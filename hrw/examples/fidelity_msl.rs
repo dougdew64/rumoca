@@ -343,7 +343,7 @@ fn main() {
         let event = match attempt {
             Ok(event) => event,
             Err(payload) => {
-                let message = panic_message(payload.as_ref());
+                let message = hrw::panic_message(payload.as_ref());
                 eprintln!("  [PANIC] {}: {message}", row.name);
                 let _ = writeln!(sink, "{}", note_row(&row.name, "panicked", &message))
                     .and_then(|()| sink.flush());
@@ -568,22 +568,6 @@ fn note_row(name: &str, outcome: &str, message: &str) -> String {
         f(outcome),
         f(message),
     )
-}
-
-/// The readable half of a panic payload.
-///
-/// `panic!("literal")` boxes a `&str` and `panic!("{x}")` boxes a `String`; anything
-/// else is a payload nothing can read. Mirrors `worker::guard`, which does the same for
-/// the GUI path — and which is the reason the GUI reports these two models as a message
-/// while this binary used to die of them.
-fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
-    if let Some(s) = payload.downcast_ref::<&str>() {
-        (*s).to_owned()
-    } else if let Some(s) = payload.downcast_ref::<String>() {
-        s.clone()
-    } else {
-        "panicked with a payload the runner cannot read".to_owned()
-    }
 }
 
 /// Serialised size of a JSON value **without building it**.

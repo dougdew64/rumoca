@@ -1030,9 +1030,31 @@ fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
         h.query_by_label_contains("MSL corpus").is_some(),
         "the corpus must announce itself with NO filter typed — its absence is          indistinguishable from it not being implemented, which is how it was reported",
     );
+    // **Derived from the artifact, not pinned to a literal.**
+    //
+    // This asserted the literal `2626` until 2026-11-06, when a repaired survey moved the
+    // corpus to 2,791 — `ModelicaReference` and `ObsoleteModelica4` entered it when the
+    // MSL root list was consolidated — and the assertion failed on a **correct** change.
+    // A pinned count tests the survey's size, which is not this test's subject.
+    //
+    // The number is evidence only if it matches the corpus the app actually reads, so read
+    // the same artifact by the same parser. The floor keeps the assertion from passing
+    // vacuously if the file ever goes missing and `parse_csv` yields nothing: the app
+    // degrades to curated specimens there, and the header would then be honestly absent.
+    let expected = {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/msl-survey.csv");
+        let text = std::fs::read_to_string(path).expect("the survey artifact is committed");
+        crate::survey::parse_csv(&text).len()
+    };
     assert!(
-        h.query_by_label_contains("2626").is_some() || h.query_by_label_contains("2,626").is_some(),
-        "and it must say how many models it holds, so the header is evidence rather          than decoration",
+        expected > 2000,
+        "the committed survey holds only {expected} models; this test's subject is the \
+         header, so it must not be the thing that reports a truncated corpus",
+    );
+    assert!(
+        h.query_by_label_contains(&expected.to_string()).is_some(),
+        "and it must say how many models it holds, so the header is evidence rather \
+         than decoration — expected {expected}, the count in docs/reports/msl-survey.csv",
     );
 
     h.state_mut()

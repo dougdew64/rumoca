@@ -1469,17 +1469,10 @@ fn panic_reply(msg: &ToWorker) -> PanicReply {
 /// [`Worker::spawn`]. Reusing a panicked session would risk IR that is subtly wrong
 /// rather than absent, which this project ranks as worse than a hang.
 fn guard<R>(f: impl FnOnce() -> R) -> Result<R, String> {
-    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).map_err(|payload| {
-        // A panic payload is `Box<dyn Any>`; `panic!("literal")` boxes a `&str` and
-        // `panic!("{x}")` boxes a `String`. Anything else is a payload we cannot read.
-        if let Some(s) = payload.downcast_ref::<&str>() {
-            (*s).to_owned()
-        } else if let Some(s) = payload.downcast_ref::<String>() {
-            s.clone()
-        } else {
-            "panicked with a payload HRW cannot read".to_owned()
-        }
-    })
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f))
+        // The downcast moved to `crate::panic_message` on 2026-11-06, when both corpus
+        // runners needed the same thing and three copies were one edit away.
+        .map_err(|payload| crate::panic_message(payload.as_ref()))
 }
 
 /// The compile response for a compile that panicked.

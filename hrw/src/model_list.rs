@@ -1,8 +1,13 @@
 //! The **model list**: the left panel's browser over every model HRW can open.
 //!
 //! Three sources behind one widget — curated `specimens/`, scratch
-//! `.hrw-bridge/specimens/`, and the 2,626-row MSL corpus — with one filter
+//! `.hrw-bridge/specimens/`, and the MSL corpus — with one filter
 //! narrowing all of them.
+//!
+//! The corpus is however many rows `docs/reports/msl-survey.csv` holds, and that number
+//! moves: it was 2,626 until 2026-11-06 and is 2,791 after the MSL root list was
+//! consolidated. Nothing here should spell it, which is why the header reads it from the
+//! artifact and `the_corpus_is_visible_unfiltered_and_opens_on_click` does the same.
 //!
 //! # Why this is a module and the other panes are not, yet
 //!
@@ -163,8 +168,10 @@ pub(crate) enum ModelListNav {
 /// Everything the left panel's **model list** owns.
 ///
 /// Three sources behind one widget — curated `specimens/`, scratch
-/// `.hrw-bridge/specimens/`, and the 2,626-row MSL corpus — plus the filter that
-/// narrows all three and the bookkeeping that keeps them fresh.
+/// `.hrw-bridge/specimens/`, and the MSL corpus — plus the filter that
+/// narrows all three and the bookkeeping that keeps them fresh. The corpus's size is
+/// whatever the survey artifact holds; see this module's own docs for why no count is
+/// spelled here.
 ///
 /// # Why these ten and not the whole left panel
 ///
