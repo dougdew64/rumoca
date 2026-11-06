@@ -196,6 +196,44 @@ fn main() -> std::process::ExitCode {
         println!("\n  This is the check that would have caught `Y[1]` and `Minus` on 2026-09-03.");
     }
 
+    // **An Answer that opens another lab mid-document abandons itself when played.**
+    //
+    // Doug, 2026-11-05, pressing Play on an Answer: *"the animation runs correctly until
+    // beat 7. At beat 7, all formatting of the Answer view is lost."* Beat 4 had followed
+    // `hrw://lab/matching`, which swaps the lab panel to that file — so the run spent its
+    // remaining thirteen beats narrating a document the reader never asked to play, and
+    // the schedule's byte offsets, measured against the Answer, were being applied to it.
+    //
+    // **The corruption is fixed** (`LabState::render_split` refuses to cut a document the
+    // run never measured) **and the wandering is not.** Doug ruled: *"for now, let's simply
+    // adhere to authoring guidance to not wander."* This is that guidance, as a mechanism
+    // rather than a sentence someone has to remember — the repository's own finding is that
+    // a ruling with no mechanism is a ruling Claude re-breaks, which is why the bold check
+    // below exists at all.
+    //
+    // **Only the last station is exempt**, because citing a lab is the right way for an
+    // Answer to end: it hands the reader to a demonstration that is versioned and checked,
+    // rather than retelling it. `docs/upstream-strategy.md`'s "order by cost to accept"
+    // reasoning applies to prose too.
+    let last_heading = text.rfind("\n## ").map_or(0, |n| n + 1);
+    let strays: Vec<&str> = text[..last_heading]
+        .lines()
+        .filter(|l| l.contains("hrw://lab/"))
+        .collect();
+    if !strays.is_empty() {
+        println!(
+            "\nWANDERS: {} line(s) open another lab before the Answer's last section.\n  \
+             Pressing Play follows them, so the run leaves this document and narrates\n  \
+             the other one for every remaining beat. Cite a lab at the END, or describe\n  \
+             it without a link.",
+            strays.len(),
+        );
+        for l in strays.iter().take(4) {
+            println!("  {}", l.trim().chars().take(96).collect::<String>());
+        }
+        return std::process::ExitCode::FAILURE;
+    }
+
     // **An Answer carries no bold, and nothing was checking that.**
     //
     // Doug ruled on 2026-09-01 that labs are plain prose — measured then at 98 bold spans in
