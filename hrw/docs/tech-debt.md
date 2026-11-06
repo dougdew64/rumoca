@@ -3814,6 +3814,42 @@ partition is checked over a *subset* and the missing rows are reported as holes
 it fails models that are fine and cannot detect a real partition defect in any model with a
 compacted family.
 
+### ⟶ FIXED 2026-11-06 — the row range is published, and a specimen now reaches the shape
+
+**Doug chose the stronger half of the pair** — *"fix F4 so that we are able to make full use of the
+fidelity test"* — because teaching F4 to skip compacted blocks would have silenced the noise and
+left it unable to find a real partition defect in any model containing a family.
+
+`BlockReport::StructuredScalar` gains `first_row` and `row_count` from
+`StructuredScalarBlock::row_range()`, which the type already had; `worker::block_to_json` publishes
+them, and `check_f4` expands the range into the rows the family accounts for. Additive fields on a
+report type — the most upstreamable shape a `crates/` change can take.
+
+**And the process hole is closed, which matters more than the code fix.** F4 went blind for two
+releases *because the curated specimens did not reach the shape*, so only the hours-long MSL sweep
+exercised it. `specimens/ArrayFamily.mo` — a `for` equation over an 8-element array, the simplest
+model that compacts — is now in `fidelity::MODELS`, so the pre-commit suite covers F4's compacted
+path in seconds.
+
+**Falsified rather than assumed.** With the two keys renamed so F4 cannot see them, `ArrayFamily`
+reproduces both documented halves of the defect exactly:
+
+```text
+ArrayFamily / Structural: block 0 names no equations
+ArrayFamily / Structural: blocks cover 0 of 8 equations; missing rows [0, 1, 2, 3, 4, 5, 6, 7]
+```
+
+Loud and blind at once. With the keys restored both disappear, and the published block reads
+`first_row: 0, row_count: 8` against an 8-equation incidence. A new must-fire test
+`f4_reads_a_compacted_family_and_still_sees_a_partition_defect` drives the shape through four
+cases — whole coverage quiet, a hole still seen, a double-cover still seen, and a family claiming
+rows past the incidence — because F4's *existing* must-fire used `{"kind": "scalar"}`, the shape it
+was written against, and so proved only that the handled shape was handled.
+
+**The account below is kept as written**, because what the pair refused is the useful part.
+
+---
+
 **NOT FIXED TONIGHT, deliberately.** The repair needs a decision this run is not allowed to take
 alone: what rows a compacted family covers for partition purposes. The block publishes
 `point_count × equations_per_point` as a *size*, but `check_f4` resolves names through

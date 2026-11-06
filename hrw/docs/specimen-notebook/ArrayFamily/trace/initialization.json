@@ -1,0 +1,20 @@
+{
+  "determinacy": {
+    "state_scalars": 8,
+    "determined": 0,
+    "only_guessed": [
+      "x[1]",
+      "x[2]",
+      "x[3]",
+      "x[4]",
+      "x[5]",
+      "x[6]",
+      "x[7]",
+      "x[8]"
+    ],
+    "definitions": 0,
+    "checks": 0,
+    "partly_fixed_states": []
+  },
+  "pins": []
+}

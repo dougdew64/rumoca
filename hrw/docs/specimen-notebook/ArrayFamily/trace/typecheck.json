@@ -1,0 +1,471 @@
+{
+  "components": {
+    "2": {
+      "instance_id": 2,
+      "owner_class_id": 1,
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 7077285335715512691,
+          "start": 1514,
+          "end": 1520
+        },
+        "parts": [
+          {
+            "ident": "x",
+            "span": {
+              "source": 7077285335715512691,
+              "start": 1514,
+              "end": 1520
+            },
+            "subs": [],
+            "def_id": 99
+          }
+        ]
+      },
+      "qualified_name": {
+        "parts": [
+          [
+            "x",
+            []
+          ]
+        ]
+      },
+      "source_location": {
+        "start_line": 23,
+        "start_column": 3,
+        "end_line": 23,
+        "end_column": 9,
+        "start": 1514,
+        "end": 1520,
+        "source": 7077285335715512691
+      },
+      "dims": [
+        8
+      ],
+      "dims_expr": [],
+      "type_id": 8,
+      "type_name": "Real",
+      "type_def_id": 1,
+      "type_reference_root_def_id": null,
+      "declaration_source_scope": {
+        "parts": [
+          [
+            "ArrayFamily",
+            []
+          ]
+        ]
+      },
+      "class_overrides": {},
+      "has_forwarding_class_redeclare": false,
+      "has_unapplied_redeclare": false,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "start": {
+        "Terminal": {
+          "terminal_type": "UnsignedReal",
+          "token": {
+            "text": "1.0",
+            "location": {
+              "start_line": 23,
+              "start_column": 26,
+              "end_line": 23,
+              "end_column": 29,
+              "start": 1537,
+              "end": 1540,
+              "source": 7077285335715512691
+            },
+            "token_number": 33,
+            "token_type": 68
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1537,
+            "end": 1540
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_source": null,
+      "binding_source_scope": null,
+      "attribute_source_scopes": {},
+      "binding_from_modification": false,
+      "is_primitive": true,
+      "is_discrete_type": false,
+      "from_expandable_connector": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_final": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "is_connector_type": false,
+      "is_expandable_connector_type": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "classes": {
+    "1": {
+      "instance_id": 1,
+      "owner_component_id": null,
+      "class_def_id": 98,
+      "qualified_name": {
+        "parts": []
+      },
+      "source_scope": {
+        "parts": [
+          [
+            "ArrayFamily",
+            []
+          ]
+        ]
+      },
+      "source_scope_id": 1,
+      "equations": [
+        {
+          "equation": {
+            "For": {
+              "indices": [
+                {
+                  "binder": {
+                    "Source": 100
+                  },
+                  "ident": {
+                    "text": "i",
+                    "location": {
+                      "start_line": 25,
+                      "start_column": 7,
+                      "end_line": 25,
+                      "end_column": 8,
+                      "start": 1558,
+                      "end": 1559,
+                      "source": 7077285335715512691
+                    },
+                    "token_number": 38,
+                    "token_type": 64
+                  },
+                  "range": {
+                    "Range": {
+                      "start": {
+                        "Terminal": {
+                          "terminal_type": "UnsignedInteger",
+                          "token": {
+                            "text": "1",
+                            "location": {
+                              "start_line": 25,
+                              "start_column": 12,
+                              "end_line": 25,
+                              "end_column": 13,
+                              "start": 1563,
+                              "end": 1564,
+                              "source": 7077285335715512691
+                            },
+                            "token_number": 40,
+                            "token_type": 67
+                          },
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1563,
+                            "end": 1564
+                          }
+                        }
+                      },
+                      "step": null,
+                      "end": {
+                        "Terminal": {
+                          "terminal_type": "UnsignedInteger",
+                          "token": {
+                            "text": "8",
+                            "location": {
+                              "start_line": 25,
+                              "start_column": 14,
+                              "end_line": 25,
+                              "end_column": 15,
+                              "start": 1565,
+                              "end": 1566,
+                              "source": 7077285335715512691
+                            },
+                            "token_number": 42,
+                            "token_type": 67
+                          },
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1565,
+                            "end": 1566
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 7077285335715512691,
+                        "start": 1563,
+                        "end": 1566
+                      }
+                    }
+                  }
+                }
+              ],
+              "equations": [
+                {
+                  "Simple": {
+                    "lhs": {
+                      "FunctionCall": {
+                        "comp": {
+                          "local": false,
+                          "parts": [
+                            {
+                              "ident": {
+                                "text": "der",
+                                "location": {
+                                  "start_line": 26,
+                                  "start_column": 5,
+                                  "end_line": 26,
+                                  "end_column": 8,
+                                  "start": 1576,
+                                  "end": 1579,
+                                  "source": 7077285335715512691
+                                },
+                                "token_number": 44,
+                                "token_type": 15
+                              },
+                              "subs": null
+                            }
+                          ],
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1576,
+                            "end": 1579
+                          }
+                        },
+                        "args": [
+                          {
+                            "ComponentReference": {
+                              "local": false,
+                              "parts": [
+                                {
+                                  "ident": {
+                                    "text": "x",
+                                    "location": {
+                                      "start_line": 26,
+                                      "start_column": 9,
+                                      "end_line": 26,
+                                      "end_column": 10,
+                                      "start": 1580,
+                                      "end": 1581,
+                                      "source": 7077285335715512691
+                                    },
+                                    "token_number": 46,
+                                    "token_type": 64
+                                  },
+                                  "subs": [
+                                    {
+                                      "Expression": {
+                                        "ComponentReference": {
+                                          "local": false,
+                                          "parts": [
+                                            {
+                                              "ident": {
+                                                "text": "i",
+                                                "location": {
+                                                  "start_line": 26,
+                                                  "start_column": 11,
+                                                  "end_line": 26,
+                                                  "end_column": 12,
+                                                  "start": 1582,
+                                                  "end": 1583,
+                                                  "source": 7077285335715512691
+                                                },
+                                                "token_number": 48,
+                                                "token_type": 64
+                                              },
+                                              "subs": null
+                                            }
+                                          ],
+                                          "span": {
+                                            "source": 7077285335715512691,
+                                            "start": 1582,
+                                            "end": 1583
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "span": {
+                                "source": 7077285335715512691,
+                                "start": 1580,
+                                "end": 1581
+                              }
+                            }
+                          }
+                        ],
+                        "is_partial_application": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1576,
+                          "end": 1585
+                        }
+                      }
+                    },
+                    "rhs": {
+                      "Unary": {
+                        "op": "Minus",
+                        "rhs": {
+                          "ComponentReference": {
+                            "local": false,
+                            "parts": [
+                              {
+                                "ident": {
+                                  "text": "x",
+                                  "location": {
+                                    "start_line": 26,
+                                    "start_column": 18,
+                                    "end_line": 26,
+                                    "end_column": 19,
+                                    "start": 1589,
+                                    "end": 1590,
+                                    "source": 7077285335715512691
+                                  },
+                                  "token_number": 53,
+                                  "token_type": 64
+                                },
+                                "subs": [
+                                  {
+                                    "Expression": {
+                                      "ComponentReference": {
+                                        "local": false,
+                                        "parts": [
+                                          {
+                                            "ident": {
+                                              "text": "i",
+                                              "location": {
+                                                "start_line": 26,
+                                                "start_column": 20,
+                                                "end_line": 26,
+                                                "end_column": 21,
+                                                "start": 1591,
+                                                "end": 1592,
+                                                "source": 7077285335715512691
+                                              },
+                                              "token_number": 55,
+                                              "token_type": 64
+                                            },
+                                            "subs": null
+                                          }
+                                        ],
+                                        "span": {
+                                          "source": 7077285335715512691,
+                                          "start": 1591,
+                                          "end": 1592
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            ],
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1589,
+                              "end": 1590
+                            }
+                          }
+                        },
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1588,
+                          "end": 1590
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "origin": {
+            "parts": []
+          },
+          "source_scope": {
+            "parts": [
+              [
+                "ArrayFamily",
+                []
+              ]
+            ]
+          },
+          "source_scope_id": 1,
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1558,
+            "end": 1559
+          }
+        }
+      ],
+      "initial_equations": [],
+      "algorithms": [],
+      "initial_algorithms": [],
+      "connections": [],
+      "resolved_imports": [],
+      "parameter_branch_selections": []
+    }
+  },
+  "is_partial": false,
+  "class_type": "Model",
+  "root_description": "A regular array equation family — the StructuredScalar compaction",
+  "disabled_components": [],
+  "each_modifier_bindings": [],
+  "array_parent_dims": {},
+  "array_component_declarations": [
+    99
+  ],
+  "outer_prefix_to_inner": {},
+  "inner_outer_to_parent_inner": {},
+  "synthesized_inners": [],
+  "synthesized_inner_messages": [],
+  "type_roots": {
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 0
+  },
+  "type_ids_by_def_id": {
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "6": 4,
+    "98": 7
+  },
+  "enumeration_type_roots": [
+    5,
+    6
+  ],
+  "effective_types": {
+    "8": {
+      "nominal_type": 0,
+      "canonical_type": 0,
+      "dimensions": [
+        8
+      ]
+    }
+  },
+  "enumeration_types": [],
+  "next_id": 2
+}

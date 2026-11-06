@@ -1,0 +1,1264 @@
+{
+  "predefined_string_declaration": 4,
+  "predefined_types": {
+    "real": 0,
+    "integer": 1,
+    "boolean": 2,
+    "string": 3,
+    "clock": 4
+  },
+  "effective_types": {
+    "8": {
+      "nominal_type": 0,
+      "canonical_type": 0,
+      "dimensions": [
+        8
+      ]
+    }
+  },
+  "enumeration_types": [],
+  "type_ids_by_def_id": {
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "6": 4,
+    "98": 7
+  },
+  "enumeration_type_roots": [
+    5,
+    6
+  ],
+  "variables": {
+    "x": {
+      "instance_id": 2,
+      "name": "x",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 7077285335715512691,
+          "start": 1514,
+          "end": 1520
+        },
+        "parts": [
+          {
+            "ident": "x",
+            "span": {
+              "source": 7077285335715512691,
+              "start": 1514,
+              "end": 1520
+            },
+            "subs": [],
+            "def_id": 99
+          }
+        ]
+      },
+      "source_span": {
+        "source": 7077285335715512691,
+        "start": 1514,
+        "end": 1520
+      },
+      "type_id": 8,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [
+        8
+      ],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1537,
+            "end": 1540
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": null,
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "record_instances": {},
+  "record_types": {},
+  "variable_type_names": {
+    "x": "Real"
+  },
+  "variable_final_flags": {},
+  "equations": [
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1514,
+                          "end": 1520
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "subs": [],
+                            "def_id": 99
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 2,
+                      "generated": false
+                    },
+                    "subscripts": [
+                      {
+                        "Index": {
+                          "value": 1,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1582,
+                            "end": 1583
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 7077285335715512691,
+                      "start": 1580,
+                      "end": 1581
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          },
+          "rhs": {
+            "Unary": {
+              "op": "Minus",
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "x",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 7077285335715512691,
+                        "start": 1514,
+                        "end": 1520
+                      },
+                      "parts": [
+                        {
+                          "ident": "x",
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1514,
+                            "end": 1520
+                          },
+                          "subs": [],
+                          "def_id": 99
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 2,
+                    "generated": false
+                  },
+                  "subscripts": [
+                    {
+                      "Index": {
+                        "value": 1,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1591,
+                          "end": 1592
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 7077285335715512691,
+                    "start": 1589,
+                    "end": 1590
+                  }
+                }
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1588,
+                "end": 1590
+              }
+            }
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      },
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1514,
+                          "end": 1520
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "subs": [],
+                            "def_id": 99
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 2,
+                      "generated": false
+                    },
+                    "subscripts": [
+                      {
+                        "Index": {
+                          "value": 2,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1582,
+                            "end": 1583
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 7077285335715512691,
+                      "start": 1580,
+                      "end": 1581
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          },
+          "rhs": {
+            "Unary": {
+              "op": "Minus",
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "x",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 7077285335715512691,
+                        "start": 1514,
+                        "end": 1520
+                      },
+                      "parts": [
+                        {
+                          "ident": "x",
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1514,
+                            "end": 1520
+                          },
+                          "subs": [],
+                          "def_id": 99
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 2,
+                    "generated": false
+                  },
+                  "subscripts": [
+                    {
+                      "Index": {
+                        "value": 2,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1591,
+                          "end": 1592
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 7077285335715512691,
+                    "start": 1589,
+                    "end": 1590
+                  }
+                }
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1588,
+                "end": 1590
+              }
+            }
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      },
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1514,
+                          "end": 1520
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "subs": [],
+                            "def_id": 99
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 2,
+                      "generated": false
+                    },
+                    "subscripts": [
+                      {
+                        "Index": {
+                          "value": 3,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1582,
+                            "end": 1583
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 7077285335715512691,
+                      "start": 1580,
+                      "end": 1581
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 0.0
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1558,
+                "end": 1559
+              }
+            }
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      },
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1514,
+                          "end": 1520
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "subs": [],
+                            "def_id": 99
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 2,
+                      "generated": false
+                    },
+                    "subscripts": [
+                      {
+                        "Index": {
+                          "value": 4,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1582,
+                            "end": 1583
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 7077285335715512691,
+                      "start": 1580,
+                      "end": 1581
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 0.0
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1558,
+                "end": 1559
+              }
+            }
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      },
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1514,
+                          "end": 1520
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "subs": [],
+                            "def_id": 99
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 2,
+                      "generated": false
+                    },
+                    "subscripts": [
+                      {
+                        "Index": {
+                          "value": 5,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1582,
+                            "end": 1583
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 7077285335715512691,
+                      "start": 1580,
+                      "end": 1581
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 0.0
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1558,
+                "end": 1559
+              }
+            }
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      },
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1514,
+                          "end": 1520
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "subs": [],
+                            "def_id": 99
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 2,
+                      "generated": false
+                    },
+                    "subscripts": [
+                      {
+                        "Index": {
+                          "value": 6,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1582,
+                            "end": 1583
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 7077285335715512691,
+                      "start": 1580,
+                      "end": 1581
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 0.0
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1558,
+                "end": 1559
+              }
+            }
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      },
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1514,
+                          "end": 1520
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "subs": [],
+                            "def_id": 99
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 2,
+                      "generated": false
+                    },
+                    "subscripts": [
+                      {
+                        "Index": {
+                          "value": 7,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1582,
+                            "end": 1583
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 7077285335715512691,
+                      "start": 1580,
+                      "end": 1581
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 0.0
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1558,
+                "end": 1559
+              }
+            }
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      },
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1514,
+                          "end": 1520
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "subs": [],
+                            "def_id": 99
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 2,
+                      "generated": false
+                    },
+                    "subscripts": [
+                      {
+                        "Index": {
+                          "value": 8,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1582,
+                            "end": 1583
+                          }
+                        }
+                      }
+                    ],
+                    "span": {
+                      "source": 7077285335715512691,
+                      "start": 1580,
+                      "end": 1581
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          },
+          "rhs": {
+            "Literal": {
+              "value": {
+                "Real": 0.0
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1558,
+                "end": 1559
+              }
+            }
+          },
+          "span": {
+            "source": 7077285335715512691,
+            "start": 1576,
+            "end": 1585
+          }
+        }
+      },
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    }
+  ],
+  "structured_equations": [
+    {
+      "domain": {
+        "binders": [
+          {
+            "provenance": {
+              "Source": 100
+            },
+            "id": 0,
+            "display_name": "i",
+            "lower": 1,
+            "upper": 8,
+            "step": 1
+          }
+        ]
+      },
+      "first_equation_index": 0,
+      "equations_per_point": 1,
+      "span": {
+        "source": 7077285335715512691,
+        "start": 1558,
+        "end": 1559
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "regular": {
+        "binders": [
+          "i"
+        ],
+        "accesses": [
+          {
+            "var": "x",
+            "subscripts": [
+              {
+                "constant": 0,
+                "coeffs": [
+                  1
+                ]
+              }
+            ]
+          },
+          {
+            "var": "x",
+            "subscripts": [
+              {
+                "constant": 0,
+                "coeffs": [
+                  1
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "template": {
+        "body": [
+          {
+            "Binary": {
+              "op": "Sub",
+              "lhs": {
+                "BuiltinCall": {
+                  "function": "Der",
+                  "args": [
+                    {
+                      "VarRef": {
+                        "name": {
+                          "name": "x",
+                          "component_ref": {
+                            "local": false,
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1514,
+                              "end": 1520
+                            },
+                            "parts": [
+                              {
+                                "ident": "x",
+                                "span": {
+                                  "source": 7077285335715512691,
+                                  "start": 1514,
+                                  "end": 1520
+                                },
+                                "subs": [],
+                                "def_id": 99
+                              }
+                            ]
+                          },
+                          "resolved_function": null,
+                          "instance_id": 2,
+                          "generated": false
+                        },
+                        "subscripts": [
+                          {
+                            "Expr": {
+                              "expr": {
+                                "VarRef": {
+                                  "name": {
+                                    "name": "i",
+                                    "component_ref": {
+                                      "local": false,
+                                      "span": {
+                                        "source": 7077285335715512691,
+                                        "start": 1582,
+                                        "end": 1583
+                                      },
+                                      "parts": [
+                                        {
+                                          "ident": "i",
+                                          "span": {
+                                            "source": 7077285335715512691,
+                                            "start": 1582,
+                                            "end": 1583
+                                          },
+                                          "subs": [],
+                                          "def_id": 100
+                                        }
+                                      ]
+                                    },
+                                    "resolved_function": null,
+                                    "instance_id": 1,
+                                    "generated": false
+                                  },
+                                  "subscripts": [],
+                                  "span": {
+                                    "source": 7077285335715512691,
+                                    "start": 1582,
+                                    "end": 1583
+                                  }
+                                }
+                              },
+                              "span": {
+                                "source": 7077285335715512691,
+                                "start": 1582,
+                                "end": 1583
+                              }
+                            }
+                          }
+                        ],
+                        "span": {
+                          "source": 7077285335715512691,
+                          "start": 1580,
+                          "end": 1581
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 7077285335715512691,
+                    "start": 1576,
+                    "end": 1585
+                  }
+                }
+              },
+              "rhs": {
+                "Unary": {
+                  "op": "Minus",
+                  "rhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "x",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 7077285335715512691,
+                            "start": 1514,
+                            "end": 1520
+                          },
+                          "parts": [
+                            {
+                              "ident": "x",
+                              "span": {
+                                "source": 7077285335715512691,
+                                "start": 1514,
+                                "end": 1520
+                              },
+                              "subs": [],
+                              "def_id": 99
+                            }
+                          ]
+                        },
+                        "resolved_function": null,
+                        "instance_id": 2,
+                        "generated": false
+                      },
+                      "subscripts": [
+                        {
+                          "Expr": {
+                            "expr": {
+                              "VarRef": {
+                                "name": {
+                                  "name": "i",
+                                  "component_ref": {
+                                    "local": false,
+                                    "span": {
+                                      "source": 7077285335715512691,
+                                      "start": 1591,
+                                      "end": 1592
+                                    },
+                                    "parts": [
+                                      {
+                                        "ident": "i",
+                                        "span": {
+                                          "source": 7077285335715512691,
+                                          "start": 1591,
+                                          "end": 1592
+                                        },
+                                        "subs": [],
+                                        "def_id": 100
+                                      }
+                                    ]
+                                  },
+                                  "resolved_function": null,
+                                  "instance_id": 1,
+                                  "generated": false
+                                },
+                                "subscripts": [],
+                                "span": {
+                                  "source": 7077285335715512691,
+                                  "start": 1591,
+                                  "end": 1592
+                                }
+                              }
+                            },
+                            "span": {
+                              "source": 7077285335715512691,
+                              "start": 1591,
+                              "end": 1592
+                            }
+                          }
+                        }
+                      ],
+                      "span": {
+                        "source": 7077285335715512691,
+                        "start": 1589,
+                        "end": 1590
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 7077285335715512691,
+                    "start": 1588,
+                    "end": 1590
+                  }
+                }
+              },
+              "span": {
+                "source": 7077285335715512691,
+                "start": 1576,
+                "end": 1585
+              }
+            }
+          }
+        ]
+      },
+      "interiors": "StateDerivative"
+    }
+  ],
+  "assert_equations": [],
+  "initial_equations": [],
+  "initial_structured_equations": [],
+  "initial_assert_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "when_chains": [],
+  "functions": {},
+  "is_partial": false,
+  "class_type": "Model",
+  "model_description": "A regular array equation family — the StructuredScalar compaction",
+  "definite_roots": [],
+  "branches": [],
+  "optional_edges": [],
+  "potential_roots": [],
+  "top_level_connectors": [],
+  "top_level_input_components": [],
+  "top_level_output_components": [],
+  "oc_break_edge_scalar_count": 0,
+  "enum_literal_ordinals": {
+    "StateSelect.never": 1,
+    "StateSelect.'never'": 1,
+    "StateSelect.avoid": 2,
+    "StateSelect.'avoid'": 2,
+    "StateSelect.default": 3,
+    "StateSelect.'default'": 3,
+    "StateSelect.prefer": 4,
+    "StateSelect.'prefer'": 4,
+    "StateSelect.always": 5,
+    "StateSelect.'always'": 5,
+    "AssertionLevel.warning": 1,
+    "AssertionLevel.'warning'": 1,
+    "AssertionLevel.error": 2,
+    "AssertionLevel.'error'": 2
+  },
+  "enumeration_declarations": {},
+  "instance_relations": {
+    "1": {
+      "owner": null,
+      "declaration": 98,
+      "indices": [],
+      "kind": "Class"
+    },
+    "2": {
+      "owner": 1,
+      "declaration": 99,
+      "indices": [],
+      "kind": "Materialized"
+    }
+  }
+}

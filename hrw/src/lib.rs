@@ -1218,6 +1218,24 @@ fn walk_for_labels(value: &serde_json::Value, path: String, out: &mut Vec<Uniden
                 }
             }
 
+            // **A compacted family is identified by its ROW RANGE, not by an equation id.**
+            //
+            // `BlockReport::StructuredScalar` stands for a whole regular family, and
+            // `worker::block_to_json` deliberately publishes no `id` for it: no single
+            // row is the right answer, and emitting one *"would make a capture resolve to
+            // whichever row the derivation happened to land on"*. Its `origin` is
+            // provenance — where the family starts — and it is spelled like a label, so
+            // the scan below would call it unidentified.
+            //
+            // It is not. Since 2026-11-06 the block carries `first_row` and `row_count`
+            // (published for `fidelity::check_f4`, which needs the same thing to check the
+            // partition), and **that pair is the identity**: it resolves the family to
+            // exactly the rows it stands for, which an equation id could not do. So the
+            // presence of both is accepted here rather than exempting the field.
+            let identified_by_row_range = map.contains_key("first_row")
+                && map.contains_key("row_count")
+                && map.get("kind").and_then(Value::as_str) == Some("structured_scalar");
+
             for (k, v) in map {
                 let child = if path.is_empty() {
                     k.clone()
@@ -1227,7 +1245,8 @@ fn walk_for_labels(value: &serde_json::Value, path: String, out: &mut Vec<Uniden
                 match v {
                     Value::String(s)
                         if is_decorated_equation_label(s)
-                            && !ids.contains(equation_id_from_label(s)) =>
+                            && !ids.contains(equation_id_from_label(s))
+                            && !identified_by_row_range =>
                     {
                         out.push(UnidentifiedLabel {
                             path: child.clone(),
@@ -1385,6 +1404,56 @@ mod tests_equation_identity {
              resolves to nothing:\n  {}",
             findings.len(),
             findings.join("\n  "),
+        );
+    }
+
+    /// **The row-range identity is accepted, and its absence is still caught.**
+    ///
+    /// The scan above gained an acceptance on 2026-11-06: a `structured_scalar` block's
+    /// `origin` is spelled like an equation label but is identified by `first_row` /
+    /// `row_count` rather than by an id. **An acceptance is a hole unless something
+    /// proves it is the intended shape and only that shape** — which is the lesson this
+    /// codebase keeps relearning, so it is proved here rather than assumed.
+    #[test]
+    fn a_compacted_family_is_identified_by_its_row_range_and_not_by_nothing() {
+        let with_range = serde_json::json!({
+            "kind": "structured_scalar",
+            "origin": "f_x[0] (i)",
+            "point_count": 8,
+            "equations_per_point": 1,
+            "first_row": 0,
+            "row_count": 8,
+        });
+        assert!(
+            super::unidentified_equation_labels(&with_range).is_empty(),
+            "a family carrying its row range is identified: {:?}",
+            super::unidentified_equation_labels(&with_range),
+        );
+
+        // The must-fire half: drop the range and the label is unidentified again.
+        let without_range = serde_json::json!({
+            "kind": "structured_scalar",
+            "origin": "f_x[0] (i)",
+            "point_count": 8,
+            "equations_per_point": 1,
+        });
+        assert!(
+            !super::unidentified_equation_labels(&without_range).is_empty(),
+            "a family with neither an id nor a row range resolves to nothing and must \
+             still be reported",
+        );
+
+        // And the acceptance must not leak to other block kinds.
+        let scalar = serde_json::json!({
+            "kind": "scalar",
+            "equation": "f_x[0] (i)",
+            "first_row": 0,
+            "row_count": 1,
+        });
+        assert!(
+            !super::unidentified_equation_labels(&scalar).is_empty(),
+            "only a compacted family is identified by a row range; a scalar block still \
+             needs its id",
         );
     }
 }
