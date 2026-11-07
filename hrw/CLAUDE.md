@@ -637,9 +637,11 @@ the next phase touches — is procedure and lives there.
 > `.hrw-bridge/question.json`; he types `?` in the chat; the hook prints it. ANSWER FROM THE
 > CONVERSATION** — the chat, a VS Code tab, System Modeler or Wolfram Desktop, whichever is most
 > effective (Claude's choice); committed only when he asks.
-> **"This" is the question's own `this`**, which the bar showed him before he asked (the point,
-> then the follow, then the stage on screen) — **never the live `pointing at:` line**, which
-> may have moved since. The hook labels the two; do not mix them.
+> **If the question says "this" and its referent is unclear, ASK Doug** *(2026-11-07)*. HRW
+> resolved it for a few hours (point, then follow, then stage, shown as `this = …`), and Doug
+> removed that: *"for me, 'this' often means the entire assembled context."* Read the
+> question against **its own `context`** in `question.json` — **never the live `pointing at:`
+> line**, which may have moved since. The hook labels the two; do not mix them.
 >
 > **Used, and Doug's verdict was "much better"; the HRW Answer feature is REMOVED** (same day,
 > after charter Decision 19 was ratified). Lab mode now shows fixture labs only, and nothing

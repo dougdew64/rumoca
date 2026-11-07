@@ -530,20 +530,13 @@ fn a_captured_lab_passage_is_shown_quoted_and_claims_no_stage() {
     app.test_point_at_lab_passage("connect-expansion", "two separate graphs");
     let h = harness(app);
 
-    // **Two labels now carry the passage, and the assertion must not let one stand in
-    // for the other.** Since 2026-11-07 the question row's `this =` preview repeats the
-    // point's text, so a bare "is it anywhere?" would pass on the preview alone even if
-    // the Pointing-at row stopped quoting the passage. So: the preview by its exact
-    // label, and at least one MORE match, which can only be the row.
+    // For part of 2026-11-07 the question row's `this =` preview repeated the point's
+    // text, and this asserted the preview plus one more match. The preview is gone, so
+    // the Pointing-at row is again the only label that can carry the passage.
     assert!(
-        h.query_by_label("this = two separate graphs").is_some(),
-        "the question row says what \u{201c}this\u{201d} means",
-    );
-    assert!(
-        h.get_all_by_label_contains("two separate graphs").count() >= 2,
+        h.query_by_label_contains("two separate graphs").is_some(),
         "the bar must quote the passage \u{2014} the reader has to see WHICH sentence \
-         Claude is holding, not merely that a passage was captured \u{2014} and the \
-         preview alone does not count",
+         Claude is holding, not merely that a passage was captured",
     );
     assert!(
         h.query_by_label_contains("pointed at in").is_none(),

@@ -5912,3 +5912,38 @@ charter be updated. The reasoning is in charter Decision 19, *"What this decisio
 - quotations of Doug that say "context bar";
 - dated records (this file, the tech-debt ledger, the plan documents, `ideas.md`), which keep
   the name they were written under.
+
+## 2026-11-07 (evening) — the bar spans the window; "this" is not resolved
+
+**The bar moved twice in one afternoon, and the second move reversed Claude's argument for the
+first position.** Doug first proposed moving it above the stage tabs, on the premise that below
+them it *"suggests incorrectly that the Question bar contents might change by selecting a
+different tab."* Claude showed that four of its parts do follow the tab, and the bar stayed
+(`dd51134b`). Doug then pointed out: *"questions might also be asked about content in the LHS of
+HRW."* Two of the five point origins are in the left column, so the bar's scope is the window.
+**A position can express one scope**, so it now expresses the widest one: a full-width bottom
+panel above the status line (`70f06a2f`), with the tab dependence stated in words (*"Flatten
+tab"*).
+
+**The `this =` resolver is removed** (Doug, the same evening): *"I doubt that it would always
+correctly identify the same "this" which I have in mind when answering a question. In fact, for
+me, "this" often means the entire assembled context. So, I recommend removing the "this = ..."
+feature. If ever I use "this" in a question and you need clarification, then you should ask."*
+
+**What went:** the `Referent` type and `this_referent` rule; the `this = …` label beside the
+Text field; `this` and `this_rule` in `question.json`; the hook's `this =` line on `?`; the
+hook's *"so 'this' is not an HRW point"* on every prompt; *"about this"* in the field's
+placeholder.
+
+**What replaced it:** `question.json`'s instructions and the hook's `?` output both say *if the
+question says "this" and its referent is unclear, ask Doug*. The question still carries the
+whole context, which is what "this" usually means to him.
+
+**Why a resolver is the wrong shape here**, beyond his verdict: it is confidently wrong whenever
+his referent differs from its pick, and the output gives neither side a sign that it differed.
+Asking is one line of conversation; a wrong silent pick is an answer to a question he did not
+ask. **Do not reintroduce one.**
+
+**Open, for Doug:** charter Decision 19 still cites *"a `this =` beside a question field"* as an
+example of a provoking feature, and says the Question Bar *"is what makes 'this' certain"*.
+Both describe the removed feature; amending the charter is his call.

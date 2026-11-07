@@ -3812,7 +3812,6 @@ Some prose.
                 let question = serde_json::json!({
                     "seq": 12,
                     "question": "why is this singular?",
-                    "this": "components.src.V",
                     "context": { "kind": "stage" },
                 });
                 std::fs::write(bridge.join("question.json"), question.to_string())
@@ -3862,7 +3861,9 @@ Some prose.
             "but not delivered without ?:\n{out}"
         );
 
-        // 2. `?` delivers it, with the referent Doug saw and the live-context warning.
+        // 2. `?` delivers it, with the instruction to ask about an unclear "this", and the
+        //    live-context warning. It printed a resolved `this = …` until 2026-11-07, when
+        //    Doug removed the resolver: for him "this" often means the whole context.
         let out = ask(&asked, "?");
         assert!(
             out.contains("HRW QUESTION #12"),
@@ -3873,8 +3874,12 @@ Some prose.
             "with its text:\n{out}"
         );
         assert!(
-            out.contains("this = components.src.V"),
-            "and what 'this' means:\n{out}"
+            !out.contains("this ="),
+            "the hook resolves \"this\"; Doug ruled that Claude asks instead:\n{out}"
+        );
+        assert!(
+            out.contains("ASK Doug"),
+            "and says to ask when \"this\" is unclear:\n{out}"
         );
         assert!(
             out.contains("LIVE context NOW"),
