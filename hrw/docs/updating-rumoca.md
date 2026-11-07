@@ -438,6 +438,30 @@ place in `fidelity::MODELS`.
 **Announce the cost before starting.** These are hours, not minutes, and
 [`long-runs.md`](long-runs.md) owns the safety rules.
 
+## 11. Propose a comprehensive tech-debt sweep — the last step
+
+**Doug's ruling, 2026-11-07**, after the 0.10.0 and 0.10.4 rebases and a day of feature changes:
+*"Some tech debt sweeps are not forward-looking. In fact, our document which contains the
+procedure for rebases should have a final step which suggests a tech debt sweep."*
+
+**Why a rebase earns one.** The other sweep triggers in [`tech-debt.md`](tech-debt.md) look
+**forward** (what the next phase will touch) or at **what has been costing mistakes**. A rebase
+leaves debt that neither one aims at, because it sits in what was *changed* rather than in what
+comes next:
+
+- **Port residue.** The v0.10.0 port (`b2f75914`) turned 32 `\` line continuations into runs of
+  spaces inside string literals, three of them fields emitted to Claude. The compiler accepted
+  all of it, and it was found **four days later**, by eye, in a screenshot.
+- **Renamed and removed things still described in prose.** Comments, docs, emitted strings and
+  lab text name the old surface, and no compiler error points at a sentence.
+- **Workarounds whose reason is gone.** A shim for the old API, a disabled surface waiting on a
+  re-model, an `upstream-issues.md` entry the release fixed (step 3c catches only the last).
+
+**What to do.** Propose the sweep to Doug with a scope and a cost; do not start it unasked,
+because it competes with whatever he wants next. When it runs, sweep the **rebase's diff** and
+the feature work since, not the whole tree. Record what it finds in the who-caught-it ledger, so
+the next rebase can see which residue the toolchain now catches.
+
 ---
 
 **Note on commands:** run everything from the workspace root with `-p hrw`
@@ -460,7 +484,8 @@ read `cargo build` / `cargo test` for brevity — this note sits at the end of t
 **Rule of thumb:** step 0 is research and decides whether the rest happens at all; steps 1–3 are
 mechanical and compiler-driven; 3b–3c say what the release actually changed; steps 4–5 are one
 command each (then review the diffs); step 6 is a targeted search-and-update; steps 7 and 9 are
-human judgement; **step 10 is hours of machine time and is the one that cannot be hurried.** If
+human judgement; **step 10 is hours of machine time and is the one that cannot be hurried**;
+step 11 proposes the sweep that clears what the port left behind. If
 `cargo build` + `cargo test` are green and the field-help + trace diffs look sane, the update is in
 good shape — **but not finished until step 10 has run**, because the pre-commit gate deliberately
 excludes every suite that would make it slow.
