@@ -1477,14 +1477,27 @@ Opus 4.6 → Opus 5 change and Claude's own verbosity), and **a single −5,613 
 through noise that would swallow twenty −150 extractions.** A discontinuity can be seen; a drift
 cannot. The model has been stable since, which is the condition the confound note requires.
 
-**STILL TRUE AS OF 2026-09-25, and now by decision rather than by default.** Anthropic made
-**Opus 5.5** the default that day; Doug declined it — *"I will stick with Opus 5 / High effort"* —
-after being shown that switching would break exactly this condition. So **Opus 5 at `high` effort
-is the baseline any handoff count in this document is measured against**, and the claim above is
-dated rather than open-ended. **If the model ever does change, this sentence is what stops a count
-taken afterwards from being compared with one taken before**; record the new model and start a
-fresh baseline instead of continuing the series (`CLAUDE.md`, *handoff frequency MEASURES rather
-than triggers*).
+**THE MODEL CHANGED ON 2026-11-07, AND THIS IS THE SENTENCE THAT WAS WAITING FOR IT.** Doug
+upgraded to **Opus 5.5 at `high` effort**, having declined the same upgrade on 2026-09-25 —
+*"I will stick with Opus 5 / High effort"* — precisely to protect this measurement. He un-made that
+choice knowingly, with the cost stated.
+
+**So the series resets here. Any handoff count taken from 2026-11-07 onward belongs to a new
+baseline and must not be compared with one taken before it** — the confound this document warned
+about is now real rather than hypothetical, and a discontinuity read across the boundary would
+measure the upgrade rather than the split. Record which model produced any future count
+(`CLAUDE.md`, *handoff frequency MEASURES rather than triggers*).
+
+**What survives the reset and what does not.** The **−5,613-line step** and every count up to
+2026-11-06 are measurements of Opus 5 at `high` and stay as that; the *experiment* is intact
+because its subject is `app.rs`, not the model. What is gone is the ability to continue the series
+without a gap. **There is no count after the boundary yet**, which is worth saying plainly so a
+later session does not reach for the pre-boundary numbers to fill it.
+
+*(The previous paragraph read "STILL TRUE AS OF 2026-09-25, and now by decision rather than by
+default." It was true for six weeks and is kept in substance above, because the decision it records
+— that Doug was shown the cost and chose the baseline — is what makes today's change deliberate
+rather than accidental.)*
 
 **`worker.rs` remains the control and is not touched** (§4). That is what makes this an
 experiment rather than a campaign.

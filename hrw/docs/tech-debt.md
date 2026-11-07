@@ -4746,3 +4746,25 @@ than leaving the two readings indistinguishable.
 | 11-06 | **`ArrayFamily` was committed with no System Modeler verdict** — the oracle report held 28 rows for 29 specimens | reading the directory listing against the artifact, while closing the rebase | *oracle-first* was a rule with no mechanism, and the absence is the invisible kind: a specimen with no row contributes nothing, so a missing adjudication and a specimen that was never authored look identical. Now `fidelity::every_specimen_has_an_oracle_verdict`, with the predicate split out so its must-fire needs neither System Modeler nor a file |
 | 11-06 | the promoted sidecar told maintainers the run covered **`F1-F9`** | reading the sidecar that `promote_run` had just written | every word wrong by then: F1 retired into `check_f2`, F8 a measurement rather than a check, F10 absent from the range and present in the run. It now derives from `fidelity::CHECKS` and carries a `checks` array. **This is the artifact a maintainer reads without the conversation around it**, which is the whole argument for the `not_checked` field one line above it |
 | 11-06 | two documents cited `solve_lowerings_names_is_documented_as_slots_not_imports`, renamed the same day | grep, while looking for something else | `qualified_citations_resolve` scans six documents and neither `tech-debt.md` nor `unattended-run-log.md` is one, so the rename gated green with two dead pointers behind it. **Widening it was measured and rejected** — see the entry below |
+| 11-06 | **every `cargo test` run overwrote the live bridge** — `focus.json`, all eleven `stages/*.json`, `answer.md`, a scratch specimen | **Doug**, by asking how Claude would know what *"this"* refers to | `bridge::write()` had no test redirect and eight tests reach it through the production emitters. **The gate runs before every commit**, and `CLAUDE.md` sends Claude to `stages/` as *"the file the pane is actually fed"* — so Doug captures, Claude gates, Doug asks, and the artifacts Claude is told to trust describe the suite. Nothing in them false. `diagnostics::dir()` had taken this ruling two months earlier for the other half of the bridge. Now redirected at the **const definitions**, so all ~70 call sites follow; `tests_never_write_the_live_bridge_files` guards it, and a full gate now changes **zero** live bridge files against seventeen before |
+| 11-06 | the hook timed a capture by **a different file's mtime** than the one the referent came from | the same question | the only freshness signal beside `pointing at:` belonged to another event *and* was movable by the row above. The age now comes from the action trail; `focus.json`'s mtime is demoted to a cross-check that WARNS on disagreement — and it fired correctly on the live state the moment it was written |
+| 11-06 | Claude's own fix filtered the trail on `kind -eq 'capture'`, **which is recorded nowhere** | the author, before shipping | the word exists only in a doc comment at `app.rs:2569` — a grep hit in prose read as a code fact, the *filtered grep* failure one layer out. It would have reported *"NO capture in the action trail"* **forever**: a confident claim of absence replacing a weak claim of presence, failing nothing. `the_hook_matches_real_action_kinds` now asserts the overlap, because **a string shared between PowerShell and Rust has no compiler** |
+
+> ### ⟶ MODEL BOUNDARY — 2026-11-07, Opus 5 `high` → Opus 5.5 `high`
+>
+> **Rows above were produced while Claude ran Opus 5 at `high` effort; rows below were not.**
+> Recorded here because this ledger is the instrument that answers *"are the checks working?"*,
+> and `CLAUDE.md`'s rules are very largely a record of **one model's** observed failure modes —
+> so a shift in the ratio across this line is ambiguous between *the checks changed* and *the
+> failures changed*.
+>
+> **No rule was relaxed on account of the upgrade, and none should be.** A session rewriting its
+> own constraints from a guess about its own competence is the inverse of *a policy blocking
+> something valuable is evidence about the policy*: that test licenses re-reading a rule when it
+> blocks a concrete, zero-risk action, not pre-emptively loosening rules whose instances are all
+> on record. **If a rule here is mis-aimed at this model, the ledger is how that becomes
+> visible** — several rows, caught by the toolchain rather than by Doug, in a class the rule
+> claims is silent.
+>
+> The same boundary is recorded in `app-split-plan.md`, where it resets a measurement series
+> rather than merely annotating one.
