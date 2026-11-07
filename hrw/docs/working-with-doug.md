@@ -99,20 +99,33 @@ paragraph was written about.
 systems programming deeply — threads, memory, build systems — so the gap is never concepts,
 it is **idiom**.
 
-**So translate, do not teach from zero:**
+**So translate, do not teach from zero — and TRANSLATE INTO CONTEMPORARY C++, NOT JAVA**
+*(2026-09-20)*. He is ramping up on C++17/20/23 and no longer writes Java, so modern C++ is the
+closer target, and **the goal is reading Rust, not writing it.** The mappings, each tagged with the
+C++ standard it arrived in and the one place the translation is loose, live in
+[`rust-for-cpp-readers.md`](rust-for-cpp-readers.md) — **that file is their one home; do not
+rebuild a table here.** The shape of it: `Option` ≈ `std::optional`, `Result` ≈ `std::expected`,
+a data-carrying `enum` ≈ `std::variant`, static traits ≈ **concepts**, `dyn` ≈ `virtual`.
+**Lifetimes have no analogue and are the one genuinely new thing.** For egui's immediate mode,
+the contrast is **no retained widget tree**, against Qt.
 
-| Rust / egui | Reach for |
-|---|---|
-| `trait` | a Java interface |
-| `enum` | a tagged union |
-| `match` | an exhaustive switch |
-| `Option<T>` | nullable, but the compiler checks it |
-| ownership / `&mut` | RAII plus move semantics; an exclusive reference |
-| egui's immediate mode | **no retained widget tree** — contrast Swing/Qt, which he knows |
+*(This said `trait` → "a Java interface" and contrasted egui with "Swing/Qt" until 2026-11-07 —
+seven weeks after `CLAUDE.md` and `rust-for-cpp-readers.md` moved to C++, so two files on the
+mandatory reading path gave opposite instructions on the most frequent thing Claude does for him.
+Found by a fresh read after a model change, which is a reading no session in between had made.)*
 
 **Liberal code comments are welcome and are not noise.** They are ongoing knowledge transfer.
-Frame Rumoca concepts as **introductions, not reminders** — he is new to Modelica compilers,
-not to software.
+
+**How to pitch Rumoca's concepts depends on WHICH HALF of the pipeline they come from** — the
+table under *"He has built the back half of a Modelica compiler"*, above, is the rule. **DAE
+representation, integration, codegen and real-time constraints are REMINDERS**: he shipped them.
+**Parse, resolve, instantiate, flatten, connection sets, matching and BLT are INTRODUCTIONS.**
+Index reduction is **motivation familiar, mechanism new**.
+
+*(This paragraph said, flatly, "Frame Rumoca concepts as introductions, not reminders — he is new
+to Modelica compilers, not to software." The section above corrected that on 2026-09-19 as "right
+for half the pipeline and wrong for the other half" — and the sentence it corrected was left
+standing below its own correction, so a reader arriving here got the wrong default unqualified.)*
 
 **He intends to own and maintain this code**, including for an upstream PR. Understanding
 beats speed.

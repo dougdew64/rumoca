@@ -110,7 +110,7 @@ on a tab showing 48 equations.
 
 | Document | Holds |
 |---|---|
-| [`ideas.md`](ideas.md) | The numbered backlog, #1-#57. Candidates, not commitments; numbers are permanent. |
+| [`ideas.md`](ideas.md) | The numbered backlog. Candidates, not commitments; numbers are permanent. *(This cell said "#1-#57" until 2026-11-07, by which time the backlog reached #92 — a count in an index, which nothing checks and every new entry falsifies. The file holds its own range.)* |
 | [`../DECISIONS.md`](../DECISIONS.md) | Every nontrivial implementation choice, plus the closed-arc record. |
 | [`question-ledger.md`](question-ledger.md) | Doug's questions verbatim, and what made each click. **The only artifact whose value grows with time.** |
 | [`upstream-issues.md`](upstream-issues.md) | Bugs in code we do not own — Rumoca and egui — written ready to file. **Claude never files them.** |
