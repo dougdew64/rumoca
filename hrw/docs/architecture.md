@@ -115,30 +115,30 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 93,746 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 94,389 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,559 |
-| `app.rs` | 8,638 |
-| `app/tests.rs` | 8,096 |
+| `app.rs` | 8,742 |
+| `app/tests.rs` | 8,175 |
 | `worker.rs` | 7,862 |
 | `doc_citations.rs` | 7,597 |
-| `bridge.rs` | 5,423 |
-| `ui_tests.rs` | 3,037 |
+| `bridge.rs` | 5,581 |
+| `ui_tests.rs` | 3,047 |
 | `fidelity.rs` | 2,760 |
 | `equation_sheet.rs` | 1,569 |
 | `lib.rs` | 1,459 |
 | `tree.rs` | 1,432 |
 | `diagnostics.rs` | 1,421 |
 | `matching_anim.rs` | 1,310 |
+| `context_bar.rs` | 1,254 |
 | `incidence_view.rs` | 1,219 |
 | `report_sub_view.rs` | 1,214 |
 | `playback.rs` | 1,135 |
 | `connection_anim.rs` | 1,106 |
 | `reduction_view.rs` | 1,048 |
 | `tarjan_anim.rs` | 1,001 |
-| `context_bar.rs` | 962 |
 | `lab_panel.rs` | 946 |
 | `matching_ledger.rs` | 928 |
 | `dae_expr_format.rs` | 898 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **93,746** |
+| **total** | **94,389** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1373,7 +1373,7 @@ for; charter Decision 8 is the principle and `bridge::AskRequest` carries the ac
 
 ### The file protocol
 
-Four channels, all in `.hrw-bridge/` (gitignored). Two carry context **out** to
+Five channels, all in `.hrw-bridge/` (gitignored). Three carry context **out** to
 Claude, and two carry a request **in**:
 
 1. **`focus.json`** — written on each capture. Contains:
@@ -1392,6 +1392,16 @@ Claude, and two carry a request **in**:
 
 2. **`stages/<name>.json`** — one file per pipeline stage's full IR, rewritten
    each compile. Claude can diff any two stages by reading two files.
+
+2b. **`question.json`** *(2026-11-07)* — a question Doug typed into the Context Bar's
+   question field, **written in the same call as the context it is about**:
+   `bridge::write_question` builds its `context` from the same `Ask` that
+   `bridge::write` puts in `focus.json` that frame, so the two cannot disagree. It also
+   carries `this` — what the word *"this"* resolves to by the bar's rule (the point, then
+   the follow, then the stage on screen), shown to Doug beside the field before he asked.
+   **A separate file because `focus.json` is the live context** and later clicks rewrite
+   it; `question.json` is written only on asking, atomically (temp file + rename), and
+   recorded as a `question-asked` action. It waits there until Doug types `?` in the chat.
 
 3. **`answer.md`** — the first channel that runs the *other* way. Claude writes a
    markdown lab; HRW's lab mode renders it and picks up a rewrite without a restart,

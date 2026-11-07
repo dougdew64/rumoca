@@ -1037,7 +1037,8 @@ pub struct App {
     problem_lines: Vec<(u32, String)>,
     /// The draggable LHS/RHS split. See [`SplitState`].
     split: SplitState,
-    /// Everything the Context Bar owns. See [`ContextBarState`].
+    /// Everything the Context Bar owns, its question field included. See
+    /// [`ContextBarState`].
     context: ContextBarState,
     /// Everything the source view owns. See [`SourceViewState`].
     source: SourceViewState,
@@ -6068,6 +6069,34 @@ impl App {
     /// keeps them independent, which is the property `docs/context-assembly.md`
     /// asks for.
     fn emit_context(&mut self) {
+        // The ordinary case: no question, so nothing to report back.
+        let _ = self.emit_context_with(None);
+    }
+
+    /// [`Self::emit_context`], optionally writing a question beside the context.
+    ///
+    /// **One assembly, two files.** When Doug asks from the Context Bar, the question is
+    /// written by [`bridge::write_question`] from the *same* `Ask` this function builds
+    /// for `focus.json`, in the same frame — which is what makes the question and its
+    /// context unable to disagree. A second, separate assembly for the question would
+    /// re-open exactly the join-by-time gap the question bar exists to close.
+    ///
+    /// Returns the question write's result, or `None` when no question was asked **or
+    /// when the context could not be emitted at all** (a node whose stage IR is
+    /// missing) — in which case the question was not written either, and the caller
+    /// must say so rather than report success.
+    fn emit_context_with(
+        &mut self,
+        question: Option<(u64, &str)>,
+    ) -> Option<std::io::Result<std::path::PathBuf>> {
+        // Resolved by the bar's rule from the same fields the bar renders from this
+        // frame, so `this` in the file is what Doug saw beside the field.
+        let this = context_bar::this_referent(
+            self.context.pointed_at.as_ref(),
+            self.tracked_identifier.as_deref(),
+            self.selected.is_some().then_some(self.stage),
+        )
+        .describe();
         let stage_values = self.stages.as_stage_pairs();
         // Summarised now (on a click), never per frame — it walks every stage.
         // Computed before the borrow below, since `tracking` borrows self.
@@ -6098,8 +6127,19 @@ impl App {
                 failure: self.failure_context(),
                 flags: self.flags_context(),
             };
-            self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
-            return;
+            let written = bridge::write(&ask);
+            let asked = question.map(|(seq, text)| {
+                bridge::write_question(
+                    &ask,
+                    &bridge::Question {
+                        seq,
+                        text,
+                        this: &this,
+                    },
+                )
+            });
+            self.context.point_error = written.err().map(|e| e.to_string());
+            return asked;
         };
 
         // Rebuild whichever shape was captured. Handling only `Node` here would
@@ -6130,8 +6170,19 @@ impl App {
                 failure: self.failure_context(),
                 flags: self.flags_context(),
             };
-            self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
-            return;
+            let written = bridge::write(&ask);
+            let asked = question.map(|(seq, text)| {
+                bridge::write_question(
+                    &ask,
+                    &bridge::Question {
+                        seq,
+                        text,
+                        this: &this,
+                    },
+                )
+            });
+            self.context.point_error = written.err().map(|e| e.to_string());
+            return asked;
         }
 
         // Every remaining shape is a location in a stage's IR, so a stage is required
@@ -6140,7 +6191,7 @@ impl App {
         let Some(point_stage) = point.stage else {
             self.context.point_error =
                 Some("capture recorded no stage, so it cannot be re-emitted".to_owned());
-            return;
+            return None;
         };
         let stage_value = self.stages.get(point_stage).value.clone();
         let focus = match (&point.kind, &stage_value) {
@@ -6155,11 +6206,11 @@ impl App {
             // destroy deliberate context over a transient condition — a
             // recompile clears the point through `reset`, which is the place
             // that knows the old IR is genuinely gone.
-            (PointKind::Node(_), None) => return,
+            (PointKind::Node(_), None) => return None,
             (PointKind::Stage, _) => Focus::Stage,
             (PointKind::Specimen, _) => Focus::Specimen,
             // Returned above, before the stage lookup this match sits inside.
-            (PointKind::Selection { .. }, _) => return,
+            (PointKind::Selection { .. }, _) => return None,
         };
         let ask = Ask {
             seq: point.seq,
@@ -6180,7 +6231,19 @@ impl App {
             failure: self.failure_context(),
             flags: self.flags_context(),
         };
-        self.context.point_error = bridge::write(&ask).err().map(|e| e.to_string());
+        let written = bridge::write(&ask);
+        let asked = question.map(|(seq, text)| {
+            bridge::write_question(
+                &ask,
+                &bridge::Question {
+                    seq,
+                    text,
+                    this: &this,
+                },
+            )
+        });
+        self.context.point_error = written.err().map(|e| e.to_string());
+        asked
     }
 
     /// Collect the text egui copied for us, into the slot a *"Point at selection"* will use.
@@ -7048,6 +7111,18 @@ impl App {
                 context_bar::stage_ir_count(&self.stages),
                 self.def_index.len(),
             );
+            // The question row here too: with nothing pointed at or followed, "this"
+            // falls back to the stage on screen, which is still worth asking about.
+            let this = context_bar::this_referent(
+                self.context.pointed_at.as_ref(),
+                self.tracked_identifier.as_deref(),
+                self.selected.is_some().then_some(self.stage),
+            );
+            if let Some(question) =
+                context_bar::question_row(ui, &mut self.context.question_draft, &this)
+            {
+                self.ask_question(question);
+            }
             ui.add_space(context_bar::BAR_MARGIN);
             ui.separator();
             return;
@@ -7059,7 +7134,7 @@ impl App {
         let lab = self.lab.selected.as_ref().map(LabSource::label);
         let press = context_bar::context_bar_ui(
             ui,
-            &self.context,
+            &mut self.context,
             &self.tracked_identifier,
             self.stage,
             &self.stages,
@@ -7118,8 +7193,37 @@ impl App {
                 self.emit_context();
             }
             Some(ContextBarPress::GoToClass(class)) => self.navigate_to(class),
+            Some(ContextBarPress::Ask(question)) => self.ask_question(question),
             None => {}
         }
+    }
+
+    /// Write a question Doug asked from the Context Bar, with the context it is about.
+    ///
+    /// The status bar says what happened and **what to do next** — the question waits in
+    /// `question.json` until Doug types `?` in the chat, since HRW cannot wake Claude.
+    /// **A question that was not written goes back into the field**, so a failure costs
+    /// a retry rather than the question: it is never cleared on the promise of a write
+    /// that did not happen.
+    pub(crate) fn ask_question(&mut self, question: String) {
+        let seq = self.context.next_seq();
+        let outcome = self.emit_context_with(Some((seq, &question)));
+        let failure = match outcome {
+            Some(Ok(_)) => {
+                self.notify(format!(
+                    "Question #{seq} written \u{2014} type ? in the Claude chat to have it answered"
+                ));
+                return;
+            }
+            Some(Err(e)) => format!("it could not be written: {e}"),
+            None => "the context could not be assembled, because the pointed-at stage's IR \
+                     is missing"
+                .to_owned(),
+        };
+        self.context.question_draft = question;
+        self.notify(format!(
+            "\u{26a0} Question not sent \u{2014} {failure}. It is still in the field."
+        ));
     }
 
     /// Follow `name`, whether or not it was already followed — for a **link**.

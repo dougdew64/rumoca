@@ -127,6 +127,13 @@ pub(crate) struct ContextBarState {
     /// soon as they point at something themselves — they have just answered a
     /// different question.
     pub(crate) jump_highlight: Option<Vec<Seg>>,
+
+    // ---- The question ----
+    /// The question field's contents. **The bar's own state, so it lives here**: it was
+    /// put on `App` first, only to avoid a borrow, and `app_does_not_regrow_its_field_count`
+    /// asked the right question — *does it belong on App, or on the pane that owns it?*
+    /// The answer was the pane, at the cost of the bar taking its state mutably.
+    pub(crate) question_draft: String,
 }
 
 impl ContextBarState {
@@ -251,6 +258,152 @@ pub(crate) enum ContextBarPress {
     ClearThread,
     /// The declaring class was clicked: open it.
     GoToClass(String),
+    /// A question was submitted from the bar's question field, already trimmed and
+    /// non-empty. `App` writes it, with the context live at this moment, to
+    /// `question.json` — see [`bridge::write_question`].
+    Ask(String),
+}
+
+/// What *"this"* means in a question asked from the bar.
+///
+/// # The rule, which is Doug's (2026-11-07)
+///
+/// **The point first, then the follow, then the visible stage.** He moved HRW questions
+/// into HRW itself — *"if we broaden the context bar to be a context + question bar…
+/// then you would know with certainty that the question was about HRW and the context I
+/// had assembled"* — and asked for the bar to show what *"this"* will resolve to
+/// **before** he asks, as an experiment.
+///
+/// That is what turns *"this"* from a convention Doug has to remember into a fact he can
+/// see. It is charter Decision 8's *known facts on screen, not on request*: the rule is
+/// fixed, so its result belongs in the UI rather than in a question to Claude.
+///
+/// # Why the order is this one
+///
+/// A point is assembled deliberately and names one thing; a follow is a lens across
+/// stages; the visible stage is merely where Doug happens to be. **Precedence follows
+/// deliberateness** — the same reading `docs/context-assembly.md` already gives a point
+/// and a follow (*"the point is the subject and the thread is the lens"*).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum Referent {
+    /// The point's target, verbatim.
+    Point(String),
+    /// The followed identifier.
+    Follow(String),
+    /// The stage tab on screen, when nothing is pointed at or followed.
+    Stage(StageKind),
+    /// Nothing at all: no point, no follow, and no specimen loaded.
+    Nothing,
+}
+
+impl Referent {
+    /// The full referent, **never elided** — this is what `question.json` records and
+    /// what Claude resolves *"this"* against.
+    pub(crate) fn describe(&self) -> String {
+        match self {
+            Referent::Point(target) => target.clone(),
+            Referent::Follow(name) => format!("{name} (the followed identifier)"),
+            Referent::Stage(stage) => format!("the {} stage on screen", stage.name()),
+            Referent::Nothing => "nothing (no point, no follow, no specimen loaded)".to_owned(),
+        }
+    }
+
+    /// The bar's short form. A point's target can be a whole selected sentence, so it
+    /// is shortened here — **with a visible `…`**, because an elision that looks
+    /// complete is a false claim about what was pointed at. `question.json` always
+    /// carries [`describe`](Self::describe), which is never shortened.
+    pub(crate) fn preview(&self) -> String {
+        const MAX: usize = 48;
+        match self {
+            Referent::Point(target) if target.chars().count() > MAX => {
+                let head: String = target.chars().take(MAX).collect();
+                format!("{}\u{2026}", head.trim_end())
+            }
+            Referent::Point(target) => target.clone(),
+            Referent::Follow(name) => format!("{name} (followed)"),
+            Referent::Stage(stage) => format!("the {} stage", stage.name()),
+            Referent::Nothing => "nothing yet \u{2014} point at something".to_owned(),
+        }
+    }
+}
+
+/// Resolve *"this"* by the bar's rule: point, then follow, then the visible stage.
+///
+/// `visible_stage` is `None` when no specimen is loaded — `App`'s empty branch already
+/// refuses to name a stage that has not run, and this inherits that refusal.
+pub(crate) fn this_referent(
+    point: Option<&PointedAt>,
+    followed: Option<&str>,
+    visible_stage: Option<StageKind>,
+) -> Referent {
+    if let Some(p) = point {
+        return Referent::Point(p.target.clone());
+    }
+    if let Some(name) = followed {
+        return Referent::Follow(name.to_owned());
+    }
+    match visible_stage {
+        Some(stage) => Referent::Stage(stage),
+        None => Referent::Nothing,
+    }
+}
+
+/// Take a submitted question out of the draft: trimmed, and `None` if nothing is left.
+///
+/// The draft is cleared **only** on a real submission, so pressing Enter in an empty
+/// field does nothing rather than sending a blank question, and a question that is
+/// sent leaves the field ready for the next. Split out of [`question_row`] so the rule
+/// is testable without a `Ui`.
+pub(crate) fn take_question(draft: &mut String) -> Option<String> {
+    let question = draft.trim();
+    if question.is_empty() {
+        return None;
+    }
+    let question = question.to_owned();
+    draft.clear();
+    Some(question)
+}
+
+/// The bar's question row: a field, an **Ask** button, and what *"this"* means.
+///
+/// Returns the question when Doug submits it — Enter in the field, or the button.
+/// Rendered by **both** of the bar's branches, the assembled one here and the empty one
+/// in `App`, because the rule's last fallback is the visible stage: a question about
+/// the stage Doug is merely looking at must be askable with nothing pointed at.
+///
+/// The hint names the next step (*type `?` in the chat*), since the question waits in
+/// `question.json` until Doug prompts Claude — HRW cannot wake him.
+pub(crate) fn question_row(
+    ui: &mut egui::Ui,
+    draft: &mut String,
+    this: &Referent,
+) -> Option<String> {
+    let mut submitted = None;
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new("   Ask").strong())
+            .on_hover_text(
+                "Ask Claude a question about what you have assembled here. It is written \
+                 to .hrw-bridge/question.json together with this context; then type ? \
+                 in the Claude chat to have it answered.",
+            );
+        let field = ui.add(
+            egui::TextEdit::singleline(draft)
+                .hint_text("ask about this, then type ? in the chat")
+                .desired_width(420.0),
+        );
+        let entered = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+        let clicked = ui.button("Ask").clicked();
+        if entered || clicked {
+            submitted = take_question(draft);
+        }
+        ui.weak(format!("this = {}", this.preview()))
+            .on_hover_text(format!(
+                "What \u{201c}this\u{201d} means in your question: {}.\n\nThe rule is the \
+                 point first, then the follow, then the stage on screen.",
+                this.describe()
+            ));
+    });
+    submitted
 }
 
 /// The bar, once something is assembled: what Claude can see right now.
@@ -278,7 +431,8 @@ pub(crate) enum ContextBarPress {
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn context_bar_ui(
     ui: &mut egui::Ui,
-    context: &ContextBarState,
+    // `&mut` for one field only — the question draft. Everything else here is read.
+    context: &mut ContextBarState,
     tracked_identifier: &Option<String>,
     stage: StageKind,
     stages: &StageBundle,
@@ -490,6 +644,17 @@ pub(crate) fn context_bar_ui(
                 press = Some(ContextBarPress::ClearThread);
             }
         });
+    }
+
+    // The question row, last, so it reads as the verb applied to the nouns above it.
+    // `stage` is the tab on screen, the rule's final fallback.
+    let this = this_referent(
+        context.pointed_at.as_ref(),
+        tracked_identifier.as_deref(),
+        Some(stage),
+    );
+    if let Some(question) = question_row(ui, &mut context.question_draft, &this) {
+        press = Some(ContextBarPress::Ask(question));
     }
 
     ui.add_space(BAR_MARGIN);
@@ -753,7 +918,7 @@ mod tests {
                 |ui, b: &mut Bar| {
                     let press = context_bar_ui(
                         ui,
-                        &b.context,
+                        &mut b.context,
                         &b.tracked,
                         b.stage,
                         &b.stages,
@@ -883,7 +1048,9 @@ mod tests {
         });
         h.run_steps(2);
         assert!(
-            h.query_by_label_contains("equations[0]").is_some(),
+            // Exact, not `_contains`: the question row's `this = equations[0]` preview
+            // also contains the text, and this asserts the noun's own row.
+            h.query_by_label("equations[0]").is_some(),
             "the noun Doug pointed at is shown",
         );
         assert!(
@@ -910,6 +1077,131 @@ mod tests {
         assert!(
             h.query_by_label_contains("for the debugger").is_some(),
             "a verb the 🐞 menu item declared must still be shown",
+        );
+    }
+
+    /// **"This" resolves by Doug's rule: the point, then the follow, then the stage.**
+    ///
+    /// Every case is distinct, so a swapped precedence fails one of them by name — the
+    /// failure that matters, since the bar shows the result *before* Doug asks and he is
+    /// entitled to rely on it.
+    #[test]
+    fn this_means_the_point_then_the_follow_then_the_stage() {
+        let point = a_point();
+        assert_eq!(
+            this_referent(Some(&point), Some("h"), Some(StageKind::Structural)),
+            Referent::Point("equations[0]".to_owned()),
+            "a point outranks a follow and the stage",
+        );
+        assert_eq!(
+            this_referent(None, Some("h"), Some(StageKind::Structural)),
+            Referent::Follow("h".to_owned()),
+            "with no point, the follow outranks the stage",
+        );
+        assert_eq!(
+            this_referent(None, None, Some(StageKind::Structural)),
+            Referent::Stage(StageKind::Structural),
+            "with neither, the stage on screen",
+        );
+        assert_eq!(
+            this_referent(None, None, None),
+            Referent::Nothing,
+            "and with no specimen, nothing — never a stage that has not run",
+        );
+    }
+
+    /// **The bar may shorten a long point; the file never does — and the shortening
+    /// shows.**
+    ///
+    /// A point can be a whole selected sentence, so the bar's preview is cut to fit. The
+    /// two halves guard opposite failures: a cut without `…` is a false claim about what
+    /// was pointed at, and a cut that reached `question.json` would hand Claude less than
+    /// Doug selected.
+    #[test]
+    fn a_long_point_is_shortened_visibly_in_the_bar_and_never_in_the_file() {
+        let long = "Causality is the answer to \"which variable is this equation \
+                    responsible for producing?\"";
+        let this = Referent::Point(long.to_owned());
+        let preview = this.preview();
+        assert!(
+            preview.ends_with('\u{2026}'),
+            "a shortened preview says so: {preview}"
+        );
+        assert!(
+            preview.chars().count() < long.chars().count(),
+            "and is shorter: {preview}"
+        );
+        assert_eq!(this.describe(), long, "the full form is never shortened");
+
+        let short = Referent::Point("equations[0]".to_owned());
+        assert_eq!(
+            short.preview(),
+            "equations[0]",
+            "a short point is shown whole"
+        );
+    }
+
+    /// **Only a real question is sent, and only a sent question clears the field.**
+    #[test]
+    fn a_question_is_trimmed_and_an_empty_one_is_not_sent() {
+        let mut draft = "   why is this singular?  ".to_owned();
+        assert_eq!(
+            take_question(&mut draft),
+            Some("why is this singular?".to_owned())
+        );
+        assert!(
+            draft.is_empty(),
+            "a sent question clears the field for the next one"
+        );
+
+        let mut blank = "   ".to_owned();
+        assert_eq!(
+            take_question(&mut blank),
+            None,
+            "whitespace is not a question"
+        );
+        assert_eq!(blank, "   ", "and refusing it leaves the field as it was");
+    }
+
+    /// **The bar shows what "this" means, and a question typed into it is reported.**
+    ///
+    /// Driven through the real widgets: the text field is found by its role, focused,
+    /// typed into, and submitted with Enter, exactly as Doug would. Asserting on the
+    /// report rather than on internal state is the point — it is the report `App` acts
+    /// on, so a field that rendered but never reported would pass any state check and
+    /// still send nothing.
+    #[test]
+    fn the_bar_shows_what_this_means_and_reports_a_typed_question() {
+        let mut h = harness(Bar {
+            context: ContextBarState {
+                pointed_at: Some(a_point()),
+                ..Default::default()
+            },
+            ..Bar::default()
+        });
+        h.run_steps(2);
+        assert!(
+            h.query_by_label_contains("this = equations[0]").is_some(),
+            "the referent is on screen before anything is asked",
+        );
+
+        let field = h.get_by_role(egui::accesskit::Role::TextInput);
+        field.focus();
+        h.run_steps(1);
+        h.get_by_role(egui::accesskit::Role::TextInput)
+            .type_text("why is this singular?");
+        h.run_steps(1);
+        h.key_press(egui::Key::Enter);
+        h.run_steps(2);
+
+        assert_eq!(
+            h.state().reported,
+            Some(ContextBarPress::Ask("why is this singular?".to_owned())),
+            "Enter in the field reports the question for App to write",
+        );
+        assert!(
+            h.state().context.question_draft.is_empty(),
+            "and the field is cleared for the next one"
         );
     }
 
