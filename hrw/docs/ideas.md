@@ -6938,3 +6938,105 @@ header has the reasoning, and the defect it protects against — a checker re-de
 and passing while the app disagreed — cost a session already. A widening that pre-filtered the
 plan per specimen to save shots would reintroduce exactly that.
 
+## 92. Claude is positioned OUTSIDE HRW — the wake, drive and see gaps — RAISED 2026-11-06 by Doug
+
+**Doug's framing, and he explicitly set the bar above the friction work already discussed:** *"We
+had discussed how we might reduce some friction when I ask you questions, but that really doesn't
+go far enough."* His three claims were that Claude cannot see inside HRW unless HRW copies
+information out as files; that Claude is not monitoring for those files and so gets no sense of
+what Doug is doing from one click to the next; and that Claude cannot drive HRW, only write an
+Answer that Doug must click.
+
+**NOTHING IS DECIDED. The discussion resumes at Doug's request.** What follows is the measurement
+taken on 2026-11-06 so it restarts from facts rather than from the three claims, **one of which is
+already false and one of which is already half-built.**
+
+### The three gaps, graded against the code
+
+| gap | state | where |
+|---|---|---|
+| **Drive** HRW from outside | **EXISTS since 2026-11-04** | `.hrw-bridge/screenshot-request.json` → `dispatch_hrw_link` |
+| **See** inside HRW | **mostly exists**, one hole that may be correct | `.hrw-bridge/stages/`, `session.json`, `in-flight.json` |
+| **Wake** when Doug acts | **genuinely absent** — and the file it needs already exists | `session.json`'s action trail |
+
+**Drive is not missing; it is misshapen.** Claude writes an increasing `seq` and a `follow` list of
+`hrw://` links. A dedicated thread — `spawn_waker`, whose whole body is a `stat` every
+`LAB_POLL_INTERVAL` (250 ms) — wakes the UI when the mtime moves, and the links go through
+`dispatch_hrw_link`, **the same function a mouse click calls**. Loading a specimen, switching
+stages, landing on a node, arming a breakpoint, opening a floating window: all available now,
+without Doug touching anything. **What is wrong is that it is a camera that accepts commands** —
+every request must be phrased as *follow these links, then take a picture*, one request and one
+reply, with a PNG usually not wanted. The `follow` queue is already a command interpreter; what it
+lacks is a **reply that is not an image**.
+
+**See is largely already outside.** `publish_current_view` refreshes the ten stage IRs as state
+moves rather than on a capture; `in-flight.json` records what HRW was *rendering* before the frame
+drew; `debug-state.json` and `screenshot-result.json` carry the debugger and the last shot. **The
+one hole is `focus.json`, which is written only on a capture click — and it may be correct that
+way.** A capture is the deliberate act of assembling the noun; publishing it continuously would
+conflate *what Doug is pointing at* with *what pane happens to be open*, which is the distinction
+the noun-verb paradigm rests on. **That is a charter-adjacent call for Doug, not craft.**
+
+### Wake is the real gap, and the file is already written
+
+`.hrw-bridge/diagnostics/session.json` is **rewritten on every recorded user action**, carrying a
+timestamped, kinded trail. It was built as crash evidence and incidentally answers Doug's question.
+Measured from a real session that night:
+
+```text
+33 actions over 3m49s  —  15 lab-link, 12 view, 2 specimen, 2 compiled, 1 split, 1 session
+```
+
+```json
+{ "at": "… 00:54:03.954 UTC", "kind": "lab-link", "detail": "load/ProportionalLoop/Dae" },
+{ "at": "… 00:54:05.159 UTC", "kind": "compiled",  "detail": "ProportionalLoop: reached Solve lowering" },
+{ "at": "… 00:54:09.304 UTC", "kind": "lab-link", "detail": "stage/Structural/Tree" }
+```
+
+**So the information is not the constraint. The invocation model is — and the asymmetry is
+temporal rather than informational.** HRW runs a thread whose only job is to watch for Claude's
+file. Claude has no thread whose job is to watch for HRW's: between prompts he is not blind, he is
+**absent**, a function invoked by a keystroke. The `[hrw-context]` hook is a `Get-Process` and a few
+`stat`s taken at that instant, which is why Claude reported HRW running when Doug had closed it
+**three times in one day** — a snapshot relayed as a present tense. `CLAUDE.md` carries that as a
+rule; this entry is the same fact seen from the architecture.
+
+### The harness already has the missing primitive
+
+`Monitor` runs a script whose every stdout line becomes an event that **wakes Claude mid-turn**,
+re-armable in 30-minute blocks. Pointed at the action trail, Doug's clicks become notifications
+with **no HRW change at all**.
+
+**The one real engineering problem is volume.** Eight actions a minute is a notification every
+seven seconds, which would bury the conversation and spend tokens on `view` events. The design that
+answers it is a **settle digest**: summarise a burst once ~3 s pass with no new action, so twelve
+clicks arrive as one line saying where Doug ended up and what compiled. That script is the piece
+worth getting right, and it is where this should start.
+
+### The prize is latency, which is why this outranks the friction work
+
+Doug, 2026-11-05: *"the latency for your answers is way too long… we need to find ways to reduce
+that."* `CLAUDE.md` already rules that most of that latency is **fact-gathering, which is the
+value**, and only verification ritual is waste. **Waking on a click attacks the remaining half
+differently: the fact-gathering happens before the question is asked rather than after.** That is
+the argument for this entry over anything that optimises the moment Doug types.
+
+### Three roads, cheapest first
+
+- **Wake.** `Monitor` on the trail plus a settle-digest script. No HRW change; a ride-along.
+- **Drive properly.** Let the request file ask for *state* instead of a PNG — *follow these links
+  and report the resulting focus, stage outcomes and node values*. Small, additive, `hrw/` only.
+  **Better driven by a specific thing Claude could not see than designed up front.**
+- **Embed.** An agent inside HRW via the Agent SDK. The literal answer to *"positioned outside"*,
+  and **a different project** — it competes directly with step 1 of Doug's queue, so it is recorded
+  rather than proposed.
+
+### The caution worth keeping attached
+
+**A Claude who watches Doug click will be tempted to narrate.** The standing rule is that an hour
+of HRW polish during a lab session is a cost; a Claude interrupting Doug's reading with
+observations is that same cost in a new wrapper, and it would land squarely on the *"frequent
+pesters from you"* complaint that retired walk-tracking. **The value is being already informed when
+the question comes — not speaking more.** Any build of the wake road should be judged on whether
+Doug's sessions get quieter.
+
