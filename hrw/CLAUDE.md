@@ -617,6 +617,12 @@ the next phase touches — is procedure and lives there.
 > **Only a real stage-tab click writes `focus.json`.** Links followed through the screenshot
 > harness capture nothing, so a measurement needing that file needs Doug.
 >
+> ### ⟶ LIVE, RAISED BY DOUG 2026-11-06 — Claude is positioned OUTSIDE HRW
+>
+> **He will resume it. Read [`docs/ideas.md`](docs/ideas.md) #92 before proposing anything**, which
+> holds the measurement: of his three gaps, **drive already exists**, **see mostly exists**, and
+> **wake is the real one** — `session.json`'s trail is written on every click and nothing reads it.
+>
 > ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
 >
 > **`CartesianPendulum` simulates**, on **2** integrated coordinates — the chart is `{y, der(y)}`,
