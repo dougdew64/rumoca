@@ -624,14 +624,17 @@ the next phase touches — is procedure and lives there.
 > **Only a real stage-tab click writes `focus.json`.** Links followed through the screenshot
 > harness capture nothing, so a measurement needing that file needs Doug.
 >
-> ### ⟶ LIVE, RAISED BY DOUG 2026-11-06 — Claude is positioned OUTSIDE HRW
+> ### ⟶ LIVE, RAISED BY DOUG 2026-11-06 — resolving "this": how Claude knows what a question is about
 >
-> **He will resume it. Read [`docs/ideas.md`](docs/ideas.md) #92 before proposing anything**, which
-> holds the measurement: of his three gaps, **drive already exists**, **see mostly exists**, and
-> **knowing what he just did is the real one** — `session.json`'s trail is written on every click
-> and nothing reads it. **Its correction is the part to absorb: that is a PULL need, and the
-> `[hrw-context]` hook is the channel. A wake is an invitation to speak, and there is no
-> watch-quietly primitive — so push is for ANOMALIES, never activity.**
+> **Read [`docs/ideas.md`](docs/ideas.md) #92 before proposing anything.** Doug: *"if I… simply ask
+> 'What does this mean?' I have no reason to believe that you will correctly determine what 'this'
+> is referencing."* **The context half is FIXED** — three defects, each the context lying. **The
+> resolution half is OPEN and is Claude's**: he stops searching on anything *consistent*, so a wrong
+> copy ends the search as fast as the right one, and he never says which referent he chose.
+>
+> **One candidate awaits Doug's ruling and must not be written in as a rule before he gives it**:
+> name the referent in one line when it is in question. **Do not resume the architecture** —
+> Doug redirected it as *"architecture without being driven by real problems."*
 >
 > ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
 >
