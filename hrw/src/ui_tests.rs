@@ -203,6 +203,14 @@ fn in_always_row(name: &str) -> String {
     format!("{name} \u{00b7}")
 }
 
+/// [`in_always_row`] for a **stage**, which the row names as *"Flatten tab"* since
+/// 2026-11-07, when the bar moved out from under the tab row and its words had to say
+/// where the stage comes from. Still anchored on the trailing `·`, so a stage tab's bare
+/// `Flatten` cannot satisfy it.
+fn stage_in_always_row(stage: &str) -> String {
+    in_always_row(&format!("{stage} tab"))
+}
+
 /// Rendering a frame records what that frame is drawing, **before** it draws it.
 ///
 /// # Why this test and not only the unit tests
@@ -378,6 +386,59 @@ fn the_question_bar_is_present_in_every_state() {
              be conditional",
         );
     }
+}
+
+/// **The Question Bar spans the whole window, at the bottom, above the status line.**
+///
+/// Doug, 2026-11-07: *"questions might also be asked about content in the LHS of HRW."*
+/// Two of the five point origins are on the left (lab prose and the specimen list), and
+/// the Always row names the open lab, so the bar's scope is the window. Drawn inside the
+/// central panel under the stage tabs, it said it belonged to that column. Its
+/// dependence on the tab is stated in its words instead (*"Resolve tab"*, *"in
+/// Flatten"*, *"pointed at in …"*).
+///
+/// Measured against the left column's **Pick a lab…** combo box, which lab mode always
+/// draws: the bar starts left of that box's right edge, so it reaches into the left
+/// column, and it sits below the button. The status line's idle hint is below the bar.
+#[test]
+fn the_question_bar_spans_the_window_above_the_status_line() {
+    let mut h = harness(App::test_default());
+    h.run_steps(3);
+    let rect = |label: &str| {
+        h.query_by_label_contains(label)
+            .unwrap_or_else(|| panic!("{label:?} should render"))
+            .rect()
+    };
+    let heading = h
+        .query_by_label("Question")
+        .expect("the bar's heading renders")
+        .rect();
+    let text = h
+        .query_by_label("   Text")
+        .expect("the Text label renders")
+        .rect();
+    // A combo box, so its text is its value, not its label.
+    let lhs = h.get_by_value("Pick a lab\u{2026}").rect();
+    let status = rect("Left-click a tree node");
+
+    assert!(
+        heading.left() < lhs.right(),
+        "the bar starts at x={:.0}, right of the left column's button (which ends at \
+         x={:.0}), so it is confined to the central column",
+        heading.left(),
+        lhs.right(),
+    );
+    assert!(
+        heading.top() > lhs.bottom(),
+        "the bar is not below the left column's content",
+    );
+    assert!(
+        text.bottom() <= status.top(),
+        "the status line is not below the bar: Text ends at y={:.0}, status starts at \
+         y={:.0}",
+        text.bottom(),
+        status.top(),
+    );
 }
 
 /// **The bar shows context, not advice.**
@@ -1107,7 +1168,7 @@ fn the_background_names_the_stage_before_a_model_exists() {
     h.run_steps(2);
 
     assert!(
-        h.query_by_label_contains(&in_always_row("Flatten"))
+        h.query_by_label_contains(&stage_in_always_row("Flatten"))
             .is_some(),
         "with a specimen selected but no model compiled, the stage is still context \
          and must still be shown",
