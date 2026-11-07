@@ -803,14 +803,11 @@ mod tests_animated_contract {
 
         assert!(
             missing.is_empty(),
-            "
-{} gated view(s) cannot see a live session:
-  {}
-
-A view app.rs arms a              debug session for must drain its channel in `ui`, or the session runs and the              pane never moves.",
+            "\n{} gated view(s) cannot see a live session:\n  {}\n\nA view app.rs arms a \
+             debug session for must drain its channel in `ui`, or the session runs and the \
+             pane never moves.",
             missing.len(),
-            missing.join("
-  "),
+            missing.join("\n  "),
         );
     }
 

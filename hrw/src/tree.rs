@@ -571,11 +571,7 @@ fn row_hover(
     }
     if let Some(doc) = doc {
         out.push_str(doc);
-        out.push_str(
-            "
-
-",
-        );
+        out.push_str("\n\n");
     }
     // **Where this came from, before what you can do with it.**
     //
@@ -600,9 +596,7 @@ fn row_hover(
     out.push_str(crate::POINT_AT_HOVER);
     if let Some(name) = trackable {
         out.push_str(&format!(
-            "
-
-Right-click to follow {name} through every stage."
+            "\n\nRight-click to follow {name} through every stage."
         ));
     }
     out

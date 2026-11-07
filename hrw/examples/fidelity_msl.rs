@@ -469,8 +469,7 @@ fn main() {
     let total_ms = timing.total_ms();
     if total_ms > 0.0 {
         eprintln!(
-            "
-[check cost] {:.1}s inside the checks:",
+            "\n[check cost] {:.1}s inside the checks:",
             total_ms / 1000.0
         );
         for (check, ms) in timing.ranked() {

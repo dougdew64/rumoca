@@ -1006,8 +1006,9 @@ adjacent to the hit. Fields on the enclosing object are often the answer \
 (`generated: true` says a variable was manufactured by a phase, not \
 declared), and adjacency is often the finding (a manufactured companion sits \
 beside the variable it shadows).\n\n\
-A `tracking.generated` section means the followed name was SYNTHESIZED by a compiler phase and is declared nowhere; `declared_at_line` is absent in that case rather than pointing at the base variable's declaration, which would name a different variable.
-
+A `tracking.generated` section means the followed name was SYNTHESIZED by a compiler \
+phase and is declared nowhere; `declared_at_line` is absent in that case rather than \
+pointing at the base variable's declaration, which would name a different variable.\n\n\
 In `tracking.stages`, `mentions: 0` is information, not a gap — the name is \
 genuinely absent from that stage, which is how a demoted or alias-eliminated \
 variable announces itself. Counts are exact; `paths` and `contexts` are \
