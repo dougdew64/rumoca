@@ -3217,11 +3217,12 @@ impl WorkerState {
                         // otherwise bury it — see `model_diagnostics_to_json`.
                         //
                         // `note` is still emitted verbatim as `message`: never lossy.
+                        // Kept whole: its `source_map` lets a library label resolve
+                        // in its own file (see `diagnostics_to_json`).
+                        let model_diags = self.session.compile_model_diagnostics(&qualified);
                         let diag = model_diagnostics_to_json(
-                            &self
-                                .session
-                                .compile_model_diagnostics(&qualified)
-                                .diagnostics,
+                            &model_diags.diagnostics,
+                            model_diags.source_map.as_ref(),
                             &source,
                             &uri,
                         );
@@ -3565,6 +3566,8 @@ impl WorkerState {
                         let diag_json = diagnostics_to_json(
                             &typed.typecheck_diagnostics,
                             SpanFile::specimen(&uri, &source),
+                            // No map on this path; see `diagnostics_to_json`.
+                            None,
                         );
                         json.as_object_mut().unwrap().insert("error".to_owned(), serde_json::json!({
                             "kind": "typecheck",
@@ -4262,10 +4265,36 @@ fn unwrap_success(result: Option<&PhaseResult>) -> &CompilationResult {
 ///
 /// `a_library_label_has_no_location` is the check, with
 /// `the_span_resolver_refuses_a_foreign_span` on the guard itself.
+///
+/// # `map`: a library label resolves in ITS OWN file when the caller has the files
+///
+/// *2026-11-07, the post-rebase sweep's open item 3.* The Resolve path calls
+/// `compile_model_diagnostics`, whose `ModelDiagnostics` carries the compile's
+/// `source_map` — and HRW read `.diagnostics` off it and dropped the map, so a library
+/// label there was `null` although its file was in hand. It now passes `Some(map)`, and
+/// a span whose id is not the specimen's is looked up in it through
+/// [`SpanFile::from_map`], which is identity, never a guess. **The three
+/// `PhaseResult::Failed` callers pass `None`**: they hold no map, and the only one
+/// reachable is `resolved_cached()`, which clones the whole resolved tree, MSL
+/// included — too much to pay on every failure for a secondary label. They keep the
+/// refusal. (The item was logged as *"resolves its span against the specimen"*; it did
+/// not — the 11-04 identity guard refuses — so what was missing was a location, not a
+/// wrong one.) `a_library_label_resolves_in_its_own_file_when_the_map_is_given` is the
+/// check.
 fn diagnostics_to_json(
     diags: &[rumoca_core::Diagnostic],
     specimen: SpanFile<'_>,
+    map: Option<&rumoca_core::SourceMap>,
 ) -> serde_json::Value {
+    // The specimen first, then the compile's own map; never the specimen's text for a
+    // span that names another file.
+    let locate = |span: &rumoca_core::Span| {
+        if span.source == specimen.id {
+            span_to_location(specimen, span)
+        } else {
+            span_to_location(SpanFile::from_map(map?, span.source)?, span)
+        }
+    };
     serde_json::Value::Array(
         diags
             .iter()
@@ -4278,7 +4307,7 @@ fn diagnostics_to_json(
                     "labels": d.labels.iter().map(|l| serde_json::json!({
                         "message": l.message,
                         "primary": l.primary,
-                        "location": span_to_location(specimen, &l.span),
+                        "location": locate(&l.span),
                     })).collect::<Vec<_>>(),
                 })
             })
@@ -4318,6 +4347,7 @@ fn diagnostics_to_json(
 /// this model's. The split is by [`diagnostic_source`], which is identity.
 fn model_diagnostics_to_json(
     diags: &[rumoca_core::Diagnostic],
+    map: Option<&rumoca_core::SourceMap>,
     source: &str,
     uri: &str,
 ) -> serde_json::Value {
@@ -4344,7 +4374,7 @@ fn model_diagnostics_to_json(
     }
 
     serde_json::json!({
-        "errors": diagnostics_to_json(&errors, SpanFile::specimen(uri, source)),
+        "errors": diagnostics_to_json(&errors, SpanFile::specimen(uri, source), map),
         "library_errors": {
             "note": "errors the compiler reported against LIBRARY sources, deduplicated. \
                      Not this model's problems and not why this compile failed \u{2014} \
@@ -4398,7 +4428,7 @@ fn dae_construction_error_to_json(
         // Shared helper so labels resolve to source lines here as well.
         obj.insert(
             "diagnostics".to_owned(),
-            diagnostics_to_json(diagnostics, specimen),
+            diagnostics_to_json(diagnostics, specimen, None),
         );
     }
 
@@ -6935,7 +6965,7 @@ fn flatten_stage(result: Option<&PhaseResult>, specimen: SpanFile<'_>) -> Stage 
                     // Shared helper, so `labels` — the source location of each problem —
                     // survives. This block used to build its own diagnostic JSON and
                     // drop them.
-                    let diag_json = diagnostics_to_json(diagnostics, specimen);
+                    let diag_json = diagnostics_to_json(diagnostics, specimen, None);
                     Stage::err_with_details(
                         serde_json::json!({
                             "kind": "flatten",
