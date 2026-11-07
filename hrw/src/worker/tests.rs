@@ -3717,6 +3717,7 @@ fn a_library_label_has_no_location() {
     let json = crate::worker::diagnostics_to_json(
         std::slice::from_ref(&diagnostic),
         crate::worker::SpanFile::specimen("Mine.mo", text),
+        None,
     );
     let labels = json[0]["labels"].as_array().expect("labels array");
     assert_eq!(labels.len(), 2, "both labels survive: {json}");
@@ -3730,6 +3731,58 @@ fn a_library_label_has_no_location() {
         labels[1]["location"].is_null(),
         "a label in another file must carry no location, because this path is given \
          only the specimen and cannot read the file the span names: {json}",
+    );
+}
+
+/// **Given the compile's source map, a library label resolves in its own file** — and
+/// still never in the specimen's (2026-11-07, open item 3). The Resolve path passes
+/// `ModelDiagnostics.source_map`, which HRW used to drop.
+///
+/// The library span is in range for the specimen text as well, so a resolver that fell
+/// back to the specimen would produce a confident wrong excerpt; the assertion on the
+/// excerpt is what tells "its own file" from "the specimen".
+#[test]
+fn a_library_label_resolves_in_its_own_file_when_the_map_is_given() {
+    let text = "model M\n  Real x;\nend M;\n";
+    let library = "package L\n  Real lib_y;\nend L;\n";
+    let mut map = rumoca_core::SourceMap::new();
+    let theirs = map.add("Library.mo", library);
+    let mine = rumoca_core::source_id_for_name("Mine.mo");
+    // A third file the map does not hold: still refused.
+    let unknown = rumoca_core::source_id_for_name("Elsewhere.mo");
+
+    let label = |span, primary| rumoca_core::Label {
+        span,
+        message: None,
+        primary,
+    };
+    let diagnostic = rumoca_core::Diagnostic {
+        severity: rumoca_core::DiagnosticSeverity::Error,
+        code: None,
+        message: "three labels, three files".to_owned(),
+        labels: vec![
+            label(rumoca_core::Span::from_offsets(mine, 10, 16), true),
+            label(rumoca_core::Span::from_offsets(theirs, 12, 22), false),
+            label(rumoca_core::Span::from_offsets(unknown, 10, 16), false),
+        ],
+        notes: Vec::new(),
+    };
+
+    let json = crate::worker::diagnostics_to_json(
+        std::slice::from_ref(&diagnostic),
+        crate::worker::SpanFile::specimen("Mine.mo", text),
+        Some(&map),
+    );
+    let labels = json[0]["labels"].as_array().expect("labels array");
+    assert_eq!(labels[0]["location"]["excerpt"], "Real x", "{json}");
+    assert_eq!(labels[1]["location"]["file"], "Library.mo", "{json}");
+    assert_eq!(
+        labels[1]["location"]["excerpt"], "Real lib_y",
+        "the library label must be read from the library's text: {json}",
+    );
+    assert!(
+        labels[2]["location"].is_null(),
+        "a file in neither the specimen nor the map is still refused: {json}",
     );
 }
 
