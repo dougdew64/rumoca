@@ -374,7 +374,14 @@ pub(crate) fn take_question(draft: &mut String) -> Option<String> {
     Some(question)
 }
 
-/// The bar's question row: a field, an **Ask** button, and what *"this"* means.
+/// The bar's question row: the **Text** field, an **Ask** button, and what *"this"* means.
+///
+/// **"Text" is the second half of the question, named at the level of "Context"**
+/// (Doug, 2026-11-07). The bar is the *Question*: the context assembled above, and the
+/// text typed here. The label was "Ask", which put the word three times on one line —
+/// label, hint and button. The button keeps it, since asking is what pressing it does.
+/// **[`QUESTION_GAP`] above the row** separates the two halves, and it is drawn here
+/// rather than by the callers, for the same reason as [`BAR_MARGIN`].
 ///
 /// Returns the question when Doug submits it — Enter in the field, or the button.
 /// Rendered by **both** of the bar's branches, the assembled one here and the empty one
@@ -389,16 +396,17 @@ pub(crate) fn question_row(
     this: &Referent,
 ) -> Option<String> {
     let mut submitted = None;
+    ui.add_space(QUESTION_GAP);
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new("   Ask").strong())
+        ui.label(egui::RichText::new("   Text").strong())
             .on_hover_text(
-                "Ask Claude a question about what you have assembled here. It is written \
-                 to .hrw-bridge/question.json together with this context; then type ? \
-                 in the Claude chat to have it answered.",
+                "Your question about the context above. Ask writes it to \
+                 .hrw-bridge/question.json together with that context; then type ? in \
+                 the Claude chat to have it answered.",
             );
         let field = ui.add(
             egui::TextEdit::singleline(draft)
-                .hint_text("ask about this, then type ? in the chat")
+                .hint_text("your question about this \u{2014} then type ? in the chat")
                 .desired_width(420.0),
         );
         let entered = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
@@ -454,10 +462,13 @@ pub(crate) fn question_bar_ui(
 ) -> Option<QuestionBarPress> {
     let mut press: Option<QuestionBarPress> = None;
 
+    // The bar's name on screen (charter v1.18): it is headed by what it is for.
+    ui.label(egui::RichText::new("Question").strong());
+    // **"Context" heads the assembled rows, one level down** (Doug, 2026-11-07), with
+    // the Text row of `question_row` at the same level. The notes on this line are about
+    // the context, so they sit with its heading rather than with the bar's name.
     ui.horizontal(|ui| {
-        // The bar's name on screen (charter v1.18): it is headed by what it is for.
-        // Its rows below are still the *context* — that word names the contents.
-        ui.label(egui::RichText::new("Question").strong());
+        ui.label(egui::RichText::new("   Context").strong());
         if let Some(point) = &context.pointed_at {
             // Worth saying only when it **differs** from the background
             // stage; otherwise it repeats the line above as if it were a
@@ -503,7 +514,7 @@ pub(crate) fn question_bar_ui(
             // Doug is learning to read this bar at a glance, and a coloured value under
             // a grey label makes the eye find the value before it knows what kind of
             // thing it is.
-            ui.colored_label(crate::colors::CONTEXT_POINT, "   Pointing at  ");
+            ui.colored_label(crate::colors::CONTEXT_POINT, "      Pointing at  ");
             ui.label(
                 egui::RichText::new(&target)
                     .monospace()
@@ -537,7 +548,7 @@ pub(crate) fn question_bar_ui(
 
     if let Some(name) = tracked_identifier.clone() {
         ui.horizontal(|ui| {
-            ui.colored_label(crate::colors::TRACKED_GOLD, "   Following    ");
+            ui.colored_label(crate::colors::TRACKED_GOLD, "      Following    ");
             ui.label(
                 egui::RichText::new(&name)
                     .monospace()
@@ -686,6 +697,12 @@ pub(crate) fn question_bar_ui(
 /// rules, not a replacement for them.
 pub(crate) const BAR_MARGIN: f32 = 6.0;
 
+/// The gap between the last context row and the Text row (Doug, 2026-11-07: *"a bit
+/// of vertical spacing between the final context item and the line which contains the
+/// question text field"*). It sets the question's two halves apart, the context above
+/// and the text below.
+pub(crate) const QUESTION_GAP: f32 = 8.0;
+
 /// How many stages have produced an IR — the count the Always row reports.
 pub(crate) fn stage_ir_count(stages: &StageBundle) -> usize {
     stages
@@ -769,8 +786,8 @@ pub(crate) fn always_summary(
 /// `unattended-runs.md` leads with; this is that, in the UI.
 ///
 /// **Now one row, one label, in every state**, carrying both halves. It is drawn
-/// *first*, directly under the title, because that is the only position it can hold in
-/// both branches — and a category that moves is one more thing to look for.
+/// *first*, directly under the "Context" heading, because that is the only position it
+/// can hold in both branches — and a category that moves is one more thing to look for.
 pub(crate) fn always_ui(
     ui: &mut egui::Ui,
     model: Option<&str>,
@@ -780,7 +797,8 @@ pub(crate) fn always_ui(
     def_count: usize,
 ) {
     ui.horizontal(|ui| {
-        ui.colored_label(crate::colors::CONTEXT_ALWAYS, "   Always       ");
+        // Six spaces: a row under the "Context" heading, which has three.
+        ui.colored_label(crate::colors::CONTEXT_ALWAYS, "      Always       ");
         ui.colored_label(
             crate::colors::CONTEXT_ALWAYS,
             always_summary(model, stage, lab, stage_ir_count, def_count),
@@ -1089,6 +1107,44 @@ mod tests {
         assert!(
             h.query_by_label_contains("for the debugger").is_some(),
             "a verb the 🐞 menu item declared must still be shown",
+        );
+    }
+
+    /// **The assembled bar has the empty bar's structure** (Doug, 2026-11-07): the bar's
+    /// name, *Question*; then its two halves one level down, *Context* over the rows and
+    /// *Text* on the field; and the rows one level further.
+    ///
+    /// `ui_tests::the_question_bar_is_present_in_every_state` checks the same headings,
+    /// but each of its four states has nothing assembled, so it only ever draws `App`'s
+    /// empty branch. This is the other branch, with both a point and a follow, so every
+    /// row is drawn.
+    #[test]
+    fn the_assembled_bar_names_both_halves_of_the_question() {
+        let mut h = harness(Bar {
+            context: QuestionBarState {
+                pointed_at: Some(a_point()),
+                ..Default::default()
+            },
+            tracked: Some("R1.v".to_owned()),
+            ..Bar::default()
+        });
+        h.run_steps(2);
+        for label in [
+            "Question",
+            "   Context",
+            "      Always       ",
+            "      Pointing at  ",
+            "      Following    ",
+            "   Text",
+        ] {
+            assert!(
+                h.query_by_label(label).is_some(),
+                "the assembled bar has no {label:?} label",
+            );
+        }
+        assert!(
+            h.query_by_label("   Ask").is_none(),
+            "\"Ask\" names the button, not the field",
         );
     }
 
