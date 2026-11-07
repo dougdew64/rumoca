@@ -858,7 +858,7 @@ use crate::ui_state::{NavEntry, SpecimenDetail, UiMode};
 /// 2. **Library config** — MSL source roots the compiler needs for `import`.
 /// 3. **Specimen list** — the directory of `.mo` files the user picks from.
 /// 4. **Compilation results** — one `Stage` per pipeline phase, plus selection state.
-/// 5. **Navigation** — the "go to definition" stack for drilling into classes.
+/// 5. **Navigation** — the **↪ Go to *Class*** stack for drilling into classes.
 /// 6. **Bridge** — communication with Claude Code (the AI assistant in the terminal).
 /// 7. **View toggles** — Settings/Help/About windows.
 /// 8. **Field help** — generic documentation for IR fields (the fast, no-AI tier).
@@ -914,7 +914,7 @@ pub struct App {
     // Shared across all stages; populated by the final `Compiled` message.
     def_index: BTreeMap<u64, DefInfo>,
 
-    // ---- 5. "Go to definition" navigation stack ----
+    // ---- 5. Navigation stack (↪ Go to <Class>; see `nav_view`'s module doc) ----
     // Empty means we're showing the specimen's own stages; non-empty means we
     // navigated into a library class (e.g. Resistor's resolved definition).
     // Renders as a breadcrumb trail: model > class1 > class2.
@@ -3797,7 +3797,7 @@ impl App {
     ///
     /// The two code paths handle different contexts:
     /// - **Navigated class** (nav stack non-empty): we're viewing a library
-    ///   class reached via "Go to definition". No Parse stage exists here
+    ///   class reached via **↪ Go to *Class***. No Parse stage exists here
     ///   (it's not a specimen), so no cross-stage diff is possible.
     /// - **Specimen stage** (nav stack empty): we're viewing the specimen's own
     ///   IR. The capture includes the Parse and Resolve values so Claude can
@@ -5720,7 +5720,7 @@ impl App {
                 self.perform_pointing(&pointing_ctx, stage_pointing);
             } // end: non-Simulation stage rendering
         } else {
-            // ---- Navigation view (a class reached via "Go to definition") ----
+            // ---- Navigation view (a class reached via ↪ Go to <Class>) ----
             // The whole branch lives in `nav_view`; it shares nothing with the stage view
             // above but the tree widget. The two buttons cannot touch `self.nav` from
             // inside a panel closure, so they report — the `FrameIntent` pattern, one

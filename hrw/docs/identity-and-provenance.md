@@ -49,7 +49,7 @@ or the lexer — never a substring search.
 
 **Exact equality decides identity only within one model.** Everything on this page was written
 when the only names in play came from the specimen's own compilation, so *"the same string"*
-and *"the same thing"* could not come apart. **"Go to definition" ended that**: it puts a
+and *"the same thing"* could not come apart. **↪ Go to *Class*** (a tree node's menu item) **ended that**: it puts a
 library class — `Modelica.Electrical.Analog.Basic.Resistor`, pulled from the resolved tree —
 on screen beside indexes built from the specimen. A `Resistor` has an `R`; so does the
 specimen. Both are exact matches, and they are different variables.

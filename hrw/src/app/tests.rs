@@ -337,7 +337,7 @@ impl App {
         self.ui_mode = UiMode::Specimen;
     }
 
-    /// Push a navigation entry, as "Go to definition" would.
+    /// Push a navigation entry, as **↪ Go to *Class*** would.
     ///
     /// **The navigation view is the branch of `central_panel_ui` that draws no tab
     /// row**, so anything added to the stage side above can miss it silently — which
