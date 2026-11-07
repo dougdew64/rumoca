@@ -407,27 +407,24 @@ value; the waste is verification ritual. `cargo run -p hrw --example check_answe
 pointers and style in one command — **run it before handing an Answer over, not after**, which
 is where a rewrite gets paid for twice.
 
-**ANSWER THROUGH HRW WHEN HRW CAN SHOW IT — a standing expectation, and its failure is silent**
-*(Doug, 2026-09-02)*: *"Enabling you to provide richer answers is a big reason for this HRW project.
-This HRW project provides less advantage over this text conversation if you don't make use of HRW to
-provide rich answers when possible."*
+**ANSWERS GO IN VS CODE — Doug reversed "answer through HRW" on 2026-11-07.** *"I was wrong to want
+your answers to appear in HRW. They should appear here, in VS Code."* **Chat text by default; a
+richer VS Code tab when he asks; iterated in place; committed as a file only when he asks.**
+`DECISIONS.md`, 2026-11-07, carries why his 2026-09-02 ruling lost. **The HRW Answer feature stays
+until the new arrangement has been used, then goes** — his sequencing.
 
-**Before answering, ask what HRW could show** — write an **Answer** to `.hrw-bridge/answer.md` when
-the reply wants a route through panes. **The `hrw://` link forms are `app.rs`'s `parse_hrw_link`,
-which is the roster** — not only `load` and `stage`, but `node` to land on one field, `frame` on one
-animation step, `equation` on one row, `follow` to trace an identifier across every stage, `src` to
-open Rumoca in VS Code, `source` for a specimen line, `breakpoint` to arm a live anchor, `window` to
-open Settings or About, and `systemmodeler` and `notebook` for the oracle. *(This said "eighteen
-link forms" until 2026-11-05, by which time there were 21 — a count in prose beside the list it
-counts, which is the cheapest thing in this repository to leave stale. Read the match.)*
-
-**Why this needs writing down rather than remembering: a text-only answer looks finished.** Nothing
-signals that the platform went unused — Doug gets a good answer and neither of us notices. **The
-recorded instance is 2026-09-02**: an Answer about the bouncing-ball event quoted six counts with no
-route to any of them, and said *"worth asking System Modeler"* when `hrw://systemmodeler/` exists.
-**Describing an action HRW can perform is the tell.**
+**What survives of the old rule is its TELL, pointed somewhere new, and it is still silent when it
+fails.** A text-only answer looks finished even when a pane would have shown the thing — Doug gets
+a good answer and neither of us notices. So **when an answer wants a pane, drive HRW there**
+through the request channel (a `follow` list of `hrw://` links in `screenshot-request.json`)
+rather than describing the click. **The link forms are `app.rs`'s `parse_hrw_link`, which is the
+roster** — read the match rather than any count here. The recorded instance is 2026-09-02, an
+answer that said *"worth asking System Modeler"* when `hrw://systemmodeler/` exists.
+**Describing an action HRW can perform is still the tell.**
 
 **WHEN DOUG CORRECTS AN ANSWER, EDIT THE ANSWER — do not reply in chat and leave it standing.**
+**Since 2026-11-07 "the answer" is the rich answer in its VS Code tab**, which Doug iterates on
+in place; the rule is unchanged, only where the document lives.
 *(Doug named this 2026-09-02: "it is great that you are iteratively improving your answer rather
 than creating a sort of conversational thread which follows your original answer.")* **This is a
 third reason an Answer earns its place**, beside *richer than text* and *a route through panes*:
@@ -624,17 +621,18 @@ the next phase touches — is procedure and lives there.
 > **Only a real stage-tab click writes `focus.json`.** Links followed through the screenshot
 > harness capture nothing, so a measurement needing that file needs Doug.
 >
-> ### ⟶ LIVE, RAISED BY DOUG 2026-11-06 — resolving "this": how Claude knows what a question is about
+> ### ⟶ HRW QUESTIONS ARE ASKED IN HRW AND ANSWERED HERE — `?` delivers them (2026-11-07)
 >
-> **Read [`docs/ideas.md`](docs/ideas.md) #92 before proposing anything.** Doug: *"if I… simply ask
-> 'What does this mean?' I have no reason to believe that you will correctly determine what 'this'
-> is referencing."* **The context half is FIXED** — three defects, each the context lying. **The
-> resolution half is OPEN and is Claude's**: he stops searching on anything *consistent*, so a wrong
-> copy ends the search as fast as the right one, and he never says which referent he chose.
+> **Doug asks in the Context Bar's question field; HRW writes the question WITH its context to
+> `.hrw-bridge/question.json`; he types `?` in the chat; the hook prints it. ANSWER IN THE CHAT**
+> — text by default, a richer VS Code tab when he asks, committed only when he asks.
+> **"This" is the question's own `this`**, which the bar showed him before he asked (the point,
+> then the follow, then the stage on screen) — **never the live `pointing at:` line**, which
+> may have moved since. The hook labels the two; do not mix them.
 >
-> **One candidate awaits Doug's ruling and must not be written in as a rule before he gives it**:
-> name the referent in one line when it is in question. **Do not resume the architecture** —
-> Doug redirected it as *"architecture without being driven by real problems."*
+> **Still an experiment** (*"I don't know if it will work well or not"*), and the HRW Answer
+> feature is **removed only after it has been used** — Doug's sequencing. Account and the
+> superseded referent-naming candidate: [`docs/ideas.md`](docs/ideas.md) #92.
 >
 > ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
 >

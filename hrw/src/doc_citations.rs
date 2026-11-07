@@ -3679,6 +3679,158 @@ Some prose.
         );
     }
 
+    /// **`?` answers the question asked in HRW, and a waiting question is never silent.**
+    ///
+    /// Doug's protocol, 2026-11-07: he types a question into HRW's Context Bar, HRW writes
+    /// it with its context to `question.json`, and he types `?` here to have it answered.
+    /// HRW cannot wake Claude, so the hook is the whole of the delivery — and like every
+    /// reporter in this repository it gets a test that runs it.
+    ///
+    /// One fixture is driven through a **sequence**, because "seen" is state the hook
+    /// keeps between prompts:
+    ///
+    /// 1. an ordinary prompt → *a question is waiting* (the trigger was forgotten);
+    /// 2. `?` → the question, its `this`, and the warning that the live context below
+    ///    may differ from the one it was asked about;
+    /// 3. an ordinary prompt → **no** reminder, since it has been shown;
+    /// 4. `?` again → the same question, marked as shown before.
+    ///
+    /// Steps 1 and 3 are the must-fire pair: a hook that always printed the reminder
+    /// would fail 3, and one that never did would fail 1.
+    #[test]
+    #[cfg(windows)]
+    fn the_hook_delivers_an_hrw_question_on_question_mark_and_never_lets_one_wait_silently() {
+        use std::io::Write as _;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let hook = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("scripts/hrw-context.ps1");
+        let now_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_millis();
+
+        struct Fixture(PathBuf);
+        impl Drop for Fixture {
+            fn drop(&mut self) {
+                drop(std::fs::remove_dir_all(&self.0));
+            }
+        }
+        let make = |name: &str, with_question: bool| -> Fixture {
+            let root = std::env::temp_dir()
+                .join(format!("hrw-hook-q-{}-{name}-{now_ms}", std::process::id()));
+            let bridge = root.join("hrw").join(".hrw-bridge");
+            std::fs::create_dir_all(bridge.join("diagnostics")).expect("fixture dirs");
+            let session = serde_json::json!({
+                "app": { "ui_mode": "Lab", "stage_tab": "Flatten",
+                         "context": { "seq": 3, "pointing_at": null, "following": null } },
+                "actions": [],
+            });
+            std::fs::write(
+                bridge.join("diagnostics").join("session.json"),
+                session.to_string(),
+            )
+            .expect("fixture session.json");
+            if with_question {
+                let question = serde_json::json!({
+                    "seq": 12,
+                    "question": "why is this singular?",
+                    "this": "components.src.V",
+                    "context": { "kind": "stage" },
+                });
+                std::fs::write(bridge.join("question.json"), question.to_string())
+                    .expect("fixture question.json");
+            }
+            Fixture(root)
+        };
+        let ask = |fixture: &Fixture, prompt: &str| -> String {
+            let mut child = std::process::Command::new("powershell")
+                .args([
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                ])
+                .arg(&hook)
+                .env("CLAUDE_PROJECT_DIR", &fixture.0)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .spawn()
+                .expect("powershell runs the hook");
+            child
+                .stdin
+                .take()
+                .expect("stdin is piped")
+                .write_all(
+                    serde_json::json!({ "prompt": prompt })
+                        .to_string()
+                        .as_bytes(),
+                )
+                .expect("write the prompt");
+            let out = child.wait_with_output().expect("the hook finishes");
+            String::from_utf8_lossy(&out.stdout).into_owned()
+        };
+
+        let asked = make("asked", true);
+
+        // 1. The trigger was forgotten: the question must not sit unmentioned.
+        let out = ask(&asked, "what does the matching do?");
+        assert!(
+            out.contains("AN HRW QUESTION IS WAITING"),
+            "a waiting question is said:\n{out}"
+        );
+        assert!(
+            !out.contains("why is this singular?"),
+            "but not delivered without ?:\n{out}"
+        );
+
+        // 2. `?` delivers it, with the referent Doug saw and the live-context warning.
+        let out = ask(&asked, "?");
+        assert!(
+            out.contains("HRW QUESTION #12"),
+            "? delivers the question:\n{out}"
+        );
+        assert!(
+            out.contains("why is this singular?"),
+            "with its text:\n{out}"
+        );
+        assert!(
+            out.contains("this = components.src.V"),
+            "and what 'this' means:\n{out}"
+        );
+        assert!(
+            out.contains("LIVE context NOW"),
+            "and says the live context may not be the one it was asked about:\n{out}",
+        );
+
+        // 3. Shown, so no reminder — the must-fire partner of step 1.
+        let out = ask(&asked, "what does the matching do?");
+        assert!(
+            !out.contains("WAITING"),
+            "a shown question stops being announced:\n{out}"
+        );
+
+        // 4. `?` again repeats it, honestly marked.
+        let out = ask(&asked, " ? ");
+        assert!(
+            out.contains("shown before"),
+            "a repeat says it is a repeat:\n{out}"
+        );
+
+        // And with no question at all: `?` says so, an ordinary prompt says nothing.
+        let none = make("none", false);
+        let out = ask(&none, "?");
+        assert!(
+            out.contains("no HRW question has been asked"),
+            "? with nothing asked:\n{out}"
+        );
+        let out = ask(&none, "hello");
+        assert!(
+            !out.contains("QUESTION"),
+            "an ordinary prompt with nothing asked is silent:\n{out}"
+        );
+    }
+
     /// **Every lab hyperlink looks the same: no glyph in the text, no bold around it.**
     ///
     /// Doug, 2026-08-30: *"In the labs, hyperlinks are given inconsistent visual

@@ -63,6 +63,86 @@ $bridge = Join-Path $root 'hrw\.hrw-bridge'
 $sessionPath = Join-Path $bridge 'diagnostics\session.json'
 $focusPath = Join-Path $bridge 'focus.json'
 
+# Defined first because the question block below needs it, and that block runs before
+# anything that can exit early.
+function Format-Age([int]$seconds) {
+    if ($seconds -lt 90) { return "${seconds}s ago" }
+    if ($seconds -lt 5400) { return "$([int]($seconds / 60))m ago" }
+    return "$([int]($seconds / 3600))h ago"
+}
+
+# ===========================================================================
+# THE QUESTION DOUG ASKED IN HRW (2026-11-07)
+# ===========================================================================
+#
+# Doug asks HRW questions in HRW's Context Bar. HRW writes the question TOGETHER WITH
+# the context it is about to `question.json`, and cannot wake Claude -- so the
+# question waits until Doug types `?` here. On `?` this block prints it; on any other
+# prompt it says, in one line, that a question is waiting, so a question can never sit
+# unanswered because the trigger was forgotten.
+#
+# **It runs before every early exit**, so an unreadable session.json cannot hide a
+# waiting question.
+#
+# **THE QUESTION'S CONTEXT IS NOT THE LIVE CONTEXT, and the output says so.** The
+# lines further down describe what HRW holds NOW; the question was asked about the
+# context frozen in question.json. If Doug clicked after asking, they differ -- and
+# reading the live `pointing at:` line as the question's referent would be the exact
+# join-by-time defect this design removes. So the question's own `this` is printed,
+# and the live block is labelled.
+$questionPath = Join-Path $bridge 'question.json'
+$seenPath = Join-Path $bridge 'question-seen.json'
+
+# The prompt arrives on stdin as JSON from the UserPromptSubmit harness. Read it only
+# when stdin is redirected, so running this script by hand does not block on the
+# console.
+$prompt = $null
+if ([Console]::IsInputRedirected) {
+    try {
+        $raw = [Console]::In.ReadToEnd()
+        if ($raw) { $prompt = ($raw | ConvertFrom-Json).prompt }
+    } catch { $prompt = $null }
+}
+# `?` on its own is a PROTOCOL TOKEN, matched exactly. It is never a substring search
+# over Doug's words, which docs/identity-and-provenance.md forbids.
+$asksForQuestion = ($null -ne $prompt) -and ($prompt.Trim() -eq '?')
+
+if (Test-Path $questionPath) {
+    # "Seen" is keyed to the question file's own mtime: question.json is written only
+    # when Doug asks, so a new mtime is exactly a new question, and nothing needs
+    # parsing on the prompts that are not `?`.
+    $questionTicks = (Get-Item $questionPath).LastWriteTimeUtc.Ticks
+    $seenTicks = $null
+    if (Test-Path $seenPath) {
+        try {
+            $seenTicks = [int64](Get-Content $seenPath -Raw -Encoding utf8 | ConvertFrom-Json).question_mtime_ticks
+        } catch { $seenTicks = $null }
+    }
+    $alreadyShown = ($null -ne $seenTicks) -and ($questionTicks -eq $seenTicks)
+    $questionAge = Format-Age ([int]((Get-Date).ToUniversalTime() - (Get-Item $questionPath).LastWriteTimeUtc).TotalSeconds)
+
+    if ($asksForQuestion) {
+        try {
+            $q = Get-Content $questionPath -Raw -Encoding utf8 | ConvertFrom-Json
+            $again = if ($alreadyShown) { ' (shown before - this is the same question)' } else { '' }
+            Write-Output "$tag HRW QUESTION #$($q.seq), asked $questionAge$again - ANSWER IT HERE, in the chat:"
+            Write-Output "$tag   question: $($q.question)"
+            Write-Output "$tag   this = $($q.this)   (the bar's rule: the point, then the follow, then the stage on screen - and Doug saw this beside the field)"
+            Write-Output "$tag   the context it was asked about is question.json's `"context`" - the SAME document focus.json held at that moment; open it for node detail"
+            Write-Output "$tag   the lines below are the LIVE context NOW; if Doug clicked after asking they differ, and the question is about the one above"
+            # Remember it was shown, so the "waiting" reminder stops.
+            @{ question_mtime_ticks = $questionTicks; seq = $q.seq } | ConvertTo-Json |
+                Set-Content -Path $seenPath -Encoding utf8
+        } catch {
+            Write-Output "$tag question.json exists but is unreadable: $($_.Exception.Message)"
+        }
+    } elseif (-not $alreadyShown) {
+        Write-Output "$tag AN HRW QUESTION IS WAITING (asked $questionAge) - Doug has not typed ? yet; if this message is not about it, say so"
+    }
+} elseif ($asksForQuestion) {
+    Write-Output "$tag no HRW question has been asked - type one into HRW's Context Bar first"
+}
+
 if (-not (Test-Path $sessionPath)) {
     Write-Output "$tag HRW has not run in this clone (no session.json), so there is no assembled context."
     exit 0
@@ -77,12 +157,6 @@ try {
 
 $app = $session.app
 $ctx = $app.context
-
-function Format-Age([int]$seconds) {
-    if ($seconds -lt 90) { return "${seconds}s ago" }
-    if ($seconds -lt 5400) { return "$([int]($seconds / 60))m ago" }
-    return "$([int]($seconds / 3600))h ago"
-}
 
 # **BOTH freshnesses, because they are different and the first version conflated
 # them.** It took the age from focus.json (written on capture) and the CONTENT from
