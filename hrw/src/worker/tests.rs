@@ -6914,6 +6914,11 @@ fn compile_produces_identifier_index_for_healthy_specimen() {
 // In production this isn't an issue: Rumoca's C-level `printf` and Rust
 // `tracing` output write directly to fd 1/2, bypassing Rust's BufWriter.
 
+#[allow(
+    unsafe_code,
+    reason = "OutputCapture works at the fd level, so its tests must write to fds 1/2 \
+              directly; the slice bounds every write, and n <= 0 stops the loop"
+)]
 unsafe fn write_to_fd(fd: i32, data: &[u8]) {
     let mut offset = 0;
     while offset < data.len() {
@@ -6932,6 +6937,10 @@ unsafe fn write_to_fd(fd: i32, data: &[u8]) {
 }
 
 #[test]
+#[allow(
+    unsafe_code,
+    reason = "calls write_to_fd, which must bypass cargo test's print capture"
+)]
 fn output_capture_round_trip() {
     let mut cap = OutputCapture::start().expect("start capture");
     unsafe {
@@ -6963,6 +6972,10 @@ fn output_capture_round_trip() {
 //    stays blocking, all bytes are captured, no data loss.
 //    This test passes with all 128 KB captured.
 #[test]
+#[allow(
+    unsafe_code,
+    reason = "calls write_to_fd, which must bypass cargo test's print capture"
+)]
 fn output_capture_handles_large_write_without_deadlock() {
     let mut cap = OutputCapture::start().expect("start capture");
     let big = vec![b'x'; 128 * 1024];

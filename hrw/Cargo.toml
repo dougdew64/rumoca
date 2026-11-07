@@ -162,11 +162,14 @@ egui_kittest = { version = "0.35", default-features = false }
 #   were silent substitution and identity-by-substring, found in 4-line helpers as
 #   readily as in 1,000-line functions.
 #
-# - `unsafe_code` — **13 genuine violations**, all in `OutputCapture`'s fd-level pipe
-#   handling, where unsafe is required rather than incidental. Adoptable, but only
-#   with scoped `#[allow(unsafe_code, reason = "...")]` at each site, and writing
-#   those reasons is the actual work. Logged in `docs/tech-debt.md`.
+#
+# **`unsafe_code` was in that list until 2026-11-07, and is now adopted** (below).
+# Every site is `OutputCapture`'s fd-level pipe handling, its two tests, or `main.rs`'s
+# one environment write, and each carries `#[allow(unsafe_code, reason = "...")]`
+# stating the invariant that makes it sound. Writing those reasons was the work; the
+# point is that a NEW `unsafe` now has to argue for itself rather than be noticed.
 [lints.rust]
+unsafe_code = "deny"
 unreachable_pub = "deny"
 unnameable_types = "deny"
 private_interfaces = "deny"
