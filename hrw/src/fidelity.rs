@@ -215,6 +215,47 @@ pub fn unknown_checks<'a>(requested: impl IntoIterator<Item = &'a str>) -> Vec<S
     bad
 }
 
+/// The curated specimens that **System Modeler has never adjudicated**.
+///
+/// Returned rather than reported, following [`unknown_checks`]: the caller names all
+/// of them in one message, and a must-fire test can drive the predicate without
+/// needing System Modeler or a file on disk. Sorted and de-duplicated.
+///
+/// # The problem this exists to make loud
+///
+/// *Oracle-first* is a standing rule — validate an authored specimen against System
+/// Modeler **before** concluding anything from Rumoca, because otherwise a specimen
+/// bug and a compiler bug are indistinguishable and the cheaper explanation (my
+/// specimen is wrong) is the one a session skips. Nothing enforced it.
+///
+/// **And the absence is invisible in exactly the way this repository keeps being
+/// bitten by.** `specimen-oracle-report.csv` is a list of verdicts; a specimen with
+/// no verdict contributes no row, so **a missing adjudication and a specimen that was
+/// never authored look identical in the artifact.** There is no gap where the missing
+/// one should be.
+///
+/// It happened on 2026-11-06: `ArrayFamily` was authored, wired into all four
+/// per-specimen systems, gated green and committed — and the oracle report still held
+/// 28 rows for 29 specimens. It was found by reading the directory listing against the
+/// file, which is the *"who caught it? a human"* trigger in `docs/tech-debt.md`.
+///
+/// Topping the report up costs a few seconds, because `scripts/oracle.wls` resumes
+/// from its own output and skips every `name` already present — see
+/// `docs/updating-rumoca.md` step 10.
+pub fn specimens_without_oracle_verdict<'a>(
+    specimens: impl IntoIterator<Item = &'a str>,
+    adjudicated: &[String],
+) -> Vec<String> {
+    let mut missing: Vec<String> = specimens
+        .into_iter()
+        .filter(|s| !adjudicated.iter().any(|a| a == s))
+        .map(str::to_owned)
+        .collect();
+    missing.sort_unstable();
+    missing.dedup();
+    missing
+}
+
 /// Run every subject-based and view-based check on one compiled model.
 ///
 /// **The `reduced` parameter is gone for the v0.10.0 rebase, and the reason it
@@ -1168,10 +1209,15 @@ mod tests {
     /// methodology rests on — a certificate rather than a bug list
     /// (`docs/reports.md`).
     fn report_path() -> std::path::PathBuf {
-        // **Named for its scope, deliberately.** This is the 10-specimen pre-commit
-        // gate. The MSL corpus artifact is `docs/reports/msl-fidelity-report.csv`, written
-        // by `scripts/promote-run.ps1` — two reports with the same name but different
-        // scopes would be confused exactly once, expensively.
+        // **Named for its scope, deliberately.** This is the specimen-scale pre-commit
+        // gate, covering the subset named by `MODELS`. The MSL corpus artifact is
+        // `docs/reports/msl-fidelity-report.csv`, written by `examples/promote_run.rs` —
+        // two reports with the same name but different scopes would be confused exactly
+        // once, expensively.
+        //
+        // *(This said "the 10-specimen pre-commit gate" and named `promote-run.ps1`.
+        // `MODELS` has since grown and the script was replaced by the Rust example; a
+        // count and a filename in a comment both rot, and neither fails anything.)*
         std::path::PathBuf::from(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/reports/specimen-fidelity-report.csv"
@@ -2041,6 +2087,96 @@ mod tests {
             vec!["F11".to_owned(), "f2".to_owned()],
             "matching is exact and de-duplicated: a case difference and an out-of-range \
              number are both unknown names, and a repeated good name is not a complaint",
+        );
+    }
+
+    /// **Every curated specimen has a System Modeler verdict on the record.**
+    ///
+    /// The enforcement half of *oracle-first*. `specimens/*.mo` is the corpus
+    /// definition; `docs/reports/specimen-oracle-report.csv` is what the oracle has
+    /// said about it. This fails by name when the first set outgrows the second —
+    /// which is the only way anyone finds out, because the artifact cannot show a
+    /// row that was never written.
+    ///
+    /// See [`super::specimens_without_oracle_verdict`] for the 2026-11-06 instance
+    /// and why topping the report up is a few seconds of work.
+    #[test]
+    fn every_specimen_has_an_oracle_verdict() {
+        let dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"));
+        let mut specimens: Vec<String> = std::fs::read_dir(dir)
+            .expect("the specimen directory is part of the checkout")
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| p.extension().is_some_and(|x| x == "mo"))
+            .filter_map(|p| p.file_stem().map(|s| s.to_string_lossy().into_owned()))
+            .collect();
+        specimens.sort_unstable();
+
+        let report = std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/reports/specimen-oracle-report.csv"
+        ));
+        let text = std::fs::read_to_string(report)
+            .expect("the committed oracle report is part of the checkout");
+        let adjudicated: Vec<String> = crate::report::parse(&text)
+            .rows
+            .into_iter()
+            .map(|r| r.name)
+            .collect();
+
+        // Not a vacuous pass: the report has to hold something, or an empty file
+        // would satisfy an empty specimen list and this test would guard nothing.
+        assert!(
+            !adjudicated.is_empty(),
+            "the oracle report parsed to zero rows — the check below would pass on an \
+             empty file, which is the vacuity this assertion exists to refuse",
+        );
+        assert!(
+            !specimens.is_empty(),
+            "no specimens found in {} — the comparison would be trivially satisfied",
+            dir.display(),
+        );
+
+        let missing = super::specimens_without_oracle_verdict(
+            specimens.iter().map(String::as_str),
+            &adjudicated,
+        );
+        assert!(
+            missing.is_empty(),
+            "{} specimen(s) have never been adjudicated by System Modeler: {missing:?}\n\
+             Top the report up — the script resumes and runs only these:\n  \
+             ls hrw/specimens/*.mo > /tmp/specimens.txt && wolframscript -script \
+             hrw/scripts/oracle.wls -models /tmp/specimens.txt -out \
+             hrw/docs/reports/specimen-oracle-report.csv -kinds \
+             hrw/docs/reports/specimen-fidelity-report.csv -timeout 90",
+            missing.len(),
+        );
+    }
+
+    /// **The must-fire half: a specimen with no oracle row is named, not overlooked.**
+    ///
+    /// Drives the predicate directly, so it needs neither System Modeler nor a file —
+    /// the reason [`super::specimens_without_oracle_verdict`] returns the names
+    /// instead of asserting on them.
+    #[test]
+    fn a_specimen_with_no_oracle_row_is_named_rather_than_overlooked() {
+        let adjudicated = vec!["RcCircuit".to_owned(), "TwoLoops".to_owned()];
+        assert_eq!(
+            super::specimens_without_oracle_verdict(
+                ["ArrayFamily", "RcCircuit", "TwoLoops"],
+                &adjudicated,
+            ),
+            vec!["ArrayFamily".to_owned()],
+            "the real 2026-11-06 shape: one new specimen, every older one adjudicated",
+        );
+        assert!(
+            super::specimens_without_oracle_verdict(["RcCircuit", "TwoLoops"], &adjudicated)
+                .is_empty(),
+            "a fully adjudicated corpus must be silent, or the guard cries wolf",
+        );
+        assert_eq!(
+            super::specimens_without_oracle_verdict(["B", "A", "B"], &[]),
+            vec!["A".to_owned(), "B".to_owned()],
+            "sorted and de-duplicated, so the failure message is stable and reads once",
         );
     }
 

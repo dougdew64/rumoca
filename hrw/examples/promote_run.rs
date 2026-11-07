@@ -99,14 +99,29 @@ fn main() {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
+    // The roster, never a range spelled by hand. This sidecar said `F1-F9` from
+    // 2026-07-31 until 2026-11-06, and every word of it was wrong by then: F1 is
+    // retired into `check_f2`, F8 is a measurement rather than a check, and F10
+    // arrived after the sentence was written. A maintainer reads this file without
+    // the conversation around it, so the one place that names what ran has to
+    // derive it. `fidelity::the_check_roster_matches_the_code` guards the source.
+    let checks: Vec<String> = hrw::fidelity::CHECKS
+        .iter()
+        .map(|c| format!("\"{c}\""))
+        .collect();
+    let checks_json = format!("[{}]", checks.join(", "));
+    let checks_prose = hrw::fidelity::CHECKS.join(", ");
     let meta = format!(
         "{{\n  \"generated_unix\": {unix},\n  \"generated_utc\": \"{}\",\n  \
          \"models\": {incoming},\n  \
          \"outcomes\": {outcomes},\n  \"profile\": {profile_note},\n  \
          \"run_verdicts\": {verdicts},\n  \"source_report\": \"{}\",\n  \
          \"not_checked\": \"{}\",\n  \
-         \"note\": \"F1-F9 over the MSL corpus. Establishes that HRW agrees with Rumoca, \
-         NOT that Rumoca is correct, and does not test the rendered UI.\"\n}}\n",
+         \"checks\": {checks_json},\n  \
+         \"note\": \"Checks {checks_prose} over the MSL corpus. Establishes that HRW \
+         agrees with Rumoca, NOT that Rumoca is correct, and does not test the rendered \
+         UI. A green row means the check found nothing, which is not the same as the \
+         check having had something to look at.\"\n}}\n",
         utc_now(),
         report.display().to_string().replace('\\', "/"),
         not_checked_sentence(&profile_rows).replace('"', "'"),

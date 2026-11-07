@@ -595,31 +595,27 @@ the next phase touches — is procedure and lives there.
 > `rumoca-phase-solve::state_selection`, which is private, exactly as `prepare_for_solve` was
 > before `watch_prepare_for_solve`.
 >
-> ### ⟶ THE ORDER DOUG SET 2026-11-05 — step 1 is DONE, 2 and 3 are next
+> ### ⟶ THE 0.10.4 REBASE IS COMPLETE — closed 2026-11-06, all ten steps
 >
-> 1. ~~**Fix `App::failure_context`**~~ — **DONE**; `docs/tech-debt.md` carries the account. The
->    reusable part: **a stage with no IR has not necessarily been skipped**
->    (`Stage::says_not_reached`), and `value.is_none()` is a different question.
-> 2. **Finish the 0.10.4 rebase** — steps 6, 6b and 7 are **DONE**; **step 8, the smoke test, is
->    RUNNING and is Doug's.** Four defects so far, all in Settings, and **two of them were caused
->    by the fix before them** — so re-check a reported fix on the screen rather than on a green
->    suite, which `hrw://window/settings` now allows.
-> 3. **Then `updating-rumoca.md` step 10**: the hours-long suites — `fidelity_msl`, the full
->    `slow-tests` set including `--ignored`, `notebook-check`, and the **oracle** over the 28
->    specimens. **Night 8's 3b run does not count**, because F4 was blind while it ran.
+> **Nothing of it is owed and there is no resume order.** The account, the sweep's numbers and the
+> three defects found while closing are in [`DECISIONS.md`](DECISIONS.md), *the 0.10.4 rebase is
+> closed*. **Do not restate them here.**
+>
+> **Four things that still bind.**
+>
+> - **A green fidelity row has no denominator.** A check that passes and a check that had nothing
+>   to look at write the identical row, so the corpus sweep does not say F4 was *exercised* — its
+>   repair rests on falsification against `specimens/ArrayFamily.mo`. Open in `docs/tech-debt.md`;
+>   `docs/reports.md` carries why a rebase threatens the report in two ways and only one is loud.
+> - **`src/field_help.json` is regenerated and current.** Night 8's *"deliberately stale, do not
+>   regenerate"* instruction is **spent** — do not re-apply it.
+> - **A stage with no IR has not necessarily been skipped** (`Stage::says_not_reached`);
+>   `value.is_none()` is a different question.
+> - **Re-check a reported fix on the screen, not on a green suite** — on step 8 two of four
+>   Settings defects were caused by the fix before them. `hrw://window/settings` reaches the dialog.
 >
 > **Only a real stage-tab click writes `focus.json`.** Links followed through the screenshot
 > harness capture nothing, so a measurement needing that file needs Doug.
->
-> ### ⟶ NIGHT 8 RAN 2026-11-04 — four pairs wait in `docs/tech-debt.md`, record in the run log
->
-> **Two traps for a session picking the rebase back up.** **(1) Step 4 is UNFINISHED and
-> `src/field_help.json` is deliberately stale** — v0.10.4 deleted two `///` docs, so regenerating
-> it restores Doug's own 2026-09-03 complaint (Solve lowering's `names` showing an *import
-> clause* doc). Do not re-run `gen_field_help` and commit it; the guard that blocks it is right.
-> **(2) F4 has been blind since v0.10.0**, so `docs/reports.md` is stale as well as wrong.
->
-> *(What remains of the rebase is listed in the resume box above.)*
 >
 > ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
 >

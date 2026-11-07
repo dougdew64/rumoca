@@ -89,6 +89,21 @@ reaches zero and stops being useful. Three reasons it is the opposite:
   `docs/fidelity-plan.md`. After a Rumoca rebase it will not be green, and that is exactly
   when it earns its keep.
 
+**That last prediction was tested by the 0.10.4 rebase and it was wrong in a way worth keeping.**
+The sweep came back **green over all 2,780 checked models**, and what the rebase actually broke was
+not Rumoca's agreement with HRW — it was **F4 itself**, which had been blind since v0.10.0 and
+could neither pass nor fail honestly on any model containing a compacted equation family. A check
+that cannot see its subject reports green, so **the detector's failure mode is indistinguishable
+from its success state.**
+
+So the sentence above is half the story. A rebase threatens the fidelity report **twice**: it can
+change what Rumoca does, which turns rows red and is the case the prediction describes; and it can
+change the *shape* of what Rumoca publishes, which takes a check out of service and turns nothing
+red at all. **Only the first announces itself.** The second is why the corpus sweep is a step of
+its own after the rebase closes rather than evidence gathered during it
+([`updating-rumoca.md`](updating-rumoca.md) step 10), and why a green row is worth less than it
+looks until something says the check had a subject.
+
 ## Three reports, three default interactions
 
 Because their steady states differ, **a list with no default filter is wrong** — which is not

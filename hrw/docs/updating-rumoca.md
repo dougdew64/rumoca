@@ -185,7 +185,7 @@ cargo test -p hrw --lib --features slow-tests -- --test-threads=1 --ignored
 
 **Then re-run the oracle**, which costs almost nothing now: System Modeler is reachable from the
 Wolfram MCP server (recipe in [`ideas.md`](ideas.md) #43), so "did this release make Rumoca agree
-with a reference implementation on our 28 specimens?" is a script, not an afternoon. That comparison
+with a reference implementation on our specimens?" is a script, not an afternoon. That comparison
 is the strongest single statement this project can make about a release.
 
 ## 4. Regenerate the per-stage field-help table
@@ -361,9 +361,21 @@ So this is a step of its own at the end, not a line inside 3b.
 
 **Why it is not simply 3b again.** 3b runs *during* the rebase to say what the release changed, and
 on the 0.10.4 hop it ran on night 8 and found **F4 blind since v0.10.0** — so that run measured
-less than it appeared to, and `docs/reports.md` is stale as well as wrong. A suite that was broken
-when it ran has to run again after it is fixed; **a green sweep covers the territory it measured
-and no more.** The same applies to anything else repaired between 3b and here.
+less than it appeared to, and the committed artifacts in [`reports/`](reports/) were stale as well
+as wrong. A suite that was broken when it ran has to run again after it is fixed; **a green sweep
+covers the territory it measured and no more.** The same applies to anything else repaired between
+3b and here.
+
+*(That sentence named `docs/reports.md` until 2026-11-06. Wrong file: `reports.md` is the design
+authority for how the three reports compose and carries no F4 claim and no corpus counts, so a
+session sent to correct it finds nothing to correct and may conclude the warning was spent. What
+was stale was `docs/reports/` — the committed CSVs, which still held the 2026-08-03 run against
+0.9.x. **A pointer that resolves to a real file it does not mean is worse than a broken one**,
+because nothing fails and the reader's own reading gets blamed.)*
+
+**On the 0.10.4 hop this step closed on 2026-11-06**: the corpus sweep ran green over all eight
+checks with F4 repaired, and `promote_run` replaced the August artifacts. The result and what it
+does *not* establish are in [`../DECISIONS.md`](../DECISIONS.md).
 
 ```text
 # the stratified MSL sweep (hours; own runbook and watchdog)
@@ -377,7 +389,8 @@ cargo test -p hrw --lib --features notebook-check -- --test-threads=1 the_commit
 ```
 
 **Then the oracle**, which is the strongest single statement this project can make about a release:
-System Modeler over the 28 specimens.
+System Modeler over every specimen. **The count is whatever `hrw/specimens/*.mo` holds** — the
+`ls` below is the definition, so nothing here spells a number.
 
 ```bash
 ls hrw/specimens/*.mo > /tmp/specimens.txt
@@ -389,7 +402,16 @@ ls hrw/specimens/*.mo > /tmp/specimens.txt
   -timeout 90
 ```
 
-About **110 seconds** for all 28 — this is the one part of step 10 that is not long.
+About **3–7 s per specimen**, so a couple of minutes for the set — this is the one part of step 10
+that is not long.
+
+**Point `-out` at the committed report to top it up instead.** The resume reads the output back and
+skips any `name` already present, so pointing it at
+`hrw/docs/reports/specimen-oracle-report.csv` adjudicates **only the specimens added since the last
+sweep** and leaves the rest untouched. That is how `ArrayFamily` was adjudicated on 2026-11-06 for
+a few seconds of System Modeler time rather than a full re-run — and it is the step that keeps a
+**new specimen** from sitting in the corpus un-adjudicated, which `specimen-oracle-report.csv`
+cannot itself detect, since a missing row and a specimen that was never authored look identical.
 
 **Use the script, NOT the Wolfram MCP server.** This step read *"through the Wolfram MCP server …
 (recipe in `ideas.md` #43)"* until 2026-11-06, and that recipe is right for **one** adjudication
