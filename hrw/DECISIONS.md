@@ -5944,6 +5944,7 @@ his referent differs from its pick, and the output gives neither side a sign tha
 Asking is one line of conversation; a wrong silent pick is an answer to a question he did not
 ask. **Do not reintroduce one.**
 
-**Open, for Doug:** charter Decision 19 still cites *"a `this =` beside a question field"* as an
-example of a provoking feature, and says the Question Bar *"is what makes 'this' certain"*.
-Both describe the removed feature; amending the charter is his call.
+**The charter followed, as v1.19, at Doug's direction.** Decision 19 had cited *"a `this =`
+beside a question field"* as an example of a provoking feature, and said the Question Bar
+*"is what makes 'this' certain"*. The example is now the Question Bar's Text field, and the
+claim is cut.
