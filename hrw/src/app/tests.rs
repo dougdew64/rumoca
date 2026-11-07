@@ -2455,7 +2455,9 @@ fn every_animation_pane_reports_having_nothing_to_show() {
 
         assert!(
             h.query_by_label_contains(expected).is_some(),
-            "the {name} animation renders blank with no report. A blank pane and a                  broken one are the same picture, and this is a pane readers meet empty                  most of the time",
+            "the {name} animation renders blank with no report. A blank pane and a \
+             broken one are the same picture, and this is a pane readers meet empty \
+             most of the time",
         );
     }
 }
@@ -2571,7 +2573,9 @@ fn the_source_map_reports_a_model_with_no_mapping() {
     assert!(
         h.query_by_label_contains("no source mapping available")
             .is_some(),
-        "a sheet with no source lines must say so. Rendering blank here is worse than              elsewhere: the reader arrived on this sub-view by inertia, not by choosing              it, so a blank pane looks like the tab they picked is broken",
+        "a sheet with no source lines must say so. Rendering blank here is worse than \
+         elsewhere: the reader arrived on this sub-view by inertia, not by choosing \
+         it, so a blank pane looks like the tab they picked is broken",
     );
 }
 
@@ -6796,10 +6800,13 @@ components together and never names a variable; it names `src.p`, `R.p`, `C.n` â
     // Rendered prose: bold gone, backticks gone, link shown as its text, lines rewrapped.
     assert!(
         App::passage_is_in_lab(
-            "A connector is a bundle of variables that two components meet at. RcCircuit wires              four components together",
+            "A connector is a bundle of variables that two components meet at. RcCircuit wires \
+             four components together",
             Some(source),
         ),
-        "a real passage arrives with its markup stripped and its lines rewrapped; if that          reads as foreign, every capture would carry the warning and the warning would stop          meaning anything",
+        "a real passage arrives with its markup stripped and its lines rewrapped; if that \
+         reads as foreign, every capture would carry the warning and the warning would stop \
+         meaning anything",
     );
 
     // The link's visible text survives; its target does not.
@@ -6811,13 +6818,15 @@ components together and never names a variable; it names `src.p`, `R.p`, `C.n` â
     // The capture that prompted all of this.
     assert!(
         !App::passage_is_in_lab("flow sum equation: src.p.i + R.p.i = 0", Some(source)),
-        "this is `connection_anim` output selected from a pane, and calling it prose sends          Claude to edit a file that does not contain it",
+        "this is `connection_anim` output selected from a pane, and calling it prose sends \
+         Claude to edit a file that does not contain it",
     );
 
     // No lab loaded is not evidence of foreignness.
     assert!(
         App::passage_is_in_lab("anything at all", None),
-        "with nothing to compare against, claiming the text is foreign would itself be a          false statement",
+        "with nothing to compare against, claiming the text is foreign would itself be a \
+         false statement",
     );
 }
 
@@ -6977,7 +6986,9 @@ fn a_right_click_on_a_selection_keeps_it_alive_and_copy_yields_the_text() {
     ]);
     assert!(
         !selected(),
-        "a press with no label hovered MUST clear the selection -- if it does not, this          harness cannot tell a surviving selection from one that was never at risk, and          the right-click assertions above are vacuous",
+        "a press with no label hovered MUST clear the selection -- if it does not, this \
+         harness cannot tell a surviving selection from one that was never at risk, and \
+         the right-click assertions above are vacuous",
     );
 }
 

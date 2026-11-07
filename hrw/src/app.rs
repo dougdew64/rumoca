@@ -7499,7 +7499,8 @@ impl App {
                 // nothing happened (2026-07-30).
                 Some(s) => ui.label(s),
                 None => ui.weak(
-                    "Left-click a tree node to point at it, then ask about it in the chat                      (right-click to follow an identifier, or for more actions).",
+                    "Left-click a tree node to point at it, then ask about it in the chat \
+                     (right-click to follow an identifier, or for more actions).",
                 ),
             };
             ui.add_space(1.0);

@@ -1390,10 +1390,10 @@ Some prose.
         }
         assert!(
             offences.is_empty(),
-            "a function carries two `#[test]` attributes, which means a test was inserted              between another test's attributes and its `fn` — that other function is no              longer a test and nothing else will tell you:
-  {}",
-            offences.join("
-  "),
+            "a function carries two `#[test]` attributes, which means a test was inserted \
+             between another test's attributes and its `fn` — that other function is no \
+             longer a test and nothing else will tell you:\n  {}",
+            offences.join("\n  "),
         );
     }
 
@@ -1912,6 +1912,83 @@ Some prose.
             &mut out,
         );
         out
+    }
+
+    /// **No string literal carries a lost line continuation.**
+    ///
+    /// Found 2026-11-07 on screen: the status line read *"… ask about it in the chat"*,
+    /// a gap of twenty spaces, then *"(right-click …"*. The rebase port `b2f75914` had
+    /// turned `\`-newline continuations into plain line joins, so each became a run of the
+    /// next line's indentation inside the string. Thirty-two literals had it, including
+    /// two on screen, three `note` fields and a `guidance` field emitted to Claude, and the
+    /// failure messages of a dozen tests. A Rust compiler accepts
+    /// all of them, and no test reads the text, so nothing else would ever object.
+    ///
+    /// **The shape:** on a line **longer than rustfmt's 100 columns**, inside the first
+    /// string literal's text, a run of eight or more spaces between two non-space
+    /// characters. The length condition is what separates the defect from deliberate
+    /// column alignment (`solver_steps.rs` prints an aligned table): joining a wrapped
+    /// string always yields an over-width line, and an aligned `println!` is short. Not
+    /// counted either: a run right after the opening quote (deliberate leading
+    /// indentation), a run after a `\n` escape (the next line of a multi-line value), and
+    /// anything after the closing quote (an aligned trailing comment). HRW's own files
+    /// only: the `crates/` are upstream's, and were not surveyed.
+    ///
+    /// **Its first run found seven more** than the line-at-a-time search that started the
+    /// fix — strings that span several source lines, whose closing quote that search
+    /// required on the same line.
+    #[test]
+    fn no_string_literal_has_a_lost_line_continuation() {
+        let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let run = " ".repeat(8);
+        let mut found: Vec<String> = Vec::new();
+        for path in rust_sources().into_iter().filter(|p| p.starts_with(&hrw)) {
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            for (i, line) in text.lines().enumerate() {
+                if line.chars().count() <= 100 || line.trim_start().starts_with("//") {
+                    continue;
+                }
+                let Some(open) = line.find('"') else {
+                    continue;
+                };
+                // The literal's text, up to an unescaped closing quote if this line has one.
+                let rest = &line[open + 1..];
+                let mut close = rest.len();
+                let mut escaped = false;
+                for (j, c) in rest.char_indices() {
+                    match c {
+                        '\\' if !escaped => escaped = true,
+                        '"' if !escaped => {
+                            close = j;
+                            break;
+                        }
+                        _ => escaped = false,
+                    }
+                }
+                let quoted = &rest[..close];
+                let mut from = 0;
+                while let Some(at) = quoted[from..].find(&run) {
+                    let start = from + at;
+                    let before = &quoted[..start];
+                    let after = quoted[start..].trim_start_matches(' ');
+                    let deliberate = before.is_empty() || before.ends_with("\\n");
+                    let between_words = !before.ends_with(' ') && !after.is_empty();
+                    if !deliberate && between_words {
+                        let rel = path.strip_prefix(&hrw).unwrap_or(&path);
+                        found.push(format!("{}:{}", rel.display(), i + 1));
+                        break;
+                    }
+                    from = start + run.len();
+                }
+            }
+        }
+        assert!(
+            found.is_empty(),
+            "string literals with a run of spaces where a `\\` continuation was lost \
+             (restore the `\\` and the line break): {found:#?}",
+        );
     }
 
     /// Does a Rust symbol exist, as a **definition** rather than a mention?
@@ -4589,13 +4666,17 @@ Some prose.
             .collect();
         assert!(
             missing.is_empty(),
-            "{missing:?} are never constructed outside pointing.rs, so the regions they name              cannot be pointed at and nothing else would say so. Either wrap the region              (docs/pointing-plan.md step 4) or delete the variant.",
+            "{missing:?} are never constructed outside pointing.rs, so the regions they name \
+             cannot be pointed at and nothing else would say so. Either wrap the region \
+             (docs/pointing-plan.md step 4) or delete the variant.",
         );
 
         let stale: Vec<&&str> = NOT_YET_ADOPTED.iter().filter(|v| constructed(v)).collect();
         assert!(
             stale.is_empty(),
-            "{stale:?} are listed as not yet adopted but ARE constructed. Remove them from              NOT_YET_ADOPTED -- a pending list that outlives the work it describes is how a              checklist stops being read.",
+            "{stale:?} are listed as not yet adopted but ARE constructed. Remove them from \
+             NOT_YET_ADOPTED -- a pending list that outlives the work it describes is how a \
+             checklist stops being read.",
         );
     }
 
@@ -4668,15 +4749,16 @@ Some prose.
 
         assert!(
             checked > 500,
-            "only {checked} paragraphs were inspected, so the splitter is broken rather              than the corpus being clean"
+            "only {checked} paragraphs were inspected, so the splitter is broken rather \
+             than the corpus being clean"
         );
         assert!(
             bad.is_empty(),
-            "{} paragraph(s) open a bold span and do not close it before the paragraph              ends. The marker renders as literal asterisks and inverts every emphasis              after it:
-  {}",
+            "{} paragraph(s) open a bold span and do not close it before the paragraph \
+             ends. The marker renders as literal asterisks and inverts every emphasis \
+             after it:\n  {}",
             bad.len(),
-            bad.join("
-  "),
+            bad.join("\n  "),
         );
     }
 
@@ -4738,7 +4820,9 @@ Some prose.
         assert_eq!(
             constraint["unknowns"].as_array().map(Vec::len),
             Some(0),
-            "Station 5 expects f_x[4]'s row to be EMPTY -- x^2 + y^2 - L^2 mentions only              quantities already known when the step begins, which is what makes this high              index rather than merely constrained",
+            "Station 5 expects f_x[4]'s row to be EMPTY -- x^2 + y^2 - L^2 mentions only \
+             quantities already known when the step begins, which is what makes this high \
+             index rather than merely constrained",
         );
 
         let lambda = names
@@ -4757,7 +4841,9 @@ Some prose.
         assert_eq!(
             holding,
             vec!["f_x[2]", "f_x[3]"],
-            "Station 5 expects lambda in exactly two rows, and names them -- both are the              force equations, already needed for der(vx) and der(vy), which is why nothing              is left to determine lambda",
+            "Station 5 expects lambda in exactly two rows, and names them -- both are the \
+             force equations, already needed for der(vx) and der(vy), which is why nothing \
+             is left to determine lambda",
         );
     }
 
@@ -4856,7 +4942,8 @@ Some prose.
                 .expect("a SetFormed frame declares its size");
             assert!(
                 size >= 2,
-                "a connection set of size {size} was formed, so Station 1's \"every set                  starts at two\" is false and Station 5's absence argument rests on it",
+                "a connection set of size {size} was formed, so Station 1's \"every set \
+                 starts at two\" is false and Station 5's absence argument rests on it",
             );
         }
 

@@ -779,7 +779,8 @@ mod tests_animated_contract {
         let gated = live_debug_gated_views();
         assert!(
             !gated.is_empty(),
-            "no live-debug gate call sites were found in app.rs, so this check is              reading nothing"
+            "no live-debug gate call sites were found in app.rs, so this check is \
+             reading nothing"
         );
 
         let views = animated_views();

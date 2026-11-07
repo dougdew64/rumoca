@@ -211,7 +211,8 @@ fn main() {
     if rows.len() > max_models {
         rows.truncate(max_models);
         eprintln!(
-            "--max-models {max_models}: doing {} of {total_remaining}, then exiting so the OS              reclaims. Re-run with --resume for the next chunk.",
+            "--max-models {max_models}: doing {} of {total_remaining}, then exiting so the OS \
+             reclaims. Re-run with --resume for the next chunk.",
             rows.len(),
         );
     }
@@ -489,7 +490,8 @@ fn main() {
         t_run.elapsed().as_secs_f64(),
     );
     eprintln!(
-        "coverage: {} subjects ({} with blocks, {} with a matching), {} stage IRs run,          {} equation sheets, {} identifier indexes, {} empty stages",
+        "coverage: {} subjects ({} with blocks, {} with a matching), {} stage IRs run, \
+         {} equation sheets, {} identifier indexes, {} empty stages",
         cov.subjects,
         cov.with_blocks,
         cov.with_matching,

@@ -380,7 +380,8 @@ fn run(cfg: Config) {
     let dead = hrw::survey::all_zero_columns(&rows);
     if !dead.is_empty() && rows.len() > 100 {
         eprintln!(
-            "[WARNING] {} column(s) are zero for every row: {} — a column that never              fires looks exactly like one that works",
+            "[WARNING] {} column(s) are zero for every row: {} — a column that never \
+             fires looks exactly like one that works",
             dead.len(),
             dead.join(", "),
         );

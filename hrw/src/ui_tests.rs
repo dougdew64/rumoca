@@ -1062,7 +1062,8 @@ fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
 
     assert!(
         h.query_by_label_contains("MSL corpus").is_some(),
-        "the corpus must announce itself with NO filter typed — its absence is          indistinguishable from it not being implemented, which is how it was reported",
+        "the corpus must announce itself with NO filter typed — its absence is \
+         indistinguishable from it not being implemented, which is how it was reported",
     );
     // **Derived from the artifact, not pinned to a literal.**
     //

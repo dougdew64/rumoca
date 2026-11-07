@@ -2546,19 +2546,43 @@ fn build(ask: &Ask) -> Value {
         // and a path for a stage-pane selection that does not contain the text.
         doc["selection"] = match (origin.source_file(), in_source) {
             (Some(file), true) => json!({
-                "note": "prose the reader selected in HRW's lab panel and pointed at. This is                          the RENDERED text, so markdown markup is stripped and it will not                          match the source byte-for-byte -- locate it in the file named below,                          which HRW verified does contain it. Before editing, check whether it                          sits inside a `run:` region (may be fixed, and the marker re-dated in                          the same commit) or an `authored:` region (Doug's own prose -- report                          a false claim, never rewrite it).",
+                "note": "prose the reader selected in HRW's lab panel and pointed at. This is \
+                         the RENDERED text, so markdown markup is stripped and it will not \
+                         match the source byte-for-byte -- locate it in the file named below, \
+                         which HRW verified does contain it. Before editing, check whether it \
+                         sits inside a `run:` region (may be fixed, and the marker re-dated in \
+                         the same commit) or an `authored:` region (Doug's own prose -- report \
+                         a false claim, never rewrite it).",
                 "from": origin.describe(),
                 "file": file,
                 "text": text,
             }),
             (Some(file), false) => json!({
-                "note": "the reader pointed at text in a lab's panel, and HRW could NOT find                          it in that lab's source. Either the prose has changed since, or the                          selection came from something else drawn in the same panel. Treat the                          file below as a lead, not a location, and do not edit it to match.",
+                "note": "the reader pointed at text in a lab's panel, and HRW could NOT find \
+                         it in that lab's source. Either the prose has changed since, or the \
+                         selection came from something else drawn in the same panel. Treat the \
+                         file below as a lead, not a location, and do not edit it to match.",
                 "from": origin.describe(),
                 "file_searched": file,
                 "text": text,
             }),
             (None, _) => json!({
-                "note": "text the reader pointed at that is NOT in any repository file --                          `from` says which region drew it. Compiler output, a rendered label,                          or Claude's own answer document, which is regenerated per question                          and never stored. **Do not go looking for it in the markdown, and do                          not edit a lab to make it match.** No `file` is given because there                          is no file it is in.",
+                // **Rewritten 2026-11-07, for two false claims.** It said the text was "NOT
+                // in any repository file" and that "there is no file it is in" — but this
+                // arm also serves `SpecimenSource` and `SpecimenPurpose`, whose text comes
+                // from the specimen's `.mo` file and its `purpose.md`. Their variants'
+                // docs say why no file is *named*: HRW has not verified the text is in
+                // it, not that no file exists. It also listed "Claude's own answer
+                // document", which left HRW that day with the Answer (charter Decision 19).
+                "note": "text the reader pointed at, for which HRW names no file -- `from` \
+                         says which region drew it. Compiler output and the other stage \
+                         panes, the specimen list and the compile log are in no file: **do \
+                         not go looking for them in the markdown, and do not edit a lab to \
+                         make them match.** The specimen's Modelica source and its purpose \
+                         note do come from files (the capture's `specimen`, and the model's \
+                         purpose.md under hrw/docs/specimen-notebook/), but HRW has not \
+                         checked that the text is in them, so treat either as a lead, not a \
+                         location.",
                 "from": origin.describe(),
                 "text": text,
             }),
@@ -3252,6 +3276,62 @@ mod tests {
                 .is_some_and(|n| n.contains("authored:") && n.contains("run:")),
             "the note must carry the editing rules, since this capture is what a \
              \"improve this paragraph\" request arrives with",
+        );
+    }
+
+    /// **A selection with no named file does not claim there is no file.**
+    ///
+    /// The fileless note told Claude the text was *"NOT in any repository file"* and that
+    /// *"there is no file it is in"*. That was true for compiler output and false for two
+    /// origins that reach the same arm: the specimen's Modelica source and its purpose
+    /// note, which are files HRW has simply not verified the text against. Found
+    /// 2026-11-07 while restoring the note's lost line continuations. Checked here for
+    /// `SpecimenSource`, the origin the false claim would mislead most.
+    #[test]
+    fn a_fileless_selection_does_not_deny_that_a_file_exists() {
+        let defs = BTreeMap::new();
+        let ask = Ask {
+            seq: 13,
+            request: None,
+            specimen: Some(std::path::Path::new("hrw/specimens/RcCircuit.mo")),
+            model: Some("RcCircuit"),
+            stage: None,
+            libraries: Vec::new(),
+            def_index: &defs,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Selection {
+                in_source: false,
+                origin: &crate::pointing::PointOrigin::SpecimenSource,
+                text: "C.v",
+            },
+            tracking: None,
+            view: View {
+                ui_mode: "Specimen",
+                stage_view: None,
+                specimen_detail: None,
+                viewing_log: false,
+                animation: None,
+            },
+            failure: None,
+            flags: vec![],
+        };
+
+        let doc = build(&ask);
+        let note = doc["selection"]["note"]
+            .as_str()
+            .expect("the note is a string");
+        assert!(
+            !note.contains("NOT in any repository file") && !note.contains("no file it is in"),
+            "the specimen's source IS a file; the note may only say none is named: {note}",
+        );
+        assert!(
+            note.contains("Modelica source") && note.contains("`specimen`"),
+            "the note must say where specimen-source text does come from: {note}",
+        );
+        assert!(
+            !note.contains("  "),
+            "the note has a run of spaces, which is a lost line continuation: {note:?}",
         );
     }
 

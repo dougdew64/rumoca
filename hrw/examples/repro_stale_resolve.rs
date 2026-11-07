@@ -298,7 +298,8 @@ fn run_accumulating() -> bool {
             println!("REPRODUCED without any document removal at all.");
             println!("  step 3 says: {stale}");
             println!(
-                "  bad.mo was never removed, so the session is correctly reporting a                  document it still holds. That is not a stale cache."
+                "  bad.mo was never removed, so the session is correctly reporting a \
+                 document it still holds. That is not a stale cache."
             );
             true
         }

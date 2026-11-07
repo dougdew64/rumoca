@@ -2278,7 +2278,9 @@ fn a_library_compile_identifies_itself_by_qualified_name() {
     assert_eq!(
         path,
         std::path::PathBuf::from(NAME),
-        "a library compile must report the qualified name it was asked for. Reporting              the document URI instead makes every result look stale to the UI, which is              indistinguishable from a compile that never finishes",
+        "a library compile must report the qualified name it was asked for. Reporting \
+         the document URI instead makes every result look stale to the UI, which is \
+         indistinguishable from a compile that never finishes",
     );
 }
 
@@ -2634,7 +2636,8 @@ fn an_msl_models_parse_stage_holds_its_declaring_file() {
         }
         assert!(
             declares(value, leaf),
-            "{qualified}: parsed {} top-level classes, none of which declares {leaf}                  anywhere beneath it: {:?}",
+            "{qualified}: parsed {} top-level classes, none of which declares {leaf} \
+             anywhere beneath it: {:?}",
             classes.len(),
             classes.keys().take(8).collect::<Vec<_>>(),
         );
@@ -8840,12 +8843,14 @@ fn a_reconstructed_algebraic_is_not_reported_as_a_state() {
     assert_eq!(
         states,
         ["$state_coordinates[1]"],
-        "the integrated chart coordinate is the state; `x` and `y` are reconstructed          from it and must not be reported as states because they come first"
+        "the integrated chart coordinate is the state; `x` and `y` are reconstructed \
+         from it and must not be reported as states because they come first"
     );
     assert_eq!(
         vars[2]["state_coordinate"],
         serde_json::json!("y"),
-        "a generated chart scalar must name the source scalar it equals, which is the          whole content of the selection"
+        "a generated chart scalar must name the source scalar it equals, which is the \
+         whole content of the selection"
     );
     assert!(
         vars[0]["state_coordinate"].is_null(),
@@ -8864,7 +8869,8 @@ fn a_reconstructed_algebraic_is_not_reported_as_a_state() {
     assert_eq!(
         vars[0]["is_state"],
         serde_json::json!(true),
-        "with no metadata the positional count is the only answer available, and it          must still be given rather than defaulting to `false`"
+        "with no metadata the positional count is the only answer available, and it \
+         must still be given rather than defaulting to `false`"
     );
 }
 
