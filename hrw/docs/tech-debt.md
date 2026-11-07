@@ -3982,6 +3982,28 @@ every stage gets that one.
 A stale-but-true tooltip beats a fresh-but-false one, and the guards are right — weakening them to
 let the regeneration through would delete the only thing that noticed.
 
+> **RESOLVED 2026-11-06 — read the paragraph above as history, not as an instruction.** Step 4 is
+> **DONE** and `src/field_help.json` is regenerated and current; the *"deliberately left stale, do
+> not regenerate"* ruling is **spent**.
+>
+> **It was two unrelated problems wearing one symptom, and only one of them was what this entry
+> says.** `causality`'s doc comment was genuinely deleted by v0.10.4, and the first branch of the
+> pair above was taken: it is restored in `rumoca-ir-dae`, naming the FMI values and distinguishing
+> `declared_causality` — additive `///` text, the shape this entry predicted would be welcome
+> upstream.
+>
+> **`names` was not a deleted doc at all. It was a deleted struct** — `SolverNameIndexMaps` — so
+> there is no Solve-lowering `names` field for a tooltip to be wrong about, and the field appears in
+> **0 of 258** published stage JSON files. The guard was re-grounded as a claim of absence
+> (`field_help::the_solve_lowering_names_symptom_is_unreachable`) rather than as a claim about which
+> crate wins a contest that no longer has two entrants.
+>
+> **The reusable part is the diagnosis, not the fix:** two symptoms that arrive together and point
+> at the same mechanism can still have different causes, and *"upstream deleted the doc"* was
+> true of one and false of the other. The false half would have been carried forward as a
+> permanent local override — the second branch of the pair, admitting a second source of truth —
+> to document a field that does not exist.
+
 **The pair for Doug.** Either carry the two doc comments as part of this fork's instrumentation —
 they are `///` text on upstream fields, additive and semantics-preserving, and plausibly a welcome
 PR in their own right — or give `FieldHelp` a local override table for names upstream has stopped
