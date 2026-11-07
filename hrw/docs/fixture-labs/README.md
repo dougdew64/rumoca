@@ -117,6 +117,11 @@ that either; the difference is that Doug finds out in the next sentence rather t
 
 ### Both channels are live
 
+> **Superseded 2026-11-07: only the fixture channel remains.** The Answer channel was removed under
+> charter Decision 19 — HRW causes questions, and answers are given on the platform (the chat, a VS
+> Code tab, System Modeler, Wolfram Desktop). This section is kept for its history; read it as
+> describing what the second channel *was*.
+
 *(This said Answers were "held in reserve" until the fixture labs were spent. Doug superseded that
 on 2026-09-02: "HRW is intended partly as a platform for you to use to provide rich answers that
 you cannot provide with only conversation text.")*
@@ -514,7 +519,7 @@ lands on the side this rule says never to tune to.
 | channel | lifetime | tune to |
 |---|---|---|
 | a fixture lab — its route, checkpoints and claims | months, re-read | **the durable profile** |
-| an Answer | seconds, discarded | the moment |
+| ~~an Answer~~ *(removed 2026-11-07, Decision 19)* | seconds, discarded | the moment |
 | **an answer at the bench, after 🎯** | the exchange | **the moment — and that is the point** |
 
 **So the rule governs what OUTLIVES the moment, not what Claude may say in it.** What is on Doug's
@@ -726,7 +731,7 @@ proposing it.**
 | **failure** | **read** the diagnosis → check what it says | show what a broken model looks like |
 | **calibration** *(was `adjudication`)* | **ask a reference implementation** | settle what HRW cannot settle |
 | **hub** | none — a table of links | route into the concept labs |
-| **ad hoc** | anything | answer the question just asked |
+| ~~**ad hoc**~~ | anything | answer the question just asked — *removed 2026-11-07 with the Answer; questions are answered on the platform* |
 | **bug report** | narrate a failure for a recording | hand a maintainer a reproduction <!-- unbuilt: bug_report_lab --> |
 
 *(The per-kind lab counts were dropped on 2026-09-01. They were hand-maintained beside the labs

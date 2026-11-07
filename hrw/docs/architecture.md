@@ -76,8 +76,6 @@ hrw/
 │   ├── tarjan_anim.rs     # Animated Tarjan SCC stepper (BLT discovery replay)
 │   ├── reduction_anim.rs  # Animated index-reduction stepper (step-by-step replay)
 │   ├── tearing_anim.rs    # Animated tearing stepper (greedy loop-breaking replay)
-│   ├── alias_anim.rs      # Alias-elimination reveal (substitutions, one at a time)
-│   ├── ic_plan_anim.rs    # Initial-condition plan run (t=0 solve order)
 │   ├── connection_anim.rs # Connection-expansion replay (connect() -> equations)
 │   ├── reduction_view.rs  # Index reduction process summary panel
 │   ├── equation_sheet.rs     # Readable equation sheet from the flat DAE
@@ -115,18 +113,18 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 94,522 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 94,549 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `worker/tests.rs` | 9,565 |
-| `app.rs` | 8,731 |
+| `worker/tests.rs` | 9,567 |
+| `app.rs` | 8,732 |
 | `app/tests.rs` | 8,144 |
-| `doc_citations.rs` | 8,025 |
-| `worker.rs` | 7,867 |
-| `bridge.rs` | 5,666 |
-| `ui_tests.rs` | 2,979 |
-| `fidelity.rs` | 2,760 |
+| `doc_citations.rs` | 8,026 |
+| `worker.rs` | 7,869 |
+| `bridge.rs` | 5,662 |
+| `ui_tests.rs` | 2,980 |
+| `fidelity.rs` | 2,768 |
 | `equation_sheet.rs` | 1,569 |
 | `lib.rs` | 1,459 |
 | `tree.rs` | 1,426 |
@@ -135,14 +133,14 @@ showing 48 equations. They are derived now, and
 | `incidence_view.rs` | 1,219 |
 | `report_sub_view.rs` | 1,214 |
 | `question_bar.rs` | 1,203 |
-| `playback.rs` | 1,133 |
+| `playback.rs` | 1,136 |
 | `connection_anim.rs` | 1,106 |
 | `reduction_view.rs` | 1,048 |
 | `tarjan_anim.rs` | 1,001 |
 | `matching_ledger.rs` | 928 |
 | `lab_panel.rs` | 908 |
 | `dae_expr_format.rs` | 898 |
-| `stage_tabs.rs` | 850 |
+| `stage_tabs.rs` | 851 |
 | `model_list.rs` | 849 |
 | `screenshot.rs` | 832 |
 | `tearing_anim.rs` | 826 |
@@ -150,8 +148,8 @@ showing 48 equations. They are derived now, and
 | `reduction_anim.rs` | 786 |
 | `survey.rs` | 769 |
 | `arch_doc.rs` | 758 |
-| `lab.rs` | 733 |
-| `pantelides_ladder.rs` | 716 |
+| `lab.rs` | 734 |
+| `pantelides_ladder.rs` | 723 |
 | `identifier_index.rs` | 688 |
 | `sub_view_rows.rs` | 659 |
 | `capture_suite.rs` | 645 |
@@ -165,10 +163,10 @@ showing 48 equations. They are derived now, and
 | `node_link_check.rs` | 512 |
 | `live_trace.rs` | 499 |
 | `gate_policy.rs` | 494 |
-| `nav_view.rs` | 490 |
+| `nav_view.rs` | 491 |
 | `equation_sheet_view.rs` | 446 |
 | `error_summary.rs` | 440 |
-| `plot_labels.rs` | 426 |
+| `plot_labels.rs` | 427 |
 | `field_help.rs` | 405 |
 | `specimen_source.rs` | 397 |
 | `pointing.rs` | 389 |
@@ -176,8 +174,8 @@ showing 48 equations. They are derived now, and
 | `dae_counts.rs` | 330 |
 | `specimen_purpose.rs` | 316 |
 | `machine_policy.rs` | 311 |
+| `equation_text.rs` | 281 |
 | `source_map.rs` | 281 |
-| `equation_text.rs` | 279 |
 | `colors.rs` | 271 |
 | `report.rs` | 265 |
 | `stage_view.rs` | 263 |
@@ -192,7 +190,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **94,522** |
+| **total** | **94,549** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -324,10 +322,14 @@ not fire).
    (states, algebraics, continuous equations), because that is the claim DAE construction
    makes and the one everything downstream relies on.
 7. **Structural** — `build_structural_report()` on the raw (pre-reduction) DAE
-8. **Index reduction** — replicate Rumoca's reduction funnel on a clone of the DAE
-9. **Initialization** — `build_ic_plan()` + determinacy analysis
-10. **Events** — read hybrid partitions from the DAE's public fields
-11. **Solve lowering** — `lower_dae_to_solve_model()` → `SolveModel`
+8. **Index reduction** — `inspect_prepare_for_solve()`: observe the reduction search the
+   compiler ran (rounds, candidates, attempts), with `before`/`after` reports
+9. **Initialization** — the same preparation's initial-value pins (Definition / Check)
+10. **Events** — read the DAE's condition algebra (`DaeView::conditions` and siblings)
+11. **Solve lowering** — `lower_solve_problem()` → `SolveProblem`
+
+*(Stages 8–11 described 0.9.20 — a replicated funnel, `build_ic_plan`, hybrid partitions,
+`lower_dae_to_solve_model` — until the 2026-11-07 post-rebase sweep.)*
 
 **Stage 6 is logged in its true position, and that took a correction.** Until
 2026-08-04 the DAE stage was built *after* solve lowering and never logged, so the log
@@ -1193,28 +1195,21 @@ justify each decision (`appearances`, `competitors`) exist only while the
 algorithm runs, which is the whole reason for the view: the `TearingReport` in
 the stage JSON has the answer but not the reasoning.
 
-Unlike the other replays this one is **not built from the stage report**.
 Tearing works in each coupled block's own `0..n` index space and the report has
-already translated back to names, so `walk_blocks` rebuilds the situation from
-the DAE — incidence, matching, BLT blocks, then
-`rumoca_phase_structural::block_local_incidence` to get into block-local space —
-and re-runs `tear_algebraic_loop_with_trace` with an observer attached. The same
-run serves recorded and live playback, so the two cannot diverge.
+already translated back to names, so this view needs its own **frames, captured during
+the compile** (`TearingAnimation::from_captured`), or a live session through the real
+compile (`start_live`). It never re-runs the algorithm. It is offered on the Structural
+tab only: the Index Reduction tab's search is not observable inside each rebuild, so
+pairing the raw system's frames with reduced block names would animate a search that
+never happened (`worker::index_reduction_stage`). A singular model has no full matching,
+hence no blocks, hence nothing to tear, and the pane says so.
 
-Which DAE depends on the tab: Structural tears the raw DAE, Index Reduction the
-reduced one (`App::tearing_dae`), because that is the system its report
-describes — and a high-index model's raw DAE has no full matching, hence no
-blocks, hence nothing to tear.
-
-**Alias-elimination reveal** (`alias_anim.rs`) and
-**initial-condition plan run** (`ic_plan_anim.rs`): both are
-`Playback`-driven like the replays, but they are **reveals of recorded lists,
-not replays of searches**, and both say so in their module docs. Rumoca's
-elimination pass has no backtracking and no competing candidate; the IC plan is
-already computed by the time HRW holds the report. Neither offers a Debug
-button, because there is no hidden process a live trace could show. Being
-explicit about that distinction matters: pretending every phase hides a search
-would teach something false.
+*(This section described `walk_blocks` re-running `tear_algebraic_loop_with_trace`, and a
+reduced DAE torn on the Index Reduction tab, until the 2026-11-07 sweep. Two reveals that
+followed it — `alias_anim.rs` and `ic_plan_anim.rs` — were deleted in the 0.10.0 rebase:
+alias elimination is not a Rumoca phase on 0.10.0, and initialization publishes pins, not
+a plan. The point they made still holds: **a reveal of a recorded list is not a replay of
+a search**, and pretending every phase hides a search would teach something false.)*
 
 What the stepping buys in both cases is *accumulation* — the unknown count
 falling one substitution at a time, the IC plan's long causal runs punctuated by
@@ -1283,11 +1278,12 @@ and the hot reload below.
 
 ### Index reduction summary (`reduction_view.rs`)
 
-A scrollable panel (not a canvas) summarizing what the Pantelides / dummy-derivative
-funnel did: which states were demoted, which equations were differentiated, which
-variables were eliminated. Renders as sections: summary → funnel steps → demoted
-states → differentiated equations → trivial eliminations. Color-coded: green for
-successful steps, red for stopped, neutral for no-ops.
+A scrollable panel (not a canvas) reading the reduction **search** Rumoca ran, grouped
+into rounds: each round's lane (`Direct` or `Holonomic`), its residue, the candidates
+discovered per proof boundary, and each attempt's measured outcome (`Sorted`, `Reduced`,
+`Held`, `Raised`, or a refusal). It reads `worker::index_reduction_from_observation`'s
+payload and invents nothing. *(It described 0.9.20's ten-step funnel — demoted states,
+differentiated equations, trivial eliminations — until the 2026-11-07 sweep.)*
 
 
 ### Equation sheet (`equation_sheet.rs`)
@@ -1784,9 +1780,11 @@ knowledge of the model at all.
 | Reads a phase result and renders it | **distortion** — a dropped field, a transposed index |
 | **Re-runs the algorithm** to animate it | **divergence** — a *different answer*, presented as the compiler's |
 
-`tearing_anim`, `matching_anim` and `tarjan_anim` all re-run. **F1 exists entirely for that
-second row**, because an animation teaching a decision Rumoca never made is the worst
-failure available to a tool whose purpose is explanation.
+`tearing_anim`, `matching_anim` and `tarjan_anim` all re-ran, when this was written.
+**F1 existed entirely for that second row**, because an animation teaching a decision
+Rumoca never made is the worst failure available to a tool whose purpose is explanation.
+*(All three now play frames captured from the compile, or a live session through it, and
+F1 was retired into `check_f2`. Past tense since the 2026-11-07 sweep.)*
 
 **Non-vacuity guards.** Every check skips subjects it does not apply to, so a corpus
 producing no blocks and no matchings would pass in silence. Hence the floors ("at least 5

@@ -38,7 +38,8 @@ use crate::bridge;
 pub(crate) struct LabState {
     /// The selected lab's text and the mtime it was read at.
     pub(crate) cached: Option<(String, std::time::SystemTime)>,
-    /// Every lab on offer: the Answer first when one exists, then fixtures.
+    /// Every lab on offer: the fixture labs. (An Answer led this list until it was
+    /// removed, 2026-11-07, charter Decision 19.)
     pub(crate) available: Vec<LabSource>,
     /// Which lab is showing.
     pub(crate) selected: Option<LabSource>,

@@ -51,8 +51,9 @@
 //! **Never run this unbounded.** The cost of being wrong is not a slow run, it
 //! is someone's machine.
 //!
-//! `--max-reduce-eq` is accepted and ignored while index reduction is
-//! disabled; it mirrored the survey, for the same reason: reduction cost
+//! `--max-reduce-eq` is accepted and **still ignored**: index reduction is not checked
+//! by this runner (the re-model landed 2026-11-04, but the runner was never re-wired to
+//! it — `fidelity::check_model`'s note). It mirrored the survey, for the same reason: reduction cost
 //! explodes on large systems. Above the cap the `IndexReduction` subjects are
 //! absent and their checks skip — so a 10,175-equation model still contributes
 //! F2, F3, F5, F6 and F7 rather than being dropped. **F8 explicitly wants the
@@ -100,10 +101,10 @@ fn main() {
         );
         std::process::exit(2);
     };
-    // `--max-reduce-eq` is accepted and ignored for the v0.10.0 rebase: index
-    // reduction is not checked, so there is no reduction cost to cap. Left
-    // accepted rather than rejected so a saved command line keeps working;
-    // `check_model`'s note records that the cap returns with the re-model.
+    // `--max-reduce-eq` is accepted and ignored: index reduction is not checked here,
+    // so there is no reduction cost to cap. Left accepted rather than rejected so a
+    // saved command line keeps working. The re-model that makes the check possible
+    // landed 2026-11-04; wiring it in is open (`check_model`'s note).
     let resume = args.iter().any(|a| a == "--resume");
     // `--only-checks F2` runs one check, so the same model profiled once per
     // check yields per-check time AND peak memory from the existing watchdog.
@@ -396,12 +397,11 @@ fn main() {
 
         let mut violations = Vec::new();
         if let Some(dae) = dae.as_ref() {
-            // **No reduced DAE, and so no reduction cap.** Both are gone with
-            // the index-reduction instrumentation: there is nothing to reduce
-            // over (0.10.0's `Dae` is immutable and not `Clone`), so
-            // `--max-reduce-eq` has nothing to cap. `check_model`'s own note
-            // records that the cap must return with the re-model, because it
-            // is what keeps the largest models in the corpus.
+            // **No reduced DAE passed, and so no reduction cap.** The reduced system
+            // is available since the 2026-11-04 re-model (`PreparedDae::as_dae()`),
+            // but this runner is not handed it yet, so `--max-reduce-eq` has nothing
+            // to cap. `check_model`'s note records that the cap must return with the
+            // wiring, because it is what keeps the largest models in the corpus.
             violations = check_model(
                 &stages,
                 dae,

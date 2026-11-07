@@ -185,7 +185,8 @@ pub enum ToWorker {
 ///
 /// `Clone` so [`FromWorker`] can derive it — see the note there. Every field is
 /// owned plain data, so a clone is a deep copy of the trajectories and nothing
-/// subtler. `SolverStepRecord` comes from `rumoca_solver` and is `Clone` there.
+/// subtler. (It named `rumoca_solver::SolverStepRecord`, gone since v0.10.0; the
+/// step rows are HRW's own `plot_labels::StepRow`.)
 #[derive(Clone)]
 pub struct SimData {
     pub times: Vec<f64>,
@@ -226,25 +227,22 @@ pub struct SimData {
     /// does *not* count, and a smooth model's coarse-but-steep transients (a stiff
     /// current spike) must never be mistaken for jumps. See [`discontinuity_segments`].
     pub has_discontinuities: bool,
-    /// Per-step solver diagnostics (t, h, order) from the BDF integrator.
+    /// Per-step solver diagnostics (t, h, order) from the integrator.
     ///
-    /// **Always empty on v0.10.0, and the pane says so** — see
-    /// `app::sim_ui`'s absence note. `rumoca_solver::SolverStepRecord` was
-    /// *HRW's own instrumentation* of the integrator, not an upstream API, so
-    /// there is nothing to follow: 0.10.0's `SimResult` carries `times`,
-    /// `names`, `data`, `n_states`, `variable_meta` and `termination`, and no
-    /// per-step record of any kind.
+    /// **Filled from the integrator's own accepted steps** since the 2026-11-03
+    /// re-model — [`solver_steps_from_integrator`], fed by this fork's observation-only
+    /// step records in `rumoca-sim` / `rumoca-solver`. Empty when the backend that ran
+    /// reports no steps, and the Simulation pane says which kind of empty it is.
     ///
-    /// **The field and the plots it feeds are kept rather than deleted.** The
-    /// step-size-on-a-log-axis and BDF-order plots were built for a specific
-    /// reported failure — Doug, 2026-09-25, could not verify a single one of
-    /// lecture 1's solver claims because egui_plot's three-place default
-    /// rendered a 1e-4 step as `0.000`. Deleting that would cost real
-    /// pedagogical work to save a type parameter, and re-instrumenting the
-    /// integrator is the re-model `docs/tech-debt.md` recruits.
+    /// *(Until the 2026-11-07 sweep this said "always empty on v0.10.0" and called the
+    /// re-instrumentation still owed. It was empty from the rebase until 11-03: the
+    /// old `rumoca_solver::SolverStepRecord` had been HRW's own instrumentation, and
+    /// 0.10.0's `SimResult` carried no per-step record.)*
     ///
-    /// Typed as HRW's own `plot_labels::StepRow` now, which is what the plots
-    /// consumed anyway, so re-instrumentation only has to fill it.
+    /// The step-size-on-a-log-axis and order plots it feeds were built for a specific
+    /// reported failure — Doug, 2026-09-25, could not verify a single one of lecture 1's
+    /// solver claims because egui_plot's three-place default rendered a 1e-4 step as
+    /// `0.000`.
     pub solver_steps: Vec<crate::plot_labels::StepRow>,
 }
 
@@ -687,8 +685,9 @@ impl Stage {
     // disabled for this rebase, and `dead_code = deny` is the signal saying so
     // rather than a nuisance to suppress.
     //
-    // **The re-models will want it back, and should re-add it rather than
-    // reach for `recovered`.** `recovered` claims `Outcome::Flagged`, which
+    // **The re-models all landed without it** (index reduction uses `Stage::ok` and
+    // sets `.note`). If a stage ever does want it, re-add it rather than reach for
+    // `recovered`. `recovered` claims `Outcome::Flagged`, which
     // says the compiler flagged a problem; "already index-1" is a successful
     // outcome that merely has something to say. `Outcome` is a claim
     // (`CLAUDE.md`), so the distinction is not cosmetic.
@@ -993,10 +992,12 @@ impl StageKind {
     /// - **Parse/Resolve/Instantiate/Typecheck** publish AST — `parse.json` is a
     ///   `StoredDefinition`.
     /// - **Flatten** publishes the flat model.
-    /// - **Dae** and **Events** — `events_to_json` takes `&rumoca_ir_dae::Dae`.
-    /// - **SolveLowering** — `solve_lowering_stage` serialises the `SolveModel` that
-    ///   `rumoca_phase_solve::lower_dae_to_solve_model` returns, and that type lives in
-    ///   `rumoca-ir-solve`.
+    /// - **Dae** and **Events** — both read `rumoca_ir_dae::Dae` (Events through
+    ///   [`events_from_condition_algebra`]'s `DaeView`).
+    /// - **SolveLowering** — `solve_lowering_stage` serialises the `SolveProblem` that
+    ///   `rumoca_phase_solve::lower_solve_problem` returns, and that type lives in
+    ///   `rumoca-ir-solve`. *(It named `lower_dae_to_solve_model` and `events_to_json`,
+    ///   both gone in v0.10.0, until the 2026-11-07 sweep.)*
     /// - **Structural/IndexReduction** — `structural_to_json` takes
     ///   `&rumoca_phase_structural::StructuralReport`. **A phase crate, not an IR crate**,
     ///   which is why the mapping could not be assumed from the stage list.
@@ -1362,7 +1363,9 @@ pub enum FromWorker {
         // funnel.** They came from re-running reduction on a cloned DAE, which
         // 0.10.0 makes impossible (`Dae` is immutable and not `Clone`) and
         // unnecessary (`inspect_prepare_for_solve` observes the real one). The
-        // re-model will supply them from that seam; see `index_reduction_stage`.
+        // re-model did not restore them: that seam records rounds, not the searches
+        // inside them, so the Index Reduction tab offers no frame views. See
+        // `index_reduction_stage`.
         /// Every MLS §3.7.5 history-operator site, and what each one lowered to.
         ///
         /// **Sites rather than the old frames, because the subject changed.** On
@@ -2056,12 +2059,14 @@ impl WorkerState {
     /// 1. **Compile** — re-reads the specimen source, runs Rumoca's full pipeline
     ///    (parse → resolve → flatten → structural → ...) to produce a `Dae`
     ///    (Differential-Algebraic Equation system).
-    /// 2. **Lower** — transforms the DAE into a `SolveModel` via
-    ///    `rumoca_phase_solve::lower_dae_to_solve_model()`. The `SolveModel` is
-    ///    the simulator's input: residual programs, variable layout, mass matrix.
-    /// 3. **Integrate** — runs the ODE/DAE solver via
-    ///    `rumoca_sim::simulate_solve_model()`. The Auto solver picks BDF for
-    ///    stiff systems, RK45 otherwise.
+    /// 2. **Lower** — transforms the DAE into a `SolveProblem` via
+    ///    `rumoca_phase_solve::lower_solve_problem()`, for the Solve lowering stage
+    ///    and its counts.
+    /// 3. **Integrate** — runs the solver via
+    ///    `rumoca_sim::simulate_with_optional_step_records()`, which takes the DAE
+    ///    itself and reports the integrator's accepted steps when the backend that
+    ///    ran has them. *(Steps 2 and 3 named `lower_dae_to_solve_model` and
+    ///    `simulate_solve_model`, gone in v0.10.0, until the 2026-11-07 sweep.)*
     ///
     /// # Why re-compile instead of reusing the `compile()` result?
     ///
@@ -2529,10 +2534,10 @@ impl WorkerState {
     /// 4. **Typecheck** — `rumoca_phase_typecheck::typecheck_instanced()` — type checking
     /// 5. **Flatten** — extracted from the reachable-closure pipeline result
     /// 6. **Structural** — `rumoca_phase_structural::build_structural_report()` — matching + BLT
-    /// 7. **Index reduction** — the dummy-derivative funnel
-    /// 8. **Initialization** — `build_ic_plan()` — initial-condition solve plan
-    /// 9. **Events** — hybrid/event structure extraction
-    /// 10. **Solve lowering** — `lower_dae_to_solve_model()` — DAE to SolveModel
+    /// 7. **Index reduction** — `rumoca_phase_structural::inspect_prepare_for_solve()` — the reduction search
+    /// 8. **Initialization** — the same preparation's initial-value pins
+    /// 9. **Events** — the DAE's condition algebra, read through `DaeView::conditions` and its siblings
+    /// 10. **Solve lowering** — `rumoca_phase_solve::lower_solve_problem()` — DAE to solve problem
     ///
     /// # Progressive streaming pattern
     ///
@@ -6023,17 +6028,15 @@ fn initialization_from_initial_pins(
 /// apart in the IR. That is worth a lecture, and it is only available to show
 /// because upstream made the semantics explicit.
 ///
-/// # Nothing is blocking it but the ruling
+/// # Nothing blocked it but the ruling
 ///
 /// Every arena is publicly readable, with a single-entry accessor *and* an
 /// ordered walk: `conditions()`, `relations()`, `roots()`,
 /// `structured_roots()`, `time_events()`, `event_actions()`, `clocks()`,
 /// `previous_values()`, `terminals()`, each documented with its MLS section. No
-/// instrumentation is required — this waits only because a re-model done while
-/// nothing compiles gets no reader (`DECISIONS.md`, 2026-11-02).
-///
-/// `docs/tech-debt.md` carries the `unbuilt:` tag naming
-/// `worker::events_from_condition_algebra`.
+/// instrumentation was required — it waited only because a re-model done while
+/// nothing compiles gets no reader (`DECISIONS.md`, 2026-11-02). It landed as
+/// [`events_from_condition_algebra`]. *(Past tense since the 2026-11-07 sweep.)*
 ///
 /// # One defect this retires on the way out
 ///
@@ -6562,14 +6565,12 @@ fn incidence_to_json<'dae>(
 // `before_report_json` was deleted in the v0.10.0 rebase rather than ported.
 //
 // It built the Index Reduction tab's "before" pane — the raw, pre-reduction
-// system with its rank deficiency highlighted — and that tab is disabled
-// awaiting a re-model against `inspect_prepare_for_solve` (see
-// `index_reduction_stage`). Porting it would have produced a function nothing
-// calls, and the same reasoning that removed the empty frame vectors from that
-// stage's return type applies here: live-looking plumbing with no caller sends
-// the next session hunting for why it never runs. `git show` has it, and
-// `docs/tech-debt.md`'s `unbuilt: worker::index_reduction_from_observation`
-// already recruits the replacement.
+// system with its rank deficiency highlighted. Porting it would have produced a
+// function nothing calls: live-looking plumbing with no caller sends the next
+// session hunting for why it never runs. **The re-model replaced it** (2026-11-04):
+// `index_reduction_from_observation` publishes `before` as the Structural stage's
+// own report, observed rather than rebuilt. `git show` has the old function.
+// *(This said the tab was "disabled awaiting a re-model" until the 2026-11-07 sweep.)*
 
 /// Build a JSON array of matched (equation, unknown) pairs from a partial
 /// matching result — the same shape as the structural report's `"matching"`
@@ -7500,8 +7501,9 @@ const UNINSTRUMENTED_PHASES: &[(&str, Option<&str>, &str)] = &[
     // Rumoca event can be emitted under this tab, and instrumenting upstream will
     // never make it speak. The data is real; only the *phase* is not.
     //
-    // **Initialization was listed here and should not have been.** It calls
-    // `rumoca_phase_structural::build_ic_plan`, a real algorithm in an instrumented
+    // **Initialization was listed here and should not have been.** It called
+    // `rumoca_phase_structural::build_ic_plan` (on 0.10.x it reads the pins of
+    // `inspect_prepare_for_solve`), a real algorithm in an instrumented
     // crate — the claim was written after reading the first ten lines of
     // `initialization_stage` and stopping before the call. The
     // `calls-no-Rumoca-function` check below exists because of that.

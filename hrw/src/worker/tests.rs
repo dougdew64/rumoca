@@ -2745,11 +2745,13 @@ fn a_specimen_compile_carries_no_library_source() {
 /// which would have Claude diagnosing the wrong model entirely, the priority-1
 /// failure in `docs/tech-debt.md`.
 ///
-/// `remove_document` does *not* clear it, despite
-/// `apply_document_removal_at_revision` calling `invalidate_resolved_state`.
-/// Rebuilding the session does; that is the mitigation, guarded on the previous
-/// compile having actually failed so the reparse is paid only when it buys something.
-/// The root cause is inside Rumoca's cache and is logged as an upstream issue.
+/// **The cause was HRW's, not Rumoca's.** It was diagnosed as a stale failure surviving
+/// `remove_document` (`upstream-issues.md` #1) and mitigated by rebuilding the session.
+/// Both were wrong: HRW was not removing the previous document at all. The removal
+/// landed 2026-08-21, and the rebuild was withdrawn 2026-08-26 — see
+/// `WorkerState::last_specimen_uri`. This test passed under the mitigation *and* the
+/// fix, which is how the wrong one ran for five days. *(The paragraph here still
+/// described the rebuild as the mitigation until the 2026-11-07 sweep.)*
 ///
 /// Uses a **fresh** `WorkerState` rather than the shared one, so this cannot pass or
 /// fail because of what other tests happened to compile first.

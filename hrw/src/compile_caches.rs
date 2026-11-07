@@ -23,7 +23,7 @@
 //! |---|---|---|
 //! | `reduction_anim` | `frames.index_reduction` | Index Reduction |
 //! | `connection_anim` | `frames.connection` | Flatten ▸ Connections |
-//! | `ic_plan_anim` | `stages.initialization` — *a fixed stage, not the current one* | Initialization ▸ IC Plan |
+//! | ~~`ic_plan_anim`~~ | `stages.initialization` — *a fixed stage, not the current one* | Initialization ▸ IC Plan — **deleted in the 0.10.0 rebase**: initialization publishes pins, not a plan |
 //! | `pre_lowering_anim` | `frames.pre_lowering` | Events ▸ pre() lowering |
 //!
 //! Three of the four sat in `StageViewCaches`, whose own doc promises *"views derived
