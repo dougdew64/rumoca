@@ -667,8 +667,8 @@ the next phase touches — is procedure and lives there.
 > **The fifth: the banner was fixed on 11-04 and the TAB STAYED RED**, a stage outcome being that
 > fact's second home. Both now read one `state_scalar_count`
 > (`worker::reconcile_reduction_with_lowering`, `stage_tabs::tab_color`), and **`Flagged` is amber,
-> not red**. `note_is_error`'s six other callers are deliberately unchanged — `docs/tech-debt.md`
-> tabulates them and says which to measure first.
+> not red**. `note_is_error`'s other callers followed on 2026-11-07 — two keep it on purpose, and
+> `docs/tech-debt.md`'s 11-05 entry says which and why.
 >
 > **This is not a branch of `hrw`.** Both descend from `main`; `hrw` is 1199 commits of HRW work on
 > 0.9.20 and still points at 2026-09-25, while the 0.10.0 branch took upstream's v0.10.0 (PR #340)

@@ -64,8 +64,8 @@ use crate::tree;
 // commands and receive `FromWorker` results. `Stage` holds one pipeline stage's
 // output (its serde_json::Value IR + optional error note).
 use crate::worker::{
-    DefInfo, DefKind, FromWorker, LogEntry, SimData, Stage, StageBundle, StageKind, ToWorker,
-    Worker, discontinuity_segments,
+    DefInfo, DefKind, FromWorker, LogEntry, Outcome, SimData, Stage, StageBundle, StageKind,
+    ToWorker, Worker, discontinuity_segments,
 };
 
 /// Initial UI zoom (fonts + spacing). Adjustable live via Settings or Ctrl +/−;
@@ -2532,10 +2532,20 @@ impl App {
         }
     }
 
-    /// The furthest-along stage that produced clean IR (value present, no error
-    /// note) — where the tabs should land after a compile. Falls back to Parse.
+    /// The furthest-along stage that produced IR the pipeline could use — where the
+    /// tabs should land after a compile. Falls back to Parse.
+    ///
+    /// **A `Flagged` stage counts, and until 2026-11-07 it did not.** This read
+    /// [`Stage::note_is_error`], which is `outcome != Ok`, so a stage carrying usable
+    /// IR *and* a report was skipped as though it had failed. Measured against the
+    /// corpus outcome matrix, exactly one specimen lands differently:
+    /// `DimensionMismatch` (`OOOF.......`) now opens on Typecheck, the stage holding its
+    /// diagnosis beside the instantiated overlay, instead of on Instantiate one stage
+    /// short of it. The high-index and singular rows are unchanged because a later
+    /// clean stage already wins. **A `Failed` stage is still skipped**: its value is
+    /// only the error payload, not IR.
     fn last_successful_stage(&self) -> StageKind {
-        let ok = |s: &Stage| s.value.is_some() && !s.note_is_error();
+        let ok = |s: &Stage| s.value.is_some() && s.outcome != Outcome::Failed;
         if ok(&self.stages.solve_lowering) {
             StageKind::SolveLowering
         } else if ok(&self.stages.events) {
@@ -2664,7 +2674,14 @@ impl App {
                 .filter(|&k| self.stages.get(k).says_not_reached())
                 .map(StageKind::name)
                 .collect();
-            if not_reached.is_empty() {
+            // **A `Failed` stage is a stop without needing a tail** (2026-11-07). The tail
+            // decides a `Flagged` stage, whose label does not; but `Failed` already means
+            // *the pipeline stopped here*, and the last compilation stage has no tail to
+            // measure. Solve lowering's refusal of `IncompatibleConnect` and `TwiceDefined`
+            // was filed as a flag -- under a note telling Claude the compile continued and
+            // not to present it as why the model does not work. See
+            // `a_failed_final_stage_is_a_stop_not_a_flag`.
+            if not_reached.is_empty() && stage.outcome != Outcome::Failed {
                 flags.push(bridge::FlaggedStage {
                     stage: kind.name(),
                     note,
@@ -2876,19 +2893,34 @@ impl App {
 
     /// One line saying how far the pipeline got, for the action trail.
     ///
-    /// Reports the **first failing stage** when there is one, because that is the
-    /// diagnostic — everything after it is "not reached" and says nothing. On success
-    /// it reports the furthest stage reached, which is how a partial pipeline (a model
-    /// that compiles but will not lower) is told apart from a complete one.
+    /// Reports the **stage that stopped the pipeline** when one did, because that is
+    /// the diagnostic — everything after it is "not reached" and says nothing. Otherwise
+    /// it reports the furthest stage reached, which is how a partial pipeline is told
+    /// apart from a complete one. Either way it names the stages Rumoca **flagged and
+    /// carried past**, so a recovery is recorded as one.
+    ///
+    /// **Read from [`Self::pipeline_context`], the same split `focus.json` carries**, so
+    /// the trail and the capture cannot disagree. Until 2026-11-07 this scanned for the
+    /// first [`Stage::note_is_error`] and wrote *"FAILED at Structural"* for the six
+    /// corpus specimens that are flagged at Structural and simulate. It now says
+    /// *"stopped at"* rather than *"FAILED at"* because a stop's outcome need not be
+    /// `Failed`: `DimensionMismatch`'s Typecheck is `Flagged` and stops the pipeline.
     fn compile_outcome(&self) -> String {
         let model = self.model.as_deref().unwrap_or("<unnamed>");
-        for kind in StageKind::COMPILATION {
-            let stage = self.stages.get(*kind);
-            if stage.note_is_error() {
-                return format!("{model}: FAILED at {}", kind.name());
-            }
+        let (flags, failure) = self.pipeline_context();
+        let flagged = if flags.is_empty() {
+            String::new()
+        } else {
+            let names: Vec<&str> = flags.iter().map(|f| f.stage).collect();
+            format!(" (flagged and carried past: {})", names.join(", "))
+        };
+        match failure {
+            Some(stop) => format!("{model}: stopped at {}{flagged}", stop.stage),
+            None => format!(
+                "{model}: reached {}{flagged}",
+                self.last_successful_stage().name()
+            ),
         }
-        format!("{model}: reached {}", self.last_successful_stage().name())
     }
 
     /// Whether a structural sub-view has a tab right now.
@@ -5466,11 +5498,13 @@ impl App {
                         && !has_custom_banner
                         && !has_error_summary
                     {
-                        let color = if stage.note_is_error() {
-                            ui.visuals().error_fg_color
-                        } else {
-                            ui.visuals().weak_text_color()
-                        };
+                        // The tab's own colour rule, one pane down: amber for a flag,
+                        // red only for a stop. See `stage_tabs::note_color`.
+                        let color = crate::stage_tabs::note_color(
+                            stage,
+                            ui.visuals().error_fg_color,
+                            ui.visuals().weak_text_color(),
+                        );
                         egui::ScrollArea::horizontal()
                             .id_salt("note")
                             .show(ui, |ui| {

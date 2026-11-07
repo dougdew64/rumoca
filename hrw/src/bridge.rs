@@ -1850,6 +1850,11 @@ pub struct FlaggedStage<'a> {
 /// *measured* tail rather than the outcome label, because the label does not decide it:
 /// `DimensionMismatch`'s Typecheck is `Flagged` and **does** stop the pipeline, while
 /// `Drivetrain`'s Structural is `Flagged` and does not.
+///
+/// **And a `Failed` stage is a stop with or without a tail** (2026-11-07). The last
+/// compilation stage has nothing after it to be "not reached", so Solve lowering's
+/// refusal of `IncompatibleConnect` and `TwiceDefined` arrived as a [`FlaggedStage`] —
+/// under a note telling Claude the compile continued. `not_reached` is then empty.
 pub struct PipelineFailure<'a> {
     /// Stage name, as `StageKind::name` reports it.
     pub stage: &'static str,
@@ -2498,7 +2503,8 @@ fn build(ask: &Ask) -> Value {
     if let Some(f) = &ask.failure {
         doc["pipeline_failure"] = json!({
             "note": "the stage that STOPPED the pipeline: every stage after it says it \
-                     never ran. `error` carries the diagnosis — counts, unmatched names, \
+                     never ran (an empty list means it was the last compilation stage, \
+                     and the model cannot be simulated). `error` carries the diagnosis — counts, unmatched names, \
                      source locations, guidance. Full IR for every stage is under \
                      `stages.dir`. A stage that reported a problem and was CARRIED PAST \
                      is not here; see `pipeline_flags`.",

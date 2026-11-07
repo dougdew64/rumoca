@@ -377,10 +377,10 @@ fn tab_label(
 /// - **`Ok` with no payload is neutral**, which covers *not yet reached* and *still
 ///   compiling*.
 ///
-/// The other six callers of `note_is_error` (counted in the 2026-11-07 sweep; this
-/// said seven) are unchanged and listed in
-/// `docs/tech-debt.md` — `App::failure_context` among them, which still names a
-/// `pipeline_failure` to the chat bridge for models that simulate.
+/// **The rest of `note_is_error`'s callers caught up by 2026-11-07.** `App::failure_context`
+/// was fixed on 11-05; `compile_outcome`, `last_successful_stage` and the stage note's
+/// colour ([`note_color`]) on 11-07. Two callers keep `note_is_error` on purpose
+/// (`has_error_summary`, `artifact_pane`), and `docs/tech-debt.md` says why.
 fn tab_color(
     stage: &Stage,
     ok_color: egui::Color32,
@@ -391,6 +391,29 @@ fn tab_color(
         Outcome::Flagged => Some(crate::colors::WARN_AMBER),
         Outcome::Ok if stage.value.is_some() => Some(ok_color),
         Outcome::Ok => None,
+    }
+}
+
+/// The colour of a stage's note, drawn under the tab row — **the tab's rule, one pane
+/// down.**
+///
+/// It was `error_fg_color` whenever [`Stage::note_is_error`] held, which is
+/// `outcome != Ok`, so `Drivetrain`'s Structural note — *structurally singular*, on a
+/// model that simulates — was red directly beneath an amber tab. The tab was fixed on
+/// 2026-11-05 and this was the same conflation left in the pane below; fixed 2026-11-07.
+///
+/// **It agrees with [`tab_color`] on every abnormal outcome**, and
+/// `the_note_and_the_tab_agree_on_every_abnormal_outcome` pins that. An `Ok` stage's note
+/// is a status line, drawn weak, where the tab would show the theme's ok colour.
+pub(crate) fn note_color(
+    stage: &Stage,
+    err_color: egui::Color32,
+    weak_color: egui::Color32,
+) -> egui::Color32 {
+    match stage.outcome {
+        Outcome::Failed => err_color,
+        Outcome::Flagged => crate::colors::WARN_AMBER,
+        Outcome::Ok => weak_color,
     }
 }
 
@@ -846,6 +869,44 @@ mod tests {
             tab_color(&Stage::default(), ok, err),
             None,
             "not yet reached, or still compiling, overrides no colour at all",
+        );
+    }
+
+    /// **The note under the tab row says what the tab says** — the stage note was red for
+    /// a flag beneath an amber tab until 2026-11-07. See [`note_color`].
+    #[test]
+    fn the_note_and_the_tab_agree_on_every_abnormal_outcome() {
+        let ok = egui::Color32::from_rgb(0x43, 0xA0, 0x47);
+        let err = egui::Color32::from_rgb(0xE5, 0x39, 0x35);
+        let weak = egui::Color32::GRAY;
+        let payload = serde_json::json!({ "outcome": { "kind": "singular" } });
+
+        for stage in [
+            Stage::recovered(payload.clone(), "structurally singular"),
+            Stage::err_with_details(serde_json::json!({}), "boom"),
+            Stage::err("boom"),
+        ] {
+            assert_ne!(
+                stage.outcome,
+                Outcome::Ok,
+                "this loop is about abnormal outcomes"
+            );
+            assert_eq!(
+                Some(note_color(&stage, err, weak)),
+                tab_color(&stage, ok, err),
+                "{:?}: the note and the tab above it disagree",
+                stage.outcome,
+            );
+        }
+        assert_ne!(
+            note_color(&Stage::recovered(payload, "singular"), err, weak),
+            err,
+            "a flag is not a stop; `Drivetrain` simulates",
+        );
+        assert_eq!(
+            note_color(&Stage::info("not reached"), err, weak),
+            weak,
+            "an Ok stage's note is a status line",
         );
     }
 }
