@@ -37,8 +37,29 @@ pub struct DaeCounts {
     pub discrete_values: usize,
 
     // --- equations and the event structure ---
-    /// Scalar residual rows, the `f_x` of the stage trees.
+    /// Rumoca's **`continuous_equations` arena** — one entry per residual equation,
+    /// the `f_x` of the stage trees. **Not a scalar row count, and not every
+    /// equation**: a compacted structured family (`for i in 1:n loop … end for;`) is
+    /// held in a separate arena ([`Self::continuous_families`]), and one residual may
+    /// itself be array-valued.
+    ///
+    /// *Corrected 2026-11-07.* This said *"scalar residual rows"*, and `ArrayFamily` —
+    /// one family over an 8-array and no residual — read **0**. Wiring the Index
+    /// Reduction subject into the fidelity checks found it: F3 compared the published
+    /// `n_equations = 0` against an 8-row incidence. Use
+    /// [`Self::continuous_scalar_rows`] for "how many equations", in the sense a matrix
+    /// row is one.
     pub continuous_equations: usize,
+    /// Rumoca's `continuous_families` arena — compacted structured equation families.
+    pub continuous_families: usize,
+    /// **Scalar continuous equation rows** — what the incidence matrix calls `n_eq`.
+    ///
+    /// Each residual contributes its value type's scalar count and each structured
+    /// family its `scalar_rows()`, which is exactly `rumoca-phase-solve`'s private
+    /// `continuous_scalar_row_count`, reproduced here through the public view so the
+    /// two cannot mean different things. `ArrayFamily` reads 8 here and 0 in
+    /// [`Self::continuous_equations`].
+    pub continuous_scalar_rows: usize,
     pub initialization_equations: usize,
     /// MLS §8.5 definitions of discrete Real coordinates — the `f_z` updates.
     pub discrete_real_equations: usize,
@@ -74,6 +95,22 @@ impl DaeCounts {
         model.inspect(|view| {
             let mut counts = Self {
                 continuous_equations: view.continuous_equation_count(),
+                continuous_families: view.continuous_family_count(),
+                // Mirrors `rumoca-phase-solve`'s `continuous_scalar_row_count`. A
+                // checked DAE always has a scalar capacity, so `unwrap_or(0)` only
+                // guards a contract Rumoca already enforces.
+                continuous_scalar_rows: view
+                    .continuous_owners()
+                    .map(|owner| match owner {
+                        dae::ContinuousOwnerView::Residual { equation, .. } => view
+                            .expression(equation.residual())
+                            .and_then(|e| e.value_type().scalar_count())
+                            .unwrap_or(0),
+                        dae::ContinuousOwnerView::Structured { family, .. } => {
+                            family.scalar_rows() as usize
+                        }
+                    })
+                    .sum(),
                 initialization_equations: view.initialization_equation_count(),
                 discrete_real_equations: view.discrete_real_equation_count(),
                 discrete_value_definitions: view.discrete_value_definition_count(),

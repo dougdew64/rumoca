@@ -2,7 +2,7 @@
   "model": "ArrayFamily",
   "specimen": "specimens/ArrayFamily.mo",
   "specimen_fnv1a": "0b51cc23232cc784",
-  "rumoca_rev": "ff0690df",
+  "rumoca_rev": "559faf87",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -27,7 +27,7 @@
     },
     "dae": {
       "has_ir": true,
-      "note": "1 state(s), 0 algebraic(s), 0 continuous equation(s)"
+      "note": "1 state(s), 0 algebraic(s), 0 continuous equation(s) and 1 structured family — 8 scalar row(s)"
     },
     "structural": {
       "has_ir": true,

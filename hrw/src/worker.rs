@@ -2236,7 +2236,8 @@ impl WorkerState {
         let counts = crate::dae_counts::DaeCounts::of(&cr.dae);
         let has_discontinuities = counts.has_discontinuities();
         let n_states = counts.states;
-        let n_eq = counts.continuous_equations;
+        // Scalar rows: `continuous_equations` misses structured families.
+        let n_eq = counts.continuous_scalar_rows;
         log(
             LogLevel::Info,
             format!("{n_eq} equations, {n_states} states, hybrid={has_discontinuities}"),
@@ -3728,8 +3729,21 @@ impl WorkerState {
                             if let Some(value) = s.value.as_mut() {
                                 replace_source_map_with_a_portable_index(value, d.source_map());
                             }
+                            // Rumoca's arena names, plus the structured families the
+                            // `continuous_equations` arena does not hold — without them
+                            // `ArrayFamily` read "0 continuous equation(s)" for a model
+                            // with eight (2026-11-07). Unchanged when there are none.
+                            let families = match counts.continuous_families {
+                                0 => String::new(),
+                                n_f => format!(
+                                    " and {n_f} structured famil{} \u{2014} {} scalar row(s)",
+                                    if n_f == 1 { "y" } else { "ies" },
+                                    counts.continuous_scalar_rows,
+                                ),
+                            };
                             s.note = Some(format!(
-                                "{n_x} state(s), {n_y} algebraic(s), {n_eq} continuous equation(s)",
+                                "{n_x} state(s), {n_y} algebraic(s), {n_eq} continuous \
+                                 equation(s){families}",
                             ));
                             // Built from the same `d` the tree will render, one line
                             // apart, so the two cannot describe different IR.
@@ -5290,9 +5304,13 @@ fn index_reduction_from_observation(
             "n_algebraics".to_owned(),
             serde_json::json!(counts_before.algebraics),
         );
+        // **Scalar rows, the incidence's `n_eq`** — not `continuous_equations`, which
+        // counts residual entries and misses structured families: `ArrayFamily` read
+        // 0 here beside an 8-row incidence until 2026-11-07, overwriting the
+        // Structural report's own correct 8. See `DaeCounts::continuous_scalar_rows`.
         obj.insert(
             "n_equations".to_owned(),
-            serde_json::json!(counts_before.continuous_equations),
+            serde_json::json!(counts_before.continuous_scalar_rows),
         );
     }
 
@@ -5322,9 +5340,10 @@ fn index_reduction_from_observation(
                     "n_algebraics".to_owned(),
                     serde_json::json!(counts.algebraics),
                 );
+                // Scalar rows, as `before` — see the note there.
                 map.insert(
                     "n_equations".to_owned(),
-                    serde_json::json!(counts.continuous_equations),
+                    serde_json::json!(counts.continuous_scalar_rows),
                 );
             }
             prepared.inspect(|system| {

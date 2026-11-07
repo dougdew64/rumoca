@@ -537,11 +537,11 @@ impl Health {
 }
 
 /// Survey one model: compile it, then measure its shape.
-/// `max_reduce_eq` is accepted and unused while index reduction is not
-/// measured; see the note at the index-reduction column below. Kept in the
-/// signature so the caller and the CLI flag need no change when the column is
-/// restored (the re-model that allows it landed 2026-11-04; wiring it is open).
-fn survey_one(session: &mut Session, name: &str, _max_reduce_eq: usize) -> SurveyRow {
+///
+/// `max_reduce_eq` caps the index-reduction column, as it did before the v0.10.0
+/// rebase — **restored 2026-11-07** (the post-rebase sweep's open item 1). See the
+/// note at that column.
+fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> SurveyRow {
     let mut row = SurveyRow {
         name: name.to_owned(),
         kind: classify(name),
@@ -581,7 +581,11 @@ fn survey_one(session: &mut Session, name: &str, _max_reduce_eq: usize) -> Surve
     // already tallies all of this in one pass, so the survey shares that one
     // home rather than opening a second `inspect` with its own arithmetic.
     let counts = hrw::dae_counts::DaeCounts::of(&cr.dae);
-    row.n_equations = Some(counts.continuous_equations);
+    // **Scalar rows since 2026-11-07.** This was `continuous_equations`, Rumoca's
+    // residual arena, which holds no structured family — so a model written with `for`
+    // equations under-reported, and `ArrayFamily`'s eight equations read 0. Reports
+    // generated before that date carry the arena count in this column.
+    row.n_equations = Some(counts.continuous_scalar_rows);
     row.n_states = Some(counts.states);
     row.n_algebraic = Some(counts.algebraics);
     row.n_discrete = Some(counts.discrete_reals + counts.discrete_values);
@@ -655,19 +659,41 @@ fn survey_one(session: &mut Session, name: &str, _max_reduce_eq: usize) -> Surve
                 rumoca_phase_structural::StructuralError::Singular { .. } => "singular".to_owned(),
                 other => format!("error:{}", first_line(&other.to_string())),
             };
-            // **The index-reduction column is not filled for the v0.10.0
-            // rebase.** It re-ran reduction over a clone of the DAE, which
-            // 0.10.0 makes impossible — `Dae` is immutable and not `Clone` —
-            // so there is no reduced system to report a structural result
-            // for. `row.index_reduced` keeps its seeded value rather than
-            // being set to "ok" or "singular", because either would be a
-            // claim about an analysis that did not run.
+            // **The index-reduction column, measured again since 2026-11-07.**
             //
-            // The `--max-reduce-eq` cap went with it; `check_model`'s note in
-            // `fidelity.rs` records why that cap has to return. **Since the
-            // 2026-11-04 re-model the column could be measured** (through
-            // `inspect_prepare_for_solve`), and this survey has not been re-wired to
-            // it: open in `docs/tech-debt.md`.
+            // It was empty from the v0.10.0 rebase: the old column re-ran reduction
+            // over a clone of the DAE, and 0.10.0's `Dae` is immutable and not
+            // `Clone`. `prepare_for_solve` takes the DAE by reference and returns the
+            // admitted system as a `PreparedDae` — the same entry point the compile
+            // uses for Index Reduction, so this measures what the compiler does
+            // rather than a variant of it. The survey is a measurement tool, so it
+            // runs the phase itself; no pane presents this as the compile.
+            //
+            // **Only a singular raw system is reduced**, as before: an index-1 one has
+            // nothing for reduction to do and its column stays at the seeded value.
+            // Over the cap, the row says `skipped:too-large` rather than omitting the
+            // fact, and `--only-skipped` revisits exactly those rows uncapped.
+            //
+            // `ok` is not "the model simulates": since v0.10.4 solve lowering's state
+            // selection reduces some systems this reducer declines (`CartesianPendulum`),
+            // and such a row reads `singular` here. The column answers what
+            // `prepare_for_solve` admitted, which is the question it always asked.
+            row.index_reduced = if counts.continuous_scalar_rows > max_reduce_eq {
+                SKIPPED.to_owned()
+            } else {
+                match rumoca_phase_structural::prepare_for_solve(&cr.dae) {
+                    Ok(prepared) => {
+                        // The reduced system's blocks replace the raw one's, which
+                        // had none: a singular system stops before BLT.
+                        fill_blocks(&mut row, &prepared.structural_report());
+                        "ok".to_owned()
+                    }
+                    Err(rumoca_phase_structural::StructuralError::Singular { .. }) => {
+                        "singular".to_owned()
+                    }
+                    Err(other) => format!("error:{}", first_line(&other.to_string())),
+                }
+            };
         }
     }
     row.secs = t.elapsed().as_secs_f64();

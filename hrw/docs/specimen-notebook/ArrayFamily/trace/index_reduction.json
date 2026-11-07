@@ -11,7 +11,7 @@
   "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
   "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
   "before": {
-    "n_equations": 0,
+    "n_equations": 8,
     "n_unknowns": 8,
     "coupled_block_count": 0,
     "matching": [
@@ -143,7 +143,7 @@
     "n_algebraics": 0
   },
   "after": {
-    "n_equations": 0,
+    "n_equations": 8,
     "n_unknowns": 8,
     "coupled_block_count": 0,
     "matching": [
