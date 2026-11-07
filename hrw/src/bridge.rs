@@ -219,6 +219,17 @@ pub const LAB_FILE: &str = concat!(
     "/.hrw-bridge/test-run/answer.md"
 );
 
+/// A question Doug asked from the Context Bar, **written together with the context
+/// that was live when he asked it** — see [`write_question`].
+#[cfg(not(test))]
+pub const QUESTION_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/question.json");
+/// The question file under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub const QUESTION_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/question.json"
+);
+
 /// Fixture labs — kept, versioned, and executed by `fixture_lab_links_all_resolve`.
 ///
 /// Hard-coded rather than configurable: the directory is part of the repository layout,
@@ -1905,6 +1916,94 @@ pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
         },
     );
     result
+}
+
+/// A question Doug asked from the Context Bar.
+pub struct Question<'a> {
+    /// Its own sequence number, from the shared context counter.
+    pub seq: u64,
+    /// The question, as typed — trimmed, never empty.
+    pub text: &'a str,
+    /// What *"this"* resolved to, **in full** (`Referent::describe`), by the bar's rule.
+    pub this: &'a str,
+}
+
+/// The instructions `question.json` carries for its reader, which is Claude.
+const QUESTION_INSTRUCTIONS: &str = "HRW question file. Doug typed this question into \
+HRW's Context Bar; it waits here until he types ? in the Claude chat. ANSWER IT IN THE \
+CHAT — not in HRW. `this` is what the word \"this\" in the question refers to, resolved by \
+the bar's rule (the point first, then the follow, then the stage on screen) and shown to \
+Doug beside the field before he asked, so it is the referent he saw rather than a guess. \
+`context` is the full focus document as it was AT THE MOMENT OF ASKING, written in the same \
+call as the question — so it cannot disagree with it, unlike focus.json, which later clicks \
+rewrite.";
+
+/// Write a question **and the context it was asked about**, in one file, atomically.
+///
+/// # Why one file, and why not `focus.json`
+///
+/// Doug's questions used to be typed in the chat and joined to his context only by
+/// *time*: Claude read whatever `focus.json` held when the hook ran. Every defect in the
+/// Q&A path that week was a failure of that join. **Here the question and its context
+/// leave HRW as one document**, so they cannot disagree.
+///
+/// **It is a separate file because `focus.json` is the LIVE context.** Every click
+/// re-emits it, so a question stored there would be overwritten by the next point or
+/// follow before Doug had typed `?`. `question.json` is written only when he asks, so it
+/// holds the question as asked, beside the context as it was.
+///
+/// # What is atomic
+///
+/// The document is written to a temporary file and **renamed** over the old one, so a
+/// reader never sees half a question — the hook may read at any moment. Like [`write`],
+/// the attempt is recorded (`question-asked`) whether or not it succeeded, so
+/// `session.json` moves in the same frame and the trail says a question was asked.
+pub fn write_question(ask: &Ask, question: &Question) -> std::io::Result<PathBuf> {
+    let result = write_question_file(ask, question);
+    crate::diagnostics::record_action(
+        "question-asked",
+        match &result {
+            Ok(_) => format!("question.json seq {}", question.seq),
+            Err(e) => format!("question.json seq {} NOT WRITTEN: {e}", question.seq),
+        },
+    );
+    result
+}
+
+/// The document [`write_question`] writes, without the file I/O, for tests.
+pub fn build_question_for_test(ask: &Ask, question: &Question) -> Value {
+    build_question(ask, question)
+}
+
+fn build_question(ask: &Ask, question: &Question) -> Value {
+    let now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis());
+    json!({
+        "instructions": QUESTION_INSTRUCTIONS,
+        "seq": question.seq,
+        "asked_at": crate::diagnostics::format_utc_millis(now_ms),
+        "question": question.text,
+        "this": question.this,
+        "this_rule": "the point first, then the follow, then the stage on screen",
+        // The SAME document `write` puts in focus.json in this frame — built by the same
+        // function from the same `Ask`, not copied from the file afterwards.
+        "context": build(ask),
+    })
+}
+
+fn write_question_file(ask: &Ask, question: &Question) -> std::io::Result<PathBuf> {
+    let path = Path::new(QUESTION_FILE).to_path_buf();
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir)?;
+    }
+    let text = serde_json::to_string_pretty(&build_question(ask, question)).unwrap_or_default();
+    let tmp = path.with_extension("json.tmp");
+    fs::write(&tmp, text)?;
+    // `rename` replaces an existing file on Windows as well as Unix, so the switch
+    // from the old question to the new one is a single step.
+    fs::rename(&tmp, &path)?;
+    Ok(path)
 }
 
 /// The file I/O half of [`write`], split out so the recording cannot be bypassed by an
@@ -4519,6 +4618,64 @@ mod tests {
         );
     }
 
+    /// **A question carries the exact context it was asked about.**
+    ///
+    /// The whole design rests on one property: the question and its context leave HRW
+    /// as one document, so they cannot disagree. So this asserts the embedded `context`
+    /// is **equal** to the focus document `build` makes from the same `Ask` — not merely
+    /// present — because a question file whose context was assembled some other way
+    /// would reintroduce the join-by-time gap with a different file name.
+    #[test]
+    fn a_question_carries_the_exact_context_it_was_asked_about() {
+        let val = json!({"name": "x"});
+        let index = std::collections::BTreeMap::new();
+        let ask = Ask {
+            seq: 4,
+            request: None,
+            specimen: None,
+            model: Some("M"),
+            stage: None,
+            libraries: Vec::new(),
+            def_index: &index,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Node {
+                key_path: vec![Seg::Key("name".to_owned())],
+                stage_value: &val,
+            },
+            tracking: None,
+            view: test_view(),
+            failure: None,
+            flags: vec![],
+        };
+        let question = Question {
+            seq: 9,
+            text: "why is this singular?",
+            this: "equations[0]",
+        };
+        let doc = build_question(&ask, &question);
+
+        assert_eq!(doc["question"], json!("why is this singular?"));
+        assert_eq!(
+            doc["this"],
+            json!("equations[0]"),
+            "the referent Doug saw is recorded"
+        );
+        assert_eq!(doc["seq"], json!(9), "the question has its own number");
+        assert!(
+            doc["asked_at"]
+                .as_str()
+                .is_some_and(|s| s.ends_with(" UTC")),
+            "and a time, in the trail's own format: {}",
+            doc["asked_at"],
+        );
+        assert_eq!(
+            doc["context"],
+            build(&ask),
+            "the context is the SAME document focus.json gets — built, not copied",
+        );
+    }
+
     #[test]
     fn ask_stage_none_shows_navigated_definition() {
         let empty = BTreeMap::new();
@@ -4980,6 +5137,7 @@ mod tests {
             ("SCRATCH_SPECIMEN_DIR", SCRATCH_SPECIMEN_DIR),
             ("SCRATCH_NOTEBOOKS_DIR", SCRATCH_NOTEBOOKS_DIR),
             ("LAB_FILE", LAB_FILE),
+            ("QUESTION_FILE", QUESTION_FILE),
             ("VIEW_FILE", VIEW_FILE),
             ("SCREENSHOTS_DIR", SCREENSHOTS_DIR),
             ("SCREENSHOT_REQUEST_FILE", SCREENSHOT_REQUEST_FILE),

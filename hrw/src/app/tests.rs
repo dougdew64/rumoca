@@ -2015,6 +2015,85 @@ fn clearing_the_point_reaches_the_file_the_hook_reads() {
     );
 }
 
+/// **A question asked from the bar is not overwritten by a later click.**
+///
+/// The reason `question.json` exists as its own file: `focus.json` is the *live* context
+/// and every point or follow rewrites it, so a question stored there would be gone before
+/// Doug had typed `?`. This asks, then clicks twice — a new point, then a follow, both of
+/// which re-emit the context — and requires the question file to be **byte-for-byte**
+/// what it was, timestamp included.
+#[test]
+fn a_question_is_not_overwritten_by_a_later_click() {
+    let _diag = diagnostics::seed_for_test();
+    let (mut app, _tx) = App::test_with_sender();
+    let point = |target: &str| PointedAt {
+        seq: 1,
+        target: target.to_owned(),
+        kind: PointKind::Stage,
+        stage: Some(StageKind::Flatten),
+        request: None,
+    };
+    let read = || -> Value {
+        let text = std::fs::read_to_string(bridge::QUESTION_FILE).expect("question.json written");
+        serde_json::from_str(&text).expect("question.json is valid JSON")
+    };
+
+    app.context.pointed_at = Some(point("components.src.V"));
+    app.context.question_draft = "why is this singular?".to_owned();
+    app.ask_question("why is this singular?".to_owned());
+    let asked = read();
+    assert_eq!(
+        asked["question"],
+        serde_json::json!("why is this singular?")
+    );
+    assert_eq!(
+        asked["this"],
+        serde_json::json!("components.src.V"),
+        "the referent is the point, by the bar's rule",
+    );
+    assert!(
+        diagnostics::action_kinds_for_test()
+            .iter()
+            .any(|k| k == "question-asked"),
+        "asking is recorded, so session.json moves in the same frame",
+    );
+
+    // Two later clicks, each of which rewrites focus.json.
+    app.context.pointed_at = Some(point("equations[3]"));
+    app.emit_context();
+    app.set_tracked_identifier("h".to_owned());
+
+    assert_eq!(
+        read(),
+        asked,
+        "question.json is written only when Doug asks; later clicks must not touch it",
+    );
+}
+
+/// **A question that could not be written goes back into the field.**
+///
+/// A node point whose stage has no IR cannot be emitted at all, so the question cannot be
+/// written with its context. Clearing the field anyway would lose the question on the
+/// strength of a write that never happened.
+#[test]
+fn a_question_that_was_not_written_stays_in_the_field() {
+    let _diag = diagnostics::seed_for_test();
+    let (mut app, _tx) = App::test_with_sender();
+    // A node in a stage that has not run: there is no IR to describe it from.
+    app.context.pointed_at = Some(PointedAt {
+        seq: 1,
+        target: "equations[0]".to_owned(),
+        kind: PointKind::Node(vec![Seg::Key("equations".to_owned())]),
+        stage: Some(StageKind::Flatten),
+        request: None,
+    });
+    app.ask_question("what is this?".to_owned());
+    assert_eq!(
+        app.context.question_draft, "what is this?",
+        "an unsent question is returned to the field rather than lost",
+    );
+}
+
 /// Switching stages drops **every stage-keyed** view, including ones added later.
 ///
 /// **This test used to re-implement the invalidation inline**, clearing five
