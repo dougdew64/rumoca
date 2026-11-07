@@ -2051,10 +2051,11 @@ fn a_question_is_not_overwritten_by_a_later_click() {
         asked["question"],
         serde_json::json!("why is this singular?")
     );
-    assert_eq!(
-        asked["this"],
-        serde_json::json!("components.src.V"),
-        "the referent is the point, by the bar's rule",
+    // The point reaches Claude inside `context`, not as a resolved `this` (removed
+    // 2026-11-07: Claude asks when "this" is unclear).
+    assert!(
+        asked.get("this").is_none(),
+        "question.json resolves \"this\"; Doug ruled that Claude asks instead",
     );
     assert!(
         diagnostics::action_kinds_for_test()

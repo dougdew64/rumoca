@@ -274,89 +274,19 @@ pub(crate) enum QuestionBarPress {
     Ask(String),
 }
 
-/// What *"this"* means in a question asked from the bar.
-///
-/// # The rule, which is Doug's (2026-11-07)
-///
-/// **The point first, then the follow, then the visible stage.** He moved HRW questions
-/// into HRW itself — *"if we broaden the context bar to be a context + question bar…
-/// then you would know with certainty that the question was about HRW and the context I
-/// had assembled"* — and asked for the bar to show what *"this"* will resolve to
-/// **before** he asks, as an experiment.
-///
-/// That is what turns *"this"* from a convention Doug has to remember into a fact he can
-/// see. It is charter Decision 8's *known facts on screen, not on request*: the rule is
-/// fixed, so its result belongs in the UI rather than in a question to Claude.
-///
-/// # Why the order is this one
-///
-/// A point is assembled deliberately and names one thing; a follow is a lens across
-/// stages; the visible stage is merely where Doug happens to be. **Precedence follows
-/// deliberateness** — the same reading `docs/context-assembly.md` already gives a point
-/// and a follow (*"the point is the subject and the thread is the lens"*).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum Referent {
-    /// The point's target, verbatim.
-    Point(String),
-    /// The followed identifier.
-    Follow(String),
-    /// The stage tab on screen, when nothing is pointed at or followed.
-    Stage(StageKind),
-    /// Nothing at all: no point, no follow, and no specimen loaded.
-    Nothing,
-}
-
-impl Referent {
-    /// The full referent, **never elided** — this is what `question.json` records and
-    /// what Claude resolves *"this"* against.
-    pub(crate) fn describe(&self) -> String {
-        match self {
-            Referent::Point(target) => target.clone(),
-            Referent::Follow(name) => format!("{name} (the followed identifier)"),
-            Referent::Stage(stage) => format!("the {} stage on screen", stage.name()),
-            Referent::Nothing => "nothing (no point, no follow, no specimen loaded)".to_owned(),
-        }
-    }
-
-    /// The bar's short form. A point's target can be a whole selected sentence, so it
-    /// is shortened here — **with a visible `…`**, because an elision that looks
-    /// complete is a false claim about what was pointed at. `question.json` always
-    /// carries [`describe`](Self::describe), which is never shortened.
-    pub(crate) fn preview(&self) -> String {
-        const MAX: usize = 48;
-        match self {
-            Referent::Point(target) if target.chars().count() > MAX => {
-                let head: String = target.chars().take(MAX).collect();
-                format!("{}\u{2026}", head.trim_end())
-            }
-            Referent::Point(target) => target.clone(),
-            Referent::Follow(name) => format!("{name} (followed)"),
-            Referent::Stage(stage) => format!("the {} stage", stage.name()),
-            Referent::Nothing => "nothing yet \u{2014} point at something".to_owned(),
-        }
-    }
-}
-
-/// Resolve *"this"* by the bar's rule: point, then follow, then the visible stage.
-///
-/// `visible_stage` is `None` when no specimen is loaded — `App`'s empty branch already
-/// refuses to name a stage that has not run, and this inherits that refusal.
-pub(crate) fn this_referent(
-    point: Option<&PointedAt>,
-    followed: Option<&str>,
-    visible_stage: Option<StageKind>,
-) -> Referent {
-    if let Some(p) = point {
-        return Referent::Point(p.target.clone());
-    }
-    if let Some(name) = followed {
-        return Referent::Follow(name.to_owned());
-    }
-    match visible_stage {
-        Some(stage) => Referent::Stage(stage),
-        None => Referent::Nothing,
-    }
-}
+// **There was a `Referent` here, and a `this_referent` rule**, until 2026-11-07: the bar
+// resolved *"this"* to the point, else the follow, else the stage on screen, showed the
+// result as `this = …` beside the field, and wrote it into `question.json`. Built the same
+// day as an experiment, and removed by Doug that afternoon:
+//
+// > *"I doubt that it would always correctly identify the same "this" which I have in mind
+// > when answering a question. In fact, for me, "this" often means the entire assembled
+// > context. … If ever I use "this" in a question and you need clarification, then you
+// > should ask."*
+//
+// A rule that picks one referent is confidently wrong whenever Doug means another, and
+// neither side notices. So "this" is not resolved anywhere in HRW: the question carries the
+// whole context, and Claude asks when the referent is unclear. Do not reintroduce a resolver.
 
 /// Take a submitted question out of the draft: trimmed, and `None` if nothing is left.
 ///
@@ -374,7 +304,7 @@ pub(crate) fn take_question(draft: &mut String) -> Option<String> {
     Some(question)
 }
 
-/// The bar's question row: the **Text** field, an **Ask** button, and what *"this"* means.
+/// The bar's question row: the **Text** field and an **Ask** button.
 ///
 /// **"Text" is the second half of the question, named at the level of "Context"**
 /// (Doug, 2026-11-07). The bar is the *Question*: the context assembled above, and the
@@ -385,16 +315,12 @@ pub(crate) fn take_question(draft: &mut String) -> Option<String> {
 ///
 /// Returns the question when Doug submits it — Enter in the field, or the button.
 /// Rendered by **both** of the bar's branches, the assembled one here and the empty one
-/// in `App`, because the rule's last fallback is the visible stage: a question about
-/// the stage Doug is merely looking at must be askable with nothing pointed at.
+/// in `App`: a question must be askable with nothing pointed at, since the Always row's
+/// context is still behind it.
 ///
 /// The hint names the next step (*type `?` in the chat*), since the question waits in
 /// `question.json` until Doug prompts Claude — HRW cannot wake him.
-pub(crate) fn question_row(
-    ui: &mut egui::Ui,
-    draft: &mut String,
-    this: &Referent,
-) -> Option<String> {
+pub(crate) fn question_row(ui: &mut egui::Ui, draft: &mut String) -> Option<String> {
     let mut submitted = None;
     ui.add_space(QUESTION_GAP);
     ui.horizontal(|ui| {
@@ -406,7 +332,9 @@ pub(crate) fn question_row(
             );
         let field = ui.add(
             egui::TextEdit::singleline(draft)
-                .hint_text("your question about this \u{2014} then type ? in the chat")
+                // Not "about this": the word implied a referent HRW had chosen, and
+                // the `this =` resolver that chose it was removed (see above).
+                .hint_text("your question \u{2014} then type ? in the chat")
                 .desired_width(420.0),
         );
         let entered = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
@@ -414,12 +342,6 @@ pub(crate) fn question_row(
         if entered || clicked {
             submitted = take_question(draft);
         }
-        ui.weak(format!("this = {}", this.preview()))
-            .on_hover_text(format!(
-                "What \u{201c}this\u{201d} means in your question: {}.\n\nThe rule is the \
-                 point first, then the follow, then the stage on screen.",
-                this.describe()
-            ));
     });
     submitted
 }
@@ -670,13 +592,7 @@ pub(crate) fn question_bar_ui(
     }
 
     // The question row, last, so it reads as the verb applied to the nouns above it.
-    // `stage` is the tab on screen, the rule's final fallback.
-    let this = this_referent(
-        context.pointed_at.as_ref(),
-        tracked_identifier.as_deref(),
-        Some(stage),
-    );
-    if let Some(question) = question_row(ui, &mut context.question_draft, &this) {
+    if let Some(question) = question_row(ui, &mut context.question_draft) {
         press = Some(QuestionBarPress::Ask(question));
     }
 
@@ -1084,8 +1000,8 @@ mod tests {
         });
         h.run_steps(2);
         assert!(
-            // Exact, not `_contains`: the question row's `this = equations[0]` preview
-            // also contains the text, and this asserts the noun's own row.
+            // Exact, not `_contains`, so only the noun's own row can satisfy it. (The
+            // question row's `this = equations[0]` preview once contained the text too.)
             h.query_by_label("equations[0]").is_some(),
             "the noun Doug pointed at is shown",
         );
@@ -1154,64 +1070,26 @@ mod tests {
         );
     }
 
-    /// **"This" resolves by Doug's rule: the point, then the follow, then the stage.**
-    ///
-    /// Every case is distinct, so a swapped precedence fails one of them by name — the
-    /// failure that matters, since the bar shows the result *before* Doug asks and he is
-    /// entitled to rely on it.
+    /// **The bar does not say what "this" means** (Doug, 2026-11-07). It showed
+    /// `this = <point, else follow, else stage>` beside the field until he removed it:
+    /// for him *"this"* often means the whole assembled context, and a resolver that
+    /// picks one item is confidently wrong when he means another. Claude asks instead.
+    /// Checked with a point and a follow both assembled, the state in which the old
+    /// resolver had the most to choose between.
     #[test]
-    fn this_means_the_point_then_the_follow_then_the_stage() {
-        let point = a_point();
-        assert_eq!(
-            this_referent(Some(&point), Some("h"), Some(StageKind::Structural)),
-            Referent::Point("equations[0]".to_owned()),
-            "a point outranks a follow and the stage",
-        );
-        assert_eq!(
-            this_referent(None, Some("h"), Some(StageKind::Structural)),
-            Referent::Follow("h".to_owned()),
-            "with no point, the follow outranks the stage",
-        );
-        assert_eq!(
-            this_referent(None, None, Some(StageKind::Structural)),
-            Referent::Stage(StageKind::Structural),
-            "with neither, the stage on screen",
-        );
-        assert_eq!(
-            this_referent(None, None, None),
-            Referent::Nothing,
-            "and with no specimen, nothing — never a stage that has not run",
-        );
-    }
-
-    /// **The bar may shorten a long point; the file never does — and the shortening
-    /// shows.**
-    ///
-    /// A point can be a whole selected sentence, so the bar's preview is cut to fit. The
-    /// two halves guard opposite failures: a cut without `…` is a false claim about what
-    /// was pointed at, and a cut that reached `question.json` would hand Claude less than
-    /// Doug selected.
-    #[test]
-    fn a_long_point_is_shortened_visibly_in_the_bar_and_never_in_the_file() {
-        let long = "Causality is the answer to \"which variable is this equation \
-                    responsible for producing?\"";
-        let this = Referent::Point(long.to_owned());
-        let preview = this.preview();
+    fn the_bar_does_not_resolve_this() {
+        let mut h = harness(Bar {
+            context: QuestionBarState {
+                pointed_at: Some(a_point()),
+                ..Default::default()
+            },
+            tracked: Some("R1.v".to_owned()),
+            ..Bar::default()
+        });
+        h.run_steps(2);
         assert!(
-            preview.ends_with('\u{2026}'),
-            "a shortened preview says so: {preview}"
-        );
-        assert!(
-            preview.chars().count() < long.chars().count(),
-            "and is shorter: {preview}"
-        );
-        assert_eq!(this.describe(), long, "the full form is never shortened");
-
-        let short = Referent::Point("equations[0]".to_owned());
-        assert_eq!(
-            short.preview(),
-            "equations[0]",
-            "a short point is shown whole"
+            h.query_by_label_contains("this =").is_none(),
+            "the bar names a referent for \"this\"; Doug ruled that Claude asks instead",
         );
     }
 
@@ -1237,15 +1115,16 @@ mod tests {
         assert_eq!(blank, "   ", "and refusing it leaves the field as it was");
     }
 
-    /// **The bar shows what "this" means, and a question typed into it is reported.**
+    /// **A question typed into the bar is reported.**
     ///
     /// Driven through the real widgets: the text field is found by its role, focused,
     /// typed into, and submitted with Enter, exactly as Doug would. Asserting on the
     /// report rather than on internal state is the point — it is the report `App` acts
     /// on, so a field that rendered but never reported would pass any state check and
-    /// still send nothing.
+    /// still send nothing. (It also asserted the `this =` preview until that was removed,
+    /// 2026-11-07; `the_bar_does_not_resolve_this` now asserts its absence.)
     #[test]
-    fn the_bar_shows_what_this_means_and_reports_a_typed_question() {
+    fn the_bar_reports_a_typed_question() {
         let mut h = harness(Bar {
             context: QuestionBarState {
                 pointed_at: Some(a_point()),
@@ -1254,10 +1133,6 @@ mod tests {
             ..Bar::default()
         });
         h.run_steps(2);
-        assert!(
-            h.query_by_label_contains("this = equations[0]").is_some(),
-            "the referent is on screen before anything is asked",
-        );
 
         let field = h.get_by_role(egui::accesskit::Role::TextInput);
         field.focus();

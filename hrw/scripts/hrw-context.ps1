@@ -4,7 +4,9 @@
 
 .DESCRIPTION
     Prints a few lines describing what HRW currently has assembled, so a question
-    like "what is this?" arrives with its referent already attached.
+    arrives with the context it is about. (It said "with its referent already
+    attached" until 2026-11-07. What "this" refers to is Doug's, and Claude asks when
+    it is unclear; the context is what is attached.)
 
     THE PROBLEM IT SOLVES. HRW writes the capture to `.hrw-bridge/focus.json`, but
     nothing pushes that at Claude -- he has to think to read it. That makes an
@@ -88,8 +90,8 @@ function Format-Age([int]$seconds) {
 # lines further down describe what HRW holds NOW; the question was asked about the
 # context frozen in question.json. If Doug clicked after asking, they differ -- and
 # reading the live `pointing at:` line as the question's referent would be the exact
-# join-by-time defect this design removes. So the question's own `this` is printed,
-# and the live block is labelled.
+# join-by-time defect this design removes. So the output points at the question's own
+# `context`, and the live block is labelled.
 $questionPath = Join-Path $bridge 'question.json'
 $seenPath = Join-Path $bridge 'question-seen.json'
 
@@ -145,7 +147,10 @@ if (Test-Path $questionPath) {
             # ruling, and the line Claude reads at the very moment of choosing.
             Write-Output "$tag HRW QUESTION #$($q.seq), asked $questionAge$again - answer from this conversation, NEVER in HRW, using the chat, a VS Code tab, System Modeler or Wolfram Desktop - whichever teaches best:"
             Write-Output "$tag   question: $($q.question)"
-            Write-Output "$tag   this = $($q.this)   (the bar's rule: the point, then the follow, then the stage on screen - and Doug saw this beside the field)"
+            # A resolved "this = ..." line stood here until 2026-11-07. Doug: "for me, 'this'
+            # often means the entire assembled context. ... If ever I use 'this' in a
+            # question and you need clarification, then you should ask."
+            Write-Output "$tag   if the question says 'this' and its referent is unclear, ASK Doug - HRW does not resolve it, and for him it often means the whole assembled context"
             Write-Output "$tag   the context it was asked about is question.json's `"context`" - the SAME document focus.json held at that moment; open it for node detail"
             Write-Output "$tag   the lines below are the LIVE context NOW; if Doug clicked after asking they differ, and the question is about the one above"
             # Remember it was shown, so the "waiting" reminder stops.
@@ -261,12 +266,16 @@ $now = (Get-Date).ToUniversalTime()
 # whether or not that point still existed -- so after the Question Bar's x, which then
 # recorded nothing, it went on saying "pointed at 26m ago" over a point Doug had cleared.
 # `$ctx.pointing_at` is the current state; the trail only supplies its age.
+#
+# **No claim about "this" on these lines** (2026-11-07). They said "so 'this' is not an
+# HRW point", which ruled out a referent on Doug's behalf. He removed the resolver: what
+# "this" means is his, and Claude asks when it is unclear. The lines state the fact only.
 if ($null -eq $ctx.pointing_at) {
     if ($captureTime -and $lastPoint.kind -eq 'point-dropped') {
         $capAge = Format-Age ([int]($now - $captureTime).TotalSeconds)
-        Write-Output "$tag the point was CLEARED $capAge - nothing is pointed at, so 'this' is not an HRW point"
+        Write-Output "$tag the point was CLEARED $capAge - nothing is pointed at"
     } else {
-        Write-Output "$tag nothing is pointed at - 'this' is not an HRW point"
+        Write-Output "$tag nothing is pointed at"
     }
 } elseif ($captureTime -and $lastPoint.kind -ne 'point-dropped') {
     $capAge = Format-Age ([int]($now - $captureTime).TotalSeconds)

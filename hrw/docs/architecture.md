@@ -115,26 +115,26 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 94,465 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 94,309 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,565 |
-| `app.rs` | 8,755 |
-| `app/tests.rs` | 8,114 |
-| `doc_citations.rs` | 7,869 |
+| `app.rs` | 8,720 |
+| `app/tests.rs` | 8,115 |
+| `doc_citations.rs` | 7,874 |
 | `worker.rs` | 7,866 |
-| `bridge.rs` | 5,646 |
-| `ui_tests.rs` | 2,986 |
+| `bridge.rs` | 5,651 |
+| `ui_tests.rs` | 2,979 |
 | `fidelity.rs` | 2,760 |
 | `equation_sheet.rs` | 1,569 |
 | `lib.rs` | 1,459 |
 | `tree.rs` | 1,432 |
 | `diagnostics.rs` | 1,421 |
-| `question_bar.rs` | 1,328 |
 | `matching_anim.rs` | 1,310 |
 | `incidence_view.rs` | 1,219 |
 | `report_sub_view.rs` | 1,214 |
+| `question_bar.rs` | 1,203 |
 | `playback.rs` | 1,136 |
 | `connection_anim.rs` | 1,106 |
 | `reduction_view.rs` | 1,048 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **94,465** |
+| **total** | **94,309** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1393,9 +1393,10 @@ on the platform, never in HRW.)*
 2b. **`question.json`** *(2026-11-07)* — a question Doug typed into the Question Bar
    (the Context Bar until 2026-11-07), **written in the same call as the context it is about**:
    `bridge::write_question` builds its `context` from the same `Ask` that
-   `bridge::write` puts in `focus.json` that frame, so the two cannot disagree. It also
-   carries `this` — what the word *"this"* resolves to by the bar's rule (the point, then
-   the follow, then the stage on screen), shown to Doug beside the field before he asked.
+   `bridge::write` puts in `focus.json` that frame, so the two cannot disagree. It does
+   **not** say what *"this"* means: a `this` field resolved it by the bar's rule (point,
+   then follow, then stage) until Doug removed that the same day, and the instructions now
+   tell Claude to ask when the referent is unclear.
    **A separate file because `focus.json` is the live context** and later clicks rewrite
    it; `question.json` is written only on asking, atomically (temp file + rename), and
    recorded as a `question-asked` action. It waits there until Doug types `?` in the chat.

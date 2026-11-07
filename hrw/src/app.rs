@@ -4447,8 +4447,9 @@ impl App {
                 ui.add_space(2.0);
                 ui.label(
                     "Then ask: type the question into the Question Bar\u{2019}s Text field and \
-                     press Ask, then type ? in the Claude Code chat. The bar shows what \
-                     \u{201c}this\u{201d} will mean before you ask. The answer is given outside \
+                     press Ask, then type ? in the Claude Code chat. Claude sees everything \
+                     the bar lists, and asks if your question\u{2019}s referent is unclear. \
+                     The answer is given outside \
                      HRW \u{2014} in the chat, a VS Code tab, System Modeler or Wolfram \
                      Desktop. Or ask in the chat directly; Claude reads what you assembled. \
                      Shortcut: just type \u{201c}explain\u{201d}, with no need to phrase a question.",
@@ -6079,14 +6080,8 @@ impl App {
         &mut self,
         question: Option<(u64, &str)>,
     ) -> Option<std::io::Result<std::path::PathBuf>> {
-        // Resolved by the bar's rule from the same fields the bar renders from this
-        // frame, so `this` in the file is what Doug saw beside the field.
-        let this = question_bar::this_referent(
-            self.context.pointed_at.as_ref(),
-            self.tracked_identifier.as_deref(),
-            self.selected.is_some().then_some(self.stage),
-        )
-        .describe();
+        // (A resolved `this` was computed here and written beside the question until
+        // 2026-11-07, when Doug removed the resolver — see `question_bar`.)
         let stage_values = self.stages.as_stage_pairs();
         // Summarised now (on a click), never per frame — it walks every stage.
         // Computed before the borrow below, since `tracking` borrows self.
@@ -6118,16 +6113,8 @@ impl App {
                 flags: self.flags_context(),
             };
             let written = bridge::write(&ask);
-            let asked = question.map(|(seq, text)| {
-                bridge::write_question(
-                    &ask,
-                    &bridge::Question {
-                        seq,
-                        text,
-                        this: &this,
-                    },
-                )
-            });
+            let asked = question
+                .map(|(seq, text)| bridge::write_question(&ask, &bridge::Question { seq, text }));
             self.context.point_error = written.err().map(|e| e.to_string());
             return asked;
         };
@@ -6161,16 +6148,8 @@ impl App {
                 flags: self.flags_context(),
             };
             let written = bridge::write(&ask);
-            let asked = question.map(|(seq, text)| {
-                bridge::write_question(
-                    &ask,
-                    &bridge::Question {
-                        seq,
-                        text,
-                        this: &this,
-                    },
-                )
-            });
+            let asked = question
+                .map(|(seq, text)| bridge::write_question(&ask, &bridge::Question { seq, text }));
             self.context.point_error = written.err().map(|e| e.to_string());
             return asked;
         }
@@ -6222,16 +6201,8 @@ impl App {
             flags: self.flags_context(),
         };
         let written = bridge::write(&ask);
-        let asked = question.map(|(seq, text)| {
-            bridge::write_question(
-                &ask,
-                &bridge::Question {
-                    seq,
-                    text,
-                    this: &this,
-                },
-            )
-        });
+        let asked = question
+            .map(|(seq, text)| bridge::write_question(&ask, &bridge::Question { seq, text }));
         self.context.point_error = written.err().map(|e| e.to_string());
         asked
     }
@@ -7132,15 +7103,9 @@ impl App {
                 question_bar::stage_ir_count(&self.stages),
                 self.def_index.len(),
             );
-            // The question row here too: with nothing pointed at or followed, "this"
-            // falls back to the stage on screen, which is still worth asking about.
-            let this = question_bar::this_referent(
-                self.context.pointed_at.as_ref(),
-                self.tracked_identifier.as_deref(),
-                self.selected.is_some().then_some(self.stage),
-            );
-            if let Some(question) =
-                question_bar::question_row(ui, &mut self.context.question_draft, &this)
+            // The question row here too: with nothing pointed at or followed, the
+            // Always row's context is still behind a question.
+            if let Some(question) = question_bar::question_row(ui, &mut self.context.question_draft)
             {
                 self.ask_question(question);
             }

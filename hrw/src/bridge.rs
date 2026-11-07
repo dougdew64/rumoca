@@ -1903,8 +1903,9 @@ pub struct Question<'a> {
     pub seq: u64,
     /// The question, as typed — trimmed, never empty.
     pub text: &'a str,
-    /// What *"this"* resolved to, **in full** (`Referent::describe`), by the bar's rule.
-    pub this: &'a str,
+    // **No `this` field since 2026-11-07.** It carried the bar's resolution of "this"
+    // (point, else follow, else stage). Doug removed the resolver: for him "this" often
+    // means the whole assembled context, so Claude asks when it is unclear.
 }
 
 // "ANSWER FROM THE CONVERSATION" -- never "in the chat". Doug, 2026-11-07: "you are free to
@@ -1917,10 +1918,9 @@ const QUESTION_INSTRUCTIONS: &str = "HRW question file. Doug typed this question
 HRW's Question Bar; it waits here until he types ? in the Claude chat. ANSWER IT FROM THE \
 CONVERSATION, NEVER IN HRW — using the chat, a VS Code tab, System Modeler or Wolfram \
 Desktop, alone or combined, whichever will teach best; the choice is Claude's. Commit an \
-answer to the repository only if Doug asks. `this` is what the word \"this\" in the question refers to, resolved by \
-the bar's rule (the point first, then the follow, then the stage on screen) and shown to \
-Doug beside the field before he asked, so it is the referent he saw rather than a guess. \
-`context` is the full focus document as it was AT THE MOMENT OF ASKING, written in the same \
+answer to the repository only if Doug asks. If the question says \"this\" and what it \
+refers to is not clear, ASK DOUG — HRW does not resolve it, and for him it often means \
+the whole assembled context. `context` is the full focus document as it was AT THE MOMENT OF ASKING, written in the same \
 call as the question — so it cannot disagree with it, unlike focus.json, which later clicks \
 rewrite.";
 
@@ -1970,8 +1970,6 @@ fn build_question(ask: &Ask, question: &Question) -> Value {
         "seq": question.seq,
         "asked_at": crate::diagnostics::format_utc_millis(now_ms),
         "question": question.text,
-        "this": question.this,
-        "this_rule": "the point first, then the follow, then the stage on screen",
         // The SAME document `write` puts in focus.json in this frame — built by the same
         // function from the same `Ask`, not copied from the file afterwards.
         "context": build(ask),
@@ -4717,15 +4715,22 @@ mod tests {
         let question = Question {
             seq: 9,
             text: "why is this singular?",
-            this: "equations[0]",
         };
         let doc = build_question(&ask, &question);
 
         assert_eq!(doc["question"], json!("why is this singular?"));
-        assert_eq!(
-            doc["this"],
-            json!("equations[0]"),
-            "the referent Doug saw is recorded"
+        // **No resolution of "this" is recorded** (Doug, 2026-11-07): the file carried
+        // `this` and `this_rule` until the resolver was removed. The instructions tell
+        // Claude to ask instead.
+        assert!(
+            doc.get("this").is_none() && doc.get("this_rule").is_none(),
+            "question.json resolves \"this\" for Claude; Doug ruled that Claude asks",
+        );
+        assert!(
+            doc["instructions"]
+                .as_str()
+                .is_some_and(|s| s.contains("ASK DOUG")),
+            "the instructions must say to ask when \"this\" is unclear",
         );
         assert_eq!(doc["seq"], json!(9), "the question has its own number");
         assert!(
