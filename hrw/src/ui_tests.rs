@@ -348,6 +348,24 @@ fn the_question_bar_is_present_in_every_state() {
             "the bar is headed \"Context\" with {what} \u{2014} it is the Question Bar \
              (charter v1.18); \"context\" names what it holds, not the bar",
         );
+        // **Both halves of the question are named, one level below the bar's name**
+        // (Doug, 2026-11-07): "Context" heads the assembled rows, and "Text" labels the
+        // field. The labels are indented with leading spaces, as the rows always were,
+        // so the query matches them exactly — spaces included.
+        assert!(
+            h.query_by_label("   Context").is_some(),
+            "the context rows have no \"Context\" heading with {what}",
+        );
+        assert!(
+            h.query_by_label("   Text").is_some(),
+            "the question field is not labelled \"Text\" with {what}",
+        );
+        // **"Ask" names the button only.** It was also the field's label, and Doug
+        // counted three uses of the word on the one line.
+        assert!(
+            h.query_by_label("   Ask").is_none(),
+            "the question field is still labelled \"Ask\" with {what}",
+        );
         // **A row labelled "Always" that is not always there is a false label**, which
         // is what Doug found on 2026-08-30: the session facts rendered only once
         // something was pointed at or followed, so `Always` meant "whenever you have

@@ -691,7 +691,7 @@ pub(crate) fn no_lab_ui(ui: &mut egui::Ui) {
     );
     ui.add_space(6.0);
     ui.weak(
-        "To ask Claude about anything you see, type it into the Ask field in the \
+        "To ask Claude about anything you see, type it into the Text field in the \
          Question Bar, then type ? in the Claude chat. The answer comes back there, \
          not here.",
     );

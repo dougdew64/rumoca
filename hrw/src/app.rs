@@ -4446,8 +4446,8 @@ impl App {
                 );
                 ui.add_space(2.0);
                 ui.label(
-                    "Then ask: type the question into the Question Bar\u{2019}s field and press \
-                     Ask, then type ? in the Claude Code chat. The bar shows what \
+                    "Then ask: type the question into the Question Bar\u{2019}s Text field and \
+                     press Ask, then type ? in the Claude Code chat. The bar shows what \
                      \u{201c}this\u{201d} will mean before you ask. The answer is given outside \
                      HRW \u{2014} in the chat, a VS Code tab, System Modeler or Wolfram \
                      Desktop. Or ask in the chat directly; Claude reads what you assembled. \
@@ -7099,9 +7099,11 @@ impl App {
             // rendering" — which the bar being unconditional now settles by itself.
             let hint = self.empty_context_hint();
             let lab = self.lab.selected.as_ref().map(LabSource::label);
+            // Same headings as `question_bar_ui`'s — one bar, one structure (v1.18).
+            // The hint is about the context being empty, so it hangs on "Context".
+            ui.label(egui::RichText::new("Question").strong());
             ui.horizontal(|ui| {
-                // Same heading as `question_bar_ui`'s — one bar, one name (v1.18).
-                ui.label(egui::RichText::new("Question").strong())
+                ui.label(egui::RichText::new("   Context").strong())
                     .on_hover_text(format!("{EMPTY_CONTEXT_RULE}\n\nRight now: {hint}"));
             });
             question_bar::always_ui(
