@@ -628,7 +628,10 @@ the next phase touches — is procedure and lives there.
 >
 > **He will resume it. Read [`docs/ideas.md`](docs/ideas.md) #92 before proposing anything**, which
 > holds the measurement: of his three gaps, **drive already exists**, **see mostly exists**, and
-> **wake is the real one** — `session.json`'s trail is written on every click and nothing reads it.
+> **knowing what he just did is the real one** — `session.json`'s trail is written on every click
+> and nothing reads it. **Its correction is the part to absorb: that is a PULL need, and the
+> `[hrw-context]` hook is the channel. A wake is an invitation to speak, and there is no
+> watch-quietly primitive — so push is for ANOMALIES, never activity.**
 >
 > ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
 >
