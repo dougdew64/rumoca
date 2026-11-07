@@ -57,7 +57,9 @@ fn recovery_returns_ok_and_reports_the_error_in_its_diagnostics() {
 #[test]
 fn a_clean_model_resolves_completely_and_reports_no_errors() {
     let mut session = Session::new(SessionConfig::default());
-    session.add_document("clean.mo", CLEAN).expect("fixture parses");
+    session
+        .add_document("clean.mo", CLEAN)
+        .expect("fixture parses");
 
     let (tree, diagnostics) = session
         .strict_compile_resolved()
@@ -92,7 +94,9 @@ fn an_error_names_the_source_it_came_from() {
     session
         .add_document("unresolved.mo", UNRESOLVED)
         .expect("fixture parses");
-    session.add_document("clean.mo", CLEAN).expect("fixture parses");
+    session
+        .add_document("clean.mo", CLEAN)
+        .expect("fixture parses");
 
     let (_tree, diagnostics) = session
         .strict_compile_resolved()

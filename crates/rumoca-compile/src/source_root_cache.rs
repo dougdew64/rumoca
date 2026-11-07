@@ -536,8 +536,11 @@ mod tests {
             "the same bytes must produce the same key, or a memo never hits"
         );
 
-        fs::write(&model, "package Lib\n  model A\n    Real x;\n  end A;\nend Lib;\n")
-            .expect("rewrite");
+        fs::write(
+            &model,
+            "package Lib\n  model A\n    Real x;\n  end A;\nend Lib;\n",
+        )
+        .expect("rewrite");
         let edited = source_root_input_cache_key(root).expect("fingerprint after the edit");
         assert_ne!(
             first, edited,

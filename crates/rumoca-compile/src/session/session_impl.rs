@@ -1045,9 +1045,7 @@ impl Session {
     ///
     /// `is_complete` remains the right question when the subject *is* the session's
     /// resolve, which is what it says.
-    pub fn strict_compile_resolved(
-        &mut self,
-    ) -> Result<(StrictCompileTree, CommonDiagnostics)> {
+    pub fn strict_compile_resolved(&mut self) -> Result<(StrictCompileTree, CommonDiagnostics)> {
         let (plan, diagnostics) = self
             .build_resolution_plan_for_strict_compile()
             .map_err(|diags| diagnostics_to_anyhow(&diags))?;
