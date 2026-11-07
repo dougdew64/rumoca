@@ -120,159 +120,155 @@ pub(crate) fn lab_controls_ui(ui: &mut egui::Ui, lab: &mut LabState) -> Option<T
     // the LHS header colours would drift apart.
     let style = section_style(ui);
     style.frame.show(ui, |ui| {
-            // **A ceiling as well as a floor.** Without `set_max_width` the bar can ask
-            // for more room than the panel has, egui widens the *panel* to satisfy it,
-            // and the panel then reports a width its content was never laid out against
-            // — content visibly detached from the divider, and oscillating between
-            // frames because each frame's width feeds the next.
+        // **A ceiling as well as a floor.** Without `set_max_width` the bar can ask
+        // for more room than the panel has, egui widens the *panel* to satisfy it,
+        // and the panel then reports a width its content was never laid out against
+        // — content visibly detached from the divider, and oscillating between
+        // frames because each frame's width feeds the next.
+        //
+        // Measured 2026-08-16: a 65.9pt gap at 1280x720, and *removing* a label made
+        // it 134.8pt, which is the signature of a feedback loop rather than of one
+        // item being too wide.
+        let bar_width = ui.available_width();
+        ui.set_min_width(bar_width);
+        ui.set_max_width(bar_width);
+        ui.horizontal(|ui| {
+            // --- Back: undo a cross-lab link ---
             //
-            // Measured 2026-08-16: a 65.9pt gap at 1280x720, and *removing* a label made
-            // it 134.8pt, which is the signature of a feedback loop rather than of one
-            // item being too wide.
-            let bar_width = ui.available_width();
-            ui.set_min_width(bar_width);
-            ui.set_max_width(bar_width);
-            ui.horizontal(|ui| {
-                // --- Back: undo a cross-lab link ---
-                //
-                // Doug, 2026-08-19: *"while in the index reduction lab, I can click a
-                // link to navigate to the blt-ordering lab, but then I cannot navigate
-                // back."* Placed where the lab count used to be, at his suggestion.
-                //
-                // **This does not consume the RHS Back/Forward** reserved in `ideas.md`
-                // #78. It is the lab panel's history; the RHS pair belongs in the stage
-                // tab bar. #78's own analysis leaned to exactly this — two histories,
-                // visually distinct, because the scopes really are different — and HRW
-                // already has a third in `nav`'s go-to-definition Back.
-                //
-                // **Enabled and disabled, never shown and hidden** (`lib.rs`'s LiveState
-                // rule), and the hover names the destination rather than leaving an arrow
-                // to be interpreted.
-                //
-                // **It costs panel floor and that is now a stated price**, not a
-                // surprise: un-wrapping made the bar's width monotonic, so this button's
-                // ~60pt lands directly on `MIN_LEFT_POINTS`. It was affordable only after
-                // the lab count, the duration words and the time combo's default width
-                // were removed.
-                let back_to = lab.history.last().map(|(source, _)| source.label());
-                let back = ui.add_enabled(
-                    back_to.is_some(),
-                    egui::Button::new("\u{25c2}").small(),
-                );
-                if let Some(name) = &back_to {
-                    if back.on_hover_text(format!("Back to {name}")).clicked() {
-                        request = Some(TransportRequest::Back);
-                    }
-                } else {
-                    back.on_hover_text(
-                        "Nothing to go back to \u{2014} follow a link into another lab \
-                         and this returns you here",
-                    );
+            // Doug, 2026-08-19: *"while in the index reduction lab, I can click a
+            // link to navigate to the blt-ordering lab, but then I cannot navigate
+            // back."* Placed where the lab count used to be, at his suggestion.
+            //
+            // **This does not consume the RHS Back/Forward** reserved in `ideas.md`
+            // #78. It is the lab panel's history; the RHS pair belongs in the stage
+            // tab bar. #78's own analysis leaned to exactly this — two histories,
+            // visually distinct, because the scopes really are different — and HRW
+            // already has a third in `nav`'s go-to-definition Back.
+            //
+            // **Enabled and disabled, never shown and hidden** (`lib.rs`'s LiveState
+            // rule), and the hover names the destination rather than leaving an arrow
+            // to be interpreted.
+            //
+            // **It costs panel floor and that is now a stated price**, not a
+            // surprise: un-wrapping made the bar's width monotonic, so this button's
+            // ~60pt lands directly on `MIN_LEFT_POINTS`. It was affordable only after
+            // the lab count, the duration words and the time combo's default width
+            // were removed.
+            let back_to = lab.history.last().map(|(source, _)| source.label());
+            let back = ui.add_enabled(back_to.is_some(), egui::Button::new("\u{25c2}").small());
+            if let Some(name) = &back_to {
+                if back.on_hover_text(format!("Back to {name}")).clicked() {
+                    request = Some(TransportRequest::Back);
                 }
+            } else {
+                back.on_hover_text(
+                    "Nothing to go back to \u{2014} follow a link into another lab \
+                         and this returns you here",
+                );
+            }
 
-                // --- Which lab: the picker ---
+            // --- Which lab: the picker ---
+            //
+            // **The `✨ Answer` button that stood left of it was removed 2026-11-07**
+            // under charter Decision 19: answers are given on the platform (the chat,
+            // a VS Code tab, System Modeler, Wolfram Desktop), never in HRW.
+            let selected_label = match lab.selected.as_ref() {
+                Some(LabSource::Fixture(p)) => LabSource::Fixture(p.clone()).label(),
+                _ => "Pick a lab…".to_owned(),
+            };
+            // **The count moved here from the deleted header.** It existed because
+            // "I do not see the new lab" must be answerable at a glance rather
+            // than by reasoning: a number distinguishes "the directory has six"
+            // from "the pane is showing six of eight", and those need opposite
+            // fixes. One hover keeps that without a titled bar around it.
+            let n_fixtures = lab
+                .available
+                .iter()
+                .filter(|s| matches!(s, LabSource::Fixture(_)))
+                .count();
+            egui::ComboBox::from_id_salt("lab_picker")
+                .selected_text(selected_label)
+                // **Adaptive, never fixed.** A hard `width(220.0)` here gives the
+                // bar an intrinsic minimum, egui sizes the *panel* to satisfy it,
+                // and the panel then reports a width its content was never laid out
+                // against — `the_left_panel_content_never_detaches_from_the_divider`
+                // caught exactly that, a 65.9pt gap at 1280x720.
                 //
-                // **The `✨ Answer` button that stood left of it was removed 2026-11-07**
-                // under charter Decision 19: answers are given on the platform (the chat,
-                // a VS Code tab, System Modeler, Wolfram Desktop), never in HRW.
-                let selected_label = match lab.selected.as_ref() {
-                    Some(LabSource::Fixture(p)) => LabSource::Fixture(p.clone()).label(),
-                    _ => "Pick a lab…".to_owned(),
-                };
-                // **The count moved here from the deleted header.** It existed because
-                // "I do not see the new lab" must be answerable at a glance rather
-                // than by reasoning: a number distinguishes "the directory has six"
-                // from "the pane is showing six of eight", and those need opposite
-                // fixes. One hover keeps that without a titled bar around it.
-                let n_fixtures = lab
-                    .available
-                    .iter()
-                    .filter(|s| matches!(s, LabSource::Fixture(_)))
-                    .count();
-                egui::ComboBox::from_id_salt("lab_picker")
-                    .selected_text(selected_label)
-                    // **Adaptive, never fixed.** A hard `width(220.0)` here gives the
-                    // bar an intrinsic minimum, egui sizes the *panel* to satisfy it,
-                    // and the panel then reports a width its content was never laid out
-                    // against — `the_left_panel_content_never_detaches_from_the_divider`
-                    // caught exactly that, a 65.9pt gap at 1280x720.
-                    //
-                    // Same lesson as the 2026-08-12 scroll-axis bug, from the other
-                    // side: **a child's minimum is a claim about the parent's width.**
-                    // The clamp keeps it readable when there is room and lets it shrink
-                    // when there is not.
-                    //
-                    // **Dropping `.width()` entirely fails too, and worse** (measured
-                    // 2026-08-19): a truncated label with no call produced a **62.6pt
-                    // gap where this code passes**, because the combo then sizes to its
-                    // text — which is widest exactly when there is least room. So both
-                    // alternatives are dead by measurement, a fixed width and no width;
-                    // this formula IS the responsive mechanism, not a workaround.
-                    // `docs/ui-findings.md` C16.
-                    .width((bar_width * 0.45).clamp(60.0, 220.0))
-                    .show_ui(ui, |ui| {
-                        // **The overview sorts first, set apart** — the reasoning and the
-                        // rejected alternatives are on `LabState::picker_order`.
-                        let (ordered, hoisted) = lab.picker_order();
+                // Same lesson as the 2026-08-12 scroll-axis bug, from the other
+                // side: **a child's minimum is a claim about the parent's width.**
+                // The clamp keeps it readable when there is room and lets it shrink
+                // when there is not.
+                //
+                // **Dropping `.width()` entirely fails too, and worse** (measured
+                // 2026-08-19): a truncated label with no call produced a **62.6pt
+                // gap where this code passes**, because the combo then sizes to its
+                // text — which is widest exactly when there is least room. So both
+                // alternatives are dead by measurement, a fixed width and no width;
+                // this formula IS the responsive mechanism, not a workaround.
+                // `docs/ui-findings.md` C16.
+                .width((bar_width * 0.45).clamp(60.0, 220.0))
+                .show_ui(ui, |ui| {
+                    // **The overview sorts first, set apart** — the reasoning and the
+                    // rejected alternatives are on `LabState::picker_order`.
+                    let (ordered, hoisted) = lab.picker_order();
 
-                        for (i, source) in ordered.into_iter().enumerate() {
-                            if i == hoisted && hoisted > 0 {
-                                ui.separator();
-                            }
-                            // Irrefutable since the Answer variant was removed.
-                            let LabSource::Fixture(path) = source;
-                            let selected = lab.selected.as_ref() == Some(source);
-                            // **The entry names its specimens.** Labs are named by
-                            // phase, but Doug searches by the model in front of him and
-                            // went looking for a "DimensionMismatch lab" that is called
-                            // `failure-typecheck` (2026-08-05). Showing both axes removes
-                            // the search, and it has to survive every move of this
-                            // control or the friction comes back.
-                            let label = lab.row_specimens.get(path).map_or_else(
-                                || source.label(),
-                                |sp| format!("{}  ·  {sp}", source.label()),
-                            );
-                            if ui
-                                .selectable_label(selected, label)
-                                .on_hover_text(format!(
-                                    "Fixture lab — a test with expected outcomes,                                      kept and versioned.
-{}",
-                                    path.display(),
-                                ))
-                                .clicked()
-                            {
-                                request = Some(TransportRequest::Switch(source.clone()));
-                            }
+                    for (i, source) in ordered.into_iter().enumerate() {
+                        if i == hoisted && hoisted > 0 {
+                            ui.separator();
                         }
-                    })
-                    .response
-                    .on_hover_text(format!(
-                        "{n_fixtures} fixture labs in {}",
-                        bridge::FIXTURE_LABS_DIR
-                    ));
+                        // Irrefutable since the Answer variant was removed.
+                        let LabSource::Fixture(path) = source;
+                        let selected = lab.selected.as_ref() == Some(source);
+                        // **The entry names its specimens.** Labs are named by
+                        // phase, but Doug searches by the model in front of him and
+                        // went looking for a "DimensionMismatch lab" that is called
+                        // `failure-typecheck` (2026-08-05). Showing both axes removes
+                        // the search, and it has to survive every move of this
+                        // control or the friction comes back.
+                        let label = lab.row_specimens.get(path).map_or_else(
+                            || source.label(),
+                            |sp| format!("{}  ·  {sp}", source.label()),
+                        );
+                        if ui
+                            .selectable_label(selected, label)
+                            .on_hover_text(format!(
+                                "Fixture lab — a test with expected outcomes, \
+                                     kept and versioned.\n{}",
+                                path.display(),
+                            ))
+                            .clicked()
+                        {
+                            request = Some(TransportRequest::Switch(source.clone()));
+                        }
+                    }
+                })
+                .response
+                .on_hover_text(format!(
+                    "{n_fixtures} fixture labs in {}",
+                    bridge::FIXTURE_LABS_DIR
+                ));
 
-                // **The count stays visible, in three words instead of a titled bar.**
-                //
-                // It was the whole reason the deleted "Labs (23)" header existed:
-                // "I do not see the new lab" has to be answerable at a glance, because
-                // a number distinguishes *the directory has six* from *the pane is
-                // showing six of eight*, and those need opposite fixes. Doug reported
-                // that on 2026-08-03 with a picker test asserting the labs were on
-                // screen — the code was provably right and the report was still true.
-                //
-                // A hover was tried first and is not enough: a tooltip is invisible
-                // until suspicion already exists, which is exactly too late, and it is
-                // also unreachable from the accessibility tree so no test can see it.
-                //
-                // **REMOVED 2026-08-19.** Doug: *"I have not used that label's
-                // information a single time"* — sixteen days, by the person it was built
-                // for, which is better evidence than the reasoning above. The count
-                // survives on the picker's hover; if *"I don't see the new lab"* ever
-                // recurs, restoring this line is the fix.
-                // <!-- unbuilt: visible_lab_count -->
-
-            });
+            // **The count stays visible, in three words instead of a titled bar.**
+            //
+            // It was the whole reason the deleted "Labs (23)" header existed:
+            // "I do not see the new lab" has to be answerable at a glance, because
+            // a number distinguishes *the directory has six* from *the pane is
+            // showing six of eight*, and those need opposite fixes. Doug reported
+            // that on 2026-08-03 with a picker test asserting the labs were on
+            // screen — the code was provably right and the report was still true.
+            //
+            // A hover was tried first and is not enough: a tooltip is invisible
+            // until suspicion already exists, which is exactly too late, and it is
+            // also unreachable from the accessibility tree so no test can see it.
+            //
+            // **REMOVED 2026-08-19.** Doug: *"I have not used that label's
+            // information a single time"* — sixteen days, by the person it was built
+            // for, which is better evidence than the reasoning above. The count
+            // survives on the picker's hover; if *"I don't see the new lab"* ever
+            // recurs, restoring this line is the fix.
+            // <!-- unbuilt: visible_lab_count -->
         });
+    });
     request
 }
 

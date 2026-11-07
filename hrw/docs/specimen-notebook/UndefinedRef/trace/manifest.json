@@ -2,7 +2,7 @@
   "model": "UndefinedRef",
   "specimen": "specimens/UndefinedRef.mo",
   "specimen_fnv1a": "2d1cfe08205c37da",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "70f06a2f",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

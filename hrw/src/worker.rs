@@ -3219,7 +3219,11 @@ impl WorkerState {
                                 "kind": "resolve",
                                 "message": note,
                                 "diagnostics": diag,
-                                "guidance": "Name resolution binds every reference to a definition.                                 Read `diagnostics.errors` first: those are this model's problems,                                 each with the source location of the reference that failed.                                 `diagnostics.warnings` are library-level and almost never the                                 cause.",
+                                "guidance": "Name resolution binds every reference to a definition. \
+                                 Read `diagnostics.errors` first: those are this model's problems, \
+                                 each with the source location of the reference that failed. \
+                                 `diagnostics.warnings` are library-level and almost never the \
+                                 cause.",
                             })
                         };
                         match self.session.resolved_cached() {
