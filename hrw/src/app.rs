@@ -5377,21 +5377,13 @@ impl App {
                 // when nothing is selected — it is how a specimen gets chosen.
                 // `stage_tab_bar_ui` disables the tabs itself, after the switcher.
                 ui.horizontal_wrapped(|ui| self.stage_tab_bar_ui(ui, intent));
-
-                // **The Question Bar is on screen even with nothing loaded** (Doug,
-                // 2026-08-30), and the reason is not that it has much to say here —
-                // it is that a bar which comes and goes cannot become a habit:
-                //
-                // > *"A context bar is novel for me. I need to learn to assume its
-                // > presence and to make frequent use of it, just like I needed decades
-                // > ago to learn to assume the presence of GUI menu bars."*
-                //
-                // Same argument the tab row won on 2026-08-02, three comment-paragraphs
-                // above: *"report the empty state, never vanish."* That rule was applied
-                // to the tabs and not to the bar below them, which is the inconsistency
-                // this closes.
+                // **The Question Bar is not drawn here any more.** It was, in all three
+                // branches of this function, until 2026-11-07, when it moved to a
+                // full-width panel above the status line (`frame_ui`). It is still on
+                // screen with nothing loaded, as Doug asked on 2026-08-30 — *"I need to
+                // learn to assume its presence"* — and now that holds by construction,
+                // because the panel does not depend on which branch runs.
                 ui.separator();
-                self.question_bar_ui(ui);
 
                 if self.ui_mode == UiMode::Debug {
                     // **Nothing here.** Debug mode's switcher lives in the tab
@@ -5421,8 +5413,6 @@ impl App {
                 ui.colored_label(ui.visuals().error_fg_color, err);
             }
             ui.separator();
-
-            self.question_bar_ui(ui);
 
             if self.viewing_log {
                 // **A plain-text region, so the wrapper applies here.** The log has no rows
@@ -5736,10 +5726,8 @@ impl App {
             // inside a panel closure, so they report — the `FrameIntent` pattern, one
             // pane's worth.
             //
-            // **The bar comes first here too**, because "always" has to mean always or
-            // it is back to being something to check for. There is no tab row in this
-            // branch, so it sits at the top rather than under one.
-            self.question_bar_ui(ui);
+            // The Question Bar was drawn first in this branch until 2026-11-07. It is now
+            // a full-width panel drawn by `frame_ui`, so this branch cannot omit it.
             match nav_view::nav_view_ui(
                 ui,
                 &self.nav,
@@ -7046,15 +7034,26 @@ impl App {
 
     /// The **Question Bar** — what Claude will actually have behind the next question.
     ///
-    /// **It sits below the stage tabs because it depends on them**, and the position
-    /// says so. Doug proposed moving it above the tabs on 2026-11-07, on the premise that
-    /// below them it *"suggests incorrectly that the Question bar contents might change
-    /// by selecting a different tab"*; he withdrew it when shown that they do change. The
-    /// Always row names the tab's stage, *this* falls back to the tab when nothing is
-    /// pointed at or followed, the Following row counts matches in the tab's stage, and
-    /// the Pointing at row notes a point taken in another stage. Placing the bar above the
-    /// tabs would claim an independence it does not have, so do not move it unless those
-    /// four dependencies are gone first.
+    /// # Where it is drawn, and why: full width, above the status line (2026-11-07)
+    ///
+    /// **Its position states its scope, and its scope is the window.** Two of the five
+    /// point origins are in the left column (lab prose, the specimen list), and the
+    /// Always row names the open lab. Drawn in the central panel, it claimed to belong to
+    /// that column — Doug: *"questions might also be asked about content in the LHS of
+    /// HRW."* So `frame_ui` draws it as a bottom panel added before the side panels.
+    ///
+    /// **Its dependence on the stage tab is stated in words, not by position.** Four
+    /// parts do follow the tab: the Always row (*"Resolve tab"*), *this* when nothing is
+    /// pointed at or followed, the Following row's count (*"in Flatten"*), and the point's
+    /// mismatch note (*"pointed at in …"*). Earlier the same day, that dependence was the
+    /// reason given for keeping the bar under the tabs, and Doug's proposal to move it
+    /// above them was withdrawn on it. That reasoning used position for the narrower fact
+    /// and missed the wider one. A position can express one scope, so it expresses the
+    /// window, and each tab-dependent part names its stage.
+    ///
+    /// **At the bottom, not the top**, because the bar's height changes as rows appear.
+    /// Above the content, every point would push the tree and the left column down under
+    /// the cursor; below, it grows upward and the top edge of what Doug is reading stays.
     ///
     /// **What is left here is policy**, after the assembled state left for
     /// [`crate::question_bar`] on 2026-08-19: the empty-state branch (whose hint is
@@ -7069,7 +7068,16 @@ impl App {
     /// costs no frame at all.
     fn question_bar_ui(&mut self, ui: &mut egui::Ui) {
         // The top half of the bar's margin. The bottom half is added by whichever
-        // branch below finishes, immediately before that branch's separator.
+        // branch below finishes. **No separators** since the bar became a bottom panel
+        // (2026-11-07): the panel's own border rules it off from the content above, and
+        // the status panel's from the line below, so a separator would draw a second
+        // line beside each.
+        //
+        // **Drawn before the central panel in each frame**, now that it is a panel of
+        // its own. A tab click or a point made in the central panel therefore reaches
+        // the bar on the next frame, not the same one. HRW repaints continuously, so
+        // the lag is one frame, and nothing the bar *emits* is affected: emission reads
+        // `App`'s fields at the moment of the click, not the bar's rendering.
         ui.add_space(question_bar::BAR_MARGIN);
         let has_point = self.context.pointed_at.is_some();
         let has_thread = self.tracked_identifier.is_some();
@@ -7137,7 +7145,6 @@ impl App {
                 self.ask_question(question);
             }
             ui.add_space(question_bar::BAR_MARGIN);
-            ui.separator();
             return;
         }
 
@@ -7497,6 +7504,13 @@ impl App {
             };
             ui.add_space(1.0);
         });
+
+        // ---- The Question Bar: full width, above the status line ----
+        // **Added after the status panel and before the side panels**, so it stacks
+        // directly above the status line and spans the whole window. Its scope is the
+        // window (Doug, 2026-11-07: *"questions might also be asked about content in
+        // the LHS of HRW"*); see `question_bar_ui` for why it is not under the tabs.
+        egui::Panel::bottom("question_bar").show(ui, |ui| self.question_bar_ui(ui));
 
         // ---- Left panel: content depends on UI mode ----
         // Lab and Specimen modes show a left panel (lab text or specimen list

@@ -680,21 +680,21 @@ pub(crate) fn question_bar_ui(
         press = Some(QuestionBarPress::Ask(question));
     }
 
+    // No separator: the bar is a bottom panel, and its border is the rule (2026-11-07).
     ui.add_space(BAR_MARGIN);
-    ui.separator();
     press
 }
 
 /// Breathing room above and below the Question Bar (Doug, 2026-08-30: *"add some margin
 /// above and below the context bar"*).
 ///
-/// **Applied inside the bar rather than at its three call sites**, so a fourth place
-/// that draws it cannot forget — the bar reached the navigation branch by being added
-/// there separately, and that is exactly the kind of omission a per-call-site
-/// convention produces.
+/// **Applied inside the bar rather than at its call sites**, so a place that draws it
+/// cannot forget — the bar reached the navigation branch by being added there
+/// separately, and that is exactly the kind of omission a per-call-site convention
+/// produces. Since 2026-11-07 there is one call site, a full-width bottom panel.
 ///
-/// The bar sits between two `separator()`s; this is the gap between its rows and those
-/// rules, not a replacement for them.
+/// The panel's border rules the bar off above and the status panel's below; this is
+/// the gap between the bar's rows and those borders.
 pub(crate) const BAR_MARGIN: f32 = 6.0;
 
 /// The gap between the last context row and the Text row (Doug, 2026-11-07: *"a bit
@@ -748,10 +748,14 @@ pub(crate) fn always_summary(
     def_count: usize,
 ) -> String {
     let mut parts: Vec<String> = Vec::new();
+    // **"<stage> tab"** (2026-11-07): the stage is the one selected in the tab row, and
+    // since the bar spans the window its position no longer says so. The words must.
     match (model, stage) {
-        (Some(model), Some(stage)) => parts.push(format!("{model} \u{00b7} {}", stage.name())),
+        (Some(model), Some(stage)) => {
+            parts.push(format!("{model} \u{00b7} {} tab", stage.name()));
+        }
         // Mid-compile, or a compile that yielded no model name: still name the stage.
-        (None, Some(stage)) => parts.push(stage.name().to_owned()),
+        (None, Some(stage)) => parts.push(format!("{} tab", stage.name())),
         // No specimen. A stage name here would be a claim that a phase ran.
         (Some(model), None) => parts.push(model.to_owned()),
         (None, None) => {}
@@ -883,15 +887,17 @@ mod tests {
         );
 
         let loaded = always_summary(Some("RcCircuit"), Some(StageKind::Parse), None, 4, 38855);
+        // **"tab", because the stage is the tab's** (2026-11-07): the bar spans the
+        // window now, so its position no longer says the stage came from the tab row.
         assert!(
-            loaded.contains("RcCircuit \u{00b7} Parse"),
-            "a loaded specimen names its model and stage: {loaded:?}",
+            loaded.contains("RcCircuit \u{00b7} Parse tab"),
+            "a loaded specimen names its model and the tab's stage: {loaded:?}",
         );
 
         // Mid-compile: a stage is selected but no model name has arrived yet.
         let compiling = always_summary(None, Some(StageKind::Flatten), None, 1, 12);
         assert!(
-            compiling.contains("Flatten"),
+            compiling.contains("Flatten tab"),
             "the stage is real even before the model name lands: {compiling:?}",
         );
 
