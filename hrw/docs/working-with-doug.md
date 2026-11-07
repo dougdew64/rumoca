@@ -295,11 +295,24 @@ never license leaving code unclear.
 Purely cosmetic work — label spacing, positioning — is time not spent on the mission; flag it
 and suggest redirecting. Doug caught himself doing exactly this and named it.
 
-**Prefer Rust/egui/HRW over TypeScript/VS Code.** The deep-link effort took five commits and
+**When BUILDING, prefer Rust/egui over VS Code *extension* code — a rule about where Claude builds
+reliably, and NEVER about where a feature belongs.** The deep-link effort took five commits and
 several approaches and failed; VS Code extension work here is fragile and reduces Claude to
-guess-and-check, while Rust/egui work is where Claude is effective. The breakpoint bridge
-stays, but **new functionality defaults to the app side**. Extend the extension only for
-things that genuinely need editor integration.
+guess-and-check, while Rust/egui work is where Claude is effective. The breakpoint bridge stays,
+and extension code is written only where editor integration genuinely requires it.
+
+**RESCOPED 2026-11-07, because its old wording pointed the wrong way.** It said *"new functionality
+defaults to the app side"*, and read literally that sends **answering** features into HRW — the
+opposite of Doug's division that day: **HRW is a viewer and thin emitter that causes questions;
+VS Code, System Modeler and Wolfram Desktop answer them; the conversation controls them** — charter
+Decision 19. The old reading is plausibly how the HRW Answer feature came to be built against the
+founding *thin emitter* agreement.
+
+**So the order of questions is: what is this FOR, then where can Claude build it well.** *For*
+decides the side: a feature that answers belongs on the platform, never in HRW, however much more
+reliably Claude writes Rust. **This rule only breaks a tie** between two homes that both fit the
+purpose. And VS Code being the answering hub needs **no** extension code at all — the chat, the
+editor tabs and the markdown preview are VS Code as it already is.
 
 **Token consumption is not a constraint.** Doug: *"My top priority for this HRW project is my
 education… I am less concerned about token consumption. I want you to design context captures

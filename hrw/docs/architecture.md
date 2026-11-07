@@ -115,17 +115,17 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 94,572 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 94,081 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,559 |
-| `app.rs` | 8,742 |
-| `app/tests.rs` | 8,175 |
+| `app.rs` | 8,727 |
+| `app/tests.rs` | 8,103 |
 | `worker.rs` | 7,862 |
-| `doc_citations.rs` | 7,780 |
-| `bridge.rs` | 5,581 |
-| `ui_tests.rs` | 3,047 |
+| `doc_citations.rs` | 7,782 |
+| `bridge.rs` | 5,566 |
+| `ui_tests.rs` | 2,897 |
 | `fidelity.rs` | 2,760 |
 | `equation_sheet.rs` | 1,569 |
 | `lib.rs` | 1,459 |
@@ -139,8 +139,8 @@ showing 48 equations. They are derived now, and
 | `connection_anim.rs` | 1,106 |
 | `reduction_view.rs` | 1,048 |
 | `tarjan_anim.rs` | 1,001 |
-| `lab_panel.rs` | 946 |
 | `matching_ledger.rs` | 928 |
+| `lab_panel.rs` | 912 |
 | `dae_expr_format.rs` | 898 |
 | `model_list.rs` | 849 |
 | `stage_tabs.rs` | 841 |
@@ -150,9 +150,8 @@ showing 48 equations. They are derived now, and
 | `reduction_anim.rs` | 786 |
 | `survey.rs` | 769 |
 | `arch_doc.rs` | 758 |
-| `lab.rs` | 740 |
+| `lab.rs` | 733 |
 | `pantelides_ladder.rs` | 716 |
-| `answer_check.rs` | 706 |
 | `identifier_index.rs` | 688 |
 | `sub_view_rows.rs` | 659 |
 | `capture_suite.rs` | 645 |
@@ -163,6 +162,7 @@ showing 48 equations. They are derived now, and
 | `pre_lowering_anim.rs` | 531 |
 | `matrix_panes.rs` | 528 |
 | `artifact_pane.rs` | 514 |
+| `node_link_check.rs` | 512 |
 | `live_trace.rs` | 499 |
 | `gate_policy.rs` | 494 |
 | `nav_view.rs` | 483 |
@@ -171,7 +171,7 @@ showing 48 equations. They are derived now, and
 | `plot_labels.rs` | 426 |
 | `field_help.rs` | 405 |
 | `specimen_source.rs` | 397 |
-| `pointing.rs` | 395 |
+| `pointing.rs` | 389 |
 | `promote.rs` | 342 |
 | `dae_counts.rs` | 330 |
 | `specimen_purpose.rs` | 316 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **94,572** |
+| **total** | **94,081** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1256,35 +1256,29 @@ needs the resolved `ClassTree` (which contains the whole MSL) and the instance
 overlay on the UI thread. A worker-side live-debug path would be the right fix;
 see `docs/ideas.md` #9.
 
-### Answers (`bridge.rs` + `App::poll_lab_file`)
+### Lab mode (`lab.rs` + `lab_panel.rs` + `App::poll_lab_file`)
 
-Lab mode renders **whatever Claude writes to `.hrw-bridge/answer.md`** — the one
-bridge file that flows *into* HRW rather than out of it. Where `focus.json` carries
-a noun out to Claude, this carries a sequence of nouns back, as `hrw://` links the
-reader clicks to drive HRW to each stop.
+Lab mode renders a **fixture lab** from `docs/fixture-labs/` — a route through HRW's
+panes, with a prediction to make at each station, as `hrw://` links the reader clicks
+to drive HRW to each stop. The reader picks one; nothing selects itself.
 
-Until 2026-07-29 the panel showed `end_to_end_tour.md`, `include_str!`'d at compile
-time, so a new lab meant a rebuild. That was the single thing standing between
-"Claude can compose an answer in HRW" and "Claude cannot" (`docs/ideas.md` #42,
-Phase 1 of `docs/answer-platform-plan.md`).
+**The HRW Answer was removed on 2026-11-07** (charter Decision 19). Until then lab
+mode also rendered whatever Claude wrote to `.hrw-bridge/answer.md` — the one bridge
+file that flowed *into* HRW — and auto-selected it. Decision 19 divides the work: HRW
+causes questions; the platform (VS Code as the hub, System Modeler, Wolfram Desktop)
+answers them; the conversation controls it. So questions now go *out*
+(`question.json`, below) and answers stay on the platform. What the Answer needed and
+the labs still use was kept: the `hrw://` link dispatcher, the node-link checker
+(`node_link_check`, run over every lab by `every_lab_node_link_lands_on_a_real_node`)
+and the hot reload below.
 
-- **Polled, not watched.** `poll_lab_file` stats the file every
-  `LAB_POLL_INTERVAL` (250 ms) and re-reads only when the mtime changed. Simpler
-  than a filesystem watcher, no platform quirks, and a lab appearing a
-  quarter-second late is imperceptible. Keeps filesystem work out of the paint
-  path, per the debugging conventions.
-- **Absence is the normal state.** No lab file means `no_lab_ui` — a short note
-  on what lab mode is for. Deliberately *not* the old `end_to_end_tour.md`: its
-  prose was retired for describing a 7x7 incidence matrix on a tab that shows 48
-  equations, and making it the default would put that back on screen.
-- **Ephemeral by construction.** The bridge directory is gitignored, so #42's
-  "labs are regenerated, not retrieved" rule is enforced by the filesystem rather
-  than by Claude's discipline. What persists is the *question*, in
-  `docs/question-ledger.md`.
-- **Text is the default medium** (Doug, 2026-07-29): Claude answers in text and
-  writes a lab only when asked. The failure mode is asymmetric — text that should
-  have been a lab costs one follow-up, while a lab that should have been text
-  costs minutes of running stops to reach a two-sentence answer.
+- **Polled, not watched.** `poll_lab_file` stats the selected lab every
+  `LAB_POLL_INTERVAL` (250 ms) and re-reads only when the mtime changed, so an edit
+  to a lab appears without a restart. Simpler than a filesystem watcher, no platform
+  quirks, and keeps filesystem work out of the paint path, per the debugging
+  conventions.
+- **No selection is the normal state.** It shows `no_lab_ui` — a short note on what
+  lab mode is for, and where questions are asked now.
 
 ### Index reduction summary (`reduction_view.rs`)
 
@@ -1373,8 +1367,10 @@ for; charter Decision 8 is the principle and `bridge::AskRequest` carries the ac
 
 ### The file protocol
 
-Five channels, all in `.hrw-bridge/` (gitignored). Three carry context **out** to
-Claude, and two carry a request **in**:
+Four channels, all in `.hrw-bridge/` (gitignored). Three carry context **out** to
+Claude, and one carries a request **in**. *(A fifth, `answer.md`, carried an Answer in for
+lab mode to render; it was removed 2026-11-07 under charter Decision 19 — answers are given
+on the platform, never in HRW.)*
 
 1. **`focus.json`** — written on each capture. Contains:
    - `seq` — monotonic counter (each capture increments it)
@@ -1403,11 +1399,7 @@ Claude, and two carry a request **in**:
    it; `question.json` is written only on asking, atomically (temp file + rename), and
    recorded as a `question-asked` action. It waits there until Doug types `?` in the chat.
 
-3. **`answer.md`** — the first channel that runs the *other* way. Claude writes a
-   markdown lab; HRW's lab mode renders it and picks up a rewrite without a restart,
-   as `hrw://` links the reader can click.
-
-4. **`screenshot-request.json` / `screenshot-result.json` / `screenshots/*.png`** —
+3. **`screenshot-request.json` / `screenshot-result.json` / `screenshots/*.png`** —
    capture and inspect, below.
 
 ### Capture and inspect (`screenshot.rs`)

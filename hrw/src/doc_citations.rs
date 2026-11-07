@@ -747,8 +747,9 @@ mod tests {
     ///
     /// Resolved against the committed `docs/specimen-notebook/<Model>/trace/`, which is
     /// generated and therefore correct by construction — the right source of truth for
-    /// *versioned* prose. An Answer is checked against `.hrw-bridge/stages/` instead,
-    /// because it describes what is on screen now; `examples/check_answer` does that.
+    /// *versioned* prose. The HRW Answer was checked against the pane's input instead,
+    /// `.hrw-bridge/stages/`, by `examples/check_answer`; both went with the Answer on
+    /// 2026-11-07.
     ///
     /// **Unjudged pointers are counted and asserted on.** A specimen with no committed
     /// trace yields `StageUnavailable`, and a run that checked nothing would otherwise
@@ -780,7 +781,7 @@ mod tests {
                 .to_string();
             let text = std::fs::read_to_string(&path).unwrap_or_default();
 
-            for p in crate::answer_check::check(&text, |model, stage| {
+            for p in crate::node_link_check::check(&text, |model, stage| {
                 let file = stage.stage_file_name()?;
                 cache
                     .entry((model.to_owned(), file.to_owned()))
@@ -793,7 +794,7 @@ mod tests {
                     .clone()
             }) {
                 match p.verdict {
-                    crate::answer_check::Verdict::Resolved => resolved += 1,
+                    crate::node_link_check::Verdict::Resolved => resolved += 1,
                     v if v.is_defect() => defects.push(format!(
                         "{name}: {} \u{2014} {v:?} (specimen {:?}, stage {})",
                         p.raw,
@@ -4581,7 +4582,8 @@ Some prose.
             texts.iter().any(|t| t.contains(&needle))
         };
 
-        let missing: Vec<&str> = ["LabProse", "Answer", "StagePane", "ModelList", "Log"]
+        // `Answer` left this list on 2026-11-07, with the variant (charter Decision 19).
+        let missing: Vec<&str> = ["LabProse", "StagePane", "ModelList", "Log"]
             .into_iter()
             .filter(|v| !constructed(v) && !NOT_YET_ADOPTED.contains(v))
             .collect();
@@ -6955,7 +6957,7 @@ mod tests_orphaned_docs {
             // name its sub-view"* opens like a summary because it states the rule the whole
             // block exists for. Ordinary prose in a prose-heavy module, which is the case
             // this test's own docs say to raise the number for rather than reword.
-            ("answer_check.rs", 1),
+            ("node_link_check.rs", 1),
             // 9 → 10 on 2026-11-03, on the v0.10.0 rebase. The new hit is at
             // `app.rs:7839`, in the click-hook drain's doc: *"**\"Drain\" is the whole
             // contract: a fired hook is consumed, not merely read.**"* — a bold

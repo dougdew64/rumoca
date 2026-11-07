@@ -41,7 +41,6 @@
 //!   module sizes, `App` field groups), generated into marker-delimited regions so
 //!   the document cannot transcribe a count that then rots.
 
-pub mod answer_check;
 pub mod app;
 pub mod arch_doc;
 pub mod artifact_pane;
@@ -82,6 +81,7 @@ pub mod matrix_panes;
 pub mod model_list;
 pub mod modelica_lex;
 pub mod nav_view;
+pub mod node_link_check;
 /// The acceptance ladder for `docs/ideas.md` #83 (general Pantelides), whose
 /// rungs are `#[ignore]`d until it lands. Test-only, but a normal module so the
 /// compiler keeps it building against today's API rather than letting it rot.

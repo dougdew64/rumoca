@@ -5821,3 +5821,70 @@ both.
 
 *"Later, we'll explore how you could leverage a database of those as a measure of my learning."*
 `question.json` holds only the latest question, so that exploration begins by keeping history.
+
+## 2026-11-07 (later) — HRW causes questions; the platform answers; the conversation controls
+
+**Four statements of Doug's, in sequence, before the Answer feature is removed.** Together they
+state what HRW is. **Drafted by Claude as charter Decision 19 and ratified by Doug the same day
+(v1.17)** — the charter now binds it, and this entry is the record of what he said.
+
+1. *"At the beginning of this project, we agreed to include in HRW no more than it needed to be a
+   visualizer and thin emitter of events. I am trying to get us back to that agreement by removing
+   from HRW the Answer feature."* **The agreement is on record**, here, 2026-07-19 — *"the app is
+   a thin emitter … The fuller 'answer rendered inside the app' mode … deferred, ratify-first"* —
+   **and only here**, which does not bind. Nothing stopped the deferred mode being built.
+2. *"HRW is a viewer and thin emitter of events. HRW is used to cause me to ask questions. I learn
+   by asking questions."* This extends charter Decision 14 — *"the prose no longer teaches; it
+   provokes the exchange that teaches"* — from the lab prose to the whole instrument, and gives
+   the test for any HRW feature: **does it cause a question, or answer one?**
+3. *"VS Code, System Modeler and Wolfram Desktop are the platform for answering questions, not HRW.
+   VS Code is the hub of that platform. And, the conversation in the VS Code Claude extension is
+   the controller of that platform."*
+4. *"When answering questions, you are free to use this chat window, a VS code tab, System Modeler
+   or Wolfram Desktop in whichever way you believe would be most effective."* **This widens the
+   entry above**, whose *"chat text by default, a richer tab when he asks"* had been carried into
+   `CLAUDE.md`, the hook and `question.json`'s own instructions in Claude's narrower wording.
+   All three now say the choice is Claude's.
+
+**A standing rule pointed the wrong way, and was rescoped.** `working-with-doug.md` said *"Prefer
+Rust/egui/HRW over TypeScript/VS Code … new functionality defaults to the app side"*, and its
+memory copy said to default a feature to HRW *whenever it could live in either*. Read literally,
+that sends answering features into HRW — plausibly how the Answer feature came to be built against
+the agreement in (1). It was always a rule about **where Claude builds reliably** (extension code
+has been fragile here), so it is now scoped to that: **ask what a feature is FOR first; the rule
+only breaks a tie between two homes that both fit.**
+
+## 2026-11-07 (later still) — the HRW Answer is removed, narrowly
+
+**Doug: *"Ratified. Now, remove the Answer functionality from HRW … Be sure to keep any HRW
+plumbing that you need for other HRW features."*** Decision 19's first consequence, applied by
+the test it gives — *does it cause a question, or answer one?* The Answer answered one.
+
+**Removed:**
+
+- `LabSource::Answer` and its auto-select;
+- `PointOrigin::Answer`;
+- `bridge::LAB_FILE` and `read_lab`;
+- the ✨ Answer button;
+- `examples/check_answer`;
+- the backticked-token advisory `tokens_absent_from_every_stage`, whose only caller was that
+  example;
+- the `ui_tests::Answer` guard.
+
+**Kept, because the fixture labs use them:**
+
+- lab mode itself;
+- the `hrw://` link dispatcher;
+- lab hot-reload on mtime;
+- the node-link checker, which runs over every lab in `every_lab_node_link_lands_on_a_real_node`
+  and is renamed from `answer_check` to **`node_link_check`**.
+
+`LabSource` is now a single-variant enum rather than being flattened to a path, because its
+`label` / `path` / `is_overview` methods are what the lab code and tests call.
+
+**What is lost, and recoverable from git:** the token advisory caught invented notation — `Y[1]`,
+`Minus` — in an Answer. Nothing now checks an answer given on the platform. If that class of
+error reappears in answers written to a VS Code tab, the scan could be retargeted at such a file.
+That is not built, and it should wait for evidence.
+
+A stale `.hrw-bridge/answer.md` in a clone is simply ignored, and nothing reads it.

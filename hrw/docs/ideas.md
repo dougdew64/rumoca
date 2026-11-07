@@ -7030,7 +7030,9 @@ Silent otherwise.
 includes a text field for me to ask a question, then you would know with certainty that the
 question was about HRW and the context I had assembled in HRW."* And, separately: answers belong
 in VS Code — *"I was wrong to want your answers to appear in HRW"* — as chat text by default, a
-richer tab on request, committed on request.
+richer tab on request, committed on request. **Widened the same day:** *"you are free to use this
+chat window, a VS code tab, System Modeler or Wolfram Desktop in whichever way you believe would be
+most effective"* — the surface is Claude's choice, with only committing left to Doug.
 
 **Why it addresses the open half, which nothing on the context side could.** Until now the
 question and the context were joined only by *time*. The question bar joins them by
@@ -7057,9 +7059,11 @@ message, so no tool calls are spent discovering them. **One use, and it surfaced
 first minutes** (the editor's `<ide_opened_file>` note hid the `?`), so the experiment is
 confirmed in direction, not finished.
 
-**What remains, in Doug's order:** use it; **then** remove the HRW Answer feature — narrowly
-(the Answer lab source, `answer.md`, `check_answer`), keeping labs and the `hrw://` dispatcher,
-which the fixture labs need. **And later**, Doug's own next idea: *"we'll explore how you could
+**Done, in Doug's order:** it was used; **then**, after charter Decision 19 was ratified, the
+HRW Answer feature was removed — narrowly (the Answer lab source, `answer.md`, `check_answer`
+and its token advisory), keeping labs, the `hrw://` dispatcher and the node-link checker (now
+`node_link_check`), which the fixture labs need. `DECISIONS.md`, *2026-11-07 (later still)*,
+lists what went and what stayed. **What remains is later**, Doug's own next idea: *"we'll explore how you could
 leverage a database of those as a measure of my learning."* `question.json` keeps only the
 latest question today, so that needs history kept before it can be measured.
 

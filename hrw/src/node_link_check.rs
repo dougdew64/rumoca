@@ -31,18 +31,19 @@
 //! habit (*cite the node by its label, prefer the shallowest node carrying the fact*) and
 //! Doug's report remains the only instrument, as it is for layout.
 //!
-//! # Two sources of truth, because the two artifacts differ
+//! # One source of truth: the committed trace
 //!
 //! A **lab** is versioned, so it is checked against the committed
 //! `docs/specimen-notebook/<Model>/trace/`, which is generated and correct by
-//! construction. An **Answer** is about what is on screen right now, so it is checked
-//! against `.hrw-bridge/stages/`, the pane's own input.
+//! construction. The caller supplies the loader, so this module never chooses a source
+//! itself.
 //!
-//! **That distinction is not pedantry — it is the bug it prevents.** While fixing the
-//! third defect above, the claim was verified against the notebook rather than against
-//! the file feeding the pane. The two happened to agree, so it did not bite, but a
-//! sibling artifact had been checked instead of the screen, which is the habit that
-//! produced the first three errors.
+//! **There used to be a second source.** The HRW Answer was checked against
+//! `.hrw-bridge/stages/`, the pane's own input, by `examples/check_answer.rs`, because
+//! an Answer was about what was on screen right now. The Answer was removed from HRW on
+//! 2026-11-07 (charter Decision 19: answers are given on the platform — the chat, a VS
+//! Code tab, System Modeler or Wolfram Desktop — never in HRW), and the example and its
+//! token-scan advisory went with it. The module was renamed from `answer_check` then.
 
 use crate::bridge;
 use crate::worker::StageKind;
@@ -282,139 +283,12 @@ pub fn check(
     out
 }
 
-/// A backticked token in the prose that appears in **no** stage IR that was loaded.
-///
-/// # Advisory, never a gate — and the asymmetry is the point
-///
-/// This is the check that would have caught `Y[1]` and `Minus`, and it cannot be made
-/// exact: markdown does not say whether `` `when` `` is a claim about a pane, a Modelica
-/// keyword, or a Rust identifier. So it is **reported for a human to read, not asserted**.
-///
-/// As a tool's advisory output a false positive costs a glance. As a test it would be
-/// fatal, and the test would be deleted or the rule loosened — which is how a checker
-/// becomes a checker nobody trusts.
-pub fn tokens_absent_from_every_stage(text: &str, loaded: &[Value]) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
-    let haystacks: Vec<String> = loaded.iter().map(Value::to_string).collect();
-
-    for token in backticked_tokens(text) {
-        if !could_name_a_node(&token) {
-            continue;
-        }
-        if haystacks.iter().any(|h| h.contains(&token)) {
-            continue;
-        }
-        // **A subscript is legitimate when its base holds an ARRAY.** `f_x[0]` never
-        // appears literally in JSON — `f_x` is a key and `0` an index — so flagging it was
-        // noise, and the loudest kind: seven of thirteen advisory lines on 2026-09-04 for
-        // zero real findings, which is how an advisory stops being read.
-        //
-        // **"The base exists as a key" is NOT the rule, and trying it first proved why.**
-        // `Y` *is* a key in Solve lowering — `bindings.v.Y` — so that version excluded
-        // `Y[1]`, the original defect this scan was built to catch. The difference is what
-        // the key holds: `f_x` is an array, so `f_x[0]` addresses something; `Y` is an
-        // object mapping a name to a slot, so `Y[1]` addresses nothing and was exactly as
-        // unfindable as Doug reported.
-        if let Some(base) = token.split('[').next().filter(|b| !b.is_empty())
-            && base != token
-            && loaded.iter().any(|ir| key_holds_an_array(ir, base))
-        {
-            continue;
-        }
-        if !out.contains(&token) {
-            out.push(token);
-        }
-    }
-    out
-}
-
-/// Whether any node anywhere in `ir` is `key` mapped to an array.
-///
-/// The question a subscripted token asks: is `base[0]` addressing something? A key holding
-/// an object answers no, which is what separates `f_x[0]` from `Y[1]`.
-fn key_holds_an_array(ir: &Value, key: &str) -> bool {
-    match ir {
-        Value::Object(map) => map
-            .iter()
-            .any(|(k, v)| (k == key && v.is_array()) || key_holds_an_array(v, key)),
-        Value::Array(items) => items.iter().any(|v| key_holds_an_array(v, key)),
-        _ => false,
-    }
-}
-
-/// Whether a backticked token could plausibly be a name in stage IR.
-///
-/// **Four structural exclusions, all of them "this is a different kind of thing" rather
-/// than a judgement about content.** The first run of the advisory printed seventeen
-/// tokens for two real findings, and an advisory nobody reads is worse than none —
-/// so these remove classes, not cases:
-///
-/// - **A dotted path** (`problem.layout.bindings`) never appears literally in JSON, where
-///   it is nested keys. It is also **already checked properly** by [`check`], so flagging
-///   it here is noise about something a real resolver has ruled on.
-/// - **Parentheses** make it a call or an annotation — `pre(v)`, `experiment(...)`.
-/// - **A file extension** makes it a file: `CLAUDE.md`, `worker.rs`.
-/// - **Very short** tokens are `h`, `v`, `e` — Modelica names whose presence in IR says
-///   nothing, since a single letter matches almost any JSON.
-///
-/// What survives is what the scan is for: an identifier-shaped or subscript-shaped token
-/// asserted to be in a pane. `Y[1]` and `Minus` both survive.
-fn could_name_a_node(token: &str) -> bool {
-    if token.len() < 3 || token.contains(' ') || token.contains('/') {
-        return false;
-    }
-    if token.contains('(') || token.contains(')') {
-        return false;
-    }
-    if token.ends_with(".md") || token.ends_with(".rs") || token.ends_with(".mo") {
-        return false;
-    }
-    // A trailing dot makes it a prose fragment naming a prefix — `conditions.`,
-    // `discrete.` — not a name anything could carry.
-    if token.ends_with('.') {
-        return false;
-    }
-    // A dotted path with identifier-ish segments, as against a name that merely
-    // contains a dot. `bridge::parse_path` is the arbiter, since it is what a link
-    // would be resolved with.
-    if token.contains('.') && bridge::parse_path(token).is_some_and(|segs| segs.len() > 1) {
-        return false;
-    }
-    true
-}
-
-/// Every single-backtick span in the text.
-///
-/// Fenced blocks are skipped: their content is quoted *output*, and a fence's opening
-/// line carries a language tag that is not a claim about anything.
-fn backticked_tokens(text: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut in_fence = false;
-    for line in text.lines() {
-        if line.trim_start().starts_with("```") {
-            in_fence = !in_fence;
-            continue;
-        }
-        if in_fence {
-            continue;
-        }
-        let mut rest = line;
-        while let Some(open) = rest.find('`') {
-            let after = &rest[open + 1..];
-            match after.find('`') {
-                Some(close) => {
-                    let token = &after[..close];
-                    if !token.is_empty() {
-                        out.push(token.to_owned());
-                    }
-                    rest = &after[close + 1..];
-                }
-                None => break,
-            }
-        }
-    }
-    out
-}
+// **The backticked-token scan was here** — `tokens_absent_from_every_stage` and three
+// helpers, an *advisory* that flagged a backticked name appearing in no stage IR. It was
+// the check that caught invented notation like `Y[1]` and `Minus` in HRW Answers, and its
+// only caller was `examples/check_answer.rs`, which read `.hrw-bridge/answer.md`. Both
+// went with the HRW Answer on 2026-11-07 (charter Decision 19). Recoverable from git if a
+// checker for answers on the platform is ever wanted.
 
 #[cfg(test)]
 mod tests {
@@ -634,73 +508,5 @@ mod tests {
         let found = check(text, loader(solve_ir()));
         assert_eq!(found.len(), 2, "both forms seen: {found:?}");
         assert!(found.iter().all(|p| p.verdict == Verdict::Resolved));
-    }
-
-    /// The advisory scan finds a token no stage contains, and ignores ones they do.
-    ///
-    /// `Y[1]` and `Minus` are the two real 2026-09-03 defects; `initial_y` is the
-    /// control, and without it a scan that flagged everything would pass this test.
-    #[test]
-    fn the_token_scan_finds_the_invented_notation_and_spares_the_real_names() {
-        let text = "The state is `Y[1]`, updated as a `Minus` over a `Mul`, and \
-                    `initial_y` holds its start values.";
-        let absent = tokens_absent_from_every_stage(text, &[solve_ir()]);
-
-        assert!(absent.contains(&"Y[1]".to_owned()), "got: {absent:?}");
-        assert!(absent.contains(&"Minus".to_owned()), "got: {absent:?}");
-        assert!(
-            !absent.contains(&"initial_y".to_owned()),
-            "a real node name must not be flagged, or the scan is noise: {absent:?}",
-        );
-    }
-
-    /// The advisory drops the four classes that made it unreadable, and keeps the signal.
-    ///
-    /// Seventeen tokens for two real findings is an advisory nobody reads. Each exclusion
-    /// here is a different *kind* of thing rather than a judgement about content.
-    #[test]
-    fn the_advisory_excludes_kinds_of_token_that_are_never_node_names() {
-        let text = "A dotted `problem.layout.nonesuch`, a call `pre(v)`, a file \
-                    `CLAUDE.md`, a letter `h` \u{2014} and a real find, `Y[9]`.";
-        let absent = tokens_absent_from_every_stage(text, &[solve_ir()]);
-
-        assert_eq!(
-            absent,
-            vec!["Y[9]".to_owned()],
-            "only the subscript-shaped claim survives: {absent:?}",
-        );
-    }
-
-    /// A subscript is spared when its base holds an ARRAY, and flagged otherwise.
-    ///
-    /// The line between the noise and the original catch, and the two are the same shape.
-    /// `f_x` is an array, so `f_x[0]` addresses something. `Y` is an **object** — a name
-    /// mapped to a slot — so `Y[1]` addresses nothing, which is exactly why Doug could not
-    /// find it. **"The base exists as a key" fails here**: `Y` exists, and that version of
-    /// the rule excluded the very defect this scan was built for.
-    #[test]
-    fn a_subscript_is_spared_only_when_its_base_holds_an_array() {
-        let ir = serde_json::json!({
-            "f_x": [1, 2],
-            "bindings": { "v": { "Y": { "index": 1 } } },
-        });
-        let text = "Hover `f_x[0]` and `f_x[1]`, but `Y[1]` is my invention, and \
-                    `conditions.` is a prefix.";
-        let absent = tokens_absent_from_every_stage(text, &[ir]);
-
-        assert_eq!(
-            absent,
-            vec!["Y[1]".to_owned()],
-            "`Y` is present as a key and still must not spare `Y[1]`: {absent:?}",
-        );
-    }
-
-    /// Fenced blocks are quoted output, not claims, so their contents are not scanned.
-    #[test]
-    fn a_fenced_block_is_not_scanned_for_tokens() {
-        let text = "```text\n`Nonesuch`\n```\nProse mentions `AlsoNonesuch`.";
-        let absent = tokens_absent_from_every_stage(text, &[solve_ir()]);
-        assert!(absent.contains(&"AlsoNonesuch".to_owned()));
-        assert!(!absent.contains(&"Nonesuch".to_owned()), "got: {absent:?}");
     }
 }

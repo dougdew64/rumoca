@@ -105,8 +105,9 @@ use crate::worker::{
 /// value was persisted.
 const DEFAULT_ZOOM: f32 = 1.0;
 
-/// How often lab mode stats `.hrw-bridge/answer.md`. A quarter second is well
-/// under human notice and keeps filesystem work out of the paint path.
+/// How often lab mode re-stats the selected fixture lab, so an edit to it appears
+/// without a restart. A quarter second is well under human notice and keeps
+/// filesystem work out of the paint path.
 pub(crate) const LAB_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
 
 /// How many paints a pending frame seek keeps trying for before giving up.
@@ -1046,15 +1047,12 @@ pub struct App {
     ///
     /// Polled rather than watched: stat-ing once per frame would be cheap but
     /// puts filesystem work in the paint path, which the debugging conventions
-    /// rule out. A few polls a second is indistinguishable to a reader, and a
-    /// lab Claude writes mid-conversation still appears without a restart.
+    /// rule out. A few polls a second is indistinguishable to a reader, and an
+    /// edit to a fixture lab still appears without a restart.
     ///
-    /// `pub(crate)` for `ui_tests` only: a headless test has to be able to say "an ad
-    /// hoc lab exists" without writing `.hrw-bridge/answer.md`, which is shared with a
-    /// running HRW and asserted *absent* by another test. Injecting the state is the
-    /// race-free way to give a check a subject — and without one,
-    /// `the_answer_is_a_button_and_not_a_picker_entry` passed while the Answer
-    /// lab was listed in both places.
+    /// `pub(crate)` for `ui_tests` only: a headless test injects the selected lab
+    /// rather than driving the picker, which is the race-free way to give a check a
+    /// subject.
     pub(crate) lab: LabState,
     /// A pending camera aim from `hrw://…/equation/<n>`, consumed by whichever canvas
     /// view paints next. `None` means no link asked for one.
@@ -4448,7 +4446,11 @@ impl App {
                 );
                 ui.add_space(2.0);
                 ui.label(
-                    "Then ask in the Claude Code chat \u{2014} Claude reads what you assembled. \
+                    "Then ask: type the question into the Context Bar\u{2019}s field and press \
+                     Ask, then type ? in the Claude Code chat. The bar shows what \
+                     \u{201c}this\u{201d} will mean before you ask. The answer is given outside \
+                     HRW \u{2014} in the chat, a VS Code tab, System Modeler or Wolfram \
+                     Desktop. Or ask in the chat directly; Claude reads what you assembled. \
                      Shortcut: just type \u{201c}explain\u{201d}, with no need to phrase a question.",
                 );
                 ui.add_space(6.0);
@@ -5842,21 +5844,21 @@ impl App {
         }
     }
 
-    /// Re-read `.hrw-bridge/answer.md` if it changed since the last read.
-    ///
-    /// Polled rather than watched: a `stat` every [`LAB_POLL_INTERVAL`] is
-    /// simpler than a filesystem watcher, has no platform quirks, and a lab
-    /// appearing a quarter-second late is imperceptible. Re-reads only when the
-    /// mtime differs, so an unchanged lab costs one `stat` per poll and no
-    /// markdown re-parse.
     /// Re-read the lab list and the selected lab's text, at most once per
     /// [`LAB_POLL_INTERVAL`].
     ///
-    /// So a lab Claude writes mid-conversation appears without restarting HRW.
+    /// Polled rather than watched: a `stat` every [`LAB_POLL_INTERVAL`] is
+    /// simpler than a filesystem watcher, has no platform quirks, and an edit
+    /// appearing a quarter-second late is imperceptible. Re-reads only when the
+    /// mtime differs, so an unchanged lab costs one `stat` per poll and no
+    /// markdown re-parse.
+    ///
+    /// So an edit to a fixture lab appears without restarting HRW. (It also used to make
+    /// an Answer Claude wrote mid-conversation appear and select itself; the Answer was
+    /// removed 2026-11-07 under charter Decision 19, so a poll now only refreshes the lab
+    /// the reader chose.)
     fn poll_lab_file(&mut self) {
-        if self.lab.poll() {
-            self.reset_for_new_lab();
-        }
+        self.lab.poll();
     }
 
     /// Switch the Lab panel to `source`, discarding the previous text.
@@ -6314,15 +6316,13 @@ impl App {
 
     /// What the lab panel is currently drawing, as an origin.
     ///
-    /// **The two cases are not interchangeable, which is the whole reason this exists.** A
-    /// fixture lab is a file in the repository and can be located and edited; Claude's answer
-    /// is regenerated per question, gitignored, and in no file at all. `LabSource::label`
-    /// returns `✨ Answer` for the second, so treating them alike emitted
-    /// `file: hrw/docs/fixture-labs/✨ Answer.md` — a path that has never existed, and one the
-    /// containment check cannot catch, because the text really is in the document on screen.
+    /// Always a fixture lab's prose now. **There was a second case**, Claude's HRW Answer —
+    /// regenerated per question, gitignored, in no file at all — and conflating the two once
+    /// emitted `file: hrw/docs/fixture-labs/✨ Answer.md`, a path that never existed. The
+    /// Answer was removed 2026-11-07 (charter Decision 19), so only the file-backed case
+    /// remains, and every lab-panel selection can be located and edited.
     fn lab_panel_origin(&self) -> Option<crate::pointing::PointOrigin> {
         match self.lab.selected.as_ref()? {
-            LabSource::Answer => Some(crate::pointing::PointOrigin::Answer),
             source @ LabSource::Fixture(_) => Some(crate::pointing::PointOrigin::LabProse {
                 lab: source.label(),
             }),
@@ -8333,22 +8333,6 @@ impl HrwLink {
     }
 }
 
-/// **Whether an `hrw://` URL names something HRW can actually do** — the public face of
-/// [`parse_hrw_link`], which cannot itself be public because [`HrwLink`] is not.
-///
-/// Exists for `examples/check_answer`, so that verifying an Answer's links is one
-/// command rather than a throwaway test compiled on the spot. Doug, 2026-11-05: *"the
-/// latency for your answers is way too long… we need to find ways to reduce that
-/// latency."* A link that silently does nothing is the worst outcome an Answer can
-/// carry, and nothing checks `.hrw-bridge/answer.md`, which is gitignored.
-///
-/// **It answers "would this parse", not "does the target exist".** `hrw://load/Nope`
-/// parses; whether a specimen called `Nope` is on disk is a different question, and the
-/// pointer checks in that example cover the ones that can be judged.
-pub fn link_parses(url: &str) -> bool {
-    parse_hrw_link(url).is_some()
-}
-
 /// Parse an `hrw://` URL into a navigation action, or `None` if malformed.
 fn parse_hrw_link(url: &str) -> Option<HrwLink> {
     let path = url.strip_prefix("hrw://")?;
@@ -8508,7 +8492,7 @@ pub fn frame_link(stage: &str, view: &str, index: usize) -> String {
 /// registered once per URL; a *checker* walking the document has to see every
 /// occurrence in order, because which specimen a `node` pointer resolves against is
 /// whatever the nearest preceding `load` said. Use [`hrw_links_in_order`] for that —
-/// `answer_check` does.
+/// `node_link_check` does.
 fn extract_hrw_links(text: &str) -> Vec<String> {
     let mut links = Vec::new();
     for url in hrw_links_in_order(text) {
@@ -8521,7 +8505,8 @@ fn extract_hrw_links(text: &str) -> Vec<String> {
 
 /// Every `hrw://` URL in the text, in document order, duplicates included.
 ///
-/// Split out of [`extract_hrw_links`] on 2026-09-03 so `answer_check` could track the
+/// Split out of [`extract_hrw_links`] on 2026-09-03 so `node_link_check` (then
+/// `answer_check`) could track the
 /// current specimen across a document. The rejection rules are the interesting part and
 /// they are not obvious, so they live here once rather than in both callers.
 pub(crate) fn hrw_links_in_order(text: &str) -> Vec<String> {
@@ -8549,7 +8534,7 @@ pub(crate) fn hrw_links_in_order(text: &str) -> Vec<String> {
         // The `<` case is the placeholder; the trailing-slash case is the bare verb.
         // An ellipsis is a placeholder for the same reason `<` is: `hrw://stage/
         // Structural/Tree/node/…` in prose names no node. Added 2026-09-03, when
-        // `answer_check` reached the one in `matching.md` and correctly called it a
+        // the node-link checker reached the one in `matching.md` and correctly called it a
         // path that resolves to nothing.
         if url.contains('<') || url.contains('\u{2026}') || url.ends_with('/') {
             continue;

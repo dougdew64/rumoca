@@ -170,41 +170,11 @@ pub(crate) fn lab_controls_ui(ui: &mut egui::Ui, lab: &mut LabState) -> Option<T
                     );
                 }
 
-                // --- Which lab: Claude's answer, then the picker ---
+                // --- Which lab: the picker ---
                 //
-                // **Claude's answer is not the same kind of object as the other 22**
-                // (Doug, 2026-08-16). They are committed, versioned, machine-checked
-                // and citable as `hrw://lab/<name>/station/<slug>`; this one is
-                // `.hrw-bridge/answer.md` — gitignored, regenerated per question, and
-                // there is only ever one. `lab::poll` already privileged it by
-                // auto-selecting it; only the presentation had flattened it into a row.
-                //
-                // Leftmost, so its state — present, absent, selected — is answerable
-                // without opening anything. That was the 2026-08-15 defect: the row
-                // was correctly absent and read as a broken feature.
-                let has_ad_hoc = lab.available.contains(&LabSource::Answer);
-                let answer_selected = lab.selected.as_ref() == Some(&LabSource::Answer);
-                // `Button::selectable`, not a plain button: this *selects* what you
-                // are reading. A verb-shaped control here would imply otherwise.
-                let resp = ui.add_enabled(
-                    has_ad_hoc,
-                    egui::Button::selectable(answer_selected, LabSource::Answer.label()),
-                );
-                if has_ad_hoc {
-                    if resp
-                        .on_hover_text(
-                            "Written by Claude to answer your last question.                              Ephemeral: regenerated, never stored.",
-                        )
-                        .clicked()
-                    {
-                        request = Some(TransportRequest::Switch(LabSource::Answer));
-                    }
-                } else {
-                    resp.on_disabled_hover_text(
-                        "No answer written yet. Ask Claude a question and it writes one                          here — regenerated per question, never stored.",
-                    );
-                }
-
+                // **The `✨ Answer` button that stood left of it was removed 2026-11-07**
+                // under charter Decision 19: answers are given on the platform (the chat,
+                // a VS Code tab, System Modeler, Wolfram Desktop), never in HRW.
                 let selected_label = match lab.selected.as_ref() {
                     Some(LabSource::Fixture(p)) => LabSource::Fixture(p.clone()).label(),
                     _ => "Pick a lab…".to_owned(),
@@ -249,12 +219,8 @@ pub(crate) fn lab_controls_ui(ui: &mut egui::Ui, lab: &mut LabState) -> Option<T
                             if i == hoisted && hoisted > 0 {
                                 ui.separator();
                             }
-                            let LabSource::Fixture(path) = source else {
-                                // The Answer has its own control to the left;
-                                // listing it twice would make one of them a lie about
-                                // where it lives.
-                                continue;
-                            };
+                            // Irrefutable since the Answer variant was removed.
+                            let LabSource::Fixture(path) = source;
                             let selected = lab.selected.as_ref() == Some(source);
                             // **The entry names its specimens.** Labs are named by
                             // phase, but Doug searches by the model in front of him and
@@ -703,7 +669,13 @@ pub(crate) fn show_lab_markdown(
     }
 }
 
-/// What lab mode shows when Claude has not written a lab.
+/// What lab mode shows when no lab is picked.
+///
+/// **Rewritten 2026-11-07, when the HRW Answer was removed** (charter Decision 19). It
+/// used to say lab mode shows *"a lab Claude wrote for a question you asked"* and that
+/// *"Claude writes an Answer to `.hrw-bridge/answer.md`"* — both false the moment the
+/// Answer went. It now names the one thing lab mode does, and where a question goes instead,
+/// since an empty pane is exactly where a reader looks for how to ask.
 ///
 /// Deliberately **not** `end_to_end_lab.md`, which used to be compiled in
 /// here with `include_str!`. That document's prose was retired 2026-07-29
@@ -714,21 +686,15 @@ pub(crate) fn no_lab_ui(ui: &mut egui::Ui) {
     ui.label(egui::RichText::new("No lab right now.").strong());
     ui.add_space(6.0);
     ui.label(
-        "Lab mode shows a lab Claude wrote for a question you asked \u{2014} a \
-         sequence of places to look, with links that drive HRW to each one.",
+        "Lab mode runs a fixture lab \u{2014} a route through HRW's panes, with a \
+         prediction to make at each station. Pick one above.",
     );
     ui.add_space(6.0);
     ui.weak(
-        "Ask Claude for one. Answers come as text first; a lab is for the ones \
-         where a sequence of places beats a paragraph.",
+        "To ask Claude about anything you see, type it into the Ask field in the \
+         Context Bar, then type ? in the Claude chat. The answer comes back there, \
+         not here.",
     );
-    ui.add_space(10.0);
-    ui.weak(
-        "Fixture labs \u{2014} tests with expected outcomes \u{2014} can be picked above \
-             when any exist.",
-    );
-    ui.weak(format!("Claude writes an Answer to {}", bridge::LAB_FILE));
-    ui.weak("It appears here within a moment, and a rewrite is picked up live.");
 }
 
 #[cfg(test)]

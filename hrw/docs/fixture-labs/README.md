@@ -33,8 +33,8 @@ They exist because of a gap nothing else covers: **Claude cannot see the rendere
 test suite checks HRW's logic; a fixture lab checks that clicking the thing does the thing.
 That is the half of verification only a human can do, and these make it cheap to do.
 
-**They are versioned and kept**, unlike an *ad hoc* lab (`.hrw-bridge/answer.md`, gitignored,
-regenerated per question). The difference is not permanence for its own sake — it is that a
+**They are versioned and kept**, unlike the HRW Answer was (`.hrw-bridge/answer.md`, gitignored,
+regenerated per question, and removed 2026-11-07). The difference is not permanence for its own sake — it is that a
 fixture lab has **pass/fail criteria** and an Answer has prose, and prose rots. This
 project retired 1,632 lines of explanation for that reason, and deleted a 1,071-line lab that
 described a 7×7 matrix on a tab showing 48 equations.
@@ -47,6 +47,12 @@ the half of verification only a human can do. **A saved lab that is neither chec
 stored prose with extra steps.**
 
 ### And what a lab *is*, which is a different question from what it looks like
+
+> **The Answer this section contrasts with no longer exists in HRW.** It was removed on
+> 2026-11-07 under charter Decision 19: HRW causes questions, and answers are given on the
+> platform — the chat, a VS Code tab, System Modeler or Wolfram Desktop — never in HRW. The
+> section is kept because the lab half of the distinction is unchanged, and because the
+> written-versus-read argument below still applies to an answer wherever it is given.
 
 **A lab is a document that makes claims about what a program does**, *durably* — so they must be
 kept true. **An Answer is not a kind of lab** *(Doug's ruling, 2026-09-02)*: it makes its claims

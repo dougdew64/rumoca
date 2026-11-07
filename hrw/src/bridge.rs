@@ -206,18 +206,10 @@ pub fn scratch_specimens() -> Vec<PathBuf> {
     found
 }
 
-/// An Answer written by Claude, rendered by HRW's lab mode (ideas #42).
-///
-/// The only bridge file that flows *into* HRW rather than out of it.
-#[cfg(not(test))]
-pub const LAB_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/answer.md");
-/// The Answer under `cargo test` — see [`BRIDGE_DIR`]. This one mattered most of the
-/// set: *"an Answer is a primary artifact of HRW's purpose"*, and the suite overwrote it.
-#[cfg(test)]
-pub const LAB_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/answer.md"
-);
+// **`LAB_FILE` (`.hrw-bridge/answer.md`) was here** — the HRW Answer, the one bridge file
+// that flowed *into* HRW. Removed 2026-11-07 under charter Decision 19: answers are given on
+// the platform (the chat, a VS Code tab, System Modeler, Wolfram Desktop), never in HRW. A
+// stale `answer.md` left in a clone's bridge directory is now simply ignored.
 
 /// A question Doug asked from the Context Bar, **written together with the context
 /// that was live when he asked it** — see [`write_question`].
@@ -457,19 +449,6 @@ pub fn fixture_labs() -> Vec<PathBuf> {
         .collect();
     found.sort();
     found
-}
-
-/// Read the Answer, with the modification time it was read at.
-///
-/// Returns `None` when no lab has been written — the common case, and not an
-/// error. The mtime lets a caller re-read only when the file actually changed,
-/// so a lab Claude rewrites mid-conversation appears without a restart and an
-/// unchanged one costs one `stat` per poll.
-pub fn read_lab() -> Option<(String, std::time::SystemTime)> {
-    let meta = fs::metadata(LAB_FILE).ok()?;
-    let mtime = meta.modified().ok()?;
-    let text = fs::read_to_string(LAB_FILE).ok()?;
-    Some((text, mtime))
 }
 
 /// Claude asks HRW to photograph itself here; [`SCREENSHOT_RESULT_FILE`] is the reply.
@@ -1928,10 +1907,17 @@ pub struct Question<'a> {
     pub this: &'a str,
 }
 
+// "ANSWER FROM THE CONVERSATION" -- never "in the chat". Doug, 2026-11-07: "you are free to
+// use this chat window, a VS code tab, System Modeler or Wolfram Desktop in whichever way
+// you believe would be most effective." This text said "ANSWER IT IN THE CHAT" until then,
+// and it is what Claude reads at the very moment of choosing how to answer.
+
 /// The instructions `question.json` carries for its reader, which is Claude.
 const QUESTION_INSTRUCTIONS: &str = "HRW question file. Doug typed this question into \
-HRW's Context Bar; it waits here until he types ? in the Claude chat. ANSWER IT IN THE \
-CHAT — not in HRW. `this` is what the word \"this\" in the question refers to, resolved by \
+HRW's Context Bar; it waits here until he types ? in the Claude chat. ANSWER IT FROM THE \
+CONVERSATION, NEVER IN HRW — using the chat, a VS Code tab, System Modeler or Wolfram \
+Desktop, alone or combined, whichever will teach best; the choice is Claude's. Commit an \
+answer to the repository only if Doug asks. `this` is what the word \"this\" in the question refers to, resolved by \
 the bar's rule (the point first, then the follow, then the stage on screen) and shown to \
 Doug beside the field before he asked, so it is the referent he saw rather than a guess. \
 `context` is the full focus document as it was AT THE MOMENT OF ASKING, written in the same \
@@ -4432,7 +4418,7 @@ mod tests {
     /// `StageKind::stage_file_name` and `STAGE_FILE_NAMES` agree, in both directions.
     ///
     /// The test above pins the constant's shape — count, suffix, uniqueness — and
-    /// nothing tied the *mapping* to it. `answer_check` resolves a lab's node link by
+    /// nothing tied the *mapping* to it. `node_link_check` resolves a lab's node link by
     /// asking a `StageKind` for its file, so a stage whose spelling drifted from the
     /// constant would make every pointer into that stage read as `StageUnavailable`:
     /// **unjudged, which is not a failure.** The checker would go quiet on one stage and
@@ -5136,7 +5122,6 @@ mod tests {
             ("STAGES_DIR", STAGES_DIR),
             ("SCRATCH_SPECIMEN_DIR", SCRATCH_SPECIMEN_DIR),
             ("SCRATCH_NOTEBOOKS_DIR", SCRATCH_NOTEBOOKS_DIR),
-            ("LAB_FILE", LAB_FILE),
             ("QUESTION_FILE", QUESTION_FILE),
             ("VIEW_FILE", VIEW_FILE),
             ("SCREENSHOTS_DIR", SCREENSHOTS_DIR),

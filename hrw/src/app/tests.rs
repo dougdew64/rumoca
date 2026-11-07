@@ -164,8 +164,7 @@ impl App {
     /// Put lab text on screen **without touching the disk**.
     ///
     /// **Added 2026-08-05, because two tests were reading the live Answer.**
-    /// `.hrw-bridge/answer.md` is gitignored and ephemeral by construction — Claude
-    /// overwrites it every time he answers a question — and
+    /// `.hrw-bridge/answer.md` was gitignored and ephemeral by construction, and
     /// `a_station_needing_a_specimen_is_refused_with_a_visible_notice` and
     /// `a_lab_link_acts_when_clicked_in_isolation` both clicked a link that happened
     /// to be in whatever answer was last written. **They passed for months on content
@@ -173,8 +172,14 @@ impl App {
     /// contain that link.
     ///
     /// A test whose fixture is a scratch file is not testing what it says it tests.
+    ///
+    /// **The selection is a fixture path that does not exist** since the Answer was
+    /// removed (2026-11-07). Nothing reads it: the text comes from `cached`, and the
+    /// `polled_at` below keeps a poll from noticing the path is not in the list.
     pub(crate) fn test_set_lab_text(&mut self, markdown: &str) {
-        self.lab.selected = Some(LabSource::Answer);
+        self.lab.selected = Some(LabSource::Fixture(PathBuf::from(
+            "test-injected-lab-text.md",
+        )));
         self.lab.cached = Some((markdown.to_owned(), std::time::SystemTime::now()));
         // Far in the future so `poll` does not immediately re-read the real file and
         // replace what this just set.
@@ -2177,12 +2182,8 @@ fn report_cache_invalidated_on_stage_switch() {
 /// property.*
 #[test]
 fn a_replay_keeps_its_place_across_a_stage_switch() {
-    use crate::ui_tests::{Answer, harness};
+    use crate::ui_tests::harness;
     use crate::worker::Stage;
-
-    // Auto-selecting an Answer resets the stage side. See the note on
-    // `Answer` — its presence is environment, not code.
-    let _lab_state = Answer::absent();
 
     let mut app = App::test_default();
     app.stages.events = Stage {
@@ -2266,10 +2267,8 @@ fn a_replay_keeps_its_place_across_a_stage_switch() {
 /// longer be the stage being taken over.*
 #[test]
 fn a_stranded_structural_sub_view_does_not_take_over_another_stage() {
-    use crate::ui_tests::{Answer, harness};
+    use crate::ui_tests::harness;
     use crate::worker::Stage;
-
-    let _lab_state = Answer::absent();
 
     let mut app = App::test_default();
     app.stages.events = Stage {
@@ -3731,7 +3730,7 @@ fn a_scratch_specimen_is_listed_and_marked() {
     // the moment a second one existed (2026-08-22: two probes written to answer a
     // question about connector type checking, both sorting ahead of it).
     // `.hrw-bridge/specimens/` is live state the suite does not control, the same
-    // class as `.hrw-bridge/answer.md`, and the fix is to assert what the feature
+    // class as `.hrw-bridge/answer.md` was, and the fix is to assert what the feature
     // promises rather than what one directory happened to contain.
     let last_scratch = app
         .model_list
@@ -4087,7 +4086,7 @@ fn every_stage_round_trips_between_capture_and_link() {
 
 /// Every link in every **fixture lab** resolves against the current parser.
 ///
-/// A fixture lab is kept and versioned — unlike an Answer, which is gitignored
+/// A fixture lab is kept and versioned — unlike the HRW Answer was, gitignored
 /// and regenerated per question. The ephemerality rule was never about labs; it was
 /// about *explanation*, which rots because nothing checks it. A fixture lab has a
 /// pass/fail criterion, and **this test is what makes that true**: without something
@@ -4099,20 +4098,11 @@ fn every_stage_round_trips_between_capture_and_link() {
 /// The picker names each lab by what it *is*, not by where it lives.
 #[test]
 fn lab_labels_name_what_the_lab_is() {
-    assert!(
-        LabSource::Answer.label().contains("Answer"),
-        "the Answer is named by its role; its filename is an implementation \
-             detail nobody should need to know",
-    );
     let fixture = LabSource::Fixture(PathBuf::from("/x/docs/fixture-labs/camera-aiming.md"));
     assert_eq!(fixture.label(), "camera-aiming");
     assert_eq!(
         fixture.path(),
         PathBuf::from("/x/docs/fixture-labs/camera-aiming.md")
-    );
-    assert_eq!(
-        LabSource::Answer.path(),
-        PathBuf::from(crate::bridge::LAB_FILE)
     );
 }
 
@@ -4158,14 +4148,13 @@ fn switching_labs_resets_the_stage_side() {
     assert_eq!(app.lab.selected, Some(b));
 }
 
-/// The list offers the fixtures, the Answer first when one exists.
+/// The list offers the fixtures, and only the fixtures.
 ///
-/// Doug asked for in-app selection so a fixture lab no longer has to be copied over
-/// `.hrw-bridge/answer.md` before starting HRW. The Answer goes first because it answers
-/// the question just asked; burying it under the fixtures would make the common case
-/// the awkward one.
+/// Doug asked for in-app selection so a fixture lab no longer had to be copied over
+/// `.hrw-bridge/answer.md` before starting HRW. The Answer used to sort first; it was
+/// removed 2026-11-07 (charter Decision 19), so the list is fixtures alone.
 #[test]
-fn the_lab_list_offers_fixtures_with_ad_hoc_first() {
+fn the_lab_list_offers_the_fixture_labs() {
     let mut app = App::test_default();
     app.poll_lab_file();
 
@@ -4193,18 +4182,9 @@ fn the_lab_list_offers_fixtures_with_ad_hoc_first() {
         !labels.iter().any(|l| l.eq_ignore_ascii_case("README")),
         "README.md must not be offered as a lab: {labels:?}",
     );
-    if app.lab.available.contains(&LabSource::Answer) {
-        assert_eq!(
-            app.lab.available[0],
-            LabSource::Answer,
-            "the Answer sorts first"
-        );
-        assert_eq!(
-            app.lab.selected,
-            Some(LabSource::Answer),
-            "and is selected by default"
-        );
-    }
+    // **Nothing is selected by a poll.** The Answer used to select itself when
+    // `answer.md` appeared; now choosing a lab is only ever the reader's act.
+    assert_eq!(app.lab.selected, None, "a poll selects nothing");
 
     // Selecting a fixture drops the previous text immediately rather than leaving
     // it on screen until the next poll.
@@ -5234,14 +5214,7 @@ fn a_link_into_a_non_report_stage_applies_its_sub_view() {
 /// So this drives `frame_ui` and asserts the viewport moved.
 #[test]
 fn a_frame_link_into_flatten_connections_navigates() {
-    use crate::ui_tests::{Answer, harness};
-
-    // **No Answer for the duration.** HRW auto-selects one when nothing else
-    // is chosen, and selecting a lab resets the stage side — so this test passed
-    // or failed depending on whether Claude had answered a question recently. It
-    // started failing the first time one existed, which is the environment
-    // changing rather than the code.
-    let _lab_state = Answer::absent();
+    use crate::ui_tests::harness;
 
     let mut app = App::test_default();
     // A specimen must be selected or the link is refused by design — the "no specimen
@@ -6275,48 +6248,6 @@ fn link_slugs_and_capture_names_are_the_same_vocabulary() {
     }
 }
 
-/// An Answer written to the bridge round-trips, and its links parse.
-///
-/// Replaces `lab_document_hrw_links_are_valid`, which checked the links in
-/// `end_to_end_lab.md` — a document HRW no longer shows. Its prose was
-/// retired 2026-07-29 and lab mode now renders whatever Claude writes to
-/// `.hrw-bridge/answer.md`, so the subject of that test no longer existed.
-///
-/// Touches the shared bridge directory, so it needs `--test-threads=1` like
-/// the other bridge tests.
-#[test]
-fn an_ad_hoc_lab_round_trips_through_the_bridge() {
-    let saved = std::fs::read_to_string(bridge::LAB_FILE).ok();
-
-    let lab = "# Station 1
-
-Open [the Structural tab](hrw://stage/Structural).
-
-                    # Station 2
-
-Now [load MotorWithBrake](hrw://load/MotorWithBrake/IndexReduction).
-";
-    std::fs::create_dir_all(bridge::BRIDGE_DIR).unwrap();
-    std::fs::write(bridge::LAB_FILE, lab).unwrap();
-
-    let (text, _mtime) = bridge::read_lab().expect("a written lab is readable");
-    assert!(text.contains("Station 1"), "{text}");
-
-    let links = extract_hrw_links(&text);
-    assert_eq!(links.len(), 2, "both links found: {links:?}");
-    for link in &links {
-        assert!(parse_hrw_link(link).is_some(), "unparseable link: {link}");
-    }
-
-    // Absence is the normal state, not an error.
-    std::fs::remove_file(bridge::LAB_FILE).unwrap();
-    assert!(bridge::read_lab().is_none(), "no lab file means no lab");
-
-    if let Some(prev) = saved {
-        std::fs::write(bridge::LAB_FILE, prev).unwrap();
-    }
-}
-
 /// Every `hrw://` link in every specimen `purpose.md` parses.
 ///
 /// **Counts the files it checked and asserts the count is right.** Until
@@ -6709,10 +6640,7 @@ mod tests_lab_back {
             .lab
             .selected
             .as_ref()
-            .and_then(|s| match s {
-                LabSource::Fixture(p) => p.file_stem().and_then(|n| n.to_str()),
-                LabSource::Answer => None,
-            })
+            .and_then(|LabSource::Fixture(p)| p.file_stem().and_then(|n| n.to_str()))
             .unwrap_or_default()
             .to_owned();
         assert_eq!(back_on, "index-reduction");

@@ -61,7 +61,9 @@ how he learns, which nothing else in this repository carries. The short form:
   success metric is his understanding, not feature count.
 - **Every change ships with tests, comments and doc updates**, unasked. **The source is itself
   a learning artifact**, so clean commented code ranks with the explanations, not below them.
-- **Learning over polish**; **prefer Rust/egui over VS Code work**; **token cost is not a
+- **Learning over polish**; **when building, prefer Rust/egui over VS Code extension code** —
+  a tie-breaker about where Claude builds well, **never** about where a feature belongs, since
+  HRW causes questions and never answers them (rescoped 2026-11-07); **token cost is not a
   constraint on what HRW CAPTURES for Claude to reason from** — Doug's words are about *"context
   captures which will best enable you to provide high quality answers"*, and no file-size cap
   survives without re-justifying on what Claude needs to answer well. **It is not a licence for
@@ -403,15 +405,23 @@ have one", and a feature that imposes one is suspect rather than the rule being 
 sound argument, and was still wrong. `docs/fixture-labs/README.md` carries why.)*
 
 **And latency is a cost to minimise, not a neutral.** Most of it is fact-gathering, which is the
-value; the waste is verification ritual. `cargo run -p hrw --example check_answer` covers links,
-pointers and style in one command — **run it before handing an Answer over, not after**, which
-is where a rewrite gets paid for twice.
+value; the waste is verification ritual. *(Both paragraphs were written about the HRW Answer,
+which was removed 2026-11-07 along with its checker, `examples/check_answer`; they hold
+unchanged for an answer on the platform. The node-link checker survives as `node_link_check`,
+for the fixture labs.)*
 
-**ANSWERS GO IN VS CODE — Doug reversed "answer through HRW" on 2026-11-07.** *"I was wrong to want
-your answers to appear in HRW. They should appear here, in VS Code."* **Chat text by default; a
-richer VS Code tab when he asks; iterated in place; committed as a file only when he asks.**
-`DECISIONS.md`, 2026-11-07, carries why his 2026-09-02 ruling lost. **The HRW Answer feature stays
-until the new arrangement has been used, then goes** — his sequencing.
+**ANSWERS ARE GIVEN ON THE ANSWERING PLATFORM, NEVER IN HRW — AND CLAUDE CHOOSES THE SURFACE.**
+Doug, 2026-11-07: *"When answering questions, you are free to use this chat window, a VS code tab,
+System Modeler or Wolfram Desktop in whichever way you believe would be most effective."* **Any of
+the four, alone or combined, chosen by what will teach best — no surface is a default to depart
+from with permission.** A sentence in the chat; a derivation in a tab where the mathematics
+renders; a run in System Modeler; a computation in Wolfram Desktop. **Committing an answer into the
+repository stays his call.** *(This said "chat text by default; a richer VS Code tab when he asks"
+for one morning — narrower than his ruling, and Claude's own wording.)*
+
+**The division behind it is charter Decision 19** (ratified 2026-11-07): HRW causes questions;
+VS Code (the hub), System Modeler and Wolfram Desktop answer them; the conversation controls them.
+**Read it there.** Why his 2026-09-02 *"answer through HRW"* ruling lost is in `DECISIONS.md`.
 
 **What survives of the old rule is its TELL, pointed somewhere new, and it is still silent when it
 fails.** A text-only answer looks finished even when a pane would have shown the thing — Doug gets
@@ -624,15 +634,18 @@ the next phase touches — is procedure and lives there.
 > ### ⟶ HRW QUESTIONS ARE ASKED IN HRW AND ANSWERED HERE — `?` delivers them (2026-11-07)
 >
 > **Doug asks in the Context Bar's question field; HRW writes the question WITH its context to
-> `.hrw-bridge/question.json`; he types `?` in the chat; the hook prints it. ANSWER IN THE CHAT**
-> — text by default, a richer VS Code tab when he asks, committed only when he asks.
+> `.hrw-bridge/question.json`; he types `?` in the chat; the hook prints it. ANSWER FROM THE
+> CONVERSATION** — the chat, a VS Code tab, System Modeler or Wolfram Desktop, whichever is most
+> effective (Claude's choice); committed only when he asks.
 > **"This" is the question's own `this`**, which the bar showed him before he asked (the point,
 > then the follow, then the stage on screen) — **never the live `pointing at:` line**, which
 > may have moved since. The hook labels the two; do not mix them.
 >
-> **Still an experiment** (*"I don't know if it will work well or not"*), and the HRW Answer
-> feature is **removed only after it has been used** — Doug's sequencing. Account and the
-> superseded referent-naming candidate: [`docs/ideas.md`](docs/ideas.md) #92.
+> **Used, and Doug's verdict was "much better"; the HRW Answer feature is REMOVED** (same day,
+> after charter Decision 19 was ratified). Lab mode now shows fixture labs only, and nothing
+> reads `.hrw-bridge/answer.md`. What went and what stayed is in `DECISIONS.md`, *2026-11-07
+> (later still)*. The account and the superseded referent-naming candidate are in
+> [`docs/ideas.md`](docs/ideas.md) #92.
 >
 > ### ⟶ v0.10.4 REDUCES THE CANONICAL INDEX-3 DAE, and it is not Pantelides
 >
@@ -965,7 +978,7 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
   files them.** Only *reproduced* bugs, with suspect code marked unverified: a confident wrong
   diagnosis wastes a maintainer's time and costs the credibility this project is building.
 - **[`docs/fixture-labs/`](docs/fixture-labs/) — labs that are *tests*, not explanations.**
-  Versioned, unlike an **Answer** (`.hrw-bridge/answer.md`, gitignored). **Only justified because
+  Versioned, unlike the removed HRW **Answer** (`.hrw-bridge/answer.md`, gitignored). **Only justified because
   something runs them:** `fixture_lab_links_all_resolve` parses every link on every test run.
   Three rules, each bought with a defect, and the README carries what each cost:
   - **One lab per capability, narrow** — the scarce resource is Doug's attention per
