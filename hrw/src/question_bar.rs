@@ -455,7 +455,9 @@ pub(crate) fn question_bar_ui(
     let mut press: Option<QuestionBarPress> = None;
 
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new("Context").strong());
+        // The bar's name on screen (charter v1.18): it is headed by what it is for.
+        // Its rows below are still the *context* — that word names the contents.
+        ui.label(egui::RichText::new("Question").strong());
         if let Some(point) = &context.pointed_at {
             // Worth saying only when it **differs** from the background
             // stage; otherwise it repeats the line above as if it were a

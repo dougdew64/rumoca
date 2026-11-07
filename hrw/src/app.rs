@@ -7100,7 +7100,8 @@ impl App {
             let hint = self.empty_context_hint();
             let lab = self.lab.selected.as_ref().map(LabSource::label);
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("Context").strong())
+                // Same heading as `question_bar_ui`'s — one bar, one name (v1.18).
+                ui.label(egui::RichText::new("Question").strong())
                     .on_hover_text(format!("{EMPTY_CONTEXT_RULE}\n\nRight now: {hint}"));
             });
             question_bar::always_ui(
