@@ -117,7 +117,10 @@ fn the_reported_matching_is_the_matching_that_produced_the_blocks() {
             .map(|record| record.match_eq.clone())
             .expect("matching reported at least one step");
         assert_eq!(
-            final_matching.iter().filter(|entry| entry.is_some()).count(),
+            final_matching
+                .iter()
+                .filter(|entry| entry.is_some())
+                .count(),
             sorted.matching.len(),
             "the last reported matching must have exactly as many matched \
              equations as the analysis reported pairs"
@@ -197,9 +200,7 @@ fn a_torn_block_reports_the_plan_it_actually_adopted() {
 #[test]
 fn the_report_and_the_trace_describe_one_run() {
     let compiled = compile(COUPLED_LOOP, "CoupledLoop");
-    let (report, trace) = compiled
-        .dae
-        .inspect(structural::inspect_structural_report);
+    let (report, trace) = compiled.dae.inspect(structural::inspect_structural_report);
     let report = report.expect("CoupledLoop is a well-posed square system");
 
     let final_matching = trace
@@ -208,7 +209,10 @@ fn the_report_and_the_trace_describe_one_run() {
         .map(|record| record.match_eq.clone())
         .expect("matching reported at least one step");
     assert_eq!(
-        final_matching.iter().filter(|entry| entry.is_some()).count(),
+        final_matching
+            .iter()
+            .filter(|entry| entry.is_some())
+            .count(),
         report.matching.len(),
         "the trace's last matching and the report's pair list must count the \
          same assignments"
@@ -232,9 +236,7 @@ fn the_report_and_the_trace_describe_one_run() {
 #[test]
 fn a_failed_report_still_carries_the_matching_that_failed() {
     let compiled = compile(INDEX_TWO, "IndexTwo");
-    let (report, trace) = compiled
-        .dae
-        .inspect(structural::inspect_structural_report);
+    let (report, trace) = compiled.dae.inspect(structural::inspect_structural_report);
     assert!(
         report.is_err(),
         "an index-2 system has no perfect matching as written"
@@ -389,10 +391,7 @@ fn a_singular_system_still_reports_the_search_that_proved_it() {
         assert!(
             matching
                 .iter()
-                .any(|record| matches!(
-                    record.step,
-                    structural::MatchingStep::EquationFailed(_)
-                )),
+                .any(|record| matches!(record.step, structural::MatchingStep::EquationFailed(_))),
             "the equation that could claim no unknown must be named: \
              {:?}",
             matching.iter().map(|r| &r.step).collect::<Vec<_>>()

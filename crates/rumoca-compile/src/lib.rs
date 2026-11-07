@@ -232,9 +232,8 @@ pub mod compile {
         SessionChange, SessionConfig, SessionSnapshot, SourceRootActivityKind,
         SourceRootActivityPhase, SourceRootActivitySnapshot, SourceRootDurability, SourceRootKind,
         SourceRootLoadMode, SourceRootLoadReport, SourceRootStatusSnapshot, StrictCheckTiming,
-        StrictCompileTree,
-        StrictCompilation, StrictCompileFailure, StrictCompileReport, StructuralOverride,
-        WorkspaceSymbol, WorkspaceSymbolKind, WorkspaceSymbolSnapshotTiming,
+        StrictCompilation, StrictCompileFailure, StrictCompileReport, StrictCompileTree,
+        StructuralOverride, WorkspaceSymbol, WorkspaceSymbolKind, WorkspaceSymbolSnapshotTiming,
         compile_phase_timing_stats, install_compile_phase_observer,
         reset_compile_phase_timing_stats,
     };
