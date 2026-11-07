@@ -716,6 +716,20 @@ guard, or make the thing fail loudly instead of silently.
 One or two of these is not enough. A five-line shell command that runs once and fails loudly is
 fine forever.
 
+### A third trigger: after a rebase, or any run of heavy change
+
+Added 2026-11-07, from Doug: *"Now is a good time for a comprehensive tech debt sweep because you
+have just completed two rebases and several feature changes. Some tech debt sweeps are not
+forward-looking."*
+
+The first trigger asks **what the next phase touches**, the second **what has been costing
+mistakes**. This one asks **what the last stretch of change left behind**: port residue,
+removed features still described in prose, renames that missed a spelling, workarounds whose
+reason is gone. That debt is in the *changed* code, which the next phase may never touch and
+which has not yet cost a mistake anyone saw. **Scope it to the diff of the stretch, not the
+tree.** [`updating-rumoca.md`](updating-rumoca.md) step 11 proposes one at the end of every
+rebase.
+
 ---
 
 ## Rework rate is NOT measurable from this history — two attempts, 2026-08-23
