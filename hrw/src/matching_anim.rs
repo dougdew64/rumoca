@@ -116,11 +116,11 @@ impl MatchingAnimation {
     /// Build from **frames captured during the compile**, with the matrix supplying
     /// only the names and shape to draw them against.
     ///
-    /// The distinction from [`Self::from_incidence`] is provenance, not output.
-    /// `from_incidence` re-runs matching when the tab is opened; because matching is
-    /// deterministic the two agree, but the animation then replays a search that
-    /// produced nothing, while the blocks on screen came from a different execution
-    /// nobody watched.
+    /// It replaced `from_incidence`, which re-ran matching when the tab was opened:
+    /// because matching is deterministic the two agreed, but the animation then replayed
+    /// a search that produced nothing, while the blocks on screen came from a different
+    /// execution nobody watched. `from_incidence` is gone (past tense since the
+    /// 2026-11-07 sweep).
     ///
     /// Added 2026-08-04 alongside `rumoca-phase-structural`'s capture scope. Doug:
     /// *"our ability to play animations is tremendously valuable and I want to

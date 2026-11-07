@@ -33,17 +33,13 @@
 //!    stage's full IR, rewritten once per compile. Claude can diff any two stages
 //!    by reading two files (e.g., `instantiate.json` vs `typecheck.json`).
 //!
-//! 3. **Lab file** (`.hrw-bridge/answer.md`) — the one channel that runs the *other
-//!    way*, added 2026-07-29 (ideas #42). Claude writes a markdown lab; HRW's
-//!    lab mode renders it and picks up a rewrite without a restart. Where
-//!    `focus.json` carries a noun *out* to Claude, this carries a sequence of
-//!    nouns *back*, as `hrw://` links the reader can click.
+//! 3. **Question file** (`.hrw-bridge/question.json`) — the question Doug typed into
+//!    the Question Bar, written with the context it is about; see [`write_question`].
 //!
-//!    Living in the gitignored bridge directory is deliberate: #42 says an Answer
-//!    labs are **ephemeral by default** — regenerated against the current tree
-//!    rather than retrieved and re-checked — and putting them here makes the
-//!    filesystem enforce that instead of Claude's discipline. What persists is
-//!    the *question* the lab answered, in `docs/question-ledger.md`.
+//!    *(This slot was the lab file, `.hrw-bridge/answer.md`, the one channel that ran
+//!    the other way: Claude wrote an Answer and HRW rendered it. It was removed on
+//!    2026-11-07 under charter Decision 19 — HRW causes questions, and answers live
+//!    on the platform. `docs/architecture.md` lists the channels as they are now.)*
 //!
 //! The `.hrw-bridge/` directory is gitignored. The paths are repo-relative
 //! (via `CARGO_MANIFEST_DIR`) so they are stable across Claude Code sessions.
@@ -415,9 +411,9 @@ pub fn resolve_doc(name: &str) -> Option<PathBuf> {
 
 /// List the fixture labs, sorted by file name.
 ///
-/// Distinct from the Answer in [`LAB_FILE`]: an Answer answers one question
-/// and is regenerated, a fixture lab is a **test** with a pass/fail criterion and is
-/// kept. See `docs/fixture-labs/camera-aiming.md` for the shape.
+/// A fixture lab is a **test** with a pass/fail criterion, and is kept. (It was once
+/// contrasted here with the regenerated Answer, removed 2026-11-07.) See
+/// `docs/fixture-labs/camera-aiming.md` for the shape.
 /// **`README.md` is excluded**: the directory gained one on 2026-08-01 under the
 /// two-audience convention (`DECISIONS.md`), and without this it would appear in
 /// the lab picker as a lab called "README" whose stops do not exist. A README
@@ -876,8 +872,8 @@ const MATCHING_FILE: &str = concat!(
 /// Resolve a short source-file name to the path the extension needs.
 ///
 /// **Only the files a lab may arm a breakpoint in**, deliberately: a link is
-/// user-facing text, and resolving arbitrary paths from one would let a lab —
-/// or an Answer Claude writes — point the debugger anywhere.
+/// user-facing text, and resolving arbitrary paths from one would let a lab point
+/// the debugger anywhere.
 pub fn traced_source_path(file: &str) -> std::io::Result<std::path::PathBuf> {
     let raw = match file {
         "live_trace.rs" => LIVE_TRACE_FILE,

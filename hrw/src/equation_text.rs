@@ -33,9 +33,11 @@
 //!    `expr_format` takes. Both are built: [`for_events`] and [`for_dae`], whose keys are
 //!    NOT the same shape, which is the trap that group carries.
 //!
-//!    **Initialization was in this group by assumption and is not.** Its tree is an IC
-//!    *plan* from `rumoca-phase-structural`, so it needed [`for_ic_plan`] rather than a
-//!    third call to the same helper. The DAE's initial equations live in the *DAE* tree.
+//!    **Initialization was in this group by assumption and is not.** On 0.9.20 its tree
+//!    was an IC *plan*, which needed its own renderer (`for_ic_plan`, deleted with the
+//!    plan in the 0.10.0 rebase); on 0.10.x it publishes initial-value pins, whose
+//!    expressions `worker::initialization_from_initial_pins` formats itself. The DAE's
+//!    initial equations live in the *DAE* tree.
 //! 2. **Flatten is built** — [`for_flatten`] — and the AST stages are **deliberately
 //!    not**, which reverses what this note first said.
 //!

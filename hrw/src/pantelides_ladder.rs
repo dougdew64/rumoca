@@ -1,5 +1,12 @@
 //! The acceptance ladder for general Pantelides — `docs/ideas.md` **#83**.
 //!
+//! > **ALL FIVE RUNGS ARE GREEN ON v0.10.4** (2026-11-06), and none is `#[ignore]`d —
+//! > see the note at the end of this file's tests. The reduction that turned them green
+//! > is **not Pantelides**: `CartesianPendulum` is reduced by `rumoca-phase-solve`'s state
+//! > selection, while `prepare_for_solve`'s reducer still refuses it (`hrw/CLAUDE.md`).
+//! > Everything below, the table included, records the state on 2026-08-23, against
+//! > 0.9.x. *(Status line added in the 2026-11-07 sweep; the table still said "red".)*
+//!
 //! ## What this is, and why it is a ladder rather than one test
 //!
 //! `CartesianPendulum` is the canonical index-3 DAE: a point mass on a rigid rod
@@ -17,7 +24,7 @@
 //! when you are **done**; it never says whether you are **on track**. So the
 //! acceptance criterion is a ladder, and each rung can turn green on its own:
 //!
-//! | rung | claim | today |
+//! | rung | claim | on 2026-08-23 (all green since v0.10.4) |
 //! |---|---|---|
 //! | 1 | the deficiency is detected, at the constraint | **green** |
 //! | 2 | a constraint equation is differentiated | red |

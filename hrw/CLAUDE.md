@@ -455,7 +455,7 @@ two things Doug could click were guaranteed to be refused, and he reported them 
 **That report is the third of its kind, and every time the reason was on screen.** A refused link
 notifies in the **status bar**, which reads as *nothing happened* to anyone not looking there — the
 observation the labs' *an expectation must say WHERE to look* rule is built from. **Say it in the
-Answer**, once, near the first link.
+answer, wherever it is given**, once, near the first link.
 
 **When a 🎯 capture arrives, locate the passage in the file the capture names.** The emitted text
 is what the pane *rendered*, so it will not match the markdown byte-for-byte.
@@ -774,9 +774,9 @@ the next phase touches — is procedure and lives there.
 > **The pattern, now three for three: every wrong claim in that Answer was a NOTATION or a
 > LOCATION, never a number.** Each number checked out against the trace — seven `p_scalars`, index
 > 1, one Events update. What failed was *where I said to look* and *what I said it would look
-> like*. **So verify an Answer's pointers against the trace, not only its counts** — a count is
-> checked by `docs/specimen-notebook/`, and nothing checks a pointer, because
-> `.hrw-bridge/answer.md` is gitignored and no checker reads it.
+> like*. **So verify an answer's pointers against the trace, not only its counts** — a count is
+> checked by `docs/specimen-notebook/`, and nothing checks a pointer in an answer, wherever it is
+> given. (That Answer lived in `.hrw-bridge/answer.md`, removed 2026-11-07; the rule outlived it.)
 >
 > ### ⟶ HOW THIS SECTION WORKS — and three guards the 2026-09-01 document review left behind
 >

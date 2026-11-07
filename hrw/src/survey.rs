@@ -59,7 +59,7 @@ pub struct SurveyRow {
 
     /// Structural analysis of the **raw** DAE: `ok`, `singular`, `error:…`.
     pub structural: String,
-    /// Structural analysis **after the index-reduction funnel**: `ok`,
+    /// Structural analysis **after index reduction**: `ok`,
     /// `singular`, or empty when the raw system was already `ok`.
     ///
     /// **The column the first survey lacked, and its absence made the headline

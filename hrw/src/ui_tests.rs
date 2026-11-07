@@ -300,8 +300,9 @@ fn the_harness_renders_hrw_and_sees_widgets() {
 /// *Always* is a claim about every state, and a two-case test would leave the modes
 /// Doug actually runs in unchecked. Lab mode before a stop loads anything is the
 /// case that started the conversation; the navigation view is the one branch of
-/// `central_panel_ui` that draws no tab row, so the bar had to be added there
-/// separately and could regress on its own.
+/// `central_panel_ui` that draws no tab row. Until 2026-11-07 the bar was drawn by
+/// each branch and could regress in one of them alone; it is now one full-width panel
+/// drawn by `frame_ui`, and these four states check that nothing hides it.
 #[test]
 fn the_question_bar_is_present_in_every_state() {
     /// A named state and the app that puts HRW in it. Built lazily, because each
@@ -975,8 +976,8 @@ fn a_lab_link_acts_when_clicked_in_isolation() {
 
 /// A lab link can address a **corpus model**, not only a specimen file.
 ///
-/// **This was the gap that blocked just-in-time curricula.** A curriculum is
-/// delivered as an Answer — Claude writes `.hrw-bridge/answer.md` with the
+/// **This was the gap that blocked just-in-time curricula.** A curriculum was
+/// delivered as an Answer (removed 2026-11-07) — Claude wrote `.hrw-bridge/answer.md` with the
 /// models in the chosen order — and until 2026-08-01 `hrw://load/` resolved only
 /// through `find_specimen`, which looks in `specimens/`. The worker could compile
 /// an MSL model by name (`compile_model_by_name`, built for the fidelity sweep)

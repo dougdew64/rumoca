@@ -4419,7 +4419,7 @@ fn node_pointing_fixture_paths_exist_in_the_real_ir() {
 /// file that is not there tests nothing while looking fine — the same failure as a
 /// made-up node path. Fixture notebooks are therefore **versioned beside their
 /// lab**, not written to the gitignored bridge directory: an *ad hoc* notebook is
-/// ephemeral like an Answer, but a fixture has expected outcomes, and a test
+/// ephemeral, but a fixture has expected outcomes, and a test
 /// that vanishes on a fresh checkout is not a test.
 #[test]
 fn fixture_labs_reference_files_that_exist() {
@@ -5977,7 +5977,7 @@ fn a_follow_link_sets_while_a_click_toggles() {
     app.dispatch_hrw_link(HrwLink::Follow("v".to_owned()));
     assert_eq!(app.tracked_identifier.as_deref(), Some("v"));
 
-    // The same link again, which is what a re-played Answer does.
+    // The same link again, which is what a lab played twice does.
     app.dispatch_hrw_link(HrwLink::Follow("v".to_owned()));
     assert_eq!(
         app.tracked_identifier.as_deref(),
@@ -5999,7 +5999,7 @@ fn a_follow_link_sets_while_a_click_toggles() {
 
 /// `hrw://simulate` parses both forms and round-trips through `describe`.
 ///
-/// The trail is read alongside the Answer that produced the click, so a link's description
+/// The trail is read alongside the lab that produced the click, so a link's description
 /// has to be the link — `describe` reconstructing `simulate/2` is what makes "Doug ran it for
 /// two seconds" legible without cross-referencing anything.
 #[test]

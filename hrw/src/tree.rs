@@ -25,7 +25,7 @@
 //! - **Left-click** a row to point at it — recording the node's *key-path*, its
 //!   address from the stage root, like `components.inertia.type_def_id`.
 //! - **Right-click** opens a context menu: Point at, Follow (for names the model
-//!   knows), Show-in-debugger, Go-to-definition (for DefId fields *and* for
+//!   knows), Show-in-debugger, **↪ Go to *Class*** (for DefId fields *and* for
 //!   variable names, via `TreeOptions::declaring_classes`), and Copy-text.
 //!
 //! Inputs the tree needs — what is tracked, which names are real variables, how

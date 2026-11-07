@@ -817,9 +817,12 @@ struct CompileFrames {
     // frames from either address rows the other does not have. They came from
     // re-running the reduction funnel on a cloned DAE, which 0.10.0 makes
     // impossible — `Dae` is immutable and no longer `Clone` — and which was a
-    // re-derivation rather than an observation of the compile. The re-model will
-    // take them from `inspect_prepare_for_solve`; see
-    // `worker::index_reduction_stage`.
+    // re-derivation rather than an observation of the compile. **The re-model
+    // (2026-11-04) declined to bring them back**: `inspect_prepare_for_solve`
+    // records the reduction's rounds, not the matching passes inside each rebuild,
+    // so the Index Reduction tab offers no frame views. See
+    // `worker::index_reduction_stage`. (This said "the re-model will take them"
+    // until the 2026-11-07 sweep.)
     /// MLS §3.7.5 history-operator sites, and what each one lowered to.
     ///
     /// **Sites, not frames, and the difference is not cosmetic.** 0.9.20
@@ -1020,7 +1023,8 @@ pub struct App {
     /// **The replays built from `frames`**, which live exactly as long as `frames` does.
     ///
     /// One field where `pre_lowering_anim` used to sit alone, because it never was alone:
-    /// `reduction_anim`, `connection_anim` and `ic_plan_anim` have the same lifetime and
+    /// `reduction_anim`, `connection_anim` and (until its deletion in the 0.10.0 rebase)
+    /// `ic_plan_anim` have the same lifetime and
     /// were filed under [`StageViewCaches`], which dropped them whenever a *report* stage
     /// was entered. See [`CompileViewCaches`] for what that did and why nobody designed
     /// it.
@@ -2517,7 +2521,7 @@ impl App {
             // model they're identical (nothing highlights); for a reduced
             // high-index model the raw report is absent (it was singular).
             StageKind::IndexReduction => self.stages.structural.value.as_ref(),
-            // The IC plan is its own shape (a solve sequence) — no path-aligned prior.
+            // Initialization's pins are their own shape — no path-aligned prior.
             StageKind::Initialization => None,
             // The event partitions are their own shape — no path-aligned prior.
             StageKind::Events => None,
@@ -3181,7 +3185,8 @@ impl App {
         // the reader somewhere no link had pointed — the same trap the frame-seek budget
         // exists to close.
         if action.requires_specimen() && self.selected.is_none() {
-            // **The wording must fit an Answer as well as a lab** *(2026-09-02)*. It read
+            // **The wording must fit any link's source, not only a lab** *(2026-09-02; it
+            // said "an Answer as well as a lab" until the Answer was removed, 2026-11-07)*. It read
             // *"this stop needs one. Start at the lab's first stop"* — stale twice over:
             // `stop` was retired for `station`, and an Answer has no stations to start at.
             // Doug clicked a source link in an Answer, got this notice, and reported that
@@ -4975,18 +4980,17 @@ impl App {
         }
     }
 
-    /// The tearing replay, on the Structural and Index Reduction stages.
+    /// The tearing animation, on the Structural tab.
     ///
-    /// Unlike the other animated views this one is not built from the stage's
-    /// JSON report: tearing works in each coupled block's own 0..n index space,
-    /// and the report has already translated back to names. So the view runs
-    /// the DAE again (`tearing_anim::walk_blocks`) and re-runs the algorithm
-    /// with an observer attached.
+    /// Built from the **frames the compile captured** (`from_captured`), or played
+    /// live through the real compile (`start_live`). Tearing works in each coupled
+    /// block's own 0..n index space, which is why it needs its own frames rather than
+    /// the report's names. For a singular model there is no full matching, hence no
+    /// blocks, hence nothing to tear, and the pane says so.
     ///
-    /// Which DAE depends on the tab. The Structural tab tears the raw DAE; the
-    /// Index Reduction tab tears the *reduced* one, because that is the system
-    /// its report describes -- and for a high-index model the raw DAE has no
-    /// full matching, hence no blocks, hence nothing to tear.
+    /// *(Rewritten in the 2026-11-07 sweep. It described re-running the DAE through
+    /// `tearing_anim::walk_blocks`, which no longer exists, and tearing a reduced DAE on
+    /// the Index Reduction tab, which no longer offers this view.)*
     fn tearing_anim_ui(&mut self, ui: &mut egui::Ui) {
         let gate = self.live_debug_gate(ui.ctx(), PendingLiveDebug::Tearing, |a| {
             &a.stage_views.tearing_anim
@@ -5014,22 +5018,18 @@ impl App {
             self.stage_views.tearing_anim = Some(live);
         }
         if self.stage_views.tearing_anim.is_none() {
-            // **Captured first, re-derived only as a fallback.** `from_captured`
-            // returns `None` when the capture is absent or disagrees with the
-            // report, and `record` then re-runs the run — a faithful picture beats
-            // an empty one, and refusing to *guess an alignment* is what the
-            // `None` is for.
-            // **Only under Structural.** The tearing view also renders on the
-            // Index Reduction tab, where `tearing_dae` tears the *reduced* DAE that
-            // HRW builds itself — the captured frames came from
-            // `build_structural_report` on the raw one, so using them there would
-            // animate a different system than the tab is showing.
-            // Both the report and the frames must come from the same system: the
-            // Structural tab tears the raw DAE, Index Reduction the reduced one.
-            // Pairing one tab's report with the other's frames is the mismatch this
-            // whole set of captures exists to make impossible.
-            // **No `record` fallback.** Re-running the DAE here would tear blocks the
-            // compiler never built — see `structural_unavailable`.
+            // **Captured frames only, and no fallback.** `from_captured` returns `None`
+            // when the capture is absent or disagrees with the report, and the pane
+            // then says why (`structural_unavailable`). Re-running the DAE here would
+            // tear blocks the compiler never built. (This comment opened by describing
+            // a `record` fallback that re-ran the run; that was removed, and the
+            // contradiction stood until the 2026-11-07 sweep.)
+            //
+            // **The frames are the raw system's**, from `build_structural_report`. The
+            // Index Reduction tab does not offer the frame-consuming sub-views at all
+            // (`worker::index_reduction_stage`): its search is not observable, and
+            // pairing the raw frames with reduced block names would animate a search
+            // that never happened.
             self.stage_views.tearing_anim = Some(
                 self.stages
                     .get(self.stage)
@@ -5071,11 +5071,11 @@ impl App {
     /// it through `inspect`, which borrows anyway, so the clone was buying
     /// nothing even before it became impossible.
     ///
-    /// **The Index Reduction tab is not special-cased any more**, because that
-    /// tab now shows an explanation rather than a torn matrix. Restore the
-    /// branch with the re-model, taking the reduced DAE from
-    /// `inspect_prepare_for_solve`'s `PreparedDae` instead of re-running
-    /// anything.
+    /// **The Index Reduction tab is not special-cased, and the re-model left it so.**
+    /// That tab does not offer the tearing animation (`worker::index_reduction_stage`
+    /// explains the refusal), so there is no reduced DAE to hand back here. (This said
+    /// "restore the branch with the re-model" until the 2026-11-07 sweep; the re-model
+    /// landed on 2026-11-04 and declined to.)
     fn tearing_dae(&self) -> Option<&std::sync::Arc<rumoca_ir_dae::Dae>> {
         self.cached_dae.as_ref()
     }
@@ -5876,7 +5876,7 @@ impl App {
         // Only on an actual change: re-clicking the lab already showing should not
         // throw away a specimen the reader is partway through.
         // **Remember where we were, before the selection changes.** Every switch is
-        // undoable — picker, `hrw://lab/…` link, or the Answer button — because a reader
+        // undoable — picker or `hrw://lab/…` link — because a reader
         // who lands somewhere unintended wants out regardless of how they arrived.
         if let Some(previous) = self.lab.selected.clone()
             && previous != source
@@ -6821,9 +6821,9 @@ impl App {
                 // first:** *"I will definitely want to use the new point-at mechanism to
                 // point at text in your answer documents. In fact, that is probably going to
                 // be the most likely place that I will use that mechanism."* The answer and a
-                // fixture lab draw in the same panel, so one wrapper serves both — and
-                // `lab_panel_origin` is what keeps them apart, since only one of them is in a
-                // file.
+                // fixture lab drew in the same panel, and `lab_panel_origin` kept them apart,
+                // since only one was in a file. The Answer was removed 2026-11-07, so the
+                // panel now holds fixture labs only and the origin always names the file.
                 let origin = self.lab_panel_origin();
                 let (_, pointing) = match origin {
                     Some(origin) => crate::pointing::region(ui, origin, can_point, |ui| {
@@ -7024,10 +7024,11 @@ impl App {
     /// that column — Doug: *"questions might also be asked about content in the LHS of
     /// HRW."* So `frame_ui` draws it as a bottom panel added before the side panels.
     ///
-    /// **Its dependence on the stage tab is stated in words, not by position.** Four
-    /// parts do follow the tab: the Always row (*"Resolve tab"*), *this* when nothing is
-    /// pointed at or followed, the Following row's count (*"in Flatten"*), and the point's
-    /// mismatch note (*"pointed at in …"*). Earlier the same day, that dependence was the
+    /// **Its dependence on the stage tab is stated in words, not by position.** Three
+    /// parts follow the tab: the Always row (*"Resolve tab"*), the Following row's count
+    /// (*"in Flatten"*), and the point's mismatch note (*"pointed at in …"*). (A fourth,
+    /// the `this =` preview's fallback to the stage, went with that preview the same
+    /// evening.) Earlier the same day, that dependence was the
     /// reason given for keeping the bar under the tabs, and Doug's proposal to move it
     /// above them was withdrawn on it. That reasoning used position for the narrower fact
     /// and missed the wider one. A position can express one scope, so it expresses the

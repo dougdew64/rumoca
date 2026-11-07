@@ -40,9 +40,10 @@
 
 /// One solver step as the label needs it: time, step size, method order.
 ///
-/// A plain tuple-struct rather than `rumoca_solver::SolverStepRecord` so the tests need no
-/// compile of the solver crate, and so this module cannot drift into depending on solver
-/// internals it has no business reading.
+/// A plain tuple-struct rather than the solver's own step record (`MeStepRecord` on 0.10.x;
+/// `rumoca_solver::SolverStepRecord` before it) so the tests need no compile of the solver
+/// crate, and so this module cannot drift into depending on solver internals it has no
+/// business reading.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StepRow {
     pub t: f64,

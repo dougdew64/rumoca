@@ -78,7 +78,7 @@ use crate::lab::{LabSource, LabState};
 /// 2026-11-05. `DECISIONS.md` has why.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum TransportRequest {
-    /// A different lab was chosen — from the picker, or from the Answer button.
+    /// A different lab was chosen from the picker.
     Switch(LabSource),
     /// **Back** — return to the lab a cross-lab link was followed from.
     Back,

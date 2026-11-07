@@ -610,14 +610,16 @@ mod tests_animated_contract {
         impl_body: String,
     }
 
-    /// Views whose phase display is **disabled for the v0.10.0 rebase**, and
-    /// which therefore cannot satisfy the contracts below.
+    /// Views whose phase display is **disabled**, and which therefore cannot satisfy
+    /// the contracts below. **Empty since 2026-11-04**, when the last of the v0.10.0
+    /// rebase's disabled views was re-modelled; kept so a future disablement has a
+    /// named, expiring place.
     ///
     /// A placeholder has no step enum, builds no frame context, and reports
     /// `LiveState::Idle` without consulting a `Playback` it does not own — so
     /// the three checks in this module would each fail on it for a true reason.
-    /// Exempting them by name keeps those checks meaningful for the eight views
-    /// that do render frames.
+    /// Exempting them by name keeps those checks meaningful for every view that
+    /// does render frames.
     ///
     /// **The exemption expires by itself.** `the_disabled_view_list_matches_the
     /// _placeholders` asserts this list and the `_awaiting_remodel` marker agree
@@ -858,6 +860,7 @@ mod tests_animated_contract {
             gated.len(),
         );
 
+        // (No pane is disabled now — `DISABLED_VIEWS` is empty — but the rule stands.)
         // **A disabled pane's `start_live` returns `None` unconditionally**, so
         // `app.rs` naming it counts as a gate while the pane can never have a
         // session. Removing the call site instead would delete the fallback

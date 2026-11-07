@@ -10,9 +10,17 @@ than by the toolchain. Every sweep starts from the lab holes, then re-measures.
 Quality improvements identified by code review, grouped by theme and ordered by severity within
 each group.
 
-## The v0.10.0 rebase disabled five surfaces, and one is still owed a re-model
+## The v0.10.0 rebase disabled five surfaces — all five re-modelled by 2026-11-04
 
-**This is the largest outstanding item and it is not ordinary debt** — it is work Doug ruled into a
+> **CLOSED.** `worker::AWAITING_REMODEL` and `playback::DISABLED_VIEWS` are both empty, and every
+> row below is struck through. *(The heading said "one is still owed a re-model" until the
+> 2026-11-07 sweep.)* Two leftovers are open and live elsewhere: `pre()` **live** stepping needs a
+> tracing seam in `crates/` (`lower_history_operator`), and no specimen exercises `edge`/`change`.
+> And one consequence was missed until that sweep: **the fidelity runner and the MSL survey were
+> never re-wired to the re-modelled Index reduction stage** — see *"the corpus runs do not check
+> Index reduction"* under the sweep's entry.
+
+**This was the largest outstanding item and it is not ordinary debt** — it is work Doug ruled into a
 specific order (`DECISIONS.md`, 2026-11-02). 0.10.0 re-shaped these phases' data models, so HRW's
 panes could not be ported; they need re-modelling onto the new vocabulary. Ports reached the build;
 these land afterwards, **one at a time, where each can be watched running** — because a pane
@@ -1747,6 +1755,7 @@ what a future sweep can use: what was fixed, and the lesson. Detail is in git hi
 | Sweep | Scope | Fixed |
 |---|---|---|
 | **2026-07-28** comprehensive | before source-tooling Phases 5-7 | `collect_tracked_ancestors` short-circuited on `any`, so the tree opened a path to the **first** mention only — now folds. `ui()` 1272 → 880. The specimen source view's private copy of the tracking toggle now calls `set_tracked_identifier` like every other entry point. `tree.rs` module docs refreshed. |
+| **2026-11-07** comprehensive, post-rebase | the diff of the 0.10.0 and 0.10.4 rebases and the day's feature changes (trigger 3) | the rebase port's remaining string damage, with a lexer guard; `phase_source` and three tooltips that described 0.9.20 to Claude and Doug; `view_published` overclaiming; `rustfmt` drift in our crates; about 45 comments and doc passages naming removed things as current. Open items it found are listed below the table |
 | **2026-07-29** scoped to #42 | before Answers | `ui()` 982 → 325 via `FrameIntent`, closing an item open across two sweeps and *blocked* the previous time — extraction needed seven out-parameters threaded through, because egui panel closures borrow `self`. Three dead locals removed (`node_ask`, `debug_ask`, `nav_to` — folded in with `.or(…)` where the fold was always the other operand). Batch narrative regeneration **closed as obsolete**. Test-race entry **corrected**: it blamed `bridge.rs` alone, but `worker`'s stdout redirect races too, and both reproduce on a clean tree. |
 
 **Three items were deferred into #42 rather than swept**, and the reasoning generalises:
@@ -1754,6 +1763,26 @@ unifying the four sub-view enums, decomposing `bridge.rs`, and aiming the canvas
 **design decisions of the link vocabulary wearing cleanup's clothes**. Sweeping them would
 have meant designing the abstraction before knowing what it must express — the mistake that
 made `end_to_end_tour.md` worthless. All three have since landed as #42 work.
+
+### Open items the 2026-11-07 post-rebase sweep found, and did not fix
+
+Each was checked against the code by a search agent and then by Claude; none was fixed in the
+sweep because each is real work or needs a decision. **Rank 0 first** (it shows something false).
+
+| # | item | evidence | size |
+|---|---|---|---|
+| 1 | **The corpus runs do not check Index reduction.** Fidelity pushes no `IndexReduction` subject, `--max-reduce-eq` is a no-op, and the survey's `index_reduced` column is never measured — although `PreparedDae::as_dae()` gives the reduced `&Dae` and the stage publishes `before`/`after` incidence | `fidelity::subjects`, `fidelity::check_model`, `survey_msl::survey_one` | hand the runner the `PreparedDae`; read the nested incidence; then a 3-hour re-run. `hrw/` only |
+| 2 | **Rank 0 candidate: three `note_is_error` callers still read `Flagged` as failed** — `compile_outcome` (*"FAILED at"*), `last_successful_stage`, and a note colour | `app.rs` ~2535, ~2884, ~5466; the 11-05 entry tabulates all six | 10–25 lines plus tests. The 11-05 entry says to measure first |
+| 3 | A diagnostic in a non-specimen file still resolves its span against the specimen | `diagnostics_to_json` gets only `SpanFile::specimen`; `compile_model_diagnostics(..).diagnostics` drops `ModelDiagnostics.source_map` | 15–30 lines in the compile path |
+| 4 | The two-phase reduction count (`Drivetrain` 5 / 3 / 3): the `sorted` banner never states the lowered count | `report_sub_view.rs`; `rumoca-phase-solve`'s `state_selection` is private | ~10 lines for the HRW half; a public seam for the rest |
+| 5 | The committed MSL survey still shows `panicked: 2`, although D1 is fixed | `docs/reports/msl-survey.meta.json` | a ~4-minute re-run |
+| 6 | Initialization has no field tooltips | `worker.rs` `ir_crate()` returns `None` for Initialization | waits on Doug's choice between the two options in the 11-04 entry |
+| 7 | No specimen declares `fixed = true`, none uses `edge`/`change` | `hrw/specimens/` | new specimens, oracle first |
+| 8 | A green fidelity row has no denominator | no engaged/coverage tallies anywhere | 50–150 lines plus a re-run |
+| 9 | `unsafe_code` not adopted; the entry's site list is stale (`main.rs:130` and `worker/tests.rs` sites too) | `hrw/Cargo.toml` `[lints.rust]` | one line plus ~12 `allow`s with reasons |
+| 10 | Mixed path separators grew from 20 to 28 sites | `concat!(env!("CARGO_MANIFEST_DIR"), "/…")` | mechanical |
+| 11 | `capture_suite` has no blank detection; `(tree root)` key collision; F7 cannot take an injected describer | the 11-04 and 11-06 entries | 30–60 lines each |
+| 12 | `UNCOVERED_BUDGET = 5`'s composition may have shifted now the reduction and pre() panes render again | `doc_citations.rs` | re-count; the test enforces the number, not its parts |
 
 ---
 
@@ -4805,3 +4834,7 @@ than leaving the two readings indistinguishable.
 | 11-07 | Claude told Doug *"the HRW you're running is the old build … Close it"*, about five minutes after its own `Get-Process` reading and after a 162 s gate run. HRW had already been closed | **Doug** — *"HRW is closed. Once again, your is-hrw-running check seems to be malfunctioning."* | **the fifth instance** of the snapshot-relayed-as-present defect, and **the first in which the stale reading was Claude's own, not the hook's**. Every reading was right when it was taken: the process existed at 12:28, and the hook said *NOT running* at 12:33:51. So no detector change fixes it. The fourth row's fix (a past-tense line with a timestamp) bound only the hook's output. The rule is the same for a reading Claude takes itself: **state a process observation with its time, or make the advice conditional** (*"if the HRW you had open is still running…"*) |
 | 11-07 | **32 string literals had a lost line continuation**, so each held a run of the next line's indentation. Among them: the status line's idle hint, a lab's hover text, three `note` fields and a `guidance` field emitted to Claude, and a dozen test failure messages. The same rebase port turned some `\n` escapes into literal line breaks | **Claude**, reading a screenshot taken to verify the Question Bar move | introduced by the v0.10.0 port `b2f75914` — very likely the shell-generated source text that the standing rule *"edit with Edit/Write, never through a shell"* now forbids. A compiler accepts all of it and no test read the text. A one-line search found 25. The guard written to keep them out, `no_string_literal_has_a_lost_line_continuation`, found 7 more on its first run, in strings spanning several source lines. Restored as `\` continuations. `crates/` not surveyed |
 | 11-07 | **the fileless selection note told Claude the text was "NOT in any repository file" and that "there is no file it is in"**, for the specimen's Modelica source and its purpose note too, which are files. It also still listed *"Claude's own answer document"* as a possible source, hours after the Answer was removed | **Claude**, while restoring that note's continuations | the arm serves every origin without a `source_file()`, and the variants' own docs say the file is *unnamed because unverified*, not absent. The note now says which regions are in no file and which come from files HRW has not checked. `a_fileless_selection_does_not_deny_that_a_file_exists` covers `SpecimenSource`. The Answer removal's sweep searched for the Answer's *identifiers*, and this was prose inside a JSON string |
+| 11-07 | **`phase_source`, emitted in every `focus.json`, sent Claude to six functions the v0.10.0 rebase removed**, and three stage tooltips described 0.9.20 (the funnel, `build_ic_plan`, `f_z`/`f_m`) | **Claude**, the post-rebase sweep (a search agent found them; each was verified before fixing) | five days old. Strings, so no compiler could object, and an existing test **pinned** one stale entry. `every_phase_source_names_a_defined_function` now checks all twelve, and failed with a dead name planted. One replacement was itself wrong on the first try (`to_dae`; the session calls `to_dae_with_evidence`) and caught by checking before committing |
+| 11-07 | **the fidelity runner and the MSL survey were never re-wired to the re-modelled Index reduction stage**, and their comments said the reduced DAE "cannot be had" | **Claude**, the post-rebase sweep | it can: `PreparedDae::as_dae()`. The re-model landed 2026-11-04 and the corpus runs kept describing the pre-re-model world, so **the 2026-11-06 sweep's "0 violations" covers no Index-reduction subject at all**, and `--max-reduce-eq` is a no-op. Comments corrected; the wiring is open below |
+| 11-07 | five `rustfmt` violations in this fork's own `crates/` instrumentation | **toolchain** — `cargo fmt --all -- --check`, run by the sweep | upstream CI checks formatting, so a PR would have failed on them. The gate formats `hrw/` only. Clippy `--all-targets` was clean on all eight instrumented crates |
+| 11-07 | an agent reported the committed fidelity sidecar's F4 as an overclaim | **Claude**, checking the run transcripts before editing | **not a defect**: two runs that day, the morning one without F4 and the committed afternoon one with it. The ledger entry described the morning run without naming it; it now names it. Recorded because the wrong correction was one edit away |

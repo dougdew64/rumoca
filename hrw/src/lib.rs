@@ -26,7 +26,7 @@
 //! - **`incidence_view`** — incidence matrix (equation x unknown adjacency) view.
 //! - **`matching_anim`** — animated matching stepper (augmenting-path replay).
 //! - **`tarjan_anim`** — animated Tarjan SCC stepper (BLT discovery replay).
-//! - **`reduction_view`** — index reduction process summary (the Pantelides funnel).
+//! - **`reduction_view`** — index reduction process summary (the reduction search's rounds).
 //! - **`equation_sheet`** — readable equation sheet from the flat DAE (grouped by origin).
 //! - **`identifier_index`** — cross-stage identifier index (source → flat names).
 //! - **`log_view`** — timestamped compilation/simulation log panel.
@@ -81,9 +81,9 @@ pub mod model_list;
 pub mod modelica_lex;
 pub mod nav_view;
 pub mod node_link_check;
-/// The acceptance ladder for `docs/ideas.md` #83 (general Pantelides), whose
-/// rungs are `#[ignore]`d until it lands. Test-only, but a normal module so the
-/// compiler keeps it building against today's API rather than letting it rot.
+/// The acceptance ladder for `docs/ideas.md` #83 (general Pantelides). All five
+/// rungs pass on v0.10.4, none `#[ignore]`d (they were, until it landed). Test-only,
+/// but a normal module so the compiler keeps it building against today's API.
 pub mod pantelides_ladder;
 pub mod playback;
 pub mod plot_labels;

@@ -3926,7 +3926,8 @@ Some prose.
     /// keeps between prompts:
     ///
     /// 1. an ordinary prompt → *a question is waiting* (the trigger was forgotten);
-    /// 2. `?` → the question, its `this`, and the warning that the live context below
+    /// 2. `?` → the question, the instruction to ask when "this" is unclear (it printed a
+    ///    resolved `this` until 2026-11-07), and the warning that the live context below
     ///    may differ from the one it was asked about;
     /// 3. an ordinary prompt → **no** reminder, since it has been shown;
     /// 4. `?` again → the same question, marked as shown before.

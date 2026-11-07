@@ -391,8 +391,8 @@ pub(crate) fn seed_for_test() -> DiagTestGuard {
 /// **`in-flight.json` is live state**: it has one fixed name and it is *the* file a
 /// post-mortem reads, so a test's record left behind would be read as the description
 /// of a real death — the failure this module's header calls worse than no diagnostic,
-/// because it is trusted. Same shape as `ui_tests::AdHocTour`, which guards
-/// `.hrw-bridge/tour.md`; `Drop` so a panicking test cleans up too.
+/// because it is trusted. `Drop` so a panicking test cleans up too. (It named a sibling
+/// guard, `ui_tests::AdHocTour`, which went with the tours and then the Answer.)
 #[cfg(test)]
 pub(crate) struct DiagTestGuard {
     previous: Option<Diag>,

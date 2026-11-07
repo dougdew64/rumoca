@@ -377,7 +377,8 @@ fn tab_label(
 /// - **`Ok` with no payload is neutral**, which covers *not yet reached* and *still
 ///   compiling*.
 ///
-/// The other seven callers of `note_is_error` are unchanged and listed in
+/// The other six callers of `note_is_error` (counted in the 2026-11-07 sweep; this
+/// said seven) are unchanged and listed in
 /// `docs/tech-debt.md` — `App::failure_context` among them, which still names a
 /// `pipeline_failure` to the chat bridge for models that simulate.
 fn tab_color(

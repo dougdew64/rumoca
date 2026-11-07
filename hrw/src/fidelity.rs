@@ -267,8 +267,13 @@ pub fn specimens_without_oracle_verdict<'a>(
 /// difference between a corpus sweep that covers the large models and one that
 /// silently excludes them.
 ///
-/// There is nothing to pass today: the reduced DAE came from re-running
-/// reduction over a clone, and 0.10.0's `Dae` is immutable and not `Clone`.
+/// **Open, and no longer blocked** (corrected in the 2026-11-07 sweep). This said
+/// "there is nothing to pass today", which was true from the rebase until the
+/// 2026-11-04 re-model: the old reduced DAE came from re-running reduction over a
+/// clone. Now `PreparedDae::as_dae()` gives the reduced system as a real `&Dae`, and
+/// the Index Reduction stage publishes its incidence under `after`. What is missing
+/// is plumbing: the runner is not handed the `PreparedDae`, so the cap and the
+/// `IndexReduction` subjects stay out. `docs/tech-debt.md` records it.
 ///
 /// F8 (sizes) and F9 (failure faithfulness) are the runner's business, not this
 /// function's: they need the whole bundle rather than a subject.
@@ -499,18 +504,20 @@ pub fn group_by_check(
 /// and Index Reduction the reduced one — a distinction that made F1's first
 /// tearing check fail for the wrong reason, and which still matters.
 ///
-/// It is one now because the reduced DAE cannot be had: it came from
-/// `worker::index_reduce_in_place` re-running reduction over a *clone*, and
-/// 0.10.0's `Dae` is immutable and not `Clone`. The Index Reduction stage is
-/// disabled accordingly (`docs/tech-debt.md`), so it publishes no incidence and
-/// would yield no subject even if a DAE were passed for it.
+/// It became one in the v0.10.0 rebase, when the reduced DAE could not be had: it
+/// came from `worker::index_reduce_in_place` re-running reduction over a *clone*, and
+/// 0.10.0's `Dae` is immutable and not `Clone`. **Since the 2026-11-04 re-model it
+/// can be had** — `PreparedDae::as_dae()` — and the stage publishes the reduced
+/// incidence under `after` (and the raw one under `before`). Neither is checked here
+/// yet: the runner is not handed the `PreparedDae`, and the reports nest the
+/// incidence one level down. Open in `docs/tech-debt.md`. *(Corrected in the
+/// 2026-11-07 sweep; this said the stage was disabled and published no incidence.)*
 ///
 /// **The parameter is removed rather than passed the raw DAE twice**, which
 /// would have compiled and been a lie: the `IndexReduction` subject would then
 /// claim the raw system's incidence was the reduced one's, and every F2
 /// comparison under that label would pass by describing the wrong system. When
-/// the re-model lands it will supply a real reduced DAE and this signature
-/// grows back.
+/// the plumbing lands, this signature grows back with `as_dae()`.
 pub fn subjects<'a>(stages: &'a StageBundle, dae: &'a rumoca_ir_dae::Dae) -> Vec<Subject<'a>> {
     let mut out = Vec::new();
     let mut push = |label: &str, report: Option<&'a Value>, d: &'a rumoca_ir_dae::Dae| {
@@ -525,9 +532,9 @@ pub fn subjects<'a>(stages: &'a StageBundle, dae: &'a rumoca_ir_dae::Dae) -> Vec
         }
     };
     push("Structural", stages.structural.value.as_ref(), dae);
-    // `IndexReduction` and `IndexReduction.before` are not pushed. Both
-    // described systems only the disabled stage produced; see the note above
-    // for why passing `dae` for them would be worse than omitting them.
+    // `IndexReduction` and `IndexReduction.before` are not pushed: the reduced
+    // DAE is not passed in yet (see the note above), and passing `dae` for them
+    // would be worse than omitting them.
     out
 }
 
@@ -1794,7 +1801,8 @@ mod tests {
         // (`UndefinedRef / Resolve`, `DimensionMismatch / Typecheck`, and
         // `IncompatibleConnect` and `CapacitorLoop` at `Structural`). The fifth was
         // the **index-reduction copy** of CapacitorLoop's singular payload, and that
-        // stage is on `worker::AWAITING_REMODEL` — the same duplicate removed from
+        // stage was then on `worker::AWAITING_REMODEL` (empty since 2026-11-04) — the
+        // same duplicate removed from
         // `a_structural_failure_names_the_source_line`. No span was dropped; a
         // second report of one stopped being published.
         //

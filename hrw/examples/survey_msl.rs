@@ -539,8 +539,8 @@ impl Health {
 /// Survey one model: compile it, then measure its shape.
 /// `max_reduce_eq` is accepted and unused while index reduction is not
 /// measured; see the note at the index-reduction column below. Kept in the
-/// signature so the caller and the CLI flag need no change when the
-/// re-model restores the column.
+/// signature so the caller and the CLI flag need no change when the column is
+/// restored (the re-model that allows it landed 2026-11-04; wiring it is open).
 fn survey_one(session: &mut Session, name: &str, _max_reduce_eq: usize) -> SurveyRow {
     let mut row = SurveyRow {
         name: name.to_owned(),
@@ -664,8 +664,10 @@ fn survey_one(session: &mut Session, name: &str, _max_reduce_eq: usize) -> Surve
             // claim about an analysis that did not run.
             //
             // The `--max-reduce-eq` cap went with it; `check_model`'s note in
-            // `fidelity.rs` records why that cap has to return with the
-            // re-model.
+            // `fidelity.rs` records why that cap has to return. **Since the
+            // 2026-11-04 re-model the column could be measured** (through
+            // `inspect_prepare_for_solve`), and this survey has not been re-wired to
+            // it: open in `docs/tech-debt.md`.
         }
     }
     row.secs = t.elapsed().as_secs_f64();
