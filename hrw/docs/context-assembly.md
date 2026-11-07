@@ -160,7 +160,11 @@ Doug, 2026-07-27: keeping one wire format is right — it is all captured contex
 followed.** The distinction drives different behaviour, so losing it silently
 degrades both request types:
 
-**For `explain`,** the point is the *subject* and the thread is the *lens*.
+**With no declared verb — the ordinary case, where Doug's verb is his chat message,**
+the point is the *subject* and the thread is the *lens*. *(This paragraph opened "For
+`explain`," until 2026-11-07, when `explain` stopped being a request HRW attached to every
+point and went back to being a word Doug types; see `bridge::AskRequest`. The reading it
+describes is unchanged.)*
 "Pointed at `components.src.V`, following `src.V`" asks for that node explained
 as part of that variable's story. "Pointed at an equation, following `h`" asks
 about the equation with attention to how `h` participates. Flatten the two and

@@ -180,7 +180,17 @@ pub(crate) struct PointedAt {
     /// sentence of prose. Doug, on being shown the choice: *"Accuracy is a requirement.
     /// No shortcuts. Add types as necessary to ensure accuracy."*
     pub(crate) stage: Option<StageKind>,
-    pub(crate) request: bridge::AskRequest,
+    /// The verb a gesture **declared**, if any — `None` for an ordinary point.
+    ///
+    /// **An `Option` for exactly the reason `stage` above is one**, and the same ruling
+    /// governs it: storing a default would put a claim into `focus.json` that nobody
+    /// made. Until 2026-11-07 this was a bare `AskRequest` that every capture path except
+    /// the debugger's filled with `Explain`, so the bar showed `(explain)` beside every
+    /// noun and Claude received every question pre-labelled as a request for an
+    /// explanation. Doug: *"The context bar is not supposed to presume verbs… Unless I
+    /// select something like a context menu item which explicitly declares a verb, no
+    /// verbs should be associated with my context nouns."* See [`bridge::AskRequest`].
+    pub(crate) request: Option<bridge::AskRequest>,
 }
 
 /// What a capture pointed at, kept so the focus can be rebuilt when the
@@ -320,7 +330,7 @@ pub(crate) fn context_bar_ui(
     );
 
     if let Some(point) = &context.pointed_at {
-        let request = point.request.as_str();
+        let request = point.request;
         let target = point.target.clone();
         ui.horizontal(|ui| {
             // **The category label carries the category's colour, not just its value.**
@@ -333,7 +343,15 @@ pub(crate) fn context_bar_ui(
                     .monospace()
                     .color(crate::colors::CONTEXT_POINT),
             );
-            ui.weak(format!("({request})"));
+            // **A verb only if a gesture declared one.** This printed `({request})` on
+            // every row — `(explain)` beside every noun, a dimmed label in parentheses
+            // that looked like a control and was not one, reporting a verb nobody chose.
+            // Now the bar shows nouns, as Doug ruled, and the one declared verb is named
+            // in the words of the menu item that declared it rather than as an internal
+            // slug, so the reader can tell which gesture they used.
+            if let Some(bridge::AskRequest::DebugWhereSet) = request {
+                ui.weak("\u{2014} for the debugger");
+            }
             // Symmetric with Following. Without it the point could only be
             // *replaced*, never removed — so "explain only what I am
             // following" was unaskable, and the sole escape was reloading
@@ -627,7 +645,7 @@ mod tests {
                 },
             },
             stage: None,
-            request: crate::bridge::AskRequest::Explain,
+            request: None,
         };
         assert!(
             point.stage.is_none(),
@@ -759,7 +777,7 @@ mod tests {
             target: "equations[0]".to_owned(),
             kind: PointKind::Stage,
             stage: Some(StageKind::Flatten),
-            request: bridge::AskRequest::Explain,
+            request: None,
         }
     }
 
@@ -839,6 +857,60 @@ mod tests {
         crosses[1].click();
         h.run_steps(2);
         assert_eq!(h.state().reported, Some(ContextBarPress::ClearThread));
+    }
+
+    /// **The bar shows nouns. A verb appears only if a gesture declared one.**
+    ///
+    /// Doug, 2026-11-07, on seeing `Pointing at  causality(explain)`: *"The context bar
+    /// is not supposed to presume verbs. It is only supposed to show a bunch of nouns
+    /// which I have identified by pointing and clicking with my mouse."* Every point
+    /// carried `(explain)` — a dimmed label in parentheses that looked like a control,
+    /// was not one, and reported a verb nobody chose.
+    ///
+    /// **Both halves in one test, so neither can pass alone.** Asserting only the absence
+    /// would pass on a bar that rendered no request at all, which would silently lose
+    /// the one verb that *is* declared — the debugger's. And the absence is checked on
+    /// the word, not the old parenthesised form, so a later rendering such as
+    /// `— explain` cannot slip past it.
+    #[test]
+    fn the_bar_shows_a_noun_and_no_verb_unless_one_was_declared() {
+        let mut h = harness(Bar {
+            context: ContextBarState {
+                pointed_at: Some(a_point()),
+                ..Default::default()
+            },
+            ..Bar::default()
+        });
+        h.run_steps(2);
+        assert!(
+            h.query_by_label_contains("equations[0]").is_some(),
+            "the noun Doug pointed at is shown",
+        );
+        assert!(
+            h.query_by_label_contains("explain").is_none(),
+            "pointing declared no verb, so the bar may not attach one",
+        );
+        assert!(
+            h.query_by_label_contains("for the debugger").is_none(),
+            "and in particular not the debugger's, which only its menu item declares",
+        );
+
+        let declared = PointedAt {
+            request: Some(crate::bridge::AskRequest::DebugWhereSet),
+            ..a_point()
+        };
+        let mut h = harness(Bar {
+            context: ContextBarState {
+                pointed_at: Some(declared),
+                ..Default::default()
+            },
+            ..Bar::default()
+        });
+        h.run_steps(2);
+        assert!(
+            h.query_by_label_contains("for the debugger").is_some(),
+            "a verb the 🐞 menu item declared must still be shown",
+        );
     }
 
     /// A name the index does not know, but a component type does, is a **link** — and
