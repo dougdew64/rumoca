@@ -105,7 +105,21 @@ if ([Console]::IsInputRedirected) {
 }
 # `?` on its own is a PROTOCOL TOKEN, matched exactly. It is never a substring search
 # over Doug's words, which docs/identity-and-provenance.md forbids.
-$asksForQuestion = ($null -ne $prompt) -and ($prompt.Trim() -eq '?')
+#
+# **But the VS Code extension puts its own notes in front of what Doug typed**, and they
+# are stripped first. Found on the FIRST REAL USE, 2026-11-07: Doug opened a file, typed
+# `?`, and the message arrived as `<ide_opened_file>The user opened the file …
+# </ide_opened_file>` followed by `?` -- so the whole prompt was not `?`, and the hook
+# announced "Doug has not typed ? yet" to the `?` itself. Every test had sent a bare `?`,
+# which is not what the editor sends. The tags have a fixed, documented form
+# (`<ide_opened_file>`, `<ide_selection>`, ...), so removing them is stripping the
+# harness's markup, not interpreting Doug's words; what remains is still compared
+# exactly.
+$typed = $null
+if ($null -ne $prompt) {
+    $typed = ([regex]::Replace([string]$prompt, '(?s)<ide_[a-z_]+>.*?</ide_[a-z_]+>', '')).Trim()
+}
+$asksForQuestion = ($typed -eq '?')
 
 if (Test-Path $questionPath) {
     # "Seen" is keyed to the question file's own mtime: question.json is written only
@@ -179,13 +193,24 @@ Write-Output "$tag state as of $sessionAge - session.json is rewritten only when
 # other -- so this is the same defect one step out: a file age conflated with a
 # process.
 #
-# **It also decides whether the gate may run**, which is the other reason a session
-# wants it without asking: the gate relinks hrw.exe and fails while the app is up.
+# **AND IT IS A SNAPSHOT, WHICH IS WHY IT NO LONGER SAYS "IS" (2026-11-07).** This read
+# "HRW IS RUNNING - close it before the gate", and the comment above it said the line
+# "decides whether the gate may run". Both were wrong in the same way: the probe runs
+# once, when Doug presses Enter, and a turn can last minutes. On 2026-11-07 Claude
+# reported the line as a present fact three minutes later -- "HRW is running" -- and
+# POSTPONED A COMMIT on it, after Doug had closed the app. That is the fourth instance;
+# CLAUDE.md records the first three, 2026-11-05.
+#
+# So the line now carries the time it was taken, in the past tense, and says plainly
+# that it is not a reason to skip the gate. **The gate is what decides whether the gate
+# can run**: it fails fast on the relink and names the cause, so trying it costs seconds
+# and a stale reading costs a postponed commit and a wrong statement to Doug.
 $hrwUp = $null -ne (Get-Process -Name 'hrw' -ErrorAction SilentlyContinue)
+$probedAt = (Get-Date).ToString('HH:mm:ss')
 if ($hrwUp) {
-    Write-Output "$tag HRW IS RUNNING - close it before the gate, which relinks hrw.exe"
+    Write-Output "$tag HRW WAS RUNNING at $probedAt, when this message was sent - a snapshot, not a fact about later: never report it as current, and never skip or postpone the gate on it (run the gate; it checks for itself)"
 } else {
-    Write-Output "$tag HRW is NOT running - every age below is a file's, not a live session's"
+    Write-Output "$tag HRW was NOT running at $probedAt, when this message was sent - every age below is a file's, not a live session's"
 }
 
 $where = @("mode: $($app.ui_mode)")

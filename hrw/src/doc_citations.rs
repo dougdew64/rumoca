@@ -3817,6 +3817,37 @@ Some prose.
             "a repeat says it is a repeat:\n{out}"
         );
 
+        // 5. WHAT VS CODE ACTUALLY SENDS — found on the first real use, 2026-11-07. Doug
+        //    had just opened a file, and the extension put its note in front of his `?`.
+        //    Every step above sends a bare `?`, which the editor does not; this is the
+        //    note copied from that real message.
+        let note = "<ide_opened_file>The user opened the file \
+                    c:\\Users\\dougd\\source\\repos\\rumoca\\hrw\\src\\doc_citations.rs in \
+                    the IDE. This may or may not be related to the current \
+                    task.</ide_opened_file>";
+        let ide = make("ide-prefixed", true);
+        let out = ask(&ide, &format!("{note}?"));
+        assert!(
+            out.contains("HRW QUESTION #12"),
+            "the editor's note in front of `?` must not hide the token:\n{out}",
+        );
+        assert!(
+            !out.contains("has not typed ? yet"),
+            "and the hook must never tell Claude that a `?` was not typed:\n{out}",
+        );
+
+        // 6. The must-not partner: a REAL question after the note is not the token.
+        let real = make("ide-real-question", true);
+        let out = ask(&real, &format!("{note}what is this?"));
+        assert!(
+            !out.contains("HRW QUESTION #12"),
+            "a question typed in the chat is not `?`, even with the note stripped:\n{out}",
+        );
+        assert!(
+            out.contains("AN HRW QUESTION IS WAITING"),
+            "so the waiting question is still only announced:\n{out}",
+        );
+
         // And with no question at all: `?` says so, an ordinary prompt says nothing.
         let none = make("none", false);
         let out = ask(&none, "?");
