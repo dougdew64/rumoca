@@ -5763,3 +5763,61 @@ compiler already forbids the variant: `bridge::tests::a_point_carries_no_verb_un
 and `context_bar::tests::the_bar_shows_a_noun_and_no_verb_unless_one_was_declared`, each asserting
 both the absence and the one declared verb so neither passes on a field dropped entirely. Both,
 and the inverted app test, were falsified by reinstating the presumed verb before being trusted.
+
+## 2026-11-07 — questions are asked in HRW and answered in VS Code
+
+**Three decisions of Doug's, made in sequence in one conversation, and the third reverses one of
+his own.** They close the arc `docs/ideas.md` #92 opened: how Claude knows what a question is
+about.
+
+### 1. Ask HRW questions in HRW
+
+*"If we broaden the context bar to be a context + question bar which includes a text field for me
+to ask a question, then you would know with certainty that the question was about HRW and the
+context I had assembled in HRW. I could make use of 'this' within those HRW questions with
+confidence that those uses of 'this' would be resolved correctly."*
+
+**What it fixes is the join.** A question typed in the chat was joined to Doug's context only by
+*time* — Claude read whatever `focus.json` held when the hook ran — and every Q&A defect found
+that week was a failure of that join. Asked in HRW, the question and its context leave as **one
+document**, `question.json`, built from the same `Ask` as that frame's `focus.json`. It is a
+separate file because `focus.json` is the live context and the next click would overwrite a
+question stored there. The design of `question.json` was Claude's proposal; Doug: *"That is a
+great idea."*
+
+**And the bar says what "this" means before he asks** — `this = …`, resolved by his rule: the
+point, then the follow, then the stage on screen. Proposed by Claude, adopted by Doug as an
+explicit experiment: *"I don't know if it will work well or not, but I am certain that it would be
+a good experiment."* **It is to be judged by use, not by argument.**
+
+### 2. Deliver by convention: `?`
+
+HRW cannot wake Claude, so the question waits until Doug types **`?`** in the chat (his choice of
+token), and the hook prints it. Doug priced it before deciding: *"That won't be significantly worse
+than what I have to do now. Right now, because I cannot confidently use 'This' here, I end up
+typing a bunch of extra words here. So, the tradeoff for our new system won't require extra effort
+from me, and will yield greater accuracy. So, worthwhile."*
+
+### 3. Answers belong in VS Code — reversing 2026-09-02
+
+*"My opinion is that I was wrong to want your answers to appear in HRW. They should appear here,
+in VS Code."* Chat text by default; a richer VS Code tab when he asks; iterated in place; committed
+as a file when he asks. **This reverses his ruling of 2026-09-02**, *"answer through HRW when HRW
+can show it"*, which `CLAUDE.md` carried as a standing expectation. The reasons it lost, in the
+conversation that settled it: the chat is where the conversation already lives, it streams, VS
+Code renders mathematics, selecting text in a tab already attaches it to the next message, and a
+rich answer is a file from the moment it exists.
+
+**What it costs, recorded so it is not rediscovered as a surprise:** clickable `hrw://` routes in
+an answer. VS Code cannot follow them — the same trade the lectures accepted. Claude can drive
+HRW to a pane himself instead, through the existing request channel.
+
+**Sequenced by Doug: the HRW Answer feature is removed only after the new arrangement is in
+place and used.** When it goes, it goes narrowly — the Answer lab source, `answer.md` and
+`check_answer` — and **labs and the `hrw://` dispatcher stay**, since the fixture labs depend on
+both.
+
+### Noted for later, at Doug's direction
+
+*"Later, we'll explore how you could leverage a database of those as a measure of my learning."*
+`question.json` holds only the latest question, so that exploration begins by keeping history.

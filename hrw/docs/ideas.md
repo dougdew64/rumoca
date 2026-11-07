@@ -7017,10 +7017,43 @@ Silent otherwise.
 - **What it buys:** a wrong guess becomes a **one-word correction** instead of an answer to unpick;
   and it **generates the measurement this entry lacks** — each correction Doug makes is a row in
   `docs/tech-debt.md`'s *"who caught it?"* ledger.
-- **STATUS: PROPOSED 2026-11-07, NOT RULED.** Under charter Decision 16 it is category 3 — a habit
-  of Claude's whose failure is silent, with instances on record — **so it is Doug's to rule on, and
-  it is not written into `CLAUDE.md` until he does.** Doug's reply that day was to have this entry
-  rewritten; he did not rule on the candidate.
+- **STATUS: PROPOSED 2026-11-07, NOT RULED — and, for HRW questions, OVERTAKEN the same day.**
+  Under charter Decision 16 it is category 3, so it was Doug's to rule on and was never written
+  into `CLAUDE.md`. He did not rule on it; he proposed something better (below). **For a question
+  asked in HRW the candidate is moot, because HRW now states the referent *before* the question
+  is asked** — a stronger form than Claude stating it after. It survives only for questions typed
+  straight into the chat, and stays unruled there.
+
+### WHAT WAS BUILT, 2026-11-07 — Doug's design, and it addresses the resolution half
+
+**Doug's proposal:** *"if we broaden the context bar to be a context + question bar which
+includes a text field for me to ask a question, then you would know with certainty that the
+question was about HRW and the context I had assembled in HRW."* And, separately: answers belong
+in VS Code — *"I was wrong to want your answers to appear in HRW"* — as chat text by default, a
+richer tab on request, committed on request.
+
+**Why it addresses the open half, which nothing on the context side could.** Until now the
+question and the context were joined only by *time*. The question bar joins them by
+*construction*: they leave HRW as **one document**, `question.json`, built from the same `Ask`
+that `focus.json` gets that frame. And the bar shows `this = …` beside the field, resolved by
+Doug's rule — the point, then the follow, then the stage on screen — so *"this"* is not something
+Claude infers but something Doug **saw** before he asked. *(Doug on the preview: "I don't know if
+it will work well or not, but I am certain that it would be a good experiment." It is recorded as
+an experiment, and is to be judged by use.)*
+
+**The delivery convention, since HRW cannot wake Claude:** Doug types `?` in the chat. The hook
+prints the question, its `this`, and **a warning that the live context below may differ** from
+the one the question was asked about — mixing the two would reopen the join-by-time defect. A
+question waiting without `?` is announced in one line on every other prompt, so it cannot sit
+unanswered because the trigger was forgotten. Doug: *"That won't be significantly worse than
+what I have to do now. Right now, because I cannot confidently use 'This' here, I end up typing
+a bunch of extra words."*
+
+**What remains, in Doug's order:** use it; **then** remove the HRW Answer feature — narrowly
+(the Answer lab source, `answer.md`, `check_answer`), keeping labs and the `hrw://` dispatcher,
+which the fixture labs need. **And later**, Doug's own next idea: *"we'll explore how you could
+leverage a database of those as a measure of my learning."* `question.json` keeps only the
+latest question today, so that needs history kept before it can be measured.
 
 ### What already exists, if a recorded failure ever needs it — measured 2026-11-06, NOT a plan
 
