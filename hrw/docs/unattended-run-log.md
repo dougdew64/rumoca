@@ -402,12 +402,25 @@ would have caught it had not been run since before 0.10.0.
 | 3 | 4, field help | **REVERTED** — regenerating restores a tooltip Doug reported as lying |
 | 4 | 9, version readout | 0.10.4 / `4a4f4ed8` / clean, verified at the inputs |
 
+**All four closed on 2026-11-06, and three of them needed a mechanism rather than a fix.** F4 reads
+a compacted family through `first_row`/`row_count` published by `rumoca-phase-structural`, and
+`specimens/ArrayFamily.mo` is the first specimen that reaches the shape, so the regression now
+fails the pre-commit suite in seconds instead of surviving two releases. Item 3's `names` turned
+out not to be a deleted doc at all but a deleted *struct*, so the guard was re-grounded as a claim
+of absence. The corpus sweep then re-ran with every check including F4: **2,780 of 2,791 green**,
+promoted into `docs/reports/`.
+
+**What this night cost, stated plainly, because it is the argument for the step-10 ordering:** the
+F4 blindness was two releases old and three separate corpus sweeps had run green over it. None of
+them could have found it — a check with no subject reports exactly what a passing check reports.
+It took a *specimen* reaching the shape, which no sweep could author.
+
 **Item 3 is the one to read.** `gen_field_help` ran clean and its output was thrown away, because
 v0.10.4 deleted the `rumoca-ir-solve` doc for `names` and the `rumoca-ir-dae` doc for `causality`.
 Committing the fresh table would have made Solve lowering's `names` tooltip serve
 `rumoca-ir-ast`'s *"All names imported from the package"* — **the exact symptom Doug reported five
 times in one afternoon on 2026-09-03**, and the symptom
-`solve_lowerings_names_is_documented_as_slots_not_imports` is named after. That test's own doc says
+`the_solve_lowering_names_symptom_is_unreachable` is named after. That test's own doc says
 the fix needed two halves; upstream removed one of them.
 
 **A stale-but-true tooltip beats a fresh-but-false one**, so `field_help.json` stays at its v0.10.0

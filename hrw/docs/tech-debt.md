@@ -3859,12 +3859,69 @@ JSON does not publish. **That is an HRW publishing change plus an F4 change, and
 Doug:** publish the family's row range, or teach F4 to skip compacted blocks and say so in the
 report rather than counting them as holes.
 
-**`docs/reports.md` is therefore stale as well as wrong**, and the suite has not been run since
-before the 0.10.0 rebase — which is how a check could go blind for two releases unnoticed.
+**The committed artifacts in `docs/reports/` are therefore stale as well as wrong**, and the suite
+has not been run since before the 0.10.0 rebase — which is how a check could go blind for two
+releases unnoticed. *(This said `docs/reports.md`, the design document, which carries no F4 claim
+and no corpus counts. Corrected 2026-11-06, when the artifacts were re-promoted: a pointer that
+resolves to the wrong real file sends its reader looking for a defect that is not there.)*
 
 | date | defect | caught by | note |
 |---|---|---|---|
 | 11-04 | F4 reports every `StructuredScalar` block as "names no equations", and cannot see a partition defect in any model containing one | the large fidelity suite, step 3b, on its first post-rebase run | blind since v0.10.0. The large suite is trigger 1 of the fidelity policy and is the only thing that runs F4 at scale; the pre-commit suite's 16 curated specimens do not reach the shape |
+
+### 11-06, OPEN — a green fidelity row has no denominator, so F4's repair is unproven at scale
+
+**The 0.10.4 corpus sweep came back green on all eight checks over 2,780 models. That does not say
+F4 was exercised even once.**
+
+A check that passes and a check that had nothing to look at write the identical row. F4's whole
+defect was that it could not see a compacted equation family; the repair is falsified on
+`ArrayFamily` (rename the two keys and both documented halves return), so the *mechanism* is
+proven. What is unproven is **coverage** — whether any of those 2,780 models contains a family at
+all. Nothing in the report, the profile or the sidecar can answer it.
+
+**Why this is not pedantry.** The same confusion is what let F4 go blind for two releases: three
+corpus sweeps ran green across it. **Green over a corpus is evidence about the corpus the check
+examined, which may be empty.** `docs/reports.md` now carries this as the second way a rebase
+threatens the fidelity report, beside the one it already described.
+
+**The fix is the must-fire rule aimed at coverage rather than at silence:** have each check report
+*that it engaged*, and have the runner carry the tallies into the sidecar, so "zero violations"
+arrives with "F4 examined N families across M models". Then a check that stops seeing its subject
+shows up as a **coverage collapse** rather than as continued success.
+
+**Deliberately not done while closing the rebase**, and the reason is scheduling rather than
+scope: populating a denominator means re-running the three-hour sweep, which would reopen step 10
+to answer a question step 10 did not ask. The measurement it would produce is about HRW's
+instruments, not about v0.10.4.
+
+*Who caught it: Claude, reasoning about what the finished run had established — not a checker.
+There is no checker for this, which is the entry.*
+
+### 11-06, CLOSED BY MEASUREMENT — widening `qualified_citations_resolve` to the history documents
+
+**Rejected, and the measurement is the useful part.** A rename on 11-06 left dead pointers in
+`tech-debt.md` and `unattended-run-log.md` behind a green gate, because
+`qualified_citations_resolve` scans six documents and neither is one. The obvious repair is to add
+them.
+
+**Adding both produced 11 failures, all in `tech-debt.md`, and every one correct as history** —
+`PendingLiveDebug::PreLowering`, `reduction_view::ReductionView::from_search`,
+`Stage::ok_with_note`, `Focus::LabPassage` and the rest name things this project deliberately
+deleted, in entries whose content *is* that they were deleted.
+
+**So the checker cannot be aimed here**: it cannot distinguish a deliberate reference to a deleted
+symbol from an accidental reference to a renamed one, and pointing it at a history document turns
+the record into failures — which pressures the next session to falsify history to get green. Same
+ruling as `DECISIONS.md`, also absent from the roster.
+
+**What is actually missing is narrower: a citation of a *test* name.** A test name is always meant
+to resolve — nobody writes an entry about a deleted test by name without saying so — and both of
+11-06's dead pointers were exactly that. A check over `` `[a-z_]+` `` tokens that look like test
+functions, across all documents, would have caught both and none of the 11.
+
+*Who caught it: a measurement that contradicted the obvious fix. Recorded so the next session does
+not re-propose the widening and then discover the same 11.*
 
 ### 11-04 night, the Initialization pane has no tooltips and the docs for them are already on disk
 
@@ -3914,7 +3971,7 @@ guards that exist for exactly this caught both:
 | `causality` | `rumoca-ir-dae` | `rumoca-ir-ast`'s type-alias causality, not the FMI meaning |
 
 **The `names` one is Doug's own 2026-09-03 report**, which
-`solve_lowerings_names_is_documented_as_slots_not_imports` is named after: five times in one
+`the_solve_lowering_names_symptom_is_unreachable` is named after: five times in one
 afternoon he could not find `Y` in Solve lowering, and part of why was that hovering `names`
 produced a doc about imports. The fix needed **both** halves — the per-stage keying *and* the
 `rumoca-ir-solve` doc comment giving the stage something of its own to prefer. **Upstream removed
@@ -4664,3 +4721,6 @@ than leaving the two readings indistinguishable.
 | date | defect | caught by | note |
 |---|---|---|---|
 | 11-05 | the survey's metadata no longer names the MSL version it surveyed | reading the `.meta.json` diff rather than only the CSV's | a consequence of the deliberate one-root consolidation; the versions remain available as subdirectory names |
+| 11-06 | **`ArrayFamily` was committed with no System Modeler verdict** — the oracle report held 28 rows for 29 specimens | reading the directory listing against the artifact, while closing the rebase | *oracle-first* was a rule with no mechanism, and the absence is the invisible kind: a specimen with no row contributes nothing, so a missing adjudication and a specimen that was never authored look identical. Now `fidelity::every_specimen_has_an_oracle_verdict`, with the predicate split out so its must-fire needs neither System Modeler nor a file |
+| 11-06 | the promoted sidecar told maintainers the run covered **`F1-F9`** | reading the sidecar that `promote_run` had just written | every word wrong by then: F1 retired into `check_f2`, F8 a measurement rather than a check, F10 absent from the range and present in the run. It now derives from `fidelity::CHECKS` and carries a `checks` array. **This is the artifact a maintainer reads without the conversation around it**, which is the whole argument for the `not_checked` field one line above it |
+| 11-06 | two documents cited `solve_lowerings_names_is_documented_as_slots_not_imports`, renamed the same day | grep, while looking for something else | `qualified_citations_resolve` scans six documents and neither `tech-debt.md` nor `unattended-run-log.md` is one, so the rename gated green with two dead pointers behind it. **Widening it was measured and rejected** — see the entry below |

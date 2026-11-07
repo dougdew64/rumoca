@@ -394,8 +394,12 @@ ls hrw/specimens/*.mo > /tmp/specimens.txt
   -timeout 90
 ```
 
-**28 specimens in about 110 seconds**, ~3–7 s each. Nothing about this run is long; it is here
-because it belongs beside the other two in the chain, not because it costs anything.
+**~3–7 s per specimen**, so the whole set in a couple of minutes. Nothing about this run is long;
+it is here because it belongs beside the other two in the chain, not because it costs anything.
+
+*(This read "28 specimens in about 110 seconds" until 2026-11-06, when there were 29. A per-item
+cost does not rot; a total computed from a corpus size does, and the corpus grows whenever a
+question needs a new specimen.)*
 
 ### `-script`, not `-file` or `-args`
 

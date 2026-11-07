@@ -21,11 +21,11 @@ among the documents.*
 |---|---|---|
 | `msl-survey.csv` | `examples/survey_msl.rs` | **The corpus definition.** Rumoca's reach across every MSL model, plus the IR-shape metrics that stratify a sample. 2,791 models as of 2026-11-06, up from 2,626 when the root list was consolidated and `ModelicaReference` and `ObsoleteModelica4` entered it — the count is whatever the file holds, and nothing should spell it. |
 | `msl-survey.meta.json` | same | provenance for the above |
-| `msl-fidelity-report.csv` | `examples/fidelity_msl.rs`, promoted by `examples/promote_run.rs` | **The artifact.** F1-F9 over the corpus — 2,614 of 2,626 models, all green (2026-08-01). |
+| `msl-fidelity-report.csv` | `examples/fidelity_msl.rs`, promoted by `examples/promote_run.rs` | **The artifact.** Every check on the `fidelity::CHECKS` roster over the corpus — **2,780 of 2,791 models, all green (2026-11-06)**, the rest stopped by the memory ceiling and named in the sidecar. The roster is the sidecar's `checks` field, never a range spelled here: this cell read `F1-F9` for three months, by which time F1 was retired, F8 was a measurement rather than a check, and F10 existed. |
 | `msl-fidelity-profile.csv` | `scripts/measure-fidelity.ps1` | peak resident memory and wall time per model, plus the abort verdict |
 | `msl-fidelity-report.meta.json` | `examples/promote_run.rs` | provenance, **including the `not_checked` bound** |
-| `specimen-fidelity-report.csv` | the pre-commit test in `src/fidelity.rs` | the specimens named by `fidelity::MODELS` — **10 of the 28 specimen files**, not all of them. **Churns on every full test run** — that is expected. |
-| `specimen-oracle-report.csv` | `scripts/oracle.wls` | **System Modeler's verdict** on all 28 specimens: `simulated`, `refused`, `import-failed`, `timeout`. The other side of every mismatch. **`secs` is wall-clock and unstable** — exclude it from a diff, exactly as `compile_cost` is excluded from the survey's; the first four columns were byte-identical across two consecutive runs. |
+| `specimen-fidelity-report.csv` | the pre-commit test in `src/fidelity.rs` | the specimens named by `fidelity::MODELS` — a **subset** of `specimens/*.mo`, not all of them. **Churns on every full test run** — that is expected. |
+| `specimen-oracle-report.csv` | `scripts/oracle.wls` | **System Modeler's verdict** on every specimen: `simulated`, `refused`, `import-failed`, `timeout`. The other side of every mismatch, and `every_specimen_has_an_oracle_verdict` fails by name when a new specimen has no row. **`secs` is wall-clock and unstable** — exclude it from a diff, exactly as `compile_cost` is excluded from the survey's; the first four columns were byte-identical across two consecutive runs. |
 
 ## Read at runtime — do not move or rename
 
@@ -57,10 +57,14 @@ provenance sidecar. The run is still kept in `C:\Users\dougd\rumoca-runs\` as
 
 **The bound travels with the data.** A table handed to a maintainer arrives without its
 conversation, so whatever it does *not* cover has to be readable from the artifact itself.
-`meta.json`'s `not_checked` field says which models were skipped and why — currently three
-model families that exceed this machine's memory or the run's time limit. **Those are limits
-of the hardware and the run configuration, not findings about HRW or Rumoca**, and the field
-says so in those words.
+`meta.json`'s `not_checked` field says which models were skipped and why — on 2026-11-06, **11
+models** whose single process grew past what this machine can safely give one (`EngineV6` peaked
+at 12.3 GB), with no timeouts and no free-RAM aborts. **Those are limits of the hardware and the
+run configuration, not findings about HRW or Rumoca**, and the field says so in those words.
+
+**The same 11 models were stopped by two independent runs that day**, byte-identical as a set. A
+deterministic stop is a property of those models, not a flaky machine — worth knowing before
+anyone reads a changed `not_checked` list as noise.
 
 **What these establish, and what they do not.** They establish that **HRW agrees with
 Rumoca** — not that Rumoca is correct, and nothing at all about the rendered UI. That

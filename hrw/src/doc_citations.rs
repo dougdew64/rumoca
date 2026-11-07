@@ -3288,6 +3288,25 @@ Some prose.
             // nobody, so its prose had no correction loop at all, and one paragraph
             // had been describing a *deleted* re-run for weeks.
             "docs/architecture.md",
+            // **`docs/tech-debt.md` and `docs/unattended-run-log.md` are deliberately
+            // NOT here, and this was measured rather than assumed** (2026-11-06).
+            // Adding both produced 11 failures, every one in `tech-debt.md` and every
+            // one *correct as history*: `PendingLiveDebug::PreLowering`,
+            // `reduction_view::ReductionView::from_search`, `Stage::ok_with_note` and
+            // the rest name things this project deliberately deleted, and the entries
+            // exist to record that they were deleted.
+            //
+            // **This checker cannot tell a deliberate reference to a deleted symbol
+            // from an accidental reference to a renamed one**, so pointing it at a
+            // history document converts the document's content into failures and
+            // pressures the next session to falsify the record to get green. Same
+            // ruling as `DECISIONS.md`, which is also absent: *a proper noun naming
+            // something in the past does not move when the vocabulary does.*
+            //
+            // The cost is real and is logged in `docs/tech-debt.md` — on 2026-11-06 a
+            // rename left dead pointers in both files behind a green gate. What is
+            // missing is a narrower check (a citation of a **test** name, which is
+            // always meant to resolve), not this one aimed wider.
         ];
 
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

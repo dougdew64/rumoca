@@ -5578,3 +5578,61 @@ file, had always propagated the identical failure. Fixed to match it; recorded a
 This is a semantics change rather than observability, which the charter would normally keep out
 of `crates/`. It was made because the alternative was an instrument that cannot measure the
 corpus, and because the repair was a transposition of a pattern already in that file.
+
+## 2026-11-06 — the 0.10.4 rebase is closed, and what step 10 bought
+
+**All ten steps of `docs/updating-rumoca.md` are done.** The closing step was the long-running
+suites, which Doug ruled must run *after* the rebase rather than during it.
+
+**The result.** The corpus fidelity sweep ran **2h57m over 2,791 models with every check on the
+`fidelity::CHECKS` roster — 2,780 checked, zero violations**, and F4 ran at corpus scale for the
+first time since v0.10.0. Eleven models were stopped before any check ran, each a single process
+exceeding what this machine can safely give one; **two independent runs that day stopped the same
+eleven**, so the bound is a property of those models. `promote_run` replaced artifacts that still
+held the 2026-08-03 run against 0.9.x. The oracle covers every specimen — `ArrayFamily`, authored
+that day, **simulates** in System Modeler.
+
+### The reconciliation is the step worth keeping, not the green
+
+Report rows plus profile aborts must equal the corpus, **and the name sets must match in both
+directions**. Counts alone would have passed every run this week; the name comparison is what
+proved nothing was silently dropped, after a morning in which rows *were* dropped by three
+different mechanisms. **Run it before reading any sweep result**, and before believing a tally.
+
+### Three things were found while closing, none of them by a checker
+
+- **`ArrayFamily` had no System Modeler verdict.** It was authored, wired into all four
+  per-specimen systems, gated green and committed, and the oracle report held 28 rows for 29
+  specimens. *Oracle-first* was a rule with no mechanism. Now
+  `fidelity::every_specimen_has_an_oracle_verdict`, with the predicate split out so its must-fire
+  needs neither System Modeler nor a file — the shape `unknown_checks` already used.
+- **The promoted sidecar told maintainers the run covered `F1-F9`.** Every word wrong: F1 retired
+  into `check_f2`, F8 a measurement rather than a check, F10 absent from the range and present in
+  the run. It now derives from the roster and carries a `checks` array. **This is the file a
+  maintainer reads without the conversation around it**, which is why the `not_checked` bound sits
+  beside it.
+- **A rename left dead pointers in two documents behind a green gate**, because
+  `qualified_citations_resolve` scans six documents and the history files are not among them.
+
+### Widening that checker was measured and REJECTED, which is the more useful outcome
+
+Adding `tech-debt.md` and `unattended-run-log.md` to the roster produced **11 failures, all in
+`tech-debt.md`, every one correct as history** — entries that name `PendingLiveDebug::PreLowering`,
+`reduction_view::ReductionView::from_search`, `Stage::ok_with_note` and others precisely to record
+that they were deleted. **The checker cannot tell a deliberate reference to a deleted symbol from
+an accidental one to a renamed symbol**, so aiming it at a history document turns the record into
+failures and pressures the next session to falsify history for green. Same ruling as this file's
+own absence from the roster. What is missing is narrower — a check over cited **test** names, which
+are always meant to resolve — and both of the day's dead pointers were exactly that.
+
+### The honest limit on the headline, carried forward as open debt
+
+**A check that passes and a check that had nothing to look at write the identical row.** So
+nothing in a green corpus sweep says F4 was exercised; its repair is evidenced by falsification on
+`ArrayFamily`, not by the 2,780. That is the same confusion that let F4 stay blind for two
+releases while three sweeps ran green across it. `docs/reports.md` now names it as the second way
+a rebase threatens the fidelity report — a release can change what Rumoca *does*, which turns rows
+red, or change the *shape* of what it publishes, which takes a check out of service and turns
+nothing red at all. **Only the first announces itself.** The fix — per-check coverage tallies in
+the sidecar — is deliberately not done here, because populating a denominator means re-running the
+three-hour sweep and would reopen the step to answer a question it did not ask.
