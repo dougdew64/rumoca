@@ -115,7 +115,7 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 94,457 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 94,465 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
@@ -165,7 +165,7 @@ showing 48 equations. They are derived now, and
 | `node_link_check.rs` | 512 |
 | `live_trace.rs` | 499 |
 | `gate_policy.rs` | 494 |
-| `nav_view.rs` | 483 |
+| `nav_view.rs` | 490 |
 | `equation_sheet_view.rs` | 446 |
 | `error_summary.rs` | 440 |
 | `plot_labels.rs` | 426 |
@@ -187,12 +187,12 @@ showing 48 equations. They are derived now, and
 | `autoplay.rs` | 215 |
 | `timing.rs` | 200 |
 | `main.rs` | 178 |
-| `ui_state.rs` | 170 |
+| `ui_state.rs` | 171 |
 | `json_read.rs` | 119 |
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **94,457** |
+| **total** | **94,465** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -514,7 +514,7 @@ error a total is powerless to catch.
 | 2 | Library configuration |
 | 3 | The model list |
 | 4 | Current selection + compilation results |
-| 5 | "Go to definition" navigation stack |
+| 5 | Navigation stack (↪ Go to <Class>; see `nav_view`'s module doc) |
 | 7 | Panels and windows toggled from the menu bar |
 | 8 | Generic field help |
 | 9 | How the reader is looking at the current stage |
@@ -685,8 +685,9 @@ answered at a glance.
 The tree recognizes fields named `def_id`, `type_def_id`, and `base_def_id` and
 annotates them inline with the resolved class name (e.g., `type_def_id: 27579 →
 model Modelica.Mechanics.Rotational.Components.Inertia`). Right-clicking offers
-"Go to definition," which pushes a `NavEntry` onto the navigation stack and renders
-the target class in the same generic tree.
+**↪ Go to *Class*** (the item is labelled with the class's name), which pushes a
+`NavEntry` onto the navigation stack and renders the target class in the same generic
+tree. The Question Bar's class link in the Following row does the same.
 
 
 ## 7. Custom-painted views

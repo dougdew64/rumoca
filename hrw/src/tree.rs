@@ -74,7 +74,7 @@ const CHANGED_COLOR: egui::Color32 = crate::colors::OK_GREEN;
 pub struct TreeActions {
     /// Left-click capture — the key-path of a node to explain.
     pub capture: Option<Vec<Seg>>,
-    /// "Go to definition" — a class name to navigate to.
+    /// The menu's "↪ Go to *Class*" — a class name to navigate to.
     pub nav_to: Option<String>,
     /// "Show this being set" — the key-path to arm a breakpoint for.
     pub debug: Option<Vec<Seg>>,
@@ -126,7 +126,7 @@ pub struct TreeOptions<'a> {
     /// offer is worse than no offer.
     pub known_variables: Option<&'a HashSet<String>>,
     /// Variable name -> the class that declares it, when that is not the
-    /// specimen. Lets "Go to definition" work from a variable name, not only
+    /// specimen. Lets "↪ Go to *Class*" work from a variable name, not only
     /// from a DefId field.
     pub declaring_classes: Option<&'a HashMap<String, String>>,
     /// Variable name -> the source line that declares it.
@@ -610,8 +610,8 @@ Right-click to follow {name} through every stage."
 
 // Check whether a scalar leaf is a DefId that resolves to a *class* definition.
 // If so, return the class's fully-qualified Modelica name (e.g.,
-// "Modelica.Mechanics.Rotational.Inertia") — this becomes the "Go to
-// definition" navigation target. If the DefId resolves to something that isn't
+// "Modelica.Mechanics.Rotational.Inertia") — this becomes the target of the menu's
+// "↪ Go to <Class>" item. If the DefId resolves to something that isn't
 // a class (a variable, a function), navigation doesn't apply and we return None.
 fn nav_target(
     key: &str,
@@ -1103,7 +1103,7 @@ mod tests {
     // --- nav_target ---
 
     /// A variable name navigates to the class that declares it, using the same
-    /// menu item as a DefId field — so "Go to definition" means one thing
+    /// menu item as a DefId field — so "↪ Go to *Class*" means one thing
     /// whether you found the class through a DefId or through the variable.
     #[test]
     fn nav_target_resolves_a_variable_to_its_declaring_class() {

@@ -40,11 +40,12 @@ pub(crate) enum SpecimenDetail {
     Purpose,
 }
 
-/// One level of "go to definition" navigation: a class extracted from the
-/// resolved tree, shown in the same generic tree the specimen stages use.
+/// One level of navigation: a class extracted from the resolved tree, shown in the
+/// same generic tree the specimen stages use.
 ///
-/// Navigation forms a stack: clicking "Go to definition" pushes a `NavEntry`,
-/// "Back" pops one, and "Specimen" clears the stack entirely. Each entry
+/// Navigation forms a stack: **↪ Go to *Class*** (a tree node's menu, or the Question
+/// Bar's class link) pushes a `NavEntry`, "← Back" pops one, and "Specimen" clears the
+/// stack entirely. Each entry
 /// carries its own `def_index` so the tree inspector can resolve DefIds
 /// (numeric cross-references) to human-readable class names within that class.
 pub(crate) struct NavEntry {

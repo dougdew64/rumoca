@@ -1,5 +1,12 @@
 //! **The navigation view** — the pane that replaces the whole stage view once the reader
-//! follows "Go to definition" into a library class.
+//! opens a library class with **↪ Go to *Class***.
+//!
+//! **Two gestures reach it, and neither is labelled "Go to definition".** It opens from
+//! the **↪ Go to *Class*** item in a tree node's right-click menu (offered when the node
+//! names a class, `tree::nav_target`), and from the class link in the Question Bar's
+//! Following row (*"— in Modelica.…Capacitor"*). Comments here and in `app.rs` called the
+//! feature "Go to definition", in quotes, as if that were the label, until 2026-11-07,
+//! when it sent Claude to tell Doug to click an item that does not exist.
 //!
 //! Lifted out of `central_panel_ui` on 2026-08-20, the second cut into that router. See
 //! [`docs/app-split-plan.md`](../docs/app-split-plan.md).
@@ -34,7 +41,7 @@
 //! |---|---|---|
 //! | `path_lines` | *stage* node path → source line | a colliding path resolves to the **specimen's** DAE line |
 //! | `variable_lines` | variable name → declaring line **in the specimen** | `R` in `Resistor` gets the specimen's `R` |
-//! | `declaring_classes` | variable name → declaring class, **of the specimen** | the same collision, feeding "Go to definition" |
+//! | `declaring_classes` | variable name → declaring class, **of the specimen** | the same collision, feeding **↪ Go to *Class*** |
 //! | `known_variables` | the **specimen's** variables | decides what is *trackable*; a name in both is offered |
 //! | `tracked` | the identifier being followed | a flat name (`resistor.R`), so a hit here is a bare-name collision |
 //!
@@ -51,7 +58,7 @@
 //! **Why nothing caught it:** `docs/identity-and-provenance.md` forbids *substring* search
 //! deciding identity, and all five use exact equality, so they comply as written. What they
 //! step outside is that rule's unstated precondition — **that both sides are the same
-//! model**, true of everything until "Go to definition" existed. Exact equality across two
+//! model**, true of everything until **↪ Go to *Class*** existed. Exact equality across two
 //! namespaces is a collision wearing identity's clothes.
 //!
 //! **What the fix does NOT remove is the confirming detail.** `def_index` is per-[`NavEntry`]
@@ -95,7 +102,7 @@ pub(crate) struct NavChrome<'a> {
     pub(crate) model: Option<&'a str>,
     /// A class whose fetch is in flight, named so the spinner says *what* is opening.
     pub(crate) loading: Option<&'a str>,
-    /// Why the last "Go to definition" produced nothing.
+    /// Why the last **↪ Go to *Class*** produced nothing.
     ///
     /// **Rendered here as well as in the stage view**, deliberately: a failed navigation
     /// can leave the reader on either side of the `nav.is_empty()` split, and a message
