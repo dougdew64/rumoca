@@ -53,7 +53,7 @@ fn main() {
 
     // `docs/reports/`, beside the reports.md that explains how the three
     // compose — not loose among the prose.
-    let docs = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/reports");
+    let docs = PathBuf::from(hrw::manifest_path!("docs", "reports"));
     let dest_report = docs.join("msl-fidelity-report.csv");
     let dest_meta = docs.join("msl-fidelity-report.meta.json");
 

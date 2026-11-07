@@ -1071,7 +1071,7 @@ fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
     // vacuously if the file ever goes missing and `parse_csv` yields nothing: the app
     // degrades to curated specimens there, and the header would then be honestly absent.
     let expected = {
-        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/msl-survey.csv");
+        let path = crate::manifest_path!("docs", "reports", "msl-survey.csv");
         let text = std::fs::read_to_string(path).expect("the survey artifact is committed");
         crate::survey::parse_csv(&text).len()
     };
@@ -2928,9 +2928,10 @@ fn a_lab_renders_none_of_its_html_markers() {
 /// guard either way; the cause would be worth knowing only if it regresses.
 #[test]
 fn lab_prose_after_a_table_wraps_to_the_panel_not_the_table() {
-    let real = std::fs::read_to_string(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/docs/fixture-labs/the-pipeline.md"
+    let real = std::fs::read_to_string(crate::manifest_path!(
+        "docs",
+        "fixture-labs",
+        "the-pipeline.md"
     ))
     .expect("the-pipeline.md is the document that exhibits this");
     // Up to the end of the hub table -- the real one, because a synthetic table narrow

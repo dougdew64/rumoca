@@ -274,10 +274,16 @@ impl ReductionAnimation {
         // bailing out on `is_empty` alone hides the controls exactly when the reader needs
         // to see the session is armed. The second half of the same report.
         if self.playback.is_empty() && !self.playback.is_live() && !arming {
+            // **Reached only by an empty `search` log**, and that is a stage that RAN: a
+            // stage that was not reached has no `search` key, so `from_report` returns
+            // `None` and this view never exists. Every specimen that reaches the stage
+            // records at least one step (measured from the committed traces,
+            // 2026-11-07). This said *"The stage was not reached"* until then, which is
+            // the one case that cannot get here.
             ui.label("No reduction search in this report.");
             ui.weak(
-                "The stage was not reached, so there is no search to step through \u{2014} \
-                 the stage tab's note says what stopped the pipeline earlier.",
+                "The search log is empty, so there is no step to show \u{2014} the stage \
+                 tab's note says what the stage reported.",
             );
             return false;
         }
@@ -607,6 +613,24 @@ mod tests {
         assert!(anim.is_empty());
         assert_eq!(anim.position(), (0, 0));
         assert_eq!(anim.n_records(), 0);
+    }
+
+    /// **The empty pane's words, rendered** — and they must not claim the stage was
+    /// skipped, because an empty log comes from a stage that ran (a stage that did not
+    /// has no `search` key, and `from_report` gives `None`). The message said *"The
+    /// stage was not reached"* until 2026-11-07.
+    #[test]
+    fn an_empty_log_says_so_without_claiming_the_stage_was_skipped() {
+        use egui_kittest::kittest::Queryable;
+        let mut anim = ReductionAnimation::from_report(&report(json!([]))).expect("an animation");
+        let harness = egui_kittest::Harness::new_ui(|ui| {
+            let _ = anim.ui(ui, false, true);
+        });
+        harness.get_by_label("No reduction search in this report.");
+        assert!(
+            harness.query_by_label_contains("not reached").is_none(),
+            "an empty log is from a stage that ran",
+        );
     }
 
     /// **Every frame describes itself, including the opening one.**

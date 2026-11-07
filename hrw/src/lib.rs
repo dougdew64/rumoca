@@ -41,6 +41,45 @@
 //!   module sizes, `App` field groups), generated into marker-delimited regions so
 //!   the document cannot transcribe a count that then rots.
 
+/// The platform's path separator **as a string literal**, so `concat!` can use it.
+///
+/// `concat!(env!("CARGO_MANIFEST_DIR"), "/specimens")` is a mixed path on Windows —
+/// Cargo spells the manifest dir natively and the literal does not — and Doug found one
+/// in the Settings dialog (`docs/tech-debt.md`, 11-05). `std::path::MAIN_SEPARATOR_STR`
+/// is a `const`, not a literal, and `concat!` accepts only literals, hence a
+/// `cfg`-selected macro. Defined here, before every `mod`, so all of them see it;
+/// exported so the examples can too. Prefer [`manifest_path!`] for a whole path.
+#[cfg(windows)]
+#[macro_export]
+macro_rules! native_sep {
+    () => {
+        "\\"
+    };
+}
+/// See the Windows definition above.
+#[cfg(not(windows))]
+#[macro_export]
+macro_rules! native_sep {
+    () => {
+        "/"
+    };
+}
+
+/// A path under this crate's manifest directory, **one segment per argument**, joined
+/// with the platform's separator at compile time.
+///
+/// `manifest_path!(".hrw-bridge", "stages")` is `…\hrw\.hrw-bridge\stages` on Windows
+/// and `…/hrw/.hrw-bridge/stages` elsewhere. **Taking segments rather than a
+/// slash-separated string is the point**: a segment containing `/` would rebuild the
+/// mixed path this exists to make unconstructible.
+/// `doc_citations::no_manifest_path_mixes_separators` fails on the old `concat!` shape.
+#[macro_export]
+macro_rules! manifest_path {
+    ($($seg:literal),+ $(,)?) => {
+        concat!(env!("CARGO_MANIFEST_DIR") $(, $crate::native_sep!(), $seg)+)
+    };
+}
+
 pub mod app;
 pub mod arch_doc;
 pub mod artifact_pane;
@@ -158,9 +197,8 @@ pub const NODE_LABEL_ZOOM_THRESHOLD: f32 = 10.0;
 /// [`tests_one_home::no_second_copy_of_the_msl_root_list`] now makes it countable.
 #[must_use]
 pub fn msl_roots() -> Vec<std::path::PathBuf> {
-    vec![std::path::PathBuf::from(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/vendor/msl"
+    vec![std::path::PathBuf::from(crate::manifest_path!(
+        "vendor", "msl"
     ))]
 }
 

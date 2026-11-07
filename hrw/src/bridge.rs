@@ -112,10 +112,10 @@ fn strip_windows_prefix(p: &Path) -> PathBuf {
 /// two more months. **Examples are deliberately NOT redirected**: `capture_suite` and
 /// the app itself must write the live files, and they are not compiled with `cfg(test)`.
 #[cfg(not(test))]
-pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge");
+pub const BRIDGE_DIR: &str = crate::manifest_path!(".hrw-bridge");
 /// The bridge directory under `cargo test` — see the non-test [`BRIDGE_DIR`].
 #[cfg(test)]
-pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/test-run");
+pub const BRIDGE_DIR: &str = crate::manifest_path!(".hrw-bridge", "test-run");
 
 /// Path to the stage-files directory (one JSON file per pipeline stage).
 ///
@@ -126,10 +126,10 @@ pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/t
 ///
 /// Redirected under `cargo test`; see [`BRIDGE_DIR`] for why.
 #[cfg(not(test))]
-pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
+pub const STAGES_DIR: &str = crate::manifest_path!(".hrw-bridge", "stages");
 /// The stage-files directory under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/test-run/stages");
+pub const STAGES_DIR: &str = crate::manifest_path!(".hrw-bridge", "test-run", "stages");
 
 /// HRW writes breakpoint requests here; the VS Code extension watches it.
 ///
@@ -137,30 +137,22 @@ pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/t
 /// `app.rs` asserts on the request this path receives, and a test that rebuilt
 /// the path itself could pass while the real one moved.
 #[cfg(not(test))]
-pub(crate) const BREAKPOINT_REQUEST_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/breakpoint-request.json"
-);
+pub(crate) const BREAKPOINT_REQUEST_FILE: &str =
+    crate::manifest_path!(".hrw-bridge", "breakpoint-request.json");
 /// The breakpoint request under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub(crate) const BREAKPOINT_REQUEST_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/breakpoint-request.json"
-);
+pub(crate) const BREAKPOINT_REQUEST_FILE: &str =
+    crate::manifest_path!(".hrw-bridge", "test-run", "breakpoint-request.json");
 /// The extension writes this ack file after processing a request, confirming
 /// the breakpoint is registered with LLDB. HRW polls for it before spawning
 /// the algorithm thread (see `check_breakpoint_ack`).
 #[cfg(not(test))]
-pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/breakpoint-ack.json"
-);
+pub(crate) const BREAKPOINT_ACK_FILE: &str =
+    crate::manifest_path!(".hrw-bridge", "breakpoint-ack.json");
 /// The breakpoint ack under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/breakpoint-ack.json"
-);
+pub(crate) const BREAKPOINT_ACK_FILE: &str =
+    crate::manifest_path!(".hrw-bridge", "test-run", "breakpoint-ack.json");
 
 /// Scratch specimens written by Claude to answer a question (ideas #42).
 ///
@@ -176,16 +168,13 @@ pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(
 /// `docs/question-ledger.md`. A probe worth keeping gets promoted into `specimens/`
 /// deliberately, with a `// purpose:` line — which is the moment it stops being a probe.
 #[cfg(not(test))]
-pub const SCRATCH_SPECIMEN_DIR: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/specimens");
+pub const SCRATCH_SPECIMEN_DIR: &str = crate::manifest_path!(".hrw-bridge", "specimens");
 /// Scratch specimens under `cargo test` — see [`BRIDGE_DIR`]. A test wrote
 /// `ScratchProbe.mo` into the live directory on 2026-11-06, where it then showed up in
 /// HRW's specimen list as though Claude had authored it to answer something.
 #[cfg(test)]
-pub const SCRATCH_SPECIMEN_DIR: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/specimens"
-);
+pub const SCRATCH_SPECIMEN_DIR: &str =
+    crate::manifest_path!(".hrw-bridge", "test-run", "specimens");
 
 /// List the scratch specimens, sorted. Empty when none have been written — the common
 /// case, and not an error.
@@ -210,38 +199,31 @@ pub fn scratch_specimens() -> Vec<PathBuf> {
 /// A question Doug asked from the Question Bar, **written together with the context
 /// that was live when he asked it** — see [`write_question`].
 #[cfg(not(test))]
-pub const QUESTION_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/question.json");
+pub const QUESTION_FILE: &str = crate::manifest_path!(".hrw-bridge", "question.json");
 /// The question file under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub const QUESTION_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/question.json"
-);
+pub const QUESTION_FILE: &str = crate::manifest_path!(".hrw-bridge", "test-run", "question.json");
 
 /// Fixture labs — kept, versioned, and executed by `fixture_lab_links_all_resolve`.
 ///
 /// Hard-coded rather than configurable: the directory is part of the repository layout,
 /// not a user preference, and one fewer setting is one fewer thing to be wrong.
-pub const FIXTURE_LABS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-labs");
+pub const FIXTURE_LABS_DIR: &str = crate::manifest_path!("docs", "fixture-labs");
 
 /// Notebooks belonging to fixture labs — versioned, because a fixture has expected
 /// outcomes and a test that vanishes on a fresh checkout is not a test.
-pub const FIXTURE_NOTEBOOKS_DIR: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-labs/notebooks");
+pub const FIXTURE_NOTEBOOKS_DIR: &str = crate::manifest_path!("docs", "fixture-labs", "notebooks");
 
 /// Notebooks Claude writes to answer one question — ephemeral, like `lab.md`.
 #[cfg(not(test))]
-pub const SCRATCH_NOTEBOOKS_DIR: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/notebooks");
+pub const SCRATCH_NOTEBOOKS_DIR: &str = crate::manifest_path!(".hrw-bridge", "notebooks");
 /// Scratch notebooks under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub const SCRATCH_NOTEBOOKS_DIR: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/notebooks"
-);
+pub const SCRATCH_NOTEBOOKS_DIR: &str =
+    crate::manifest_path!(".hrw-bridge", "test-run", "notebooks");
 
 /// The repository documents a lab may link to with `hrw://doc/<name>`.
-pub const DOCS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs");
+pub const DOCS_DIR: &str = crate::manifest_path!("docs");
 
 /// The workspace root — the tree `hrw://src/<path>` resolves against.
 ///
@@ -492,16 +474,12 @@ pub fn fixture_labs() -> Vec<PathBuf> {
 /// route would photograph a state no user gesture can produce, and then testify
 /// about it.
 #[cfg(not(test))]
-pub const SCREENSHOT_REQUEST_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/screenshot-request.json"
-);
+pub const SCREENSHOT_REQUEST_FILE: &str =
+    crate::manifest_path!(".hrw-bridge", "screenshot-request.json");
 /// The screenshot request under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub const SCREENSHOT_REQUEST_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/screenshot-request.json"
-);
+pub const SCREENSHOT_REQUEST_FILE: &str =
+    crate::manifest_path!(".hrw-bridge", "test-run", "screenshot-request.json");
 
 /// HRW's reply to a [`SCREENSHOT_REQUEST_FILE`]: where the PNG landed, how big it
 /// is, what was on screen, and **what went wrong** when nothing landed.
@@ -520,29 +498,22 @@ pub const SCREENSHOT_REQUEST_FILE: &str = concat!(
 /// and `notice` carrying HRW's own on-screen message — because a refused link
 /// ("no specimen loaded") leaves a perfectly healthy-looking window.
 #[cfg(not(test))]
-pub const SCREENSHOT_RESULT_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/screenshot-result.json"
-);
+pub const SCREENSHOT_RESULT_FILE: &str =
+    crate::manifest_path!(".hrw-bridge", "screenshot-result.json");
 /// The screenshot reply under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub const SCREENSHOT_RESULT_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/screenshot-result.json"
-);
+pub const SCREENSHOT_RESULT_FILE: &str =
+    crate::manifest_path!(".hrw-bridge", "test-run", "screenshot-result.json");
 
 /// Where the PNGs land, one per honoured request, named by `seq`.
 ///
 /// Gitignored with the rest of `.hrw-bridge/`, which is what makes "nothing is
 /// committed" structural rather than a promise.
 #[cfg(not(test))]
-pub const SCREENSHOTS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/screenshots");
+pub const SCREENSHOTS_DIR: &str = crate::manifest_path!(".hrw-bridge", "screenshots");
 /// The screenshot directory under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub const SCREENSHOTS_DIR: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/screenshots"
-);
+pub const SCREENSHOTS_DIR: &str = crate::manifest_path!(".hrw-bridge", "test-run", "screenshots");
 
 /// How long HRW lets the UI settle before shooting, when the request does not say.
 ///
@@ -861,12 +832,15 @@ pub fn write_png(path: &Path, width: usize, height: usize, rgba: &[u8]) -> std::
 /// see `live_trace.rs`'s own header. The anchor is still on the algorithm
 /// thread and still inside the algorithm's call stack, so stepping is
 /// unchanged — only the file differs.
-const LIVE_TRACE_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/live_trace.rs");
+const LIVE_TRACE_FILE: &str = crate::manifest_path!("src", "live_trace.rs");
 
 /// The traced matching algorithm, for `hrw://breakpoint/<anchor>` links.
-const MATCHING_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../crates/rumoca-phase-structural/src/matching.rs"
+const MATCHING_FILE: &str = crate::manifest_path!(
+    "..",
+    "crates",
+    "rumoca-phase-structural",
+    "src",
+    "matching.rs"
 );
 
 /// Resolve a short source-file name to the path the extension needs.
@@ -2301,13 +2275,10 @@ pub(crate) fn remove_live_trace_breakpoint_to(
 /// its file removed, keeping the directory in sync with the current specimen.
 /// `.hrw-bridge/view.json` — **what the pane on screen is currently showing.**
 #[cfg(not(test))]
-pub const VIEW_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/view.json");
+pub const VIEW_FILE: &str = crate::manifest_path!(".hrw-bridge", "view.json");
 /// The published view under `cargo test` — see [`BRIDGE_DIR`].
 #[cfg(test)]
-pub const VIEW_FILE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/.hrw-bridge/test-run/view.json"
-);
+pub const VIEW_FILE: &str = crate::manifest_path!(".hrw-bridge", "test-run", "view.json");
 
 /// Publish the current view's content, or remove the file when there is none.
 ///
@@ -3835,10 +3806,7 @@ mod tests {
     /// byte range must slice cleanly out of the specimen source.
     #[test]
     fn provenance_holds_over_real_parsed_specimen() {
-        let specimen = Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/RotationalInertia.mo"
-        ));
+        let specimen = Path::new(crate::manifest_path!("specimens", "RotationalInertia.mo"));
         let source = fs::read_to_string(specimen).expect("read specimen");
         let ast = rumoca_phase_parse::parse_to_ast(&source, "RotationalInertia.mo").expect("parse");
         let root = serde_json::to_value(&ast).expect("to_value");
@@ -4376,7 +4344,7 @@ mod tests {
     /// the reader somewhere confidently wrong.
     #[test]
     fn every_phase_source_crate_exists_on_disk() {
-        let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
+        let root = std::path::Path::new(crate::manifest_path!(".."));
         for &stage in StageKind::ALL {
             let src = phase_source(stage);
             let dir = src["crate"].as_str().expect("crate path");

@@ -54,7 +54,7 @@ fn main() {
     }
 
     // Write src/field_help.json (pretty, sorted for stable diffs).
-    let out_path = concat!(env!("CARGO_MANIFEST_DIR"), "/src/field_help.json");
+    let out_path = hrw::manifest_path!("src", "field_help.json");
     let json = serde_json::to_string_pretty(&docs).expect("serialize");
     std::fs::write(out_path, json + "\n").expect("write field_help.json");
     let pairs: usize = docs.values().map(BTreeMap::len).sum();

@@ -367,8 +367,8 @@ mod tests {
     /// hand-written one is the thing that just rotted.
     #[test]
     fn every_ir_dependency_is_harvested_for_field_help() {
-        let manifest = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"))
-            .expect("hrw/Cargo.toml");
+        let manifest =
+            std::fs::read_to_string(crate::manifest_path!("Cargo.toml")).expect("hrw/Cargo.toml");
 
         let mut depended: Vec<String> = Vec::new();
         for line in manifest.lines() {

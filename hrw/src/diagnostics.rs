@@ -125,7 +125,7 @@ use serde_json::{Value, json};
 /// already the place Claude reads for context. A crash file is context of a
 /// different kind, and putting it anywhere else would mean explaining where to
 /// look every time.
-pub const DIAGNOSTICS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/diagnostics");
+pub const DIAGNOSTICS_DIR: &str = crate::manifest_path!(".hrw-bridge", "diagnostics");
 
 /// How many user actions to retain. Generous because actions are rare (a click,
 /// a tab switch) and because the useful one is often not the last.

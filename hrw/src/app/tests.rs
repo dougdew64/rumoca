@@ -8253,6 +8253,17 @@ fn the_default_paths_use_one_kind_of_separator() {
     for (name, value) in [
         ("DEFAULT_SPECIMEN_DIR", DEFAULT_SPECIMEN_DIR),
         ("DEFAULT_LIBRARIES", super::DEFAULT_LIBRARIES),
+        // Since 2026-11-07: the bridge paths, which reach `focus.json` (`stages.dir`)
+        // and the log. `doc_citations::no_manifest_path_mixes_separators` covers the
+        // rest by source scan; these are checked by value.
+        ("bridge::BRIDGE_DIR", bridge::BRIDGE_DIR),
+        ("bridge::STAGES_DIR", bridge::STAGES_DIR),
+        ("bridge::QUESTION_FILE", bridge::QUESTION_FILE),
+        ("bridge::VIEW_FILE", bridge::VIEW_FILE),
+        (
+            "diagnostics::DIAGNOSTICS_DIR",
+            crate::diagnostics::DIAGNOSTICS_DIR,
+        ),
     ] {
         assert!(
             !value.contains(foreign),

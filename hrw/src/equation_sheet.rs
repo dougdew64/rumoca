@@ -1056,10 +1056,8 @@ mod tests {
         ignore = "compile-heavy; run with --features slow-tests"
     )]
     fn build_on_real_specimen() {
-        let specimen = std::path::PathBuf::from(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/RotationalInertia.mo"
-        ));
+        let specimen =
+            std::path::PathBuf::from(crate::manifest_path!("specimens", "RotationalInertia.mo"));
         // `crate::msl_roots()`, not a local copy: on v0.10.0 the three-root shape
         // fails to resolve, and two copies of this list here were two more places
         // for that to be relearned.
@@ -1174,13 +1172,11 @@ mod tests {
         );
 
         // Every link that IS made names a real line of the specimen.
-        let n_lines = std::fs::read_to_string(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/GearWithBrake.mo"
-        ))
-        .expect("the specimen is readable")
-        .lines()
-        .count() as u32;
+        let n_lines =
+            std::fs::read_to_string(crate::manifest_path!("specimens", "GearWithBrake.mo"))
+                .expect("the specimen is readable")
+                .lines()
+                .count() as u32;
         let out_of_range: Vec<u32> = msl
             .groups
             .iter()
@@ -1219,7 +1215,7 @@ mod tests {
             panic!("SingleInertia must compile");
         };
         let dae = dae.expect("SingleInertia produces a DAE");
-        let uri = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo");
+        let uri = crate::manifest_path!("specimens", "SingleInertia.mo");
         let src = std::fs::read_to_string(uri).expect("read specimen");
 
         let sheet = build(&dae, Some((uri, &src)));
@@ -1264,7 +1260,7 @@ mod tests {
         };
         let dae = dae.expect("a DAE");
         let flat = flat.expect("a flat model");
-        let uri = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens/SingleInertia.mo");
+        let uri = crate::manifest_path!("specimens", "SingleInertia.mo");
         let src = std::fs::read_to_string(uri).expect("read specimen");
 
         let flat_lines = flat_node_lines(&flat, Some((uri, &src)));

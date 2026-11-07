@@ -43,10 +43,7 @@ fn session_with_msl() -> Session {
 /// The arc-1 specimen in MSL form (a System-Modeler-export shape) must resolve.
 #[test]
 fn rotational_inertia_specimen_resolves_against_msl() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/specimens/RotationalInertia.mo"
-    );
+    let path = hrw::manifest_path!("specimens", "RotationalInertia.mo");
     let source = std::fs::read_to_string(path).expect("read specimen");
 
     let mut session = session_with_msl();
@@ -126,10 +123,7 @@ fn rotational_inertia_specimen_resolves_against_msl() {
 /// fail to resolve — proving the source roots are what makes resolution work.
 #[test]
 fn same_specimen_fails_without_libraries() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/specimens/RotationalInertia.mo"
-    );
+    let path = hrw::manifest_path!("specimens", "RotationalInertia.mo");
     let source = std::fs::read_to_string(path).expect("read specimen");
 
     let mut session = Session::new(SessionConfig::default());

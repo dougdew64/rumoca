@@ -576,7 +576,7 @@ mod tests {
     /// tokens must tile it exactly.
     #[test]
     fn all_specimens_tokenize_and_tile_exactly() {
-        let dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"));
+        let dir = std::path::Path::new(crate::manifest_path!("specimens"));
         let mut checked = 0;
         for entry in std::fs::read_dir(dir).expect("specimens dir") {
             let path = entry.expect("dir entry").path();

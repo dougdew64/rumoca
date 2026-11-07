@@ -665,7 +665,7 @@ impl ModelListState {
     /// and the list should degrade to curated specimens rather than error.
     pub(crate) fn corpus_rows(&mut self) -> &[survey::SurveyRow] {
         self.corpus.get_or_insert_with(|| {
-            let path = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/reports/msl-survey.csv");
+            let path = crate::manifest_path!("docs", "reports", "msl-survey.csv");
             std::fs::read_to_string(path)
                 .map(|t| survey::parse_csv(&t))
                 .unwrap_or_default()
