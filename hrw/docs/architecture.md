@@ -115,22 +115,22 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 93,319 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 93,746 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,559 |
-| `app.rs` | 8,611 |
-| `app/tests.rs` | 8,010 |
+| `app.rs` | 8,638 |
+| `app/tests.rs` | 8,096 |
 | `worker.rs` | 7,862 |
-| `doc_citations.rs` | 7,344 |
-| `bridge.rs` | 5,386 |
+| `doc_citations.rs` | 7,597 |
+| `bridge.rs` | 5,423 |
 | `ui_tests.rs` | 3,037 |
 | `fidelity.rs` | 2,760 |
 | `equation_sheet.rs` | 1,569 |
 | `lib.rs` | 1,459 |
 | `tree.rs` | 1,432 |
-| `diagnostics.rs` | 1,397 |
+| `diagnostics.rs` | 1,421 |
 | `matching_anim.rs` | 1,310 |
 | `incidence_view.rs` | 1,219 |
 | `report_sub_view.rs` | 1,214 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **93,319** |
+| **total** | **93,746** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1588,7 +1588,7 @@ literally the 2026-07-28 debugging session's findings turned into code.
 | File | Written | Contents |
 |------|---------|----------|
 | `crash-<utc>.json` | from the panic hook | panic message, location, thread, backtrace, snapshot, actions, log tail, build |
-| `session.json` | on every recorded user action | everything above except the panic |
+| `session.json` | on every recorded user action, and on every write of `focus.json` (recorded as `context-emitted` inside `bridge::write`, so the two files move together) | everything above except the panic |
 | `previous-session.json` | at startup, by rotation | the prior run's `session.json` — the file to read after a hard death |
 
 `session.json` exists for the deaths that run **no hook at all** — a stack

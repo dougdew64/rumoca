@@ -7069,10 +7069,29 @@ impl App {
             self.model.as_deref(),
             lab.as_deref(),
         );
+        self.apply_context_bar_press(press);
+    }
 
+    /// Act on what the Context Bar reported this frame.
+    ///
+    /// **Split out of `context_bar_ui` on 2026-11-07 so a test can drive it**, because the
+    /// two × buttons were the one place a context change reached `focus.json` without
+    /// reaching `session.json` — and that was invisible to every test, since the handling
+    /// lived inside a function that needs a `Ui`. Behaviour is unchanged by the split
+    /// itself; see `clearing_the_point_reaches_the_file_the_hook_reads`.
+    pub(crate) fn apply_context_bar_press(&mut self, press: Option<ContextBarPress>) {
         match press {
             Some(ContextBarPress::Jump { forward }) => self.jump_to_next_match(forward),
             Some(ContextBarPress::ClearPoint) => {
+                // Recorded as a DROP, so the trail and the hook say the point was
+                // cleared. Without it, the latest point action stays the original
+                // `point-at…`, and the hook reports the age of a point that is gone.
+                if let Some(point) = &self.context.pointed_at {
+                    diagnostics::record_action(
+                        "point-dropped",
+                        format!("{} (cleared with the Context Bar \u{00d7})", point.target),
+                    );
+                }
                 self.context.pointed_at = None;
                 // A stale failure would otherwise keep warning about an emission
                 // for a point that no longer exists.
@@ -7086,6 +7105,14 @@ impl App {
                 self.emit_context();
             }
             Some(ContextBarPress::ClearThread) => {
+                // Same kind and wording as `set_tracked_identifier`'s un-follow, so
+                // the trail reads one way however the follow was dropped.
+                if let Some(name) = &self.tracked_identifier {
+                    diagnostics::record_action(
+                        "follow",
+                        format!("stop following {name} (Context Bar \u{00d7})"),
+                    );
+                }
                 self.tracked_identifier = None;
                 self.context.track_seq = self.context.next_seq();
                 self.emit_context();

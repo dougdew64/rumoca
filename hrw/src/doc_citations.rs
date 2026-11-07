@@ -3393,32 +3393,50 @@ Some prose.
         let text =
             std::fs::read_to_string(&hook).expect("the context hook is part of the checkout");
 
-        // Pull the single-quoted names out of `$pointKinds = @('a', 'b')`.
-        let line = text
+        // Pull the single-quoted names out of EVERY `$<name>Kinds = @('a', 'b')` line.
+        // This read only `$pointKinds` until 2026-11-07, when the hook gained a second
+        // list (`$emitKinds`) for its freshness cross-check — a list this guard would
+        // otherwise not have looked at, which is the exact gap it exists to close.
+        let lists: Vec<&str> = text
             .lines()
-            .find(|l| l.trim_start().starts_with("$pointKinds"))
-            .unwrap_or_else(|| panic!("no $pointKinds assignment in {}", hook.display()));
-        let kinds: Vec<&str> = line
-            .split('\'')
-            .skip(1)
-            .step_by(2)
+            .map(str::trim_start)
+            .filter(|l| l.starts_with('$') && l.contains("Kinds = @("))
+            .collect();
+        let kinds: Vec<&str> = lists
+            .iter()
+            .flat_map(|line| line.split('\'').skip(1).step_by(2))
             .filter(|s| !s.trim().is_empty())
             .collect();
 
-        // Non-vacuity: an empty list would satisfy the loop below and prove nothing,
-        // which is the shape of guard this repository keeps catching itself writing.
+        // Non-vacuity, on both axes: an empty list would satisfy the loop below and
+        // prove nothing, which is the shape of guard this repository keeps catching
+        // itself writing — and a parser that found only one list would quietly stop
+        // checking the other.
         assert!(
-            kinds.len() >= 2,
-            "expected several point kinds in the hook, parsed {kinds:?} from: {line}",
+            lists.len() >= 2,
+            "expected the hook's point and emission kind lists, found: {lists:?}",
+        );
+        assert!(
+            kinds.len() >= 3,
+            "expected several kinds across the hook's lists, parsed {kinds:?}",
         );
 
-        let sources = rust_source_texts();
+        // **Match regardless of line breaks.** A call written across lines —
+        // `record_action(\n    "follow",` in `set_tracked_identifier` — does not contain
+        // the one-line needle, and on 2026-11-07 that same blind spot led Claude to tell
+        // Doug the function recorded nothing when it records `"follow"`. Stripping all
+        // whitespace from both sides compares the call, not its layout.
+        let squash = |s: &str| s.chars().filter(|c| !c.is_whitespace()).collect::<String>();
+        let sources: Vec<String> = rust_source_texts()
+            .iter()
+            .map(|(_, src)| squash(src))
+            .collect();
         let mut missing: Vec<&str> = kinds
             .iter()
             .copied()
             .filter(|kind| {
-                let needle = format!("record_action(\"{kind}\"");
-                !sources.iter().any(|(_, src)| src.contains(&needle))
+                let needle = squash(&format!("record_action(\"{kind}\""));
+                !sources.iter().any(|src| src.contains(&needle))
             })
             .collect();
         missing.sort_unstable();
@@ -3429,6 +3447,235 @@ Some prose.
              emits: {missing:?}\nIt will silently report an absence rather than fail. \
              Either the kind was renamed in `src/`, or the hook invented it — the \
              recorded instance was `'capture'`, which only ever existed in a doc comment.",
+        );
+    }
+
+    /// **The hook reports a cleared point as cleared, and never cries wolf over a
+    /// correct `focus.json`** — run as the real script, against real-shaped states.
+    ///
+    /// # Why the script itself is run
+    ///
+    /// The `[hrw-context]` hook is the reporter between HRW and every answer Claude
+    /// gives, and it is PowerShell, which no compiler here checks. **It had three defects
+    /// in two days**, and every one was a *behaviour* — which line it printed for which
+    /// state — that only running it could show:
+    ///
+    /// - 2026-11-06: it timed the capture by a different file's clock;
+    /// - 2026-11-06, in the fix for that: it filtered on an action kind that is never
+    ///   recorded (`the_hook_matches_real_action_kinds` covers that one);
+    /// - 2026-11-07: its cross-check compared `focus.json` against the last POINT
+    ///   gesture, so a follow or a recompile — both of which rewrite `focus.json` — drew
+    ///   *"do NOT read it as Doug's context"* about a file that was correct. And after
+    ///   the Context Bar's ×, it went on reporting the cleared point.
+    ///
+    /// # The states, and what each must and must not print
+    ///
+    /// Each fixture is a `session.json` trail plus a `focus.json` with a set mtime, built
+    /// with the trail's own timestamp formatter. **Three assert that a correct file draws
+    /// no warning** — the false positive is the failure Doug hit, and a guard that only
+    /// checked warnings fire would pass on a hook that warns always. **Two assert that a
+    /// warning does fire**, so the hook cannot satisfy the first three by never warning.
+    #[test]
+    #[cfg(windows)]
+    fn the_hook_reports_cleared_points_and_never_cries_wolf_on_a_correct_file() {
+        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+        let hook = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("scripts/hrw-context.ps1");
+        let now = SystemTime::now();
+        let now_ms = now
+            .duration_since(UNIX_EPOCH)
+            .expect("clock after 1970")
+            .as_millis();
+        let at = |secs_ago: u64| {
+            crate::diagnostics::format_utc_millis(now_ms - u128::from(secs_ago) * 1000)
+        };
+        let action = |secs_ago: u64, kind: &str, detail: &str| serde_json::json!({ "at": at(secs_ago), "kind": kind, "detail": detail });
+        let a_point = serde_json::json!({
+            "seq": 1, "target": "components.src.V", "kind": "a stage node",
+            "stage": "Flatten", "request": null,
+        });
+
+        // One fixture project per scenario, removed even if an assertion panics.
+        struct Fixture(PathBuf);
+        impl Drop for Fixture {
+            fn drop(&mut self) {
+                drop(std::fs::remove_dir_all(&self.0));
+            }
+        }
+        let run = |name: &str,
+                   actions: Vec<serde_json::Value>,
+                   pointing_at: serde_json::Value,
+                   focus_secs_ago: u64| {
+            let root = std::env::temp_dir()
+                .join(format!("hrw-hook-{}-{name}-{now_ms}", std::process::id()));
+            let fixture = Fixture(root.clone());
+            let bridge = root.join("hrw").join(".hrw-bridge");
+            std::fs::create_dir_all(bridge.join("diagnostics")).expect("fixture dirs");
+            let session = serde_json::json!({
+                "app": {
+                    "ui_mode": "Lab",
+                    "stage_tab": "Flatten",
+                    "context": { "seq": 1, "pointing_at": pointing_at, "following": null },
+                },
+                "actions": actions,
+            });
+            std::fs::write(
+                bridge.join("diagnostics").join("session.json"),
+                session.to_string(),
+            )
+            .expect("write fixture session.json");
+            let focus = bridge.join("focus.json");
+            std::fs::write(&focus, "{}").expect("write fixture focus.json");
+            std::fs::File::options()
+                .write(true)
+                .open(&focus)
+                .and_then(|f| f.set_modified(now - Duration::from_secs(focus_secs_ago)))
+                .expect("set fixture focus.json mtime");
+
+            let out = std::process::Command::new("powershell")
+                .args([
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                ])
+                .arg(&hook)
+                .env("CLAUDE_PROJECT_DIR", &root)
+                .output()
+                .expect("powershell runs the hook");
+            drop(fixture);
+            String::from_utf8_lossy(&out.stdout).into_owned()
+        };
+
+        // 1. The Context Bar's × cleared the point. Must say CLEARED, and must not
+        //    report the age of the point that is gone.
+        let out = run(
+            "cleared",
+            vec![
+                action(600, "session", "HRW started"),
+                action(500, "point-at-selection", "Answer"),
+                action(500, "context-emitted", "focus.json seq 1"),
+                action(100, "point-dropped", "components.src.V (cleared)"),
+                action(100, "context-emitted", "focus.json seq 2"),
+            ],
+            serde_json::Value::Null,
+            100,
+        );
+        assert!(
+            out.contains("the point was CLEARED"),
+            "a cleared point is reported as cleared:\n{out}"
+        );
+        // The live-point line names its gesture ("pointed at 8m ago via …"). Checking
+        // for that, not for "pointed at", which the CLEARED line correctly contains too
+        // ("nothing is pointed at") — this assertion's first draft failed on exactly that.
+        assert!(
+            !out.contains("via point-at-selection"),
+            "and not as a live point with an age:\n{out}",
+        );
+        assert!(
+            !out.contains("WARNING"),
+            "the file is correct, so no warning:\n{out}"
+        );
+
+        // 1b. The snapshot says no point, but the trail holds no drop — what an HRW build
+        //     from before 2026-11-07 left after its ×, which recorded nothing. The point
+        //     line must follow the SNAPSHOT. The pre-fix hook followed the trail and said
+        //     "pointed at … via point-at-selection" over a point that no longer existed;
+        //     scenario 1 cannot catch that, because its trail is already correct.
+        let out = run(
+            "no-point-no-drop",
+            vec![
+                action(600, "session", "HRW started"),
+                action(500, "point-at-selection", "Answer"),
+                action(500, "context-emitted", "focus.json seq 1"),
+            ],
+            serde_json::Value::Null,
+            500,
+        );
+        assert!(
+            out.contains("nothing is pointed at"),
+            "no point in the snapshot is no point:\n{out}"
+        );
+        assert!(
+            !out.contains("via point-at-selection"),
+            "however recent the last point gesture in the trail:\n{out}",
+        );
+
+        // 2. A follow after the point rewrote focus.json — the false warning Doug hit.
+        let out = run(
+            "follow-after-point",
+            vec![
+                action(900, "session", "HRW started"),
+                action(800, "point-at-selection", "Answer"),
+                action(800, "context-emitted", "focus.json seq 1"),
+                action(300, "follow", "follow h"),
+                action(300, "context-emitted", "focus.json seq 2"),
+            ],
+            a_point.clone(),
+            300,
+        );
+        assert!(
+            out.contains("focus.json is HRW's latest emission"),
+            "a follow's rewrite is HRW's own:\n{out}"
+        );
+        assert!(
+            !out.contains("WARNING"),
+            "and must not be called someone else's:\n{out}"
+        );
+
+        // 3. A recompile kept the point and re-emitted it silently.
+        let out = run(
+            "recompile-keeps-point",
+            vec![
+                action(900, "session", "HRW started"),
+                action(800, "point-at", "a node"),
+                action(800, "context-emitted", "focus.json seq 1"),
+                action(200, "compiled", "RcCircuit"),
+                action(200, "context-emitted", "focus.json seq 1"),
+            ],
+            a_point.clone(),
+            200,
+        );
+        assert!(
+            !out.contains("WARNING"),
+            "a recompile's re-emission is correct:\n{out}"
+        );
+
+        // 4. Must-fire: something other than HRW touched focus.json after its last emission.
+        let out = run(
+            "foreign-write",
+            vec![
+                action(900, "session", "HRW started"),
+                action(800, "point-at", "a node"),
+                action(800, "context-emitted", "focus.json seq 1"),
+            ],
+            a_point.clone(),
+            10,
+        );
+        assert!(
+            out.contains("NOT written by HRW's last emission"),
+            "a write HRW did not make must be flagged:\n{out}",
+        );
+
+        // 5. Must-fire: HRW's last emission failed, so focus.json is older than the context.
+        let out = run(
+            "failed-emission",
+            vec![
+                action(900, "session", "HRW started"),
+                action(800, "point-at", "a node"),
+                action(
+                    100,
+                    "context-emitted",
+                    "focus.json seq 2 NOT WRITTEN: denied",
+                ),
+            ],
+            a_point,
+            800,
+        );
+        assert!(
+            out.contains("emission FAILED"),
+            "a failed write must be said:\n{out}"
         );
     }
 
@@ -6548,7 +6795,13 @@ mod tests_orphaned_docs {
             // it has its own summary, so there is no undocumented item for an orphan to belong
             // to. Ordinary prose in a prose-heavy module, which this test's own docs say to
             // raise the number for rather than reword.
-            ("app/tests.rs", 5),
+            //
+            // 5 -> 6 on 2026-11-07, by the same triage. The hit is inside the doc of
+            // `clearing_the_point_reaches_the_file_the_hook_reads`, which opens with its
+            // own summary and is attached to that test (checked, not assumed: the doc runs
+            // to the `#[test]` line, and both neighbouring tests keep their own docs,
+            // because the test was inserted after a closing brace). Prose, not an orphan.
+            ("app/tests.rs", 6),
             // 9 -> 10 on 2026-11-06, with the reasoning this ratchet requires. The hit is
             // `BRIDGE_DIR`'s long doc block, whose `# Under cargo test this is
             // .hrw-bridge/test-run/` heading reads as a second opening summary — it has to,

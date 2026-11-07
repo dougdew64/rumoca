@@ -46,8 +46,12 @@
 //!    ~100 bytes instead of 7 KB, which is what makes pruning the full files
 //!    safe. **The retention split is the design:** one recent complete file is
 //!    what a reasoner needs to diagnose; a directory of them is a haystack.
-//! 3. **`session.json`** — rewritten on every recorded *user action*. Deliberately
-//!    cheap and deliberately not per-frame. A stack overflow, a `SIGSEGV` from a
+//! 3. **`session.json`** — rewritten on every recorded *user action*, **and on every
+//!    write of `focus.json`**, which `bridge::write` records as `context-emitted` so the
+//!    two files cannot fall out of step (2026-11-07 — before that the Context Bar's ×
+//!    recorded nothing, and the `[hrw-context]` hook, which reads this file, went on
+//!    reporting a cleared point). Deliberately cheap and deliberately not per-frame.
+//!    A stack overflow, a `SIGSEGV` from a
 //!    graphics driver, or a hard kill runs **no** hook at all and would otherwise
 //!    leave nothing; this file survives them because it was already on disk.
 //!    The previous run's copy is moved to **`previous-session.json`** at startup
@@ -413,6 +417,23 @@ impl Drop for DiagTestGuard {
 #[cfg(test)]
 pub(crate) fn in_flight_key_for_test() -> Option<String> {
     with_diag(|d| d.in_flight.as_ref().map(|f| f.key.clone())).flatten()
+}
+
+/// The kinds of the actions recorded so far, oldest first — for tests that must prove
+/// a gesture was **recorded**, not merely performed.
+///
+/// Recording is what makes `session.json` move: [`flush_session`] is a no-op without
+/// it, and `session.json` is the file the `[hrw-context]` hook reads. So *"was an
+/// action recorded?"* is the testable form of *"will Claude see this change?"*.
+#[cfg(test)]
+pub(crate) fn action_kinds_for_test() -> Vec<String> {
+    with_diag(|d| d.actions.iter().map(|e| e.kind.clone()).collect()).unwrap_or_default()
+}
+
+/// Whether `session.json` is due to be rewritten at the end of this frame.
+#[cfg(test)]
+pub(crate) fn session_dirty_for_test() -> bool {
+    with_diag(|d| d.session_dirty).unwrap_or(false)
 }
 
 /// Record what this frame is about to render, **before** it renders it.
@@ -785,7 +806,10 @@ fn file_stamp() -> String {
 }
 
 /// `YYYY-MM-DD HH:MM:SS.mmm UTC`, for reading.
-fn format_utc_millis(ms: u128) -> String {
+///
+/// `pub(crate)` so the `[hrw-context]` hook's behavioural test can write fixture trails
+/// in **exactly** the format the hook parses, rather than an imitation of it.
+pub(crate) fn format_utc_millis(ms: u128) -> String {
     let (y, mo, d, h, mi, s, milli) = civil_from_millis(ms);
     format!("{y:04}-{mo:02}-{d:02} {h:02}:{mi:02}:{s:02}.{milli:03} UTC")
 }

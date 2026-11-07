@@ -4768,3 +4768,13 @@ than leaving the two readings indistinguishable.
 >
 > The same boundary is recorded in `app-split-plan.md`, where it resets a measurement series
 > rather than merely annotating one.
+
+**Rows below were produced under Opus 5.5 at `high`.**
+
+| date | defect | caught by | note |
+|---|---|---|---|
+| 11-07 | five places where the mandatory reading path contradicted itself or another file — a Java translation table seven weeks after the move to C++; *"introductions, not reminders"* left standing under its own correction; the charter calling the IR crates *"pure data"* after v0.10.0 falsified it; `ideas.md` described as *"#1-#57"* at #92; a box titled *RUNNING* for two months | **Claude**, a fresh read after the model change | a reading no session in between had made. The last one could not simply be evicted: `DECISIONS.md` had no entry for the day it recorded, so the history was moved there rather than deleted |
+| 11-07 | Claude told Doug the Answer in `answer.md` had been overwritten by the test suite and was unrecoverable | **Claude**, checking the file before answering a question about it | a save-and-restore test had put the original back; only the mtime moved. Corrected in the same reply |
+| 11-07 | **every point carried a presumed `Explain` verb**, shown as `(explain)` beside every noun and reaching Claude as a request Doug had not made | **Doug** — *"Why is '(explain)' written there? It's not clickable"* | Claude's first fix — hide it when it was the default — was itself wrong, hiding a presumed verb while keeping it. The variant was removed. A test had been **enforcing** the defect (*"a point does carry one"*) |
+| 11-07 | **the Context Bar's × changed `focus.json` and not `session.json`**, so the hook went on reporting a cleared point; and the hook's cross-check warned *"do NOT read it as Doug's context"* after every follow and every recompile, about a correct file | **Claude**, tracing the code to answer Doug's *"what file, and when?"* | Doug: *"a bad problem, in the part of this project which matters most."* Reproduced as a failing test before it was fixed. The cross-check was the previous day's own fix, tested only against a state in which points were the only thing that had happened |
+| 11-07 | Claude told Doug `set_tracked_identifier` records nothing; it records `"follow"` | **Claude**, re-reading before building on the claim | a one-line grep missed a call whose kind sits on the next line — and `the_hook_matches_real_action_kinds` had the identical blind spot, now closed by matching with whitespace removed |

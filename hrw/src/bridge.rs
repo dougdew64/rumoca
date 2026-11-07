@@ -1873,6 +1873,43 @@ pub struct PipelineFailure<'a> {
 /// Creates the bridge directory if it doesn't exist. Returns the path
 /// on success (used by the app to show a status message).
 pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
+    let result = write_focus_file(ask);
+    // **Every write of the context records the write, here, at the one choke point.**
+    //
+    // There are two context files and they are written by different mechanisms:
+    // `focus.json` by this function, and `diagnostics/session.json` — the file the
+    // `[hrw-context]` hook summarises above each of Doug's messages — only at the end of
+    // a frame **in which an action was recorded**. Nothing tied the two together, so any
+    // caller that changed the context without also recording a gesture left
+    // `session.json` describing the previous context:
+    //
+    // - the Context Bar's two × buttons recorded nothing, so **the hook went on
+    //   reporting a point Doug had cleared**;
+    // - a recompile that kept the point re-emitted silently, so the hook's cross-check
+    //   warned *"do NOT read it as Doug's context"* about a file that was correct.
+    //
+    // Doug, 2026-11-07: *"That is a bad problem, in the part of this project which
+    // matters most."* Recording **inside the writer** rather than at each gesture makes
+    // the two files unable to diverge: a future caller cannot write the context without
+    // recording that it did. The hook's freshness cross-check compares `focus.json`
+    // against *this* action — the event that actually wrote it — rather than against
+    // whatever gesture came last.
+    //
+    // Recorded whether or not the write succeeded, because a failed write is a context
+    // change too: the snapshot carries the emission error, and the hook must see it.
+    crate::diagnostics::record_action(
+        "context-emitted",
+        match &result {
+            Ok(_) => format!("focus.json seq {}", ask.seq),
+            Err(e) => format!("focus.json seq {} NOT WRITTEN: {e}", ask.seq),
+        },
+    );
+    result
+}
+
+/// The file I/O half of [`write`], split out so the recording cannot be bypassed by an
+/// early `?` return — a failed `create_dir_all` must still be recorded.
+fn write_focus_file(ask: &Ask) -> std::io::Result<PathBuf> {
     fs::create_dir_all(BRIDGE_DIR)?;
     let path = Path::new(BRIDGE_DIR).join("focus.json");
     let doc = build(ask);

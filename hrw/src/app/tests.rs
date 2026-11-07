@@ -1929,6 +1929,92 @@ fn a_failed_emission_is_never_silent() {
     assert!(msg.contains("denied"), "should carry the cause: {msg}");
 }
 
+/// **Every change to the context must reach the file the hook reads, in the same frame.**
+///
+/// # The defect this is built from — Doug, 2026-11-07
+///
+/// *"That is a bad problem, in the part of this project which matters most: enabling me
+/// to ask questions and enabling you to answer those questions."* There are **two**
+/// context files. `focus.json` is the context; `session.json` is what the
+/// `[hrw-context]` hook summarises above every message. They are written by different
+/// mechanisms — `focus.json` by `bridge::write`, `session.json` only at the end of a frame
+/// **in which an action was recorded** — and nothing tied the two together.
+///
+/// So the × on the Context Bar rewrote `focus.json` to *no point* and recorded nothing,
+/// `session.json` kept the old point, and **the hook went on telling Claude about a
+/// point Doug had cleared.** A recompile that kept the point re-emitted `focus.json`
+/// the same way, silently.
+///
+/// # What is asserted, and why at this level
+///
+/// Recording is the observable form of *"will Claude see this?"*, because
+/// `flush_session` is a no-op without it — so this asserts **`session_dirty`** after
+/// each change, from a clean flush. It drives `apply_context_bar_press`, the handler
+/// the real × calls, rather than a copy of its body. And it checks the snapshot the
+/// hook will read, not just the flag: a dirty flag over a stale snapshot would pass
+/// the first assertion and still mislead.
+#[test]
+fn clearing_the_point_reaches_the_file_the_hook_reads() {
+    let _diag = diagnostics::seed_for_test();
+    let (mut app, _tx) = App::test_with_sender();
+    app.context.pointed_at = Some(PointedAt {
+        seq: 1,
+        target: "components.src.V".to_owned(),
+        kind: PointKind::Stage,
+        stage: Some(StageKind::Flatten),
+        request: None,
+    });
+    app.tracked_identifier = Some("h".to_owned());
+    app.emit_context();
+
+    // A frame boundary: everything so far is on disk, nothing is pending.
+    diagnostics::flush_session();
+    assert!(
+        !diagnostics::session_dirty_for_test(),
+        "precondition: a fresh frame starts clean",
+    );
+
+    // 1. Clear the point with its ×.
+    app.apply_context_bar_press(Some(ContextBarPress::ClearPoint));
+    assert!(
+        diagnostics::session_dirty_for_test(),
+        "clearing the point rewrote focus.json, so session.json must follow it this \
+         frame — otherwise the hook reports a point Doug has already cleared",
+    );
+    let snap = app.diagnostic_snapshot();
+    assert!(
+        snap["context"]["pointing_at"].is_null(),
+        "and the snapshot it will write must show no point: {}",
+        snap["context"]["pointing_at"],
+    );
+    assert_eq!(
+        diagnostics::action_kinds_for_test()
+            .last()
+            .map(String::as_str),
+        Some("context-emitted"),
+        "the emission itself is what is recorded, so no writer can skip it",
+    );
+    assert!(
+        diagnostics::action_kinds_for_test()
+            .iter()
+            .any(|k| k == "point-dropped"),
+        "and the gesture is recorded as a drop, so the hook says the point was CLEARED \
+         rather than reporting the age of the point that is gone",
+    );
+
+    // 2. Clear the follow with its ×.
+    diagnostics::flush_session();
+    app.apply_context_bar_press(Some(ContextBarPress::ClearThread));
+    assert!(
+        diagnostics::session_dirty_for_test(),
+        "clearing the follow must reach session.json too",
+    );
+    assert!(
+        app.diagnostic_snapshot()["context"]["following"].is_null(),
+        "and the snapshot must show nothing followed",
+    );
+}
+
 /// Switching stages drops **every stage-keyed** view, including ones added later.
 ///
 /// **This test used to re-implement the invalidation inline**, clearing five
