@@ -3786,6 +3786,86 @@ fn a_library_label_resolves_in_its_own_file_when_the_map_is_given() {
     );
 }
 
+/// **`DaeCounts::continuous_scalar_rows` is the incidence's `n_eq`, on every specimen**,
+/// and the Index Reduction stage publishes it as `n_equations` on both sides.
+///
+/// Found 2026-11-07 when the reduced system was wired into the fidelity checks: F3 read
+/// `ArrayFamily / IndexReduction: n_equations = 0, incidence says 8`. The worker had
+/// filled `before`/`after.n_equations` from `continuous_equations` — Rumoca's residual
+/// arena, which holds no structured family — overwriting the Structural report's own
+/// correct 8. The same count fed the survey's `n_equations` column and both size caps.
+///
+/// Checked against the **published** incidence, so the count and the matrix a reader
+/// sees cannot disagree; `ArrayFamily` is asserted by name so the family case cannot
+/// silently drop out of the corpus.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compiles the whole specimen corpus; run with --features slow-tests"
+)]
+fn the_scalar_row_count_is_the_published_incidence_on_every_specimen() {
+    let dir = PathBuf::from(crate::manifest_path!("specimens"));
+    let mut names: Vec<String> = std::fs::read_dir(&dir)
+        .expect("specimens")
+        .flatten()
+        .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("mo"))
+        .filter_map(|e| {
+            e.path()
+                .file_stem()
+                .map(|s| s.to_string_lossy().into_owned())
+        })
+        .collect();
+    names.sort();
+    let mut compared = 0;
+    let mut saw_a_family = false;
+    for name in &names {
+        let FromWorker::Compiled { stages, dae, .. } = compile_specimen_shared(name) else {
+            panic!("{name}: expected Compiled");
+        };
+        let (Some(dae), Some(structural)) = (dae.as_ref(), stages.structural.value.as_ref()) else {
+            continue;
+        };
+        let Some(n_eq) = structural["incidence"]["n_eq"].as_u64() else {
+            continue;
+        };
+        let counts = crate::dae_counts::DaeCounts::of(dae);
+        assert_eq!(
+            counts.continuous_scalar_rows as u64, n_eq,
+            "{name}: scalar rows {} vs the published incidence's {n_eq}",
+            counts.continuous_scalar_rows,
+        );
+        if let Some(ir) = stages.index_reduction.value.as_ref() {
+            assert_eq!(
+                ir["before"]["n_equations"].as_u64(),
+                Some(n_eq),
+                "{name}: before"
+            );
+            if !ir["after"].is_null() {
+                assert_eq!(
+                    ir["after"]["n_equations"], ir["after"]["incidence"]["n_eq"],
+                    "{name}: after's count and its own incidence",
+                );
+            }
+        }
+        if counts.continuous_families > 0 {
+            saw_a_family = true;
+        }
+        if name == "ArrayFamily" {
+            assert_eq!(
+                counts.continuous_equations, 0,
+                "the arena count misses the family"
+            );
+            assert_eq!(counts.continuous_scalar_rows, 8);
+        }
+        compared += 1;
+    }
+    assert!(compared >= 15, "only {compared} specimens compared");
+    assert!(
+        saw_a_family,
+        "no specimen has a structured family; ArrayFamily went missing"
+    );
+}
+
 /// Rank deficiency comes from the **error's own** counts, not from whatever
 /// incidence the caller happened to pass.
 ///

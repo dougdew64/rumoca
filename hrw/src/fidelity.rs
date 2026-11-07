@@ -267,19 +267,19 @@ pub fn specimens_without_oracle_verdict<'a>(
 /// difference between a corpus sweep that covers the large models and one that
 /// silently excludes them.
 ///
-/// **Open, and no longer blocked** (corrected in the 2026-11-07 sweep). This said
-/// "there is nothing to pass today", which was true from the rebase until the
-/// 2026-11-04 re-model: the old reduced DAE came from re-running reduction over a
-/// clone. Now `PreparedDae::as_dae()` gives the reduced system as a real `&Dae`, and
-/// the Index Reduction stage publishes its incidence under `after`. What is missing
-/// is plumbing: the runner is not handed the `PreparedDae`, so the cap and the
-/// `IndexReduction` subjects stay out. `docs/tech-debt.md` records it.
+/// **Back as `reduced`, 2026-11-07** (the post-rebase sweep's open item 1): the
+/// reduced `&Dae` from `PreparedDae::as_dae()`, which a runner obtains from
+/// `prepare_for_solve` **only below its `--max-reduce-eq` cap** and passes `None`
+/// above it. `None` costs only F2 on the `IndexReduction` subject — F3–F5 still run
+/// on it, from the stage's own report — so the cap no longer drops a large model's
+/// reduced system from the sweep entirely. See [`subjects`].
 ///
 /// F8 (sizes) and F9 (failure faithfulness) are the runner's business, not this
 /// function's: they need the whole bundle rather than a subject.
 pub fn check_model(
     stages: &StageBundle,
     dae: &rumoca_ir_dae::Dae,
+    reduced: Option<&rumoca_ir_dae::Dae>,
     sheet: Option<&crate::equation_sheet::EquationSheet>,
     index: Option<&crate::identifier_index::IdentifierIndex>,
     coverage: &mut Coverage,
@@ -300,11 +300,9 @@ pub fn check_model(
         v.into_iter().map(move |detail| Violation { check, detail })
     };
 
-    // `subjects` yields only the `Structural` subject now, so the
-    // raw-vs-reduced skip that used to live here has nothing to skip — see
-    // its own note for why passing the raw DAE as the reduced one would be
-    // worse than omitting the subject.
-    for s in subjects(stages, dae) {
+    // `Structural`, plus `IndexReduction` whenever the stage admitted a system; F2
+    // on the second runs only when `reduced` was supplied. See `subjects`.
+    for s in subjects(stages, dae, reduced) {
         coverage.subjects += 1;
         if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
             coverage.with_blocks += 1;
@@ -506,35 +504,54 @@ pub fn group_by_check(
 ///
 /// It became one in the v0.10.0 rebase, when the reduced DAE could not be had: it
 /// came from `worker::index_reduce_in_place` re-running reduction over a *clone*, and
-/// 0.10.0's `Dae` is immutable and not `Clone`. **Since the 2026-11-04 re-model it
-/// can be had** — `PreparedDae::as_dae()` — and the stage publishes the reduced
-/// incidence under `after` (and the raw one under `before`). Neither is checked here
-/// yet: the runner is not handed the `PreparedDae`, and the reports nest the
-/// incidence one level down. Open in `docs/tech-debt.md`. *(Corrected in the
-/// 2026-11-07 sweep; this said the stage was disabled and published no incidence.)*
+/// 0.10.0's `Dae` is immutable and not `Clone`.
 ///
-/// **The parameter is removed rather than passed the raw DAE twice**, which
-/// would have compiled and been a lie: the `IndexReduction` subject would then
-/// claim the raw system's incidence was the reduced one's, and every F2
-/// comparison under that label would pass by describing the wrong system. When
-/// the plumbing lands, this signature grows back with `as_dae()`.
-pub fn subjects<'a>(stages: &'a StageBundle, dae: &'a rumoca_ir_dae::Dae) -> Vec<Subject<'a>> {
+/// # Two again since 2026-11-07 (the post-rebase sweep's open item 1)
+///
+/// The Index Reduction stage publishes the admitted system's analysis under `after`,
+/// and **`IndexReduction` is pushed whenever `after` carries an incidence** — so F3,
+/// F4 and F5, which check a report against itself, now cover every reduced system
+/// whatever the caller passes. `reduced` is the oracle F2 needs: the reduced `&Dae`
+/// from `PreparedDae::as_dae()`. **The worker's own `PreparedDae` cannot be handed
+/// over** — it borrows the compile's `Dae` and does not cross the worker's channel — so
+/// a caller computes one with the public `prepare_for_solve`, the entry point the
+/// compile itself uses, under the size cap `check_model` describes. With `None`, F2
+/// skips the subject rather than comparing it against the raw system, which would have
+/// compiled and been a lie: every F2 comparison under that label would then pass by
+/// describing the wrong system.
+///
+/// **`IndexReduction.before` is not pushed**, deliberately. The worker builds it as a
+/// clone of the Structural report (`index_reduction_from_observation`), so its F2–F5
+/// would repeat the Structural subject's exactly — doubling the costliest checks on the
+/// largest models to learn nothing new.
+pub fn subjects<'a>(
+    stages: &'a StageBundle,
+    dae: &'a rumoca_ir_dae::Dae,
+    reduced: Option<&'a rumoca_ir_dae::Dae>,
+) -> Vec<Subject<'a>> {
     let mut out = Vec::new();
-    let mut push = |label: &str, report: Option<&'a Value>, d: &'a rumoca_ir_dae::Dae| {
+    let mut push = |label: &str, report: Option<&'a Value>, d: Option<&'a rumoca_ir_dae::Dae>| {
         if let Some(r) = report
             && r.get("incidence").is_some()
         {
             out.push(Subject {
                 label: label.to_owned(),
                 report: r,
-                dae: Some(d),
+                dae: d,
             });
         }
     };
-    push("Structural", stages.structural.value.as_ref(), dae);
-    // `IndexReduction` and `IndexReduction.before` are not pushed: the reduced
-    // DAE is not passed in yet (see the note above), and passing `dae` for them
-    // would be worse than omitting them.
+    push("Structural", stages.structural.value.as_ref(), Some(dae));
+    push(
+        "IndexReduction",
+        stages
+            .index_reduction
+            .value
+            .as_ref()
+            .map(|v| &v["after"])
+            .filter(|after| !after.is_null()),
+        reduced,
+    );
     out
 }
 
@@ -1329,6 +1346,10 @@ mod tests {
         let mut with_blocks = 0usize;
         let mut with_matching = 0usize;
         let mut with_singular_error = 0usize;
+        // Models whose Index Reduction admitted a system, and the reduced subjects F2
+        // actually compared against an oracle — see the count assertion below.
+        let mut admitted = 0usize;
+        let mut reduced_with_oracle = 0usize;
 
         let mut stage_values = 0usize;
         let mut report: Vec<FidelityRow> = Vec::new();
@@ -1366,8 +1387,19 @@ mod tests {
                 }
             }
 
-            for s in subjects(&stages, &dae) {
+            // The reduced oracle for F2 on the `IndexReduction` subject, through the
+            // public entry point the compile uses (see `subjects`). These specimens are
+            // small, so no size cap applies.
+            let prepared = rumoca_phase_structural::prepare_for_solve(&dae);
+            let reduced = prepared.as_ref().ok().map(|p| p.as_dae());
+            if stages.index_reduction.outcome == crate::worker::Outcome::Ok {
+                admitted += 1;
+            }
+            for s in subjects(&stages, &dae, reduced) {
                 subjects_checked += 1;
+                if s.label == "IndexReduction" && s.dae.is_some() {
+                    reduced_with_oracle += 1;
+                }
                 if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
                     with_blocks += 1;
                 }
@@ -1436,24 +1468,33 @@ mod tests {
 
         // Each check silently skips what it does not apply to, so prove each one
         // had something to look at.
-        // **One subject per model, exactly — and that is stronger than the floor it
-        // replaces.**
+        // **One `Structural` subject per model plus one `IndexReduction` subject per
+        // admitted system, exactly — rewritten deliberately on 2026-11-07**, as the
+        // previous version of this comment required when the reduced DAE came back.
         //
-        // This read `>= 20` for ten models, because `subjects` yielded **two**
-        // incidence-bearing reports each: the raw system and the index-reduced one.
-        // v0.10.0's reduced DAE is not a surface HRW holds, so `subjects` lost that
-        // parameter and there is one report per model.
-        //
-        // Pinned as equality rather than lowered to `>= 10`. A floor of ten would
-        // pass if one model stopped producing a report while another started
-        // producing two; equality against `MODELS.len()` cannot, and *"a corpus that
-        // quietly stopped producing subjects reads as a clean bill"* is the hazard
-        // this guard exists for. **When the reduced DAE is re-modelled this becomes
-        // 2x and must be rewritten deliberately** rather than nudged.
+        // It read `>= 20` for ten models before the v0.10.0 rebase (two reports each),
+        // then `== MODELS.len()` while the reduced system was not checked at all.
+        // Equality, not a floor: a floor would pass if one model stopped producing a
+        // report while another started producing two, and *"a corpus that quietly
+        // stopped producing subjects reads as a clean bill"* is the hazard this guard
+        // exists for. `admitted` is read from each stage's own outcome, not from the
+        // subjects, so the two sides are counted independently.
         assert_eq!(
             subjects_checked,
+            MODELS.len() + admitted,
+            "F2-F5 must see each model's Structural report and each admitted system's \
+             reduced one",
+        );
+        assert!(
+            admitted >= MODELS.len() - 3,
+            "only {admitted} of {} specimens admitted a reduced system; the reduced \
+             subject is barely being exercised",
             MODELS.len(),
-            "F2/F3 must see exactly one incidence-bearing report per model",
+        );
+        assert_eq!(
+            reduced_with_oracle, admitted,
+            "every admitted system must have reached F2 with its reduced oracle; one \
+             that did not was checked by F3-F5 alone",
         );
         assert!(stage_values >= 50, "only {stage_values} stage IRs run (F7)");
         assert!(
@@ -2282,7 +2323,8 @@ mod tests {
         // incidence from this DAE cannot reproduce it.
         let mut fired = 0usize;
         let mut subjects_seen = 0usize;
-        for s in subjects(&stages_a, &dae_b) {
+        // No reduced oracle: the cross-pairing is about the raw subject.
+        for s in subjects(&stages_a, &dae_b, None) {
             subjects_seen += 1;
             if !check_f2(&s).is_empty() {
                 fired += 1;
