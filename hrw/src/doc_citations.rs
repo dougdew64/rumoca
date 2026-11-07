@@ -1924,21 +1924,31 @@ Some prose.
     /// failure messages of a dozen tests. A Rust compiler accepts
     /// all of them, and no test reads the text, so nothing else would ever object.
     ///
-    /// **The shape:** on a line **longer than rustfmt's 100 columns**, inside the first
-    /// string literal's text, a run of eight or more spaces between two non-space
-    /// characters. The length condition is what separates the defect from deliberate
-    /// column alignment (`solver_steps.rs` prints an aligned table): joining a wrapped
-    /// string always yields an over-width line, and an aligned `println!` is short. Not
-    /// counted either: a run right after the opening quote (deliberate leading
-    /// indentation), a run after a `\n` escape (the next line of a multi-line value), and
-    /// anything after the closing quote (an aligned trailing comment). HRW's own files
-    /// only: the `crates/` are upstream's, and were not surveyed.
+    /// **The shape:** inside an ordinary (non-raw) string literal, a run of eight or more
+    /// spaces between two non-space characters on one source line, where **either** that
+    /// line is longer than rustfmt's 100 columns **or** the literal spans several lines.
+    /// Either condition is what a lost continuation produces: joining a wrapped string
+    /// makes an over-width line, and a literal that still spans lines shows a lost
+    /// continuation in its middle. A short single-line literal is exempt, because that is
+    /// where deliberate column alignment lives (`solver_steps.rs` prints an aligned
+    /// table). Not counted either: a line's leading indentation inside a multi-line
+    /// literal, a run after a `\n` escape, comments, and raw strings (which cannot hold a
+    /// `\` continuation at all). HRW's own files only: the `crates/` are upstream's, and
+    /// were not surveyed.
     ///
-    /// **Its first run found seven more** than the line-at-a-time search that started the
-    /// fix — strings that span several source lines, whose closing quote that search
-    /// required on the same line.
+    /// **Two versions before this one each missed some.** A line-at-a-time search found
+    /// 25. The first form of this test, reading from a line's first quote, found 7 more
+    /// in strings spanning several lines. Then a sweep found `playback.rs`'s, which sat
+    /// mid-literal on a line too short for the column rule, in a line with no opening
+    /// quote. Hence the small lexer: string state is tracked across lines, as the
+    /// compiler does.
     #[test]
     fn no_string_literal_has_a_lost_line_continuation() {
+        /// One physical line's share of an ordinary string literal.
+        struct Segment {
+            line: usize,
+            text: String,
+        }
         let hrw = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let run = " ".repeat(8);
         let mut found: Vec<String> = Vec::new();
@@ -1946,41 +1956,160 @@ Some prose.
             let Ok(text) = std::fs::read_to_string(&path) else {
                 continue;
             };
-            for (i, line) in text.lines().enumerate() {
-                if line.chars().count() <= 100 || line.trim_start().starts_with("//") {
-                    continue;
-                }
-                let Some(open) = line.find('"') else {
-                    continue;
-                };
-                // The literal's text, up to an unescaped closing quote if this line has one.
-                let rest = &line[open + 1..];
-                let mut close = rest.len();
-                let mut escaped = false;
-                for (j, c) in rest.char_indices() {
-                    match c {
-                        '\\' if !escaped => escaped = true,
-                        '"' if !escaped => {
-                            close = j;
-                            break;
+            let line_len: Vec<usize> = text.lines().map(|l| l.chars().count()).collect();
+            let chars: Vec<char> = text.chars().collect();
+            let rel = path
+                .strip_prefix(&hrw)
+                .unwrap_or(&path)
+                .display()
+                .to_string();
+            let (mut i, mut line) = (0usize, 0usize);
+            while i < chars.len() {
+                let c = chars[i];
+                let next = chars.get(i + 1).copied();
+                match c {
+                    '\n' => {
+                        line += 1;
+                        i += 1;
+                    }
+                    '/' if next == Some('/') => {
+                        while i < chars.len() && chars[i] != '\n' {
+                            i += 1;
                         }
-                        _ => escaped = false,
                     }
-                }
-                let quoted = &rest[..close];
-                let mut from = 0;
-                while let Some(at) = quoted[from..].find(&run) {
-                    let start = from + at;
-                    let before = &quoted[..start];
-                    let after = quoted[start..].trim_start_matches(' ');
-                    let deliberate = before.is_empty() || before.ends_with("\\n");
-                    let between_words = !before.ends_with(' ') && !after.is_empty();
-                    if !deliberate && between_words {
-                        let rel = path.strip_prefix(&hrw).unwrap_or(&path);
-                        found.push(format!("{}:{}", rel.display(), i + 1));
-                        break;
+                    '/' if next == Some('*') => {
+                        let mut depth = 0usize;
+                        while i < chars.len() {
+                            if chars[i] == '/' && chars.get(i + 1) == Some(&'*') {
+                                depth += 1;
+                                i += 2;
+                            } else if chars[i] == '*' && chars.get(i + 1) == Some(&'/') {
+                                depth -= 1;
+                                i += 2;
+                                if depth == 0 {
+                                    break;
+                                }
+                            } else {
+                                if chars[i] == '\n' {
+                                    line += 1;
+                                }
+                                i += 1;
+                            }
+                        }
                     }
-                    from = start + run.len();
+                    // A char literal, or a lifetime (which has no closing quote).
+                    '\'' => {
+                        if next == Some('\\') {
+                            i += 2;
+                            while i < chars.len() && chars[i] != '\'' {
+                                i += 1;
+                            }
+                            i += 1;
+                        } else if chars.get(i + 2) == Some(&'\'') {
+                            i += 3;
+                        } else {
+                            i += 1;
+                        }
+                    }
+                    // A raw string: skipped whole, newlines counted.
+                    'r' if (next == Some('"') || next == Some('#'))
+                        && (i == 0 || !(chars[i - 1].is_alphanumeric() || chars[i - 1] == '_')) =>
+                    {
+                        let mut j = i + 1;
+                        let mut hashes = 0usize;
+                        while chars.get(j) == Some(&'#') {
+                            hashes += 1;
+                            j += 1;
+                        }
+                        if chars.get(j) != Some(&'"') {
+                            i += 1;
+                            continue;
+                        }
+                        j += 1;
+                        loop {
+                            match chars.get(j) {
+                                None => break,
+                                Some('\n') => line += 1,
+                                Some('"')
+                                    if (1..=hashes).all(|k| chars.get(j + k) == Some(&'#')) =>
+                                {
+                                    j += 1 + hashes;
+                                    break;
+                                }
+                                _ => {}
+                            }
+                            j += 1;
+                        }
+                        i = j;
+                    }
+                    '"' => {
+                        let start_line = line;
+                        let mut segments = vec![Segment {
+                            line,
+                            text: String::new(),
+                        }];
+                        i += 1;
+                        while i < chars.len() && chars[i] != '"' {
+                            match chars[i] {
+                                '\\' => {
+                                    let escaped = chars.get(i + 1).copied().unwrap_or(' ');
+                                    let seg = segments.last_mut().expect("one segment at least");
+                                    seg.text.push('\\');
+                                    if escaped == '\n' {
+                                        line += 1;
+                                        segments.push(Segment {
+                                            line,
+                                            text: String::new(),
+                                        });
+                                    } else {
+                                        seg.text.push(escaped);
+                                    }
+                                    i += 2;
+                                }
+                                '\n' => {
+                                    line += 1;
+                                    segments.push(Segment {
+                                        line,
+                                        text: String::new(),
+                                    });
+                                    i += 1;
+                                }
+                                other => {
+                                    segments
+                                        .last_mut()
+                                        .expect("one segment at least")
+                                        .text
+                                        .push(other);
+                                    i += 1;
+                                }
+                            }
+                        }
+                        i += 1;
+                        let multi_line = line != start_line;
+                        for seg in &segments {
+                            let wide = line_len.get(seg.line).copied().unwrap_or(0) > 100;
+                            if !(multi_line || wide) {
+                                continue;
+                            }
+                            let body = seg.text.trim_start_matches([' ', '\t']);
+                            let mut from = 0;
+                            while let Some(at) = body[from..].find(&run) {
+                                let start = from + at;
+                                let before = &body[..start];
+                                let after = body[start..].trim_start_matches(' ');
+                                if !before.is_empty()
+                                    && !before.ends_with("\\n")
+                                    && !before.ends_with(' ')
+                                    && !after.is_empty()
+                                {
+                                    found.push(format!("{rel}:{}", seg.line + 1));
+                                    break;
+                                }
+                                from = start + run.len();
+                            }
+                        }
+                    }
+                    _ => i += 1,
                 }
             }
         }
@@ -4726,14 +4855,7 @@ Some prose.
                 .to_string_lossy()
                 .to_string();
             let text = std::fs::read_to_string(&path).unwrap_or_default();
-            for (i, para) in text
-                .split(
-                    "
-
-",
-                )
-                .enumerate()
-            {
+            for (i, para) in text.split("\n\n").enumerate() {
                 // Strip code spans: a marker inside backticks is literal text.
                 let mut outside = String::new();
                 let mut in_code = false;
