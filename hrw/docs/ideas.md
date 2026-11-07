@@ -7049,6 +7049,14 @@ unanswered because the trigger was forgotten. Doug: *"That won't be significantl
 what I have to do now. Right now, because I cannot confidently use 'This' here, I end up typing
 a bunch of extra words."*
 
+**FIRST USE, 2026-11-07 — Doug's verdict:** *"This new question-asking workflow is much better as I
+now have confidence in 'this' and it seems that you can respond much more quickly than before."*
+Both halves are the predicted ones: confidence in the referent is the `this =` preview working,
+and the speed is the latency argument above — the question and its referent arrive **with** the
+message, so no tool calls are spent discovering them. **One use, and it surfaced a defect in its
+first minutes** (the editor's `<ide_opened_file>` note hid the `?`), so the experiment is
+confirmed in direction, not finished.
+
 **What remains, in Doug's order:** use it; **then** remove the HRW Answer feature — narrowly
 (the Answer lab source, `answer.md`, `check_answer`), keeping labs and the `hrw://` dispatcher,
 which the fixture labs need. **And later**, Doug's own next idea: *"we'll explore how you could
