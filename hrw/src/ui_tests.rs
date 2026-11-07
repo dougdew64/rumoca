@@ -334,10 +334,19 @@ fn the_question_bar_is_present_in_every_state() {
 
     for (what, build) in cases {
         let h = harness(build());
+        // **The heading is the bar's name on screen**, so it says "Question". The
+        // rename of 2026-11-07 (charter v1.18) first changed every identifier and
+        // doc but left this label "Context" — and this assert, pinned to the old
+        // label, stayed green. Doug found it by running HRW and seeing no change.
         assert!(
-            h.query_by_label("Context").is_some(),
+            h.query_by_label("Question").is_some(),
             "the Question Bar is missing with {what} \u{2014} a bar that comes and goes \
              cannot be assumed, and assuming it is the point",
+        );
+        assert!(
+            h.query_by_label("Context").is_none(),
+            "the bar is headed \"Context\" with {what} \u{2014} it is the Question Bar \
+             (charter v1.18); \"context\" names what it holds, not the bar",
         );
         // **A row labelled "Always" that is not always there is a false label**, which
         // is what Doug found on 2026-08-30: the session facts rendered only once
