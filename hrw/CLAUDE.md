@@ -916,6 +916,12 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
     file-age-conflated-with-a-process defect the hook itself was written to fix, one step out.
     The gate fails fast on the relink and names the cause, so asking buys nothing and spends a
     round trip. Same asymmetry as the cost rule: the mechanism belongs on Claude's side.
+    **A FOURTH TIME, 2026-11-07, and worse in kind: not a wrong statement but a wrong
+    DECISION.** Claude ended a turn with *"HRW is running"* from a reading three minutes old,
+    and **postponed a commit** on it; Doug: *"HRW is not running. There still seems to be a
+    defect."* The rule had not held, so the hook line was changed: it now reads *"HRW WAS
+    RUNNING at HH:MM:SS, when this message was sent"*, and says outright never to skip or
+    postpone the gate on it. **Never decide not to gate from that line — try the gate.**
   - **`cargo run -p hrw --example capture_suite [specimen] [pane|window]`** walks every canvas
     sub-view of a specimen against a *running* HRW and writes `.hrw-bridge/capture-suite.md`. It
     is the complement of `every_offered_sub_view_has_something_to_draw` and a **survey, not a
