@@ -86,7 +86,7 @@ compile produced, which only the panel knows.)*
 [Follow `C.v`](hrw://follow/C.v)
 
 **Expected:** `C.v` — the capacitor voltage, the model's one state — becomes the followed
-identifier. The Context Bar shows it, and the tree marks where it appears.
+identifier. The Question Bar shows it, and the tree marks where it appears.
 
 The stage must not change. Following and pointing are independent primitives; a station
 may set either without disturbing the other.
@@ -96,7 +96,7 @@ may set either without disturbing the other.
 [Point at `matching[0].unknown`](hrw://stage/Structural/Tree/node/matching[0].unknown)
 
 **Expected:** the tree jumps to the first matched unknown while `C.v` stays followed —
-the Context Bar shows a point *and* a thread together, which is the composition the
+the Question Bar shows a point *and* a thread together, which is the composition the
 capture was designed around.
 
 ---

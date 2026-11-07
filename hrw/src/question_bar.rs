@@ -1,15 +1,25 @@
-//! **The Context Bar** — what is pointed at, what is being followed, and what is
+//! **The Question Bar** — what is pointed at, what is being followed, and what is
 //! always context: the state it owns, and the pane that draws it.
 //!
-//! Lifted out of `App::context_bar_ui` on 2026-08-19, in two steps: the rendering
-//! first, then [`ContextBarState`] and the capture types behind it. See
+//! **It was the Context Bar until 2026-11-07** (module `context_bar`,
+//! `ContextBarState`, `ContextBarPress`). Doug renamed it, and charter Decision 19
+//! records why (*"What this decision names"*, v1.18): *"the entire reason for
+//! assembling context is to ask a question."* The bar holds both halves of one
+//! question. Its **context** is built by pointing and following, and **the question
+//! itself** is typed into its field. "Context" stays the name for what it holds;
+//! only the container was renamed. Quotations of Doug that say "context bar" are
+//! kept as he wrote them, and the identifiers in the dated history below now carry
+//! the new names.
+//!
+//! Lifted out of `App::question_bar_ui` on 2026-08-19, in two steps: the rendering
+//! first, then [`QuestionBarState`] and the capture types behind it. See
 //! [`docs/app-split-plan.md`](../docs/app-split-plan.md).
 //!
 //! # Why the state followed the pane rather than leading it
 //!
-//! The rendering moved while [`ContextBarState`], [`PointedAt`] and [`PointKind`]
+//! The rendering moved while [`QuestionBarState`], [`PointedAt`] and [`PointKind`]
 //! stayed in `app.rs`, which left this module importing its own state back from the
-//! module it had just left — `app` → `context_bar` for the pane, `context_bar` →
+//! module it had just left — `app` → `question_bar` for the pane, `question_bar` →
 //! `app` for the types it draws. Bringing the three types here makes the dependency
 //! **one-directional**, which is the whole of what this step buys; the same
 //! `Viewport` → `stage_view.rs` and `SourceViewState` → `specimen_source.rs`
@@ -24,7 +34,7 @@
 //!
 //! # Why the middle of the function, again
 //!
-//! `context_bar_ui` was 255 lines calling **seven** `App` methods — the most of
+//! `question_bar_ui` was 255 lines calling **seven** `App` methods — the most of
 //! anything left in `app.rs`, and the reason the coupling table put it last. Six of
 //! the seven turn out to be free, and the census that shows it is about *position*
 //! rather than count (`app-split-plan.md`):
@@ -36,7 +46,7 @@
 //!   trailing block *after* `ui.separator()`, where nothing downstream draws. Moving
 //!   them to the caller costs **no frame at all** — the same statements run in the
 //!   same order, one function boundary later. (`next_seq` has since come here as a
-//!   method on [`ContextBarState`]; `App` still calls it from that same block.)
+//!   method on [`QuestionBarState`]; `App` still calls it from that same block.)
 //! - `empty_context_hint` stays behind, and that decision is the parameter list:
 //!   it reads `ui_mode`, `specimen_detail` and `viewing_log`, three pieces of state
 //!   this pane otherwise never touches, purely to phrase one sentence. Moving it
@@ -52,7 +62,7 @@
 //!
 //! The function used to accumulate five independent locals (`clear_point`,
 //! `clear_thread`, `jump_forward`, `jump_back`, `go_to_class`) and act on all of
-//! them below the rows. [`ContextBarPress`] collapses that to one report, which is
+//! them below the rows. [`QuestionBarPress`] collapses that to one report, which is
 //! sound because every one of them is set by a distinct `small_button` or `link`:
 //! egui delivers a pointer press to a **single** widget, so two could never be true
 //! in the same frame. The old shape could express it; nothing could produce it.
@@ -74,7 +84,7 @@ use crate::bridge::{self, Seg};
 use crate::identifier_index::IdentifierIndex;
 use crate::worker::{DefInfo, StageBundle, StageKind};
 
-/// Everything the **Context Bar** owns: what has been captured, and how the
+/// Everything the **Question Bar** owns: what has been captured, and how the
 /// reader moves through it.
 ///
 /// Two cohorts, kept in one struct because the second exists only to serve the
@@ -85,7 +95,7 @@ use crate::worker::{DefInfo, StageBundle, StageKind};
 ///
 /// `tracked_identifier` does. It is one of the four fields the census found
 /// genuinely shared: the source view underlines it, the tree highlights it, the
-/// equation sheet marks its rows. The Context Bar *displays* the follow; it does
+/// equation sheet marks its rows. The Question Bar *displays* the follow; it does
 /// not own it.
 ///
 /// `refresh_jump_matches` and `jump_to_next_match` stay too, and that is the
@@ -95,7 +105,7 @@ use crate::worker::{DefInfo, StageBundle, StageKind};
 /// carry state this module otherwise never touches — and they are already
 /// covered by an `App`-level test that needs no worker and no compile.
 #[derive(Default)]
-pub(crate) struct ContextBarState {
+pub(crate) struct QuestionBarState {
     // ---- The capture ----
     /// What is pointed at, if anything.
     pub(crate) pointed_at: Option<PointedAt>,
@@ -136,7 +146,7 @@ pub(crate) struct ContextBarState {
     pub(crate) question_draft: String,
 }
 
-impl ContextBarState {
+impl QuestionBarState {
     /// The next stamp from the **shared** context counter.
     ///
     /// One counter for both halves, so `seq` and `tracking.seq` are directly
@@ -156,7 +166,7 @@ impl ContextBarState {
     }
 }
 
-/// The last deliberate capture, retained so the Context Bar can state it and so
+/// The last deliberate capture, retained so the Question Bar can state it and so
 /// re-emission preserves it.
 ///
 /// `stage` is the stage the capture was **made** in, not the one currently on
@@ -240,7 +250,7 @@ pub(crate) enum PointKind {
     },
 }
 
-/// What the Context Bar was asked to do, for `App` to perform.
+/// What the Question Bar was asked to do, for `App` to perform.
 ///
 /// The **fourth instance** of the render-and-report pattern, after
 /// [`crate::specimen_source`]'s `Option<String>`, [`crate::lab_panel`]'s
@@ -248,7 +258,7 @@ pub(crate) enum PointKind {
 /// deferring costs provably nothing, because every one of these was already
 /// performed below the last `ui` call in the function.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum ContextBarPress {
+pub(crate) enum QuestionBarPress {
     /// An arrow was clicked: move to the next mention of the followed identifier in
     /// this stage, forward or back.
     Jump { forward: bool },
@@ -429,10 +439,10 @@ pub(crate) fn question_row(
 /// is not context, so the declaring class is a link rather than a button.
 /// See `docs/context-assembly.md`.
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn context_bar_ui(
+pub(crate) fn question_bar_ui(
     ui: &mut egui::Ui,
     // `&mut` for one field only — the question draft. Everything else here is read.
-    context: &mut ContextBarState,
+    context: &mut QuestionBarState,
     tracked_identifier: &Option<String>,
     stage: StageKind,
     stages: &StageBundle,
@@ -441,8 +451,8 @@ pub(crate) fn context_bar_ui(
     def_index: &BTreeMap<u64, DefInfo>,
     model: Option<&str>,
     lab: Option<&str>,
-) -> Option<ContextBarPress> {
-    let mut press: Option<ContextBarPress> = None;
+) -> Option<QuestionBarPress> {
+    let mut press: Option<QuestionBarPress> = None;
 
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("Context").strong());
@@ -518,7 +528,7 @@ pub(crate) fn context_bar_ui(
                 )
                 .clicked()
             {
-                press = Some(ContextBarPress::ClearPoint);
+                press = Some(QuestionBarPress::ClearPoint);
             }
         });
     }
@@ -569,7 +579,7 @@ pub(crate) fn context_bar_ui(
                                 ))
                                 .clicked()
                             {
-                                press = Some(ContextBarPress::GoToClass(class.clone()));
+                                press = Some(QuestionBarPress::GoToClass(class.clone()));
                             }
                         }
                         None => {
@@ -623,7 +633,7 @@ pub(crate) fn context_bar_ui(
                     .on_hover_text("Previous occurrence in this stage")
                     .clicked()
                 {
-                    press = Some(ContextBarPress::Jump { forward: false });
+                    press = Some(QuestionBarPress::Jump { forward: false });
                 }
                 if ui
                     .small_button("\u{2192}")
@@ -633,7 +643,7 @@ pub(crate) fn context_bar_ui(
                     )
                     .clicked()
                 {
-                    press = Some(ContextBarPress::Jump { forward: true });
+                    press = Some(QuestionBarPress::Jump { forward: true });
                 }
             }
             if ui
@@ -641,7 +651,7 @@ pub(crate) fn context_bar_ui(
                 .on_hover_text("Stop following")
                 .clicked()
             {
-                press = Some(ContextBarPress::ClearThread);
+                press = Some(QuestionBarPress::ClearThread);
             }
         });
     }
@@ -654,7 +664,7 @@ pub(crate) fn context_bar_ui(
         Some(stage),
     );
     if let Some(question) = question_row(ui, &mut context.question_draft, &this) {
-        press = Some(ContextBarPress::Ask(question));
+        press = Some(QuestionBarPress::Ask(question));
     }
 
     ui.add_space(BAR_MARGIN);
@@ -662,7 +672,7 @@ pub(crate) fn context_bar_ui(
     press
 }
 
-/// Breathing room above and below the Context Bar (Doug, 2026-08-30: *"add some margin
+/// Breathing room above and below the Question Bar (Doug, 2026-08-30: *"add some margin
 /// above and below the context bar"*).
 ///
 /// **Applied inside the bar rather than at its three call sites**, so a fourth place
@@ -878,7 +888,7 @@ mod tests {
     /// Everything the bar reads, plus what it reported, so one harness closure can
     /// drive it and the assertions can read both sides.
     struct Bar {
-        context: ContextBarState,
+        context: QuestionBarState,
         tracked: Option<String>,
         stage: StageKind,
         stages: StageBundle,
@@ -887,7 +897,7 @@ mod tests {
         defs: BTreeMap<u64, DefInfo>,
         /// The last non-`None` report, kept separately from the per-frame return so a
         /// click observed on one frame is not erased by the next quiet redraw.
-        reported: Option<ContextBarPress>,
+        reported: Option<QuestionBarPress>,
     }
 
     /// Written by hand because [`StageKind`] has no `Default` — it is a position in
@@ -895,7 +905,7 @@ mod tests {
     impl Default for Bar {
         fn default() -> Self {
             Self {
-                context: ContextBarState::default(),
+                context: QuestionBarState::default(),
                 tracked: None,
                 stage: StageKind::Flatten,
                 stages: StageBundle::default(),
@@ -916,7 +926,7 @@ mod tests {
             .with_size(egui::Vec2::new(1600.0, 400.0))
             .build_ui_state(
                 |ui, b: &mut Bar| {
-                    let press = context_bar_ui(
+                    let press = question_bar_ui(
                         ui,
                         &mut b.context,
                         &b.tracked,
@@ -999,7 +1009,7 @@ mod tests {
     /// to drop the point — and `App` would happily re-emit the wrong context.
     #[test]
     fn the_point_and_the_follow_are_cleared_by_different_reports() {
-        let context = ContextBarState {
+        let context = QuestionBarState {
             pointed_at: Some(a_point()),
             ..Default::default()
         };
@@ -1016,12 +1026,12 @@ mod tests {
         assert_eq!(crosses.len(), 2, "one × per assembled row");
         crosses[0].click();
         h.run_steps(2);
-        assert_eq!(h.state().reported, Some(ContextBarPress::ClearPoint));
+        assert_eq!(h.state().reported, Some(QuestionBarPress::ClearPoint));
 
         let crosses: Vec<_> = h.get_all_by_label_contains("\u{00d7}").collect();
         crosses[1].click();
         h.run_steps(2);
-        assert_eq!(h.state().reported, Some(ContextBarPress::ClearThread));
+        assert_eq!(h.state().reported, Some(QuestionBarPress::ClearThread));
     }
 
     /// **The bar shows nouns. A verb appears only if a gesture declared one.**
@@ -1040,7 +1050,7 @@ mod tests {
     #[test]
     fn the_bar_shows_a_noun_and_no_verb_unless_one_was_declared() {
         let mut h = harness(Bar {
-            context: ContextBarState {
+            context: QuestionBarState {
                 pointed_at: Some(a_point()),
                 ..Default::default()
             },
@@ -1067,7 +1077,7 @@ mod tests {
             ..a_point()
         };
         let mut h = harness(Bar {
-            context: ContextBarState {
+            context: QuestionBarState {
                 pointed_at: Some(declared),
                 ..Default::default()
             },
@@ -1173,7 +1183,7 @@ mod tests {
     #[test]
     fn the_bar_shows_what_this_means_and_reports_a_typed_question() {
         let mut h = harness(Bar {
-            context: ContextBarState {
+            context: QuestionBarState {
                 pointed_at: Some(a_point()),
                 ..Default::default()
             },
@@ -1196,7 +1206,7 @@ mod tests {
 
         assert_eq!(
             h.state().reported,
-            Some(ContextBarPress::Ask("why is this singular?".to_owned())),
+            Some(QuestionBarPress::Ask("why is this singular?".to_owned())),
             "Enter in the field reports the question for App to write",
         );
         assert!(
@@ -1227,7 +1237,7 @@ mod tests {
 
         assert_eq!(
             h.state().reported,
-            Some(ContextBarPress::GoToClass(
+            Some(QuestionBarPress::GoToClass(
                 "Modelica.Electrical.DC".to_owned()
             )),
         );
@@ -1237,7 +1247,7 @@ mod tests {
     /// press on every frame would pass all of them.
     #[test]
     fn drawing_the_bar_without_clicking_reports_nothing() {
-        let context = ContextBarState {
+        let context = QuestionBarState {
             pointed_at: Some(a_point()),
             ..Default::default()
         };

@@ -388,7 +388,7 @@ fn tab_color(
 ///
 /// **None of these could have been written before the cut**, and the reason is not that
 /// the row was untested — `ui_tests` already drives it through a real `App` and asserts
-/// that a tab click selects the stage, leaves the log view and reaches the Context Bar.
+/// that a tab click selects the stage, leaves the log view and reaches the Question Bar.
 /// The reason is that those assertions all run *downstream* of the row, so they can only
 /// see the consequences `App` chose to apply. **What the row itself reported was not
 /// observable**, and the distinction that matters most here lives exactly there: the

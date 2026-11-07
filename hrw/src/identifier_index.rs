@@ -278,7 +278,7 @@ pub fn strip_der(name: &str) -> &str {
 /// code-like values (`"N.m"`) that the lexer reads as one dotted reference.
 ///
 /// Shared by the tree (highlighting) and the bridge (emission), which must
-/// agree about what counts as a mention or the Context Bar would describe
+/// agree about what counts as a mention or the Question Bar would describe
 /// something different from what the views show.
 pub const PROSE_FIELDS: &[&str] = &["description", "comment", "file_name"];
 

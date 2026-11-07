@@ -185,7 +185,7 @@ pub(crate) fn harness(app: App) -> Harness<'static, App> {
     h
 }
 
-/// A name as the Context Bar's **Always** row writes it: followed by the separator.
+/// A name as the Question Bar's **Always** row writes it: followed by the separator.
 ///
 /// **The row is the only place a name is followed by `·`.** A stage tab is the bare
 /// word `Flatten`; the row is `… · Flatten · 4 stage IRs · …`, and the counts always
@@ -210,7 +210,7 @@ fn in_always_row(name: &str) -> String {
 /// `diagnostics.rs` proves the record behaves; this proves **the app asks for one**.
 /// That is the gap that has bitten this repository over and over — an observer that
 /// works perfectly and is never called. All seven silent bugs of 2026-08-01 were that
-/// shape, and the Context Bar shipped omitting the background for weeks because
+/// shape, and the Question Bar shipped omitting the background for weeks because
 /// everything on screen was correct.
 ///
 /// It matters more than usual here, because the whole point of the record is to
@@ -266,7 +266,7 @@ fn the_harness_renders_hrw_and_sees_widgets() {
     assert!(h.query_by_label("Help").is_some(), "expected the Help menu");
 }
 
-/// **The Context Bar is on screen in every state**, which is the whole of what it is
+/// **The Question Bar is on screen in every state**, which is the whole of what it is
 /// for.
 ///
 /// # This test asserted the opposite until 2026-08-30, and the reversal is the record
@@ -295,7 +295,7 @@ fn the_harness_renders_hrw_and_sees_widgets() {
 /// `central_panel_ui` that draws no tab row, so the bar had to be added there
 /// separately and could regress on its own.
 #[test]
-fn the_context_bar_is_present_in_every_state() {
+fn the_question_bar_is_present_in_every_state() {
     /// A named state and the app that puts HRW in it. Built lazily, because each
     /// `App` spawns a worker and only one is needed at a time.
     type Case = (&'static str, fn() -> App);
@@ -336,7 +336,7 @@ fn the_context_bar_is_present_in_every_state() {
         let h = harness(build());
         assert!(
             h.query_by_label("Context").is_some(),
-            "the Context Bar is missing with {what} \u{2014} a bar that comes and goes \
+            "the Question Bar is missing with {what} \u{2014} a bar that comes and goes \
              cannot be assumed, and assuming it is the point",
         );
         // **A row labelled "Always" that is not always there is a false label**, which
@@ -470,7 +470,7 @@ fn a_captured_lab_passage_is_shown_quoted_and_claims_no_stage() {
 /// `session.json` has carried the open lab's name since 2026-08-19, so the bar was
 /// under-reporting context Claude already had — the gap Doug's question opened. This
 /// is the *rendered* half, proving `App` actually passes the lab through; what the
-/// row says in each state is `context_bar::tests::always_summary_states_only_what_is_true`.
+/// row says in each state is `question_bar::tests::always_summary_states_only_what_is_true`.
 #[test]
 fn the_bar_names_the_open_lab() {
     let mut app = App::test_default();
@@ -1031,7 +1031,7 @@ fn the_corpus_is_visible_unfiltered_and_opens_on_click() {
 /// how half of it went missing in plain sight from the first commit of the bar
 /// (`b2732393`) until Doug counted three kinds and saw two on 2026-08-01.
 ///
-/// **This is the must-fire rule aimed at the Context Bar.** The bar's entire job
+/// **This is the must-fire rule aimed at the Question Bar.** The bar's entire job
 /// is to report what `focus.json` will carry, and `focus.json` carried the stage
 /// all along. An under-reporting reporter is the failure mode most likely to go
 /// unnoticed, because everything it *does* say is true.
@@ -1189,7 +1189,7 @@ fn the_hrw_section_count_matches_its_body_and_the_header_collapses_it() {
 ///
 /// The filter is the reason the corpus is reachable at all, and a section that
 /// stayed shut while matching would report "no results" by omission — the
-/// same absence-by-implication the Context Bar was fixed for.
+/// same absence-by-implication the Question Bar was fixed for.
 #[test]
 fn a_filter_opens_both_sections() {
     let mut app = App::test_default();
@@ -1506,7 +1506,7 @@ fn a_library_model_awaiting_its_source_is_not_told_to_select_one() {
 ///
 /// `central_panel_ui` rendered the summary in an `if` with the entire tree as the
 /// `else`, so the overlay was built on every compile and discarded at the last step —
-/// **with nothing on screen saying content was withheld**, which is the Context Bar
+/// **with nothing on screen saying content was withheld**, which is the Question Bar
 /// defect's shape.
 ///
 /// **This test could not have been written before the fix**, which is the bar
@@ -2420,20 +2420,20 @@ fn clicking_a_stage_tab_leaves_the_log_view() {
     );
 }
 
-/// Clicking a stage tab **reaches the Context Bar**.
+/// Clicking a stage tab **reaches the Question Bar**.
 ///
 /// A tab click is a point-at: it emits `Focus::Stage`, making the stage the
 /// subject of the next question asked in the chat. Invisible from the tab row,
 /// so a reader who clicked a tab and then asked a question would have no way to
 /// tell the two were connected.
 ///
-/// **The Context Bar, not the status bar** — a distinction the first draft of
+/// **The Question Bar, not the status bar** — a distinction the first draft of
 /// this test got wrong. `emit_focus` sets the notice to `None` on success *on
-/// purpose*: the Context Bar names the point and keeps naming it, while the
+/// purpose*: the Question Bar names the point and keeps naming it, while the
 /// status bar is for things that happen and are then over. A success message
 /// there would be noise that outlives its meaning.
 #[test]
-fn clicking_a_stage_tab_reaches_the_context_bar() {
+fn clicking_a_stage_tab_reaches_the_question_bar() {
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
@@ -2447,7 +2447,7 @@ fn clicking_a_stage_tab_reaches_the_context_bar() {
     assert!(
         // **The background's own shape, not the bare name.** `contains("RcCircuit")`
         // is satisfied by any source line, list row or notice that mentions the
-        // specimen — so this did not assert "the Context Bar names it", it asserted
+        // specimen — so this did not assert "the Question Bar names it", it asserted
         // "exactly one thing on screen mentions it", and it broke on 2026-08-04 when
         // the source pane legitimately started rendering. See the sweep note in
         // `docs/tech-debt.md`.
@@ -2457,7 +2457,7 @@ fn clicking_a_stage_tab_reaches_the_context_bar() {
         // and the specimen is checked inside it rather than anywhere on screen.
         h.query_by_label_contains(&in_always_row("RcCircuit"))
             .is_some(),
-        "precondition: the Context Bar names the specimen even with nothing pointed at",
+        "precondition: the Question Bar names the specimen even with nothing pointed at",
     );
     assert!(
         h.query_by_label_contains("Pointing at").is_none(),

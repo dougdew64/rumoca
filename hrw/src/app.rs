@@ -835,10 +835,10 @@ struct CompileFrames {
 }
 
 use crate::compile_caches::CompileViewCaches;
-use crate::context_bar::{self, ContextBarPress, ContextBarState, PointKind, PointedAt};
 use crate::lab::{LabSource, LabState};
 use crate::lab_panel::{self, TransportRequest};
 use crate::model_list::{ModelListNav, ModelListState};
+use crate::question_bar::{self, PointKind, PointedAt, QuestionBarPress, QuestionBarState};
 use crate::report_sub_view;
 use crate::specimen_purpose;
 use crate::specimen_source::{self, SourceViewState};
@@ -930,7 +930,7 @@ pub struct App {
     /// A transient one-line notice for the status bar.
     ///
     /// **No longer the bridge's confirmation channel.** Renamed from
-    /// `bridge_status` when the Context Bar took that job: the bar names the
+    /// `bridge_status` when the Question Bar took that job: the bar names the
     /// point persistently, so a second, staler description of the same thing
     /// could only disagree with it. What is left is genuinely transient and
     /// belongs nowhere else — "specimen not found", "diagnostic written to …",
@@ -1038,9 +1038,9 @@ pub struct App {
     problem_lines: Vec<(u32, String)>,
     /// The draggable LHS/RHS split. See [`SplitState`].
     split: SplitState,
-    /// Everything the Context Bar owns, its question field included. See
-    /// [`ContextBarState`].
-    context: ContextBarState,
+    /// Everything the Question Bar owns, its question field included. See
+    /// [`QuestionBarState`].
+    context: QuestionBarState,
     /// Everything the source view owns. See [`SourceViewState`].
     source: SourceViewState,
     /// Everything the lab panel owns. See [`LabState`].
@@ -1875,7 +1875,7 @@ impl App {
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
             split: SplitState::default(),
-            context: ContextBarState::default(),
+            context: QuestionBarState::default(),
             source: SourceViewState::default(),
             lab: LabState::default(),
             aim_at_equation: None,
@@ -2741,9 +2741,9 @@ impl App {
     ///
     /// Recording matters as much as emitting: this path used to write the file
     /// without updating `pointed_at`, so a stage-tab click replaced the emitted
-    /// context while the Context Bar carried on showing the previous node.
+    /// context while the Question Bar carried on showing the previous node.
     fn emit_focus(&mut self, focus: Focus) {
-        // `Nothing` is not a capture. It is what the Context Bar emits *after*
+        // `Nothing` is not a capture. It is what the Question Bar emits *after*
         // the point is cleared, which goes through `emit_context`. Guarded
         // rather than asserted: a UI path must not abort the app to report a
         // programming error.
@@ -2795,7 +2795,7 @@ impl App {
             request: None,
         });
         self.context.point_error = result.as_ref().err().map(std::string::ToString::to_string);
-        // `None` on success: the Context Bar already names the point, and it
+        // `None` on success: the Question Bar already names the point, and it
         // does so persistently. See `status_line`.
         self.set_notice(status_line(seq, &target, None, result));
     }
@@ -3849,7 +3849,7 @@ impl App {
                     let stage_values = self.stages.as_stage_pairs();
                     let ask = self.base_ask(seq, request, focus, &stage_values);
                     let result = bridge::write(&ask);
-                    // Retained so the Context Bar can state it, and so a later
+                    // Retained so the Question Bar can state it, and so a later
                     // change of what is followed re-emits without losing it.
                     self.context.pointed_at = Some(PointedAt {
                         seq,
@@ -4382,7 +4382,7 @@ impl App {
 /// ## Why success is silent now
 ///
 /// The status bar used to confirm every capture ("captured equations.3.lhs —
-/// now ask me about it in the chat"). The Context Bar makes that redundant, and
+/// now ask me about it in the chat"). The Question Bar makes that redundant, and
 /// worse than redundant: the bar states the point *persistently and by name*,
 /// while the status line stated it once and then went stale, so the two could
 /// disagree about what Claude had. Two places claiming to describe the same
@@ -4390,7 +4390,7 @@ impl App {
 /// confirmation is the weaker of the two, so it goes.
 ///
 /// A failure still returns text, because a failure is precisely the case the
-/// Context Bar cannot show on its own: it renders the point either way, and
+/// Question Bar cannot show on its own: it renders the point either way, and
 /// silence would leave it describing context that was never written. (The bar
 /// *also* flags it via `point_error`; this is the second, transient channel for
 /// the moment it happens.)
@@ -4438,7 +4438,7 @@ impl App {
                 ui.add_space(6.0);
                 ui.strong("Assemble context");
                 ui.label(
-                    "Two ways to build the subject of a question, and the Context Bar shows \
+                    "Two ways to build the subject of a question, and the Question Bar shows \
                      both. Point at one node \u{2014} left-click it, or right-click for more \
                      actions. Follow one identifier \u{2014} right-click a variable name and \
                      choose Follow, and HRW reports where it appears in every stage, and \
@@ -4446,7 +4446,7 @@ impl App {
                 );
                 ui.add_space(2.0);
                 ui.label(
-                    "Then ask: type the question into the Context Bar\u{2019}s field and press \
+                    "Then ask: type the question into the Question Bar\u{2019}s field and press \
                      Ask, then type ? in the Claude Code chat. The bar shows what \
                      \u{201c}this\u{201d} will mean before you ask. The answer is given outside \
                      HRW \u{2014} in the chat, a VS Code tab, System Modeler or Wolfram \
@@ -5378,7 +5378,7 @@ impl App {
                 // `stage_tab_bar_ui` disables the tabs itself, after the switcher.
                 ui.horizontal_wrapped(|ui| self.stage_tab_bar_ui(ui, intent));
 
-                // **The Context Bar is on screen even with nothing loaded** (Doug,
+                // **The Question Bar is on screen even with nothing loaded** (Doug,
                 // 2026-08-30), and the reason is not that it has much to say here —
                 // it is that a bar which comes and goes cannot become a habit:
                 //
@@ -5391,7 +5391,7 @@ impl App {
                 // to the tabs and not to the bar below them, which is the inconsistency
                 // this closes.
                 ui.separator();
-                self.context_bar_ui(ui);
+                self.question_bar_ui(ui);
 
                 if self.ui_mode == UiMode::Debug {
                     // **Nothing here.** Debug mode's switcher lives in the tab
@@ -5422,7 +5422,7 @@ impl App {
             }
             ui.separator();
 
-            self.context_bar_ui(ui);
+            self.question_bar_ui(ui);
 
             if self.viewing_log {
                 // **A plain-text region, so the wrapper applies here.** The log has no rows
@@ -5693,7 +5693,7 @@ impl App {
                             // commit, and the region menu never opened once: every right-click in this
                             // pane lands on a row, and the row's own menu takes it. The row menu then
                             // answered a gesture meant for the selection by capturing the node — a
-                            // silent substitution that looked like success, because the Context Bar
+                            // silent substitution that looked like success, because the Question Bar
                             // updates either way. The selection item lives in `tree::row_menu`, which
                             // is the only menu a right-click here can reach.
                             let stage = self.current_stage();
@@ -5739,7 +5739,7 @@ impl App {
             // **The bar comes first here too**, because "always" has to mean always or
             // it is back to being something to check for. There is no tab row in this
             // branch, so it sits at the top rather than under one.
-            self.context_bar_ui(ui);
+            self.question_bar_ui(ui);
             match nav_view::nav_view_ui(
                 ui,
                 &self.nav,
@@ -6077,7 +6077,7 @@ impl App {
 
     /// [`Self::emit_context`], optionally writing a question beside the context.
     ///
-    /// **One assembly, two files.** When Doug asks from the Context Bar, the question is
+    /// **One assembly, two files.** When Doug asks from the Question Bar, the question is
     /// written by [`bridge::write_question`] from the *same* `Ask` this function builds
     /// for `focus.json`, in the same frame — which is what makes the question and its
     /// context unable to disagree. A second, separate assembly for the question would
@@ -6093,7 +6093,7 @@ impl App {
     ) -> Option<std::io::Result<std::path::PathBuf>> {
         // Resolved by the bar's rule from the same fields the bar renders from this
         // frame, so `this` in the file is what Doug saw beside the field.
-        let this = context_bar::this_referent(
+        let this = question_bar::this_referent(
             self.context.pointed_at.as_ref(),
             self.tracked_identifier.as_deref(),
             self.selected.is_some().then_some(self.stage),
@@ -6598,7 +6598,7 @@ impl App {
     /// distinction.
     ///
     /// Guarded by three headless tests from the baseline suite's chunk 3: a tab
-    /// click selects the stage, leaves the log view, and reaches the Context Bar.
+    /// click selects the stage, leaves the log view, and reaches the Question Bar.
     fn stage_tab_bar_ui(&mut self, ui: &mut egui::Ui, intent: &mut FrameIntent) {
         // Specimen switcher dropdown — only in Debug mode, where
         // the specimen list is hidden.
@@ -7044,10 +7044,10 @@ impl App {
         None
     }
 
-    /// The **Context Bar** — what Claude will actually have behind the next question.
+    /// The **Question Bar** — what Claude will actually have behind the next question.
     ///
     /// **What is left here is policy**, after the assembled state left for
-    /// [`crate::context_bar`] on 2026-08-19: the empty-state branch (whose hint is
+    /// [`crate::question_bar`] on 2026-08-19: the empty-state branch (whose hint is
     /// built from view state this pane otherwise never touches), the one call that
     /// must run *before* the rows that report it, and the four presses the bar
     /// reports rather than performs.
@@ -7057,10 +7057,10 @@ impl App {
     /// mid-body: the Following row reads `jump_matches` two lines later. The other
     /// four presses all sat *below* the last `ui` call, so performing them here
     /// costs no frame at all.
-    fn context_bar_ui(&mut self, ui: &mut egui::Ui) {
+    fn question_bar_ui(&mut self, ui: &mut egui::Ui) {
         // The top half of the bar's margin. The bottom half is added by whichever
         // branch below finishes, immediately before that branch's separator.
-        ui.add_space(context_bar::BAR_MARGIN);
+        ui.add_space(question_bar::BAR_MARGIN);
         let has_point = self.context.pointed_at.is_some();
         let has_thread = self.tracked_identifier.is_some();
         if !has_point && !has_thread {
@@ -7103,27 +7103,27 @@ impl App {
                 ui.label(egui::RichText::new("Context").strong())
                     .on_hover_text(format!("{EMPTY_CONTEXT_RULE}\n\nRight now: {hint}"));
             });
-            context_bar::always_ui(
+            question_bar::always_ui(
                 ui,
                 self.model.as_deref(),
                 self.selected.is_some().then_some(self.stage),
                 lab.as_deref(),
-                context_bar::stage_ir_count(&self.stages),
+                question_bar::stage_ir_count(&self.stages),
                 self.def_index.len(),
             );
             // The question row here too: with nothing pointed at or followed, "this"
             // falls back to the stage on screen, which is still worth asking about.
-            let this = context_bar::this_referent(
+            let this = question_bar::this_referent(
                 self.context.pointed_at.as_ref(),
                 self.tracked_identifier.as_deref(),
                 self.selected.is_some().then_some(self.stage),
             );
             if let Some(question) =
-                context_bar::question_row(ui, &mut self.context.question_draft, &this)
+                question_bar::question_row(ui, &mut self.context.question_draft, &this)
             {
                 self.ask_question(question);
             }
-            ui.add_space(context_bar::BAR_MARGIN);
+            ui.add_space(question_bar::BAR_MARGIN);
             ui.separator();
             return;
         }
@@ -7132,7 +7132,7 @@ impl App {
         self.refresh_jump_matches();
 
         let lab = self.lab.selected.as_ref().map(LabSource::label);
-        let press = context_bar::context_bar_ui(
+        let press = question_bar::question_bar_ui(
             ui,
             &mut self.context,
             &self.tracked_identifier,
@@ -7144,27 +7144,27 @@ impl App {
             self.model.as_deref(),
             lab.as_deref(),
         );
-        self.apply_context_bar_press(press);
+        self.apply_question_bar_press(press);
     }
 
-    /// Act on what the Context Bar reported this frame.
+    /// Act on what the Question Bar reported this frame.
     ///
-    /// **Split out of `context_bar_ui` on 2026-11-07 so a test can drive it**, because the
+    /// **Split out of `question_bar_ui` on 2026-11-07 so a test can drive it**, because the
     /// two × buttons were the one place a context change reached `focus.json` without
     /// reaching `session.json` — and that was invisible to every test, since the handling
     /// lived inside a function that needs a `Ui`. Behaviour is unchanged by the split
     /// itself; see `clearing_the_point_reaches_the_file_the_hook_reads`.
-    pub(crate) fn apply_context_bar_press(&mut self, press: Option<ContextBarPress>) {
+    pub(crate) fn apply_question_bar_press(&mut self, press: Option<QuestionBarPress>) {
         match press {
-            Some(ContextBarPress::Jump { forward }) => self.jump_to_next_match(forward),
-            Some(ContextBarPress::ClearPoint) => {
+            Some(QuestionBarPress::Jump { forward }) => self.jump_to_next_match(forward),
+            Some(QuestionBarPress::ClearPoint) => {
                 // Recorded as a DROP, so the trail and the hook say the point was
                 // cleared. Without it, the latest point action stays the original
                 // `point-at…`, and the hook reports the age of a point that is gone.
                 if let Some(point) = &self.context.pointed_at {
                     diagnostics::record_action(
                         "point-dropped",
-                        format!("{} (cleared with the Context Bar \u{00d7})", point.target),
+                        format!("{} (cleared with the Question Bar \u{00d7})", point.target),
                     );
                 }
                 self.context.pointed_at = None;
@@ -7179,26 +7179,26 @@ impl App {
                 self.context.context_seq = self.context.next_seq();
                 self.emit_context();
             }
-            Some(ContextBarPress::ClearThread) => {
+            Some(QuestionBarPress::ClearThread) => {
                 // Same kind and wording as `set_tracked_identifier`'s un-follow, so
                 // the trail reads one way however the follow was dropped.
                 if let Some(name) = &self.tracked_identifier {
                     diagnostics::record_action(
                         "follow",
-                        format!("stop following {name} (Context Bar \u{00d7})"),
+                        format!("stop following {name} (Question Bar \u{00d7})"),
                     );
                 }
                 self.tracked_identifier = None;
                 self.context.track_seq = self.context.next_seq();
                 self.emit_context();
             }
-            Some(ContextBarPress::GoToClass(class)) => self.navigate_to(class),
-            Some(ContextBarPress::Ask(question)) => self.ask_question(question),
+            Some(QuestionBarPress::GoToClass(class)) => self.navigate_to(class),
+            Some(QuestionBarPress::Ask(question)) => self.ask_question(question),
             None => {}
         }
     }
 
-    /// Write a question Doug asked from the Context Bar, with the context it is about.
+    /// Write a question Doug asked from the Question Bar, with the context it is about.
     ///
     /// The status bar says what happened and **what to do next** — the question waits in
     /// `question.json` until Doug types `?` in the chat, since HRW cannot wake Claude.
@@ -7246,7 +7246,7 @@ impl App {
     /// declarative statement — *be following `v`* — not a keystroke.
     ///
     /// The toggle stays where it belongs: a click on the name itself, in the tree, the source
-    /// view or the Context Bar, where clicking twice to undo is the whole affordance.
+    /// view or the Question Bar, where clicking twice to undo is the whole affordance.
     fn follow_identifier(&mut self, name: String) {
         let name = crate::identifier_index::strip_der(&name).to_owned();
         if self.tracked_identifier.as_deref() == Some(name.as_str()) {
@@ -7291,7 +7291,7 @@ impl App {
         // the user touched most recently.
         self.context.track_seq = self.context.next_seq();
         // Following is context, so changing it changes what Claude has. Emit
-        // now rather than waiting for the next capture, or the Context Bar
+        // now rather than waiting for the next capture, or the Question Bar
         // would show a thread that had never been sent.
         self.emit_context();
     }
@@ -7469,7 +7469,7 @@ impl App {
         // after left/right panels would only fill the remaining center).
         egui::Panel::bottom("status").show(ui, |ui| {
             ui.add_space(1.0);
-            // Success is silent. The Context Bar states what Claude has; this
+            // Success is silent. The Question Bar states what Claude has; this
             // line is for things that happen and then are over.
             match &self.notice {
                 // **Not `weak`.** A notice is something that just happened — often a

@@ -46,7 +46,7 @@ const SCRATCH_MARKER: char = '\u{2731}';
 /// What the model list wants the app to do next.
 ///
 /// The pane renders a list; **loading a specimen resets stages, the log, the
-/// context bar and the source view**, none of which it owns. Reporting the intent
+/// question bar and the source view**, none of which it owns. Reporting the intent
 /// instead of acting keeps the list a list, and is what lets it be rendered in a
 /// test without constructing an `App`.
 #[derive(Default)]
@@ -545,7 +545,7 @@ impl ModelListState {
                     }
                 }
                 // **Reported, not applied.** Loading a specimen
-                // resets stages, the log and the context bar, none of
+                // resets stages, the log and the question bar, none of
                 // which this pane owns. Returning the intent keeps the
                 // list a *list*.
                 if let Some(name) = open_model {

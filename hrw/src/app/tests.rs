@@ -341,7 +341,7 @@ impl App {
     ///
     /// **The navigation view is the branch of `central_panel_ui` that draws no tab
     /// row**, so anything added to the stage side above can miss it silently — which
-    /// is exactly what the Context Bar did until it was made unconditional.
+    /// is exactly what the Question Bar did until it was made unconditional.
     pub(crate) fn test_push_nav(&mut self, name: &str) {
         self.nav.push(NavEntry {
             name: name.to_owned(),
@@ -393,7 +393,7 @@ impl App {
         // something that does not happen.
         //
         // The text deliberately does **not** contain the model name: several tests
-        // assert on the *Context Bar* by looking for the specimen name, and any
+        // assert on the *Question Bar* by looking for the specimen name, and any
         // source on screen would give them a second match. That coupling is itself
         // fragile and is logged in the UI-testing debt.
         self.source.text = Some("// (fixture source)\n".to_owned());
@@ -492,7 +492,7 @@ impl App {
             commonmark_cache: egui_commonmark::CommonMarkCache::default(),
             problem_lines: Vec::new(),
             split: SplitState::default(),
-            context: ContextBarState::default(),
+            context: QuestionBarState::default(),
             source: SourceViewState::default(),
             lab: LabState::default(),
             aim_at_equation: None,
@@ -611,7 +611,7 @@ fn jumping_cycles_within_the_current_stage_and_resets_across_stages() {
 /// which are LEFT-click-to-follow.
 ///
 /// A hint naming an unavailable gesture is worse than no hint, and it is the
-/// same defect the Context Bar exists to prevent: a confident statement that
+/// same defect the Question Bar exists to prevent: a confident statement that
 /// does not match the state.
 #[test]
 fn the_empty_hint_names_only_gestures_that_are_available() {
@@ -711,7 +711,7 @@ fn reselecting_the_same_specimen_keeps_the_context_but_switching_clears_it() {
 
 /// A retained point that no longer resolves is dropped, and says so.
 ///
-/// Keeping it would leave the Context Bar naming a node that does not exist
+/// Keeping it would leave the Question Bar naming a node that does not exist
 /// and the emitted `node.subtree` as `null` — a confident claim about
 /// nothing. A stage point cannot dangle, so it survives.
 #[test]
@@ -1006,7 +1006,7 @@ fn every_point_and_follow_combination_emits_honestly() {
 }
 
 /// Following is context, so changing it must re-emit — and must not destroy
-/// the point. That independence is the property the Context Bar's honesty
+/// the point. That independence is the property the Question Bar's honesty
 /// rests on.
 #[test]
 fn following_re_emits_without_losing_the_point() {
@@ -1068,7 +1068,7 @@ fn point_and_thread_stamps_are_comparable() {
 ///
 /// Clicking a stage tab emits a *stage* capture. That path used to write
 /// the file without updating `pointed_at`, so the emitted context changed
-/// while the Context Bar kept displaying the previous node — the exact
+/// while the Question Bar kept displaying the previous node — the exact
 /// drift the bar's rule forbids.
 #[test]
 fn stage_and_specimen_captures_are_recorded_too() {
@@ -1881,7 +1881,7 @@ fn parse_library_paths_empty_text() {
 
 /// A successful point says nothing in the status bar.
 ///
-/// The Context Bar names the point persistently; a second, transient
+/// The Question Bar names the point persistently; a second, transient
 /// description of the same thing could only go stale and disagree with it.
 /// Two places claiming to describe what Claude has is the failure mode this
 /// design keeps running into, and the weaker one is the one to drop.
@@ -1895,7 +1895,7 @@ fn a_successful_point_is_silent() {
     );
     assert_eq!(
         msg, None,
-        "the Context Bar states this; the status bar must not repeat it"
+        "the Question Bar states this; the status bar must not repeat it"
     );
 }
 
@@ -1920,7 +1920,7 @@ fn a_debug_point_still_tells_the_user_what_to_do() {
     );
 }
 
-/// A failure must still be stated. This is the one case the Context Bar
+/// A failure must still be stated. This is the one case the Question Bar
 /// cannot cover alone — it renders the point either way, so silence would
 /// leave it describing context that was never written.
 #[test]
@@ -1945,7 +1945,7 @@ fn a_failed_emission_is_never_silent() {
 /// mechanisms — `focus.json` by `bridge::write`, `session.json` only at the end of a frame
 /// **in which an action was recorded** — and nothing tied the two together.
 ///
-/// So the × on the Context Bar rewrote `focus.json` to *no point* and recorded nothing,
+/// So the × on the Question Bar rewrote `focus.json` to *no point* and recorded nothing,
 /// `session.json` kept the old point, and **the hook went on telling Claude about a
 /// point Doug had cleared.** A recompile that kept the point re-emitted `focus.json`
 /// the same way, silently.
@@ -1954,7 +1954,7 @@ fn a_failed_emission_is_never_silent() {
 ///
 /// Recording is the observable form of *"will Claude see this?"*, because
 /// `flush_session` is a no-op without it — so this asserts **`session_dirty`** after
-/// each change, from a clean flush. It drives `apply_context_bar_press`, the handler
+/// each change, from a clean flush. It drives `apply_question_bar_press`, the handler
 /// the real × calls, rather than a copy of its body. And it checks the snapshot the
 /// hook will read, not just the flag: a dirty flag over a stale snapshot would pass
 /// the first assertion and still mislead.
@@ -1980,7 +1980,7 @@ fn clearing_the_point_reaches_the_file_the_hook_reads() {
     );
 
     // 1. Clear the point with its ×.
-    app.apply_context_bar_press(Some(ContextBarPress::ClearPoint));
+    app.apply_question_bar_press(Some(QuestionBarPress::ClearPoint));
     assert!(
         diagnostics::session_dirty_for_test(),
         "clearing the point rewrote focus.json, so session.json must follow it this \
@@ -2009,7 +2009,7 @@ fn clearing_the_point_reaches_the_file_the_hook_reads() {
 
     // 2. Clear the follow with its ×.
     diagnostics::flush_session();
-    app.apply_context_bar_press(Some(ContextBarPress::ClearThread));
+    app.apply_question_bar_press(Some(QuestionBarPress::ClearThread));
     assert!(
         diagnostics::session_dirty_for_test(),
         "clearing the follow must reach session.json too",
@@ -2382,7 +2382,7 @@ fn the_model_list_renders_and_reports_without_an_app() {
         nav_seen.borrow().as_deref(),
         Some("RcCircuit.mo"),
         "a click must be REPORTED as a navigation, not applied — the list does not \
-             own the stages, the log or the context bar that opening a specimen resets",
+             own the stages, the log or the question bar that opening a specimen resets",
     );
 }
 
@@ -6773,7 +6773,7 @@ mod tests_look_link_reuses_the_loaded_compile {
 /// 2026-09-22, with `connect-expansion` open, and pressed 🎯. The string is generated by
 /// `connection_anim` and appears in no lab; `focus.json` nevertheless carried
 /// `file: hrw/docs/fixture-labs/connect-expansion.md` and told Claude to locate it there.
-/// **The copy and the Context Bar were both correct** — Doug confirmed the bar named
+/// **The copy and the Question Bar were both correct** — Doug confirmed the bar named
 /// exactly what he had selected — so the defect was only ever the attribution, which is
 /// why the fix is a checked flag rather than a new capture shape.
 ///

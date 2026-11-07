@@ -77,7 +77,7 @@ pub const ANIM_FAIL: Color32 = Color32::from_rgb(0xEF, 0x53, 0x50);
 /// Tracked-identifier highlight — opaque gold for text/strokes.
 pub const TRACKED_GOLD: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
 
-/// The Context Bar's **Always** row — specimen, stage, open lab, stage IRs, DefIds.
+/// The Question Bar's **Always** row — specimen, stage, open lab, stage IRs, DefIds.
 ///
 /// One of three colours, one per category of context (Doug, 2026-08-30: *"make the
 /// context bar contents easier to read by using different text colors for each of the
@@ -95,7 +95,7 @@ pub const TRACKED_GOLD: Color32 = Color32::from_rgb(0xFF, 0xD5, 0x4F);
 /// distinguishable from the two categories beside it, which is what was asked.
 pub const CONTEXT_ALWAYS: Color32 = Color32::from_rgb(0x8A, 0x9E, 0xA8);
 
-/// The Context Bar's **point** — the one node you are pointing at.
+/// The Question Bar's **point** — the one node you are pointing at.
 ///
 /// **The opaque twin of [`JUMP_FILL`]**, exactly as [`TRACKED_GOLD`] is the opaque twin
 /// of [`TRACKED_FILL`]. That pairing is the whole reason this value and not another:

@@ -1646,7 +1646,7 @@ Some prose.
     fn app_does_not_regrow_its_field_count() {
         /// 105 before the pause (2026-08-02); 94 after `StageViewCaches`; 85
         /// after `ModelListState`; 75 after `Viewport`; 72 after `LabState`; 57
-        /// after `SourceViewState` and `ContextBarState`.
+        /// after `SourceViewState` and `QuestionBarState`.
         ///
         /// **Raised to 58 on 2026-08-02 for `SplitState`** (`ideas.md` #59). The ratchet
         /// fired and the question it asks was answered honestly: the LHS/RHS split is
@@ -1677,7 +1677,7 @@ Some prose.
         ///
         /// - **`shots: ScreenshotState`** is a *channel*, the fourth after the focus
         ///   file, the stage files and the lab. Its siblings are `lab: LabState` and
-        ///   `context: ContextBarState`, and like them it is already a grouping struct
+        ///   `context: QuestionBarState`, and like them it is already a grouping struct
         ///   rather than loose fields — one slot for a whole subsystem is the shape
         ///   this ratchet was built to reward.
         ///
@@ -3467,7 +3467,7 @@ Some prose.
     /// - 2026-11-07: its cross-check compared `focus.json` against the last POINT
     ///   gesture, so a follow or a recompile — both of which rewrite `focus.json` — drew
     ///   *"do NOT read it as Doug's context"* about a file that was correct. And after
-    ///   the Context Bar's ×, it went on reporting the cleared point.
+    ///   the Question Bar's ×, it went on reporting the cleared point.
     ///
     /// # The states, and what each must and must not print
     ///
@@ -3549,7 +3549,7 @@ Some prose.
             String::from_utf8_lossy(&out.stdout).into_owned()
         };
 
-        // 1. The Context Bar's × cleared the point. Must say CLEARED, and must not
+        // 1. The Question Bar's × cleared the point. Must say CLEARED, and must not
         //    report the age of the point that is gone.
         let out = run(
             "cleared",
@@ -3682,7 +3682,7 @@ Some prose.
 
     /// **`?` answers the question asked in HRW, and a waiting question is never silent.**
     ///
-    /// Doug's protocol, 2026-11-07: he types a question into HRW's Context Bar, HRW writes
+    /// Doug's protocol, 2026-11-07: he types a question into HRW's Question Bar, HRW writes
     /// it with its context to `question.json`, and he types `?` here to have it answered.
     /// HRW cannot wake Claude, so the hook is the whole of the delivery — and like every
     /// reporter in this repository it gets a test that runs it.
@@ -4508,7 +4508,7 @@ Some prose.
     /// characters the reader highlighted. **The failure mode is choosing the wrong one without
     /// noticing** — which already happened once, when a `pointing::region` wrapped this pane,
     /// never opened, and the node item silently answered a gesture meant for the selection. The
-    /// Context Bar updates either way, so nothing on screen distinguishes them.
+    /// Question Bar updates either way, so nothing on screen distinguishes them.
     ///
     /// Doug's call, 2026-09-22: name the node item *"Point at this node"* rather than leaving it
     /// as *"Point at"*, so the nouns differ, and show the selection item only when text is held.

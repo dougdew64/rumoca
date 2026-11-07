@@ -8,7 +8,7 @@
 //!
 //! `central_panel_ui`'s outermost shape is `if self.nav.is_empty() { … } else { … }`, and
 //! the two halves have **nothing in common but the tree widget**. The `if` is the
-//! specimen's compiled stages: tab row, context bar, sub-view dispatch, thirteen panes.
+//! specimen's compiled stages: tab row, question bar, sub-view dispatch, thirteen panes.
 //! The `else` is one breadcrumb, two buttons and one tree over an IR that came from
 //! somewhere else entirely. Nothing crosses between them — no shared local, no shared
 //! guard — so the `else` is the cheapest whole branch the router has.

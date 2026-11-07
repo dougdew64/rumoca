@@ -5888,3 +5888,27 @@ error reappears in answers written to a VS Code tab, the scan could be retargete
 That is not built, and it should wait for evidence.
 
 A stale `.hrw-bridge/answer.md` in a clone is simply ignored, and nothing reads it.
+
+## 2026-11-07 (last) — the Context Bar is the Question Bar (charter v1.18)
+
+**Doug: *"It seems that it is more like a question bar, which contains context which has been
+assembled to ask a question. In other words, the entire reason for assembling context is to ask
+a question."*** Claude agreed and proposed the rename; Doug approved it and directed that the
+charter be updated. The reasoning is in charter Decision 19, *"What this decision names"*.
+
+**What changed:**
+
+- the module, `context_bar` → `question_bar`;
+- the types, `ContextBarState` / `ContextBarPress` → `QuestionBarState` / `QuestionBarPress`;
+- every function and test whose name carried the bar;
+- the on-screen text (Using HRW, the lab panel's note, two status messages);
+- the hook's messages;
+- the live docs.
+
+**What did not change:**
+
+- **"context" as the word for what the bar holds** — `focus.json`, `question.json` and the
+  hook keep it;
+- quotations of Doug that say "context bar";
+- dated records (this file, the tech-debt ledger, the plan documents, `ideas.md`), which keep
+  the name they were written under.
