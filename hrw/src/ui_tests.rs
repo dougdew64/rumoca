@@ -89,67 +89,13 @@ use egui_kittest::kittest::Queryable;
 
 use crate::app::App;
 
-/// Hold `.hrw-bridge/answer.md` at a chosen state for the duration of a test, and put
-/// back whatever was there on the way out — including on a panic.
-///
-/// # Why every test that paints needs this
-///
-/// **The Answer is live state, not scratch space.** It is Claude's answer to
-/// Doug's last question, and HRW *auto-selects it* when nothing else is chosen
-/// (`lab::poll`), which resets the stage side. So its mere presence changes what a
-/// painted frame does.
-///
-/// Three tests were written without accounting for that, and all three were wrong in a
-/// different direction — found on 2026-08-16, the first day an Answer existed
-/// while the suite ran:
-///
-/// 1. `the_ad_hoc_lab_row_is_present_even_with_no_ad_hoc_lab` **asserted** the file
-///    was absent, so it failed whenever the feature had been used. A precondition of
-///    "the user has not used the product recently" measures the environment.
-/// 2. `the_answer_is_a_button_and_not_a_picker_entry` wrote its own fixture and
-///    **deleted** it afterwards, destroying a real answer without a word.
-/// 3. `a_frame_link_into_flatten_connections_navigates` painted with whatever happened
-///    to be on disk, and started failing when an Answer appeared and the
-///    auto-selection reset the viewport it was asserting on.
-///
-/// One helper, three uses: `absent()` for tests that need none, `with(text)` for tests
-/// that need one. Both restore.
-pub(crate) struct Answer(Option<String>);
+// **An `Answer` guard was here** — it held `.hrw-bridge/answer.md` at a chosen state
+// for a test's duration, because HRW auto-selected the Answer and its mere presence
+// changed what a painted frame did (three tests were wrong in three directions on
+// 2026-08-16 for want of it). The HRW Answer was removed on 2026-11-07 (charter
+// Decision 19), nothing reads `answer.md` any more, and the guard went with it.
 
-impl Answer {
-    /// No Answer exists for the duration.
-    pub(crate) fn absent() -> Self {
-        let saved = std::fs::read_to_string(crate::bridge::LAB_FILE).ok();
-        let _ = std::fs::remove_file(crate::bridge::LAB_FILE);
-        Self(saved)
-    }
-
-    /// An Answer with `text` exists for the duration.
-    pub(crate) fn with(text: &str) -> Self {
-        let path = std::path::Path::new(crate::bridge::LAB_FILE);
-        if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir).expect("bridge dir");
-        }
-        let saved = std::fs::read_to_string(path).ok();
-        std::fs::write(path, text).expect("write the Answer");
-        Self(saved)
-    }
-}
-
-impl Drop for Answer {
-    fn drop(&mut self) {
-        match self.0.take() {
-            Some(text) => {
-                let _ = std::fs::write(crate::bridge::LAB_FILE, text);
-            }
-            None => {
-                let _ = std::fs::remove_file(crate::bridge::LAB_FILE);
-            }
-        }
-    }
-}
-
-/// `.hrw-bridge/stages/` is live state too, and the suite was destroying it.
+/// `.hrw-bridge/stages/` is live state, and the suite was destroying it.
 ///
 /// # The report, 2026-09-04
 ///
@@ -161,16 +107,15 @@ impl Drop for Answer {
 /// tests in `app/tests.rs` send a synthetic `Compiled` whose bundle has one stage — so
 /// each of them overwrote Doug's eleven real stage files with one, and left it there.
 ///
-/// **This is the same defect as `Answer` above, one directory over**, and it is worse in
-/// one respect: the Answer is Doug's to read, while `stages/` is what *Claude* reads to
-/// verify an Answer's pointers against the pane. A truncated directory makes a
-/// verification quietly fall back to the committed notebook — checking a sibling artifact
-/// instead of the screen, which is the habit that produced four wrong pointers that day.
+/// **The same defect the old `Answer` guard fixed, one directory over**, and worse in one
+/// respect: `stages/` is what *Claude* reads to check a claim against the pane. A
+/// truncated directory makes a check quietly fall back to the committed notebook —
+/// checking a sibling artifact instead of the screen.
 ///
-/// `examples/check_answer` already prints how many stage files it found and which source
-/// judged each pointer, which is how the truncation was noticed at all. That reporting
-/// stays: a guard here stops the suite causing it, and says nothing about a real compile
-/// that legitimately reaches only two stages — a failure specimen does exactly that.
+/// The truncation was noticed because `examples/check_answer` (removed with the Answer
+/// on 2026-11-07) printed how many stage files it found. A guard here stops the suite
+/// causing it, and says nothing about a real compile that legitimately reaches only two
+/// stages — a failure specimen does exactly that.
 pub(crate) struct StageFiles(Vec<(std::path::PathBuf, Vec<u8>)>);
 
 impl StageFiles {
@@ -422,8 +367,6 @@ fn the_context_bar_is_present_in_every_state() {
 /// to and the half a harness can see.
 #[test]
 fn the_bar_shows_context_not_advice() {
-    let _no_ad_hoc = Answer::absent();
-
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
@@ -493,8 +436,6 @@ fn the_three_context_categories_have_distinct_colours() {
 ///   to be selected. That shortcut is the one the `Option` was introduced to refuse.
 #[test]
 fn a_captured_lab_passage_is_shown_quoted_and_claims_no_stage() {
-    let _no_ad_hoc = Answer::absent();
-
     let mut app = App::test_default();
     app.test_set_ui_mode_specimen();
     app.test_set_session_state("RcCircuit.mo", "RcCircuit", crate::worker::StageKind::Parse);
@@ -532,11 +473,6 @@ fn a_captured_lab_passage_is_shown_quoted_and_claims_no_stage() {
 /// row says in each state is `context_bar::tests::always_summary_states_only_what_is_true`.
 #[test]
 fn the_bar_names_the_open_lab() {
-    // **`.hrw-bridge/answer.md` is live state and `lab::poll` auto-selects it**, so an
-    // Answer on disk would be the one named, and this would pass whichever lab
-    // the wiring actually carried. `Answer` exists for exactly that.
-    let _no_ad_hoc = Answer::absent();
-
     let mut app = App::test_default();
     assert!(
         app.test_select_fixture_lab("connect-expansion"),
@@ -893,9 +829,9 @@ fn switching_labs_clears_the_stage_side_on_screen() {
 fn a_station_needing_a_specimen_is_refused_with_a_visible_notice() {
     let mut app = App::test_default();
     // **Its own lab text, not the live Answer file.** This used to click a link out
-    // of `.hrw-bridge/answer.md`, which is gitignored and rewritten every time Claude
-    // answers a question — so it passed on content nobody had chosen, and broke the
-    // day an answer was written that did not happen to contain this link.
+    // of `.hrw-bridge/answer.md` (since removed), which was gitignored and rewritten
+    // per question — so it passed on content nobody had chosen, and broke the day an
+    // answer was written that did not happen to contain this link.
     app.test_set_lab_text(
         "# Fixture\n\n[Structural → Incidence](hrw://stage/Structural/Incidence)\n",
     );
@@ -2580,124 +2516,39 @@ fn the_log_button_returns_without_changing_the_stage() {
     );
 }
 
-/// **The "Claude's answer" row is always on screen — disabled when there is none.**
+/// **Lab mode offers no Answer control, closed picker or open.**
 ///
-/// Doug, 2026-08-15: *"the 'Claude's Answer' lab seems to have disappeared from the
-/// labs list in the lab mode."* It had not broken; no Answer had been written,
-/// and the row was gated on `.hrw-bridge/answer.md` existing. **The absence was correct
-/// and the design was wrong** — a row that silently ceases to exist gives no way to
-/// distinguish *"nothing written yet"* from *"the feature broke"*, and he read it as
-/// the second, which was the only reading the evidence supported.
+/// The HRW Answer was removed on 2026-11-07 under charter Decision 19: HRW causes
+/// questions, and answers are given on the platform (the chat, a VS Code tab, System
+/// Modeler, Wolfram Desktop), never in HRW. This replaces the two tests that guarded
+/// the Answer's control — that its row was always present
+/// (`the_ad_hoc_lab_row_is_present_even_with_no_ad_hoc_lab`) and that it was a button
+/// beside the picker rather than an entry in it
+/// (`the_answer_is_a_button_and_not_a_picker_entry`).
 ///
-/// `docs/ideas.md` #77 states the rule this breaks: *controls are enabled and disabled,
-/// never shown and hidden.*
-///
-/// **Why this matters beyond one row:** the Answer is the whole *"Claude composes
-/// an answer inside HRW"* capability (#42). A feature that looks broken stops being
-/// reached for, and dies of apparent absence rather than of any decision.
-///
-/// The test asserts the row is **present**; that it is *disabled* is not reachable
-/// through the accessibility tree here, and saying so is better than implying coverage
-/// this does not have.
+/// **Must-fire, by construction:** the first of those asserted the opposite of this
+/// against the same label and passed until today, so on the previous commit this test
+/// fails on its first assertion.
 #[test]
-fn the_ad_hoc_lab_row_is_present_even_with_no_ad_hoc_lab() {
-    // **The state under test is ESTABLISHED, not asserted.**
-    //
-    // This used to assert the bridge file was absent, on the reasoning that it is
-    // gitignored and absent in a clean checkout. That made the test fail whenever the
-    // *feature worked*: Claude writes `.hrw-bridge/answer.md` to answer a question, and
-    // from that moment the suite went red until someone deleted it. Found 2026-08-16,
-    // the first time an Answer was written since the test existed.
-    //
-    // A test whose precondition is "the user has not used the product recently" is
-    // measuring the environment. It now moves any real lab aside and restores it on
-    // the way out, so a live answer survives the run and the run does not depend on
-    // there being none.
-    let _lab_state = Answer::absent();
+fn lab_mode_offers_no_answer_control() {
+    // The label the Answer's button carried, spelled out because the variant that
+    // produced it no longer exists.
+    let label = "\u{2728} Answer";
 
     // Lab is `UiMode`'s `#[default]`, so no mode switch is needed.
     let mut h = harness(App::test_default());
     h.run_steps(2);
-
-    let label = crate::lab::LabSource::Answer.label();
     assert!(
-        h.query_by_label_contains(&label).is_some(),
-        "the {label:?} row must be listed even with no Answer \u{2014} its absence \
-         is indistinguishable from the feature being broken",
-    );
-}
-
-/// **The Answer has exactly one control, and it is not inside the picker.**
-///
-/// Doug, 2026-08-16: *"It seems to me that the 'Claude's Answer' lab item is special.
-/// So special that perhaps it could be its own UI button beside the drop-down."*
-///
-/// It is a different kind of object from the other 22: they are committed, versioned,
-/// machine-checked and citable as `hrw://lab/<name>/station/<slug>`; this one is
-/// `.hrw-bridge/answer.md` — gitignored, regenerated per question, and there is only ever
-/// one. The code already privileged it (`lab::poll` auto-selects it); only the
-/// presentation flattened it into row 23.
-///
-/// **Listing it in both places is the regression this guards.** A duplicate would make
-/// one of the two a lie about where the lab lives, and the obvious way to write the
-/// combo — iterate `available` — produces exactly that, because `available` still
-/// contains `Answer`.
-#[test]
-fn the_answer_is_a_button_and_not_a_picker_entry() {
-    let label = crate::lab::LabSource::Answer.label();
-
-    // **The Answer must actually EXIST, or the duplication half of this test
-    // checks nothing.** Injecting `lab.available` does not work: `poll_lab_file`
-    // rebuilds the list from disk on the first frame and erases it — measured, after an
-    // injected version passed while the lab was listed in both places.
-    //
-    // So the file is written, and removed by a **guard** rather than by a line at the
-    // end: a failing assertion between the two would leave it behind and break
-    // `the_ad_hoc_lab_row_is_present_even_with_no_ad_hoc_lab`, which asserts its
-    // absence as a precondition.
-    // **The guard RESTORES what was there; it does not delete.** The first version
-    // removed the file on the way out — and `.hrw-bridge/answer.md` is not scratch space,
-    // it is Claude's live answer to Doug's last question. Running the suite while one
-    // existed **destroyed it**, silently, which is worse than a failing test. Found
-    // minutes after this test shipped, the first time an Answer was written.
-    let _lab_state = Answer::with(
-        "# Claude's answer
-
-A fixture for the picker test.
-",
-    );
-
-    let mut h = harness(App::test_default());
-
-    // **Counted by EXACT label since 2026-08-30, not by substring.** This asked for
-    // nodes whose label *contains* "✨ Answer" and required exactly one — which quietly
-    // also meant "nothing else on screen may NAME the open lab". The Context Bar then
-    // began doing exactly that, correctly, and turned this red.
-    //
-    // The control's label *is* the lab's label; anything that merely mentions the lab
-    // says more than that — the bar's background line reads "· lab: ✨ Answer". So an
-    // exact match counts controls and ignores mentions, which is what the test's own
-    // name claims it is about.
-    let controls = |h: &Harness<'static, App>| h.get_all_by_label(&label).count();
-
-    // Present as its own control while the picker is closed — the whole point of
-    // promoting it, and the state Doug reported as a broken feature when it vanished.
-    assert_eq!(
-        controls(&h),
-        1,
-        "the Answer must have exactly one control, visible without opening the \
-         picker",
+        h.query_by_label_contains(label).is_none(),
+        "no {label:?} control may be drawn beside the picker \u{2014} answers are given on \
+         the platform, never in HRW (charter Decision 19)",
     );
 
     h.get_by_value("Pick a lab\u{2026}").click();
     h.run_steps(2);
-
-    assert_eq!(
-        controls(&h),
-        1,
-        "opening the picker must not add a second {label:?} \u{2014} it lives beside \
-         the picker, not inside it, and two controls for one lab makes one of them \
-         wrong about where it comes from",
+    assert!(
+        h.query_by_label_contains(label).is_none(),
+        "nor inside the picker",
     );
 }
 
@@ -2726,7 +2577,6 @@ A fixture for the picker test.
 /// frame carrying none preserves it.
 #[test]
 fn switching_labs_asks_the_pane_to_return_to_the_top() {
-    let _guard = Answer::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
@@ -2776,7 +2626,6 @@ fn switching_labs_asks_the_pane_to_return_to_the_top() {
 /// would work when tested and not when run.
 #[test]
 fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_lab() {
-    let _guard = Answer::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
@@ -2807,7 +2656,6 @@ fn a_return_to_the_top_is_not_spent_on_a_frame_with_no_lab() {
 /// is not constant and four attempts proved no constant corrects for it.
 #[test]
 fn a_station_request_is_spent_by_the_pane() {
-    let _guard = Answer::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
@@ -2847,7 +2695,6 @@ fn a_station_request_is_spent_by_the_pane() {
 /// second is reachable by ordinary editing rather than by contrivance.
 #[test]
 fn a_stale_station_offset_is_discarded_without_panicking() {
-    let _guard = Answer::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
@@ -2902,7 +2749,6 @@ fn a_stale_station_offset_is_discarded_without_panicking() {
 /// older, and asserting on the general form is what keeps the fix honest about that.
 #[test]
 fn a_lab_renders_none_of_its_html_markers() {
-    let _guard = Answer::absent();
     let mut h = harness(App::test_default());
     h.run_steps(2);
 
@@ -3019,12 +2865,16 @@ fn lab_prose_after_a_table_wraps_to_the_panel_not_the_table() {
                         well past the width of any reasonable panel, which is the \
                         entire point of this fixture, and so it continues for some \
                         time yet before finally coming to a stop.";
-    let _lab_state = Answer::with(&format!(
+    // Injected, not written to disk: this used to write `.hrw-bridge/answer.md`, which
+    // went with the HRW Answer on 2026-11-07. The paint path is the same either way —
+    // the pane renders `lab.cached`, wherever it came from.
+    let mut app = App::test_default();
+    app.test_set_lab_text(&format!(
         "ZZbefore {PARA}\n\n{}\n\nZZafter {PARA}\n",
         &real[..cut]
     ));
 
-    let mut h = harness(App::test_default());
+    let mut h = harness(app);
     h.run_steps(3);
 
     let rect = |m: &str| {

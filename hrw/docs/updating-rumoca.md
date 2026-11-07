@@ -126,7 +126,7 @@ this is the rebase-time instance of it):
 | the canonical file list | `bridge::STAGE_FILE_NAMES` |
 | what a compile publishes | `StageBundle::as_stage_pairs` |
 | which crate supplies tooltips | `StageKind::ir_crate` |
-| sub-view rosters | `SubView`, `STAGES_WITH_SUB_VIEWS` (`answer_check`) |
+| sub-view rosters | `SubView`, `STAGES_WITH_SUB_VIEWS` (`node_link_check`) |
 
 Several of these are pinned against each other by tests — `stage_kind_all_is_exhaustive`,
 `every_stage_file_name_is_in_the_canonical_list`, `stage_pairs_names_match_stage_file_names`,
@@ -226,9 +226,10 @@ is the strongest single statement this project can make about a release.
   - `the_committed_notebook_matches_what_the_pipeline_produces_now` — a gate, and the only thing
     that catches trace *contents* drifting. The committed traces were stale for **25 days** before
     it existed.
-  - `answer_check` judges an Answer's pointers against the notebook whenever the live bridge does
-    not match the session's model. A stale notebook therefore makes Answer verification quietly
-    wrong rather than absent.
+  - `node_link_check` judges every fixture lab's node links against the notebook
+    (`every_lab_node_link_lands_on_a_real_node`). A stale notebook therefore makes that check
+    quietly wrong rather than absent. *(It also judged HRW Answers until 2026-11-07, when the
+    Answer was removed.)*
   - `matching_ledger` and `pantelides_ladder` read trace data as reference values.
 - **Review the trace diff anyway** — it tells you what the rebase changed about each specimen (a
   changed residual, a different tearing, a new or removed block), and after a large release that

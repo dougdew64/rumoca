@@ -211,26 +211,33 @@ impl LabState {
     }
 
     /// Re-read the list and the selected lab, at most once per
-    /// [`LAB_POLL_INTERVAL`]. Returns true when a lab was newly selected.
-    pub(crate) fn poll(&mut self) -> bool {
-        let mut newly_selected = false;
+    /// [`LAB_POLL_INTERVAL`].
+    ///
+    /// **It returns nothing since 2026-11-07.** It used to return *"true when a lab was
+    /// newly selected"*, and the only thing that ever made that true was the HRW Answer
+    /// auto-selecting itself when `answer.md` appeared. With the Answer removed, a poll
+    /// can only refresh what the reader already chose — selecting a lab is always the
+    /// reader's act, through [`LabState::select`] — so a `bool` that could only ever be
+    /// `false` would have been a claim about a behaviour that no longer exists.
+    pub(crate) fn poll(&mut self) {
         let due = self
             .polled_at
             .is_none_or(|last| last.elapsed() >= LAB_POLL_INTERVAL);
         if !due {
-            return false;
+            return;
         }
         self.polled_at = Some(std::time::Instant::now());
 
         // --- Rebuild the pick list ---
         //
-        // The Answer first when it exists: it is the reply to the question just asked,
-        // and burying it under the fixtures would make the common case the awkward one.
-        let mut labs = Vec::new();
-        if std::path::Path::new(bridge::LAB_FILE).exists() {
-            labs.push(LabSource::Answer);
-        }
-        labs.extend(bridge::fixture_labs().into_iter().map(LabSource::Fixture));
+        // Fixture labs only. **The HRW Answer was removed on 2026-11-07** under charter
+        // Decision 19 — HRW causes questions, and answers are given on the platform
+        // (VS Code, System Modeler, Wolfram Desktop) — so `.hrw-bridge/answer.md` is no
+        // longer a lab source.
+        let labs: Vec<LabSource> = bridge::fixture_labs()
+            .into_iter()
+            .map(LabSource::Fixture)
+            .collect();
         let list_changed = labs != self.available;
         self.available = labs;
 
@@ -256,8 +263,8 @@ impl LabState {
             }
         }
 
-        // A selection that no longer exists (the Answer was deleted, a fixture
-        // renamed) must not leave stale text on screen attributed to a live file.
+        // A selection that no longer exists (a fixture renamed or deleted) must not
+        // leave stale text on screen attributed to a live file.
         if self
             .selected
             .as_ref()
@@ -266,15 +273,11 @@ impl LabState {
             self.selected = None;
             self.cached = None;
         }
-        // Default to the Answer when one appears and nothing is chosen.
-        if self.selected.is_none() && self.available.contains(&LabSource::Answer) {
-            newly_selected |= self.select(LabSource::Answer);
-        }
 
         // --- Re-read the selected lab if it changed on disk ---
         let Some(selected) = self.selected.clone() else {
             self.cached = None;
-            return newly_selected;
+            return;
         };
         let path = selected.path();
         let mtime = std::fs::metadata(&path)
@@ -290,31 +293,35 @@ impl LabState {
                 }
             }
             // The file vanished between listing and reading. Drop the text rather
-            // than keep a stale copy: for an Answer, absence is the normal state.
+            // than keep a stale copy attributed to a file that is gone.
             None => {
                 self.cached = None;
                 self.selected = None;
             }
         }
-        newly_selected
     }
 }
 
 /// Which lab the Lab panel is showing.
 ///
-/// Two kinds, with different lifetimes and different jobs:
+/// **One kind now: `Fixture`** — a file in `docs/fixture-labs/`, kept and versioned
+/// because it is a *test* with a pass/fail criterion rather than an explanation that
+/// would rot.
 ///
-/// - **`Answer`** — `.hrw-bridge/answer.md`, written by Claude to answer the question just
-///   asked. Gitignored, regenerated, ephemeral by construction.
-/// - **`Fixture`** — a file in `docs/fixture-labs/`, kept and versioned because it is a
-///   *test* with a pass/fail criterion rather than an explanation that would rot.
+/// # There was a second kind, and why it went
 ///
-/// Keeping them in one list (rather than one panel each) is deliberate: from the
-/// reader's side both are "a sequence of stops to run", and the distinction is about
-/// where the file lives, not about how it is used.
+/// **`Answer`** was `.hrw-bridge/answer.md`, written by Claude to answer the question just
+/// asked, rendered here beside the fixtures. **Removed 2026-11-07 under charter Decision
+/// 19**: HRW is a viewer and thin emitter that *causes* questions, and answers are given on
+/// the platform — the chat, a VS Code tab, System Modeler or Wolfram Desktop — never in
+/// HRW. It was the *"answer rendered inside the app"* mode that the founding decision of
+/// 2026-07-19 had deferred, ratify-first, and that was built anyway.
+///
+/// **Still an enum rather than a bare path**, deliberately: every caller already matches
+/// on it, a one-variant enum says *this is a fixture lab* at each use, and collapsing it
+/// would be churn across the lab code for no gain in meaning.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum LabSource {
-    Answer,
     Fixture(PathBuf),
 }
 
@@ -388,18 +395,13 @@ pub(crate) const OVERVIEW_LAB: &str = "the-pipeline";
 impl LabSource {
     pub(crate) fn path(&self) -> PathBuf {
         match self {
-            Self::Answer => PathBuf::from(bridge::LAB_FILE),
             Self::Fixture(p) => p.clone(),
         }
     }
 
     /// Whether this is the chain overview — the hub the phase labs hang off.
-    ///
-    /// `Answer` is never the overview: it is Claude's answer to the last question, and it
-    /// has its own control beside the picker.
     pub(crate) fn is_overview(&self) -> bool {
         match self {
-            Self::Answer => false,
             Self::Fixture(p) => p.file_stem().and_then(|s| s.to_str()) == Some(OVERVIEW_LAB),
         }
     }
@@ -451,18 +453,9 @@ impl LabSource {
             .unwrap_or_default()
     }
 
-    /// Label for the picker. The Answer is named by what it *is* rather than by
-    /// its filename, which is an implementation detail nobody should have to know.
+    /// Label for the picker: the lab's file stem.
     pub(crate) fn label(&self) -> String {
         match self {
-            // **`✨ Answer`, shortened 2026-08-19.** The sparkle identifies it — the only
-            // emoji in the bar — and "Claude's" was the widest word in a strip whose
-            // one-row width is now a hard floor on the left panel.
-            //
-            // **The word is kept rather than going icon-only:** Doug asked for this
-            // control to be prominent and reported it as a broken feature the day it
-            // briefly vanished. An unlabelled sparkle is a puzzle; `✨ Answer` is not.
-            Self::Answer => "\u{2728} Answer".to_owned(),
             Self::Fixture(p) => p
                 .file_stem()
                 .and_then(|s| s.to_str())

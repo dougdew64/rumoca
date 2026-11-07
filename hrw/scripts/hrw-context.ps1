@@ -139,7 +139,11 @@ if (Test-Path $questionPath) {
         try {
             $q = Get-Content $questionPath -Raw -Encoding utf8 | ConvertFrom-Json
             $again = if ($alreadyShown) { ' (shown before - this is the same question)' } else { '' }
-            Write-Output "$tag HRW QUESTION #$($q.seq), asked $questionAge$again - ANSWER IT HERE, in the chat:"
+            # Doug, 2026-11-07: "you are free to use this chat window, a VS code tab, System
+            # Modeler or Wolfram Desktop in whichever way you believe would be most effective."
+            # This line said "ANSWER IT HERE, in the chat" until then -- narrower than his
+            # ruling, and the line Claude reads at the very moment of choosing.
+            Write-Output "$tag HRW QUESTION #$($q.seq), asked $questionAge$again - answer from this conversation, NEVER in HRW, using the chat, a VS Code tab, System Modeler or Wolfram Desktop - whichever teaches best:"
             Write-Output "$tag   question: $($q.question)"
             Write-Output "$tag   this = $($q.this)   (the bar's rule: the point, then the follow, then the stage on screen - and Doug saw this beside the field)"
             Write-Output "$tag   the context it was asked about is question.json's `"context`" - the SAME document focus.json held at that moment; open it for node detail"

@@ -77,7 +77,7 @@ impl StructuralView {
 //
 // **The enum went rather than keeping a one-variant version**, which would have
 // drawn a selector with one item and, worse, kept Initialization in
-// `answer_check::STAGES_WITH_SUB_VIEWS` — making an Answer's node link into it
+// `node_link_check::STAGES_WITH_SUB_VIEWS` — making a lab's node link into it
 // obliged to name a sub-view that is the stage's only one. `sub_view_name_for`
 // returns `None` for it now, which is what it already does for every other
 // tree-only stage, and that list's own both-directions test is what forced the

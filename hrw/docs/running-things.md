@@ -118,16 +118,15 @@ cargo test -p hrw --test msl_resolve --features slow-tests -- --test-threads=1
 unattended run requires it closed — see [`docs/unattended-runs.md`](unattended-runs.md), **read
 that before doing any work while Doug is asleep.**
 
-**`.hrw-bridge/answer.md` IS LIVE STATE, AND TESTS THAT PAINT MUST HOLD IT** *(2026-08-16, three
-defects in one hour)*. It is Claude's answer to Doug's last question, and `lab::poll`
-**auto-selects it** when nothing else is chosen — which resets the stage side. So its mere
-presence changes what a painted frame does, and the suite had never run while one existed.
-
-All three failure modes appeared the first time one did: a test that *asserted* the file was
-absent (failing whenever the feature had been used), a test that wrote its own and **deleted**
-Doug's afterwards, and a test that painted against whatever was on disk. Use
-`ui_tests::Answer::absent()` or `::with(text)`; both restore what was there, including on a
-panic.
+**LIVE STATE IN `.hrw-bridge/` MUST BE HELD, NOT ASSUMED, BY A TEST** *(2026-08-16, three
+defects in one hour)*. The case that taught it was `answer.md`, the HRW Answer, which
+`lab::poll` auto-selected — so its mere presence changed what a painted frame did. All three
+failure modes appeared the first time one existed: a test that *asserted* the file was absent, a
+test that wrote its own and **deleted** Doug's afterwards, and a test that painted against
+whatever was on disk. The Answer was removed on 2026-11-07 (charter Decision 19) and its guard
+with it; the lesson stands for what remains — `ui_tests::StageFiles` and
+`test_support::ScratchSpecimen` save what was there and restore it in `Drop`, including on a
+panic. To give a painting test lab text, inject it with `App::test_set_lab_text`.
 
 **A THIRD GATE EXISTS AND IS NOT IN EITHER OF THOSE — the notebook content check** *(added
 2026-08-15)*. The committed specimen traces had been stale for **25 days** and nothing could

@@ -101,9 +101,9 @@ end ScratchProbe;
 ///
 /// **That directory is live state.** Doug runs HRW from the working tree while the
 /// suite runs, and Claude writes probes into it mid-conversation to answer questions —
-/// two of them are sitting there as of 2026-08-22. So the contract is the one
-/// [`crate::ui_tests::Answer`] already proved for the lab file: **save what was
-/// there, and put it back in `Drop`** so a failing assertion cannot poison the
+/// two of them are sitting there as of 2026-08-22. So the contract is the one the old
+/// `ui_tests::Answer` guard (removed with the Answer, 2026-11-07) proved for the lab
+/// file: **save what was there, and put it back in `Drop`** so a failing assertion cannot poison the
 /// directory for the next run or for the app Doug has open.
 ///
 /// The shadow test is the sharp case: it writes `BouncingBall.mo`, and leaving that

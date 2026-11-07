@@ -51,14 +51,9 @@ pub enum PointOrigin {
         /// The lab's label, which is also its file stem.
         lab: String,
     },
-    /// Claude's answer document, rendered in the same panel as lab prose.
-    ///
-    /// **Distinct from `LabProse` because it has no file.** `LabSource::label` returns
-    /// `✨ Answer` for it, so treating the two alike emitted
-    /// `file: hrw/docs/fixture-labs/✨ Answer.md` — a path that has never existed. The
-    /// containment check added on 2026-09-22 cannot catch that one, because the text really is
-    /// in the document that was open; it is the *file* claim that is false.
-    Answer,
+    // **There was an `Answer` origin here** — Claude's answer document, rendered in the same
+    // panel as lab prose and, unlike it, in no file. It went with the HRW Answer on
+    // 2026-11-07 (charter Decision 19: answers are given on the platform, never in HRW).
     /// A compile stage's pane — a tree, an animation, a sheet.
     StagePane {
         stage: StageKind,
@@ -91,7 +86,6 @@ impl PointOrigin {
     pub fn describe(&self) -> String {
         match self {
             Self::LabProse { lab } => format!("prose in {lab}"),
-            Self::Answer => "Claude's answer".to_owned(),
             Self::StagePane {
                 stage,
                 sub_view: Some(v),
@@ -255,13 +249,14 @@ pub fn region<R>(
 mod tests {
     use super::*;
 
-    /// **Only lab prose names a file, and the Answer must not.**
+    /// **Only lab prose names a file.**
     ///
-    /// `LabSource::label` returns `✨ Answer` for the answer document, so a capture made in it
-    /// used to emit `file: hrw/docs/fixture-labs/✨ Answer.md`. **The containment check cannot
-    /// catch that**, because the selected text genuinely is in the document that was open — it
-    /// is the file claim that is false, and only the origin can tell the two apart. That is the
-    /// case this whole enum exists for.
+    /// Every other origin must claim none: naming a file sends the reader to edit something
+    /// that does not contain the text. The case that first proved it was the HRW Answer, which
+    /// emitted `file: hrw/docs/fixture-labs/✨ Answer.md` — a path that never existed, and one
+    /// the containment check could not catch because the text really was in the document
+    /// open. That origin was removed with the Answer on 2026-11-07; the rule it established
+    /// still binds the ones that remain.
     #[test]
     fn only_lab_prose_claims_a_file() {
         assert_eq!(
@@ -273,7 +268,6 @@ mod tests {
             Some("hrw/docs/fixture-labs/connect-expansion.md"),
         );
         for origin in [
-            PointOrigin::Answer,
             PointOrigin::StagePane {
                 stage: StageKind::Flatten,
                 sub_view: Some("Connections".to_owned()),
