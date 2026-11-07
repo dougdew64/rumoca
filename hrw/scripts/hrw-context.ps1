@@ -23,8 +23,22 @@
     IT READS `session.json`, NOT `focus.json`. The capture file is ~740 KB and
     parsing it on every prompt would tax every message Doug sends. `session.json`
     is ~7 KB and already carries the same summary -- `context.pointing_at`,
-    `context.following`, the open tour and the UI mode. The capture's AGE comes
-    from `focus.json`'s mtime, which needs no parse at all.
+    `context.following`, the open tour and the UI mode.
+
+    THE TWO FILES ARE WRITTEN BY DIFFERENT MECHANISMS, and keeping them in step is
+    the whole correctness of this hook. `focus.json` is written by `bridge::write`
+    whenever the context changes; `session.json` only at the end of a frame in which
+    an action was RECORDED. Since 2026-11-07 `bridge::write` records a
+    `context-emitted` action itself, so every context change moves both files in the
+    same frame. Before that, the Context Bar's x buttons recorded nothing, and this
+    hook went on reporting a point Doug had cleared.
+
+    So: the point's AGE comes from the last point gesture in the trail; whether a
+    point EXISTS comes from the snapshot; and `focus.json`'s mtime is a CROSS-CHECK
+    against the `context-emitted` action that wrote it. (Until 2026-11-06 the age
+    came from that mtime, which any writer could move.)
+    `doc_citations::the_hook_reports_cleared_points_and_never_cries_wolf_on_a_correct_file`
+    runs this script against fixture states and fails by name if any of that breaks.
 
     `powershell`, not `pwsh`: pwsh is installed on neither of Doug's machines, and
     `CLAUDE.md` records the machine-switch that cost.
@@ -139,42 +153,68 @@ if ($lastPoint -and $lastPoint.at) {
 }
 $now = (Get-Date).ToUniversalTime()
 
-if ($captureTime -and $lastPoint.kind -eq 'point-dropped') {
-    # **A cleared point is not a stale point, and the difference decides the answer.**
-    # `pointing at` below is whatever the snapshot held; if the last thing Doug did was
-    # drop the point, there is no referent and a question's "this" is not in HRW.
-    $capAge = Format-Age ([int]($now - $captureTime).TotalSeconds)
-    Write-Output "$tag the point was CLEARED $capAge - nothing is being pointed at, so do not resolve 'this' from the context below"
-} elseif ($captureTime) {
+# **THE POINT LINE AGREES WITH THE SNAPSHOT, not merely with the last gesture**
+# (2026-11-07). The previous version reported the age of the latest point-kind action
+# whether or not that point still existed -- so after the Context Bar's x, which then
+# recorded nothing, it went on saying "pointed at 26m ago" over a point Doug had cleared.
+# `$ctx.pointing_at` is the current state; the trail only supplies its age.
+if ($null -eq $ctx.pointing_at) {
+    if ($captureTime -and $lastPoint.kind -eq 'point-dropped') {
+        $capAge = Format-Age ([int]($now - $captureTime).TotalSeconds)
+        Write-Output "$tag the point was CLEARED $capAge - nothing is pointed at, so 'this' is not an HRW point"
+    } else {
+        Write-Output "$tag nothing is pointed at - 'this' is not an HRW point"
+    }
+} elseif ($captureTime -and $lastPoint.kind -ne 'point-dropped') {
     $capAge = Format-Age ([int]($now - $captureTime).TotalSeconds)
     Write-Output "$tag pointed at $capAge via $($lastPoint.kind) - from the action trail, the same file as the context below"
 } else {
-    # **The trail is capped at 200 actions, so say that rather than claim nothing was
-    # pointed at.** A long session can push an early point-at out, and "nothing was
-    # captured" would be a claim of absence the evidence does not support.
-    Write-Output "$tag NO point-at in the action trail (capped at 200 actions) - the context below may be startup state rather than something Doug pointed at"
+    # **The trail is capped at 200 actions, so say that rather than claim an age.** A
+    # long session can push the gesture out; the point itself is real (it is in the
+    # snapshot), only its age is unknown.
+    Write-Output "$tag a point is set but its gesture is not in the trail (capped at 200 actions) - its age is unknown"
 }
 
-# **focus.json is the DETAIL file, and its mtime is a CROSS-CHECK rather than a
-# freshness claim.** It carries the node value and tracking paths the summary below
-# does not, so it is what Claude opens for detail -- and if its mtime disagrees with
-# the recorded capture, something other than a capture wrote it and reading it would
-# describe that writer instead. That check is the one thing that would have caught
-# 2026-11-06 on the day rather than two months later.
+# **focus.json is the DETAIL file, and its mtime is a CROSS-CHECK against the EMISSION
+# that wrote it** (2026-11-07). Every write of focus.json now records a
+# `context-emitted` action, in the same frame, at the one choke point (`bridge::write`).
+# So the two must agree to within that frame; a disagreement means something OTHER
+# than HRW's emitter touched the file, and reading it would describe that writer.
+#
+# The previous cross-check compared against the last POINT gesture -- and focus.json is
+# also rewritten by a follow, by either x, and by a recompile that keeps the point. So
+# it warned "do NOT read it as Doug's context" after every edit-and-recompile, about a
+# file that was correct: an instruction to distrust the right file. That is worse than
+# no check, which is why it was replaced rather than widened.
+$emitKinds = @('context-emitted')
+$lastEmit = $session.actions | Where-Object { $emitKinds -contains $_.kind } | Select-Object -Last 1
+$emitTime = $null
+if ($lastEmit -and $lastEmit.at) {
+    try   { $emitTime = [datetime]::Parse($lastEmit.at.Replace(' UTC', '')) }
+    catch { $emitTime = $null }
+}
+
 if (Test-Path $focusPath) {
     $focusTime = (Get-Item $focusPath).LastWriteTime.ToUniversalTime()
     $focusAge = Format-Age ([int]($now - $focusTime).TotalSeconds)
-    if ($captureTime) {
-        $skew = [math]::Abs((New-TimeSpan -Start $captureTime -End $focusTime).TotalSeconds)
-        if ($skew -gt 120) {
-            Write-Output "$tag WARNING focus.json ($focusAge) does NOT match the recorded capture - something else wrote it; do NOT read it as Doug's context"
+    if ($emitTime -and $lastEmit.detail -like '*NOT WRITTEN*') {
+        Write-Output "$tag WARNING HRW's last emission FAILED ($($lastEmit.detail)) - focus.json holds an OLDER context than the one below"
+    } elseif ($emitTime) {
+        # Same frame, so seconds of slack is generous; the old 120 s tolerance was
+        # sized for comparing against a gesture that might precede the write.
+        $skew = [math]::Abs((New-TimeSpan -Start $emitTime -End $focusTime).TotalSeconds)
+        if ($skew -gt 5) {
+            Write-Output "$tag WARNING focus.json ($focusAge) was NOT written by HRW's last emission - something else touched it; do NOT read it as Doug's context"
         } else {
-            Write-Output "$tag focus.json agrees with that capture ($focusAge) - safe to open for node detail"
+            Write-Output "$tag focus.json is HRW's latest emission ($focusAge) - safe to open for node detail"
         }
     } elseif ($started -and $focusTime -lt [datetime]::Parse($started.Replace(' UTC', ''))) {
         Write-Output "$tag focus.json ($focusAge) PREDATES this HRW session - leftover from a previous run, not context"
     } else {
-        Write-Output "$tag focus.json written $focusAge but no capture is recorded - treat it as leftover, not as context"
+        # No emission in the trail: either an HRW build from before 2026-11-07, which did
+        # not record them, or a trail that scrolled. Say which cannot be told, rather than
+        # guess -- and do not warn, since there is nothing to compare against.
+        Write-Output "$tag focus.json written $focusAge - cannot cross-check: no context-emitted in the trail (an HRW build from before 2026-11-07 does not record them; rebuild)"
     }
 } else {
     Write-Output "$tag no focus.json - nothing has ever been captured in this clone"
