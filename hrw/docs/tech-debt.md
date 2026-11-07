@@ -1583,7 +1583,13 @@ and a query does not. Both of the previous run's defects were exactly that.
 **A limit of the suite this run exposed and nothing yet closes:** it photographs **frame 1 only**,
 and `Outcome::Landed` is decided by image dimensions. So an animation that draws nothing lands
 identically to one that draws a matrix — the Reduction animation's empty canvas was indistinguish-
-able from a full one until I stepped it to frame 6 by hand through the screenshot channel. <!-- unbuilt: capture_suite::is_blank -->
+able from a full one until I stepped it to frame 6 by hand through the screenshot channel.
+**Partly closed 2026-11-07** (the post-rebase sweep's open item 11): every landed row now carries
+`capture_suite::ink_fraction` — the share of pixels off the image's dominant colour — and an image
+of exactly one colour is marked **BLANK**. **Not a blank detector**: an empty canvas still draws its
+transport bar, so it is not uniform, and a threshold below which a pane counts as empty would be a
+number nobody has measured. The fraction is the measurement; reading it is the reader's. The
+frame-1-only limit stands.
 
 **And a legibility question left open rather than guessed at**, the same shape as
 `tarjan_anim::NODE_LABEL_MAX_CHARS`: the matching animation truncates `0 = m*der(vx) - -(l…`
@@ -1781,7 +1787,7 @@ sweep because each is real work or needs a decision. **Rank 0 first** (it shows 
 | 8 | A green fidelity row has no denominator | no engaged/coverage tallies anywhere | 50–150 lines plus a re-run |
 | 9 | ~~`unsafe_code` not adopted~~ | **FIXED 2026-11-07** — adopted, nine item-level `allow`s with reasons; proved to fire | done |
 | 10 | ~~Mixed path separators grew from 20 to 28 sites~~ | **FIXED 2026-11-07 — and it was 72, not 28.** The 28 was a one-line grep; 40 more were `concat!(`s rustfmt had wrapped onto two lines, and the guard's own first draft had the same blind spot (the value test caught it, on `QUESTION_FILE`). All now use `manifest_path!` (crate root, beside `native_sep!`), and `no_manifest_path_mixes_separators` matches with whitespace removed. Five production `Path::join("a/b")` sites fixed with it; **74 remain, all in tests** | the `join` remainder, if ever |
-| 11 | `capture_suite` has no blank detection; `(tree root)` key collision; F7 cannot take an injected describer | the 11-04 and 11-06 entries | 30–60 lines each |
+| 11 | ~~`capture_suite` has no blank detection; `(tree root)` key collision; F7 cannot take an injected describer~~ | **FIXED 2026-11-07.** F7 injectable, then the grammar fixed — the pair, in order. The capture index reports an **ink fraction** per shot and flags a one-colour image BLANK; a real empty-canvas threshold is unmeasured and was not invented | an empty-canvas threshold, once a run measures one |
 | 12 | ~~`UNCOVERED_BUDGET = 5`'s composition may have shifted~~ | **FIXED 2026-11-07, budget 5 → 2.** It had shifted: three of the five were not the ones listed. Three covered by rendering tests — and covering `reduction_anim`'s showed its weak line was false (*"the stage was not reached"*, for a branch only a stage that RAN can reach); reworded. The two left are C17 | done |
 
 ---
@@ -4746,7 +4752,12 @@ records `ok`. **That is the second guard today whose first version could not fai
 reported `ok` for everything via an empty `ExitCode`), and both were written while fixing this
 exact class of defect.
 
-### 11-06, a key spelled `(tree root)` cannot navigate back — and F7's must-fire test now depends on it
+### ~~11-06, a key spelled `(tree root)` cannot navigate back — and F7's must-fire test now depends on it~~ — FIXED 2026-11-07, as the pair
+
+> **Done in the order this entry required.** `fidelity::check_f7_with` takes the describer, the
+> must-fire test injects one that drops each path's last segment, and only then did
+> `bridge::key_needs_quoting` learn the sentinel (now `bridge::ROOT_SENTINEL`, spelled once). The
+> old must-fire input is kept as an assertion **in the opposite direction**: it must round-trip.
 
 Writing F7's must-fire coverage required an input the path grammar gets **wrong**, because F7 is a
 round-trip property over `describe_path` / `parse_path` / `navigate` and no input the grammar handles
