@@ -86,7 +86,7 @@ pub struct TreeActions {
     /// the pane in a `pointing::region` was tried on 2026-09-22 and **the region menu never
     /// opened once**, because every right-click lands on a row. Worse, the row menu's "Point
     /// at" then answered a gesture meant for the selection by capturing the node — a silent
-    /// substitution that looked like success in the Context Bar, since it updates either way.
+    /// substitution that looked like success in the Question Bar, since it updates either way.
     ///
     /// So the item belongs *in this menu*, beside the node one, rather than in a second menu
     /// that cannot be reached. Shown only when text is actually held, so the two appear

@@ -633,7 +633,7 @@ the next phase touches — is procedure and lives there.
 >
 > ### ⟶ HRW QUESTIONS ARE ASKED IN HRW AND ANSWERED HERE — `?` delivers them (2026-11-07)
 >
-> **Doug asks in the Context Bar's question field; HRW writes the question WITH its context to
+> **Doug asks in the Question Bar (named the Context Bar until 2026-11-07, charter v1.18); HRW writes the question WITH its context to
 > `.hrw-bridge/question.json`; he types `?` in the chat; the hook prints it. ANSWER FROM THE
 > CONVERSATION** — the chat, a VS Code tab, System Modeler or Wolfram Desktop, whichever is most
 > effective (Claude's choice); committed only when he asks.

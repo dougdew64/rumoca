@@ -30,7 +30,7 @@
     whenever the context changes; `session.json` only at the end of a frame in which
     an action was RECORDED. Since 2026-11-07 `bridge::write` records a
     `context-emitted` action itself, so every context change moves both files in the
-    same frame. Before that, the Context Bar's x buttons recorded nothing, and this
+    same frame. Before that, the Question Bar's x buttons recorded nothing, and this
     hook went on reporting a point Doug had cleared.
 
     So: the point's AGE comes from the last point gesture in the trail; whether a
@@ -75,7 +75,7 @@ function Format-Age([int]$seconds) {
 # THE QUESTION DOUG ASKED IN HRW (2026-11-07)
 # ===========================================================================
 #
-# Doug asks HRW questions in HRW's Context Bar. HRW writes the question TOGETHER WITH
+# Doug asks HRW questions in HRW's Question Bar. HRW writes the question TOGETHER WITH
 # the context it is about to `question.json`, and cannot wake Claude -- so the
 # question waits until Doug types `?` here. On `?` this block prints it; on any other
 # prompt it says, in one line, that a question is waiting, so a question can never sit
@@ -158,7 +158,7 @@ if (Test-Path $questionPath) {
         Write-Output "$tag AN HRW QUESTION IS WAITING (asked $questionAge) - Doug has not typed ? yet; if this message is not about it, say so"
     }
 } elseif ($asksForQuestion) {
-    Write-Output "$tag no HRW question has been asked - type one into HRW's Context Bar first"
+    Write-Output "$tag no HRW question has been asked - type one into HRW's Question Bar first"
 }
 
 if (-not (Test-Path $sessionPath)) {
@@ -258,7 +258,7 @@ $now = (Get-Date).ToUniversalTime()
 
 # **THE POINT LINE AGREES WITH THE SNAPSHOT, not merely with the last gesture**
 # (2026-11-07). The previous version reported the age of the latest point-kind action
-# whether or not that point still existed -- so after the Context Bar's x, which then
+# whether or not that point still existed -- so after the Question Bar's x, which then
 # recorded nothing, it went on saying "pointed at 26m ago" over a point Doug had cleared.
 # `$ctx.pointing_at` is the current state; the trail only supplies its age.
 if ($null -eq $ctx.pointing_at) {
@@ -370,7 +370,7 @@ if ($ctx.following) {
 }
 
 # A refusal to emit is context too: it means the bar is showing a point Claude does
-# not have, which is the one disagreement the Context Bar exists to make impossible.
+# not have, which is the one disagreement the Question Bar exists to make impossible.
 if ($ctx.last_emission_error) {
     Write-Output "$tag NOT EMITTED - $($ctx.last_emission_error)"
 }

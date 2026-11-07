@@ -82,7 +82,7 @@ pub enum PointOrigin {
 }
 
 impl PointOrigin {
-    /// One line naming the origin, for the Context Bar and the emitted context.
+    /// One line naming the origin, for the Question Bar and the emitted context.
     pub fn describe(&self) -> String {
         match self {
             Self::LabProse { lab } => format!("prose in {lab}"),

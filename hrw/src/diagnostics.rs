@@ -48,7 +48,7 @@
 //!    what a reasoner needs to diagnose; a directory of them is a haystack.
 //! 3. **`session.json`** — rewritten on every recorded *user action*, **and on every
 //!    write of `focus.json`**, which `bridge::write` records as `context-emitted` so the
-//!    two files cannot fall out of step (2026-11-07 — before that the Context Bar's ×
+//!    two files cannot fall out of step (2026-11-07 — before that the Question Bar's ×
 //!    recorded nothing, and the `[hrw-context]` hook, which reads this file, went on
 //!    reporting a cleared point). Deliberately cheap and deliberately not per-frame.
 //!    A stack overflow, a `SIGSEGV` from a

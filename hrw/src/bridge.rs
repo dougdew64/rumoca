@@ -211,7 +211,7 @@ pub fn scratch_specimens() -> Vec<PathBuf> {
 // the platform (the chat, a VS Code tab, System Modeler, Wolfram Desktop), never in HRW. A
 // stale `answer.md` left in a clone's bridge directory is now simply ignored.
 
-/// A question Doug asked from the Context Bar, **written together with the context
+/// A question Doug asked from the Question Bar, **written together with the context
 /// that was live when he asked it** — see [`write_question`].
 #[cfg(not(test))]
 pub const QUESTION_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/question.json");
@@ -1257,7 +1257,7 @@ pub enum Focus<'a> {
     ///
     /// The first focus that is not part of a compile: there is no stage, no IR and no
     /// key path, which is why [`Ask::stage`] is `None` for one of these and why
-    /// [`crate::context_bar::PointedAt::stage`] became an `Option` the same day.
+    /// [`crate::question_bar::PointedAt::stage`] became an `Option` the same day.
     ///
     /// **`text` is what the pane RENDERED**, markdown stripped — that is what egui can
     /// hand back, and Doug ruled it sufficient. It is enough to answer *"what does this
@@ -1269,7 +1269,7 @@ pub enum Focus<'a> {
         /// The selected text, verbatim as rendered.
         text: &'a str,
         /// Whether `text` was found in that lab's source. See
-        /// [`crate::context_bar::PointKind`]'s `LabPassage` for why this is checked
+        /// [`crate::question_bar::PointKind`]'s `LabPassage` for why this is checked
         /// rather than assumed.
         in_source: bool,
     },
@@ -1295,7 +1295,7 @@ pub enum Focus<'a> {
 /// Until 2026-11-07 there was one, and **every capture path except the debugger's
 /// supplied it** — a tree-node click, a stage focus, a specimen focus, the context emit
 /// and a text selection all hard-wired `Explain`. **Nothing in HRW ever branched on
-/// it.** It was only broadcast: to the Context Bar as `(explain)`, into `focus.json`,
+/// it.** It was only broadcast: to the Question Bar as `(explain)`, into `focus.json`,
 /// into `session.json`, and through the `[hrw-context]` hook to Claude — so every
 /// question Doug asked reached Claude pre-labelled as a request for an explanation he had
 /// not made, biasing the reading of his actual sentence toward explaining.
@@ -1368,7 +1368,7 @@ pub struct Tracking<'a> {
 /// How much a followed identifier actually has behind it: total mentions, and
 /// how many stages contain at least one.
 ///
-/// For the Context Bar, which states what a question will have to work with
+/// For the Question Bar, which states what a question will have to work with
 /// *before* it is asked — the difference between a rich answer and a thin one.
 /// Computed at emission time (a click), never per frame: it walks every stage's
 /// IR.
@@ -1873,7 +1873,7 @@ pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
     // caller that changed the context without also recording a gesture left
     // `session.json` describing the previous context:
     //
-    // - the Context Bar's two × buttons recorded nothing, so **the hook went on
+    // - the Question Bar's two × buttons recorded nothing, so **the hook went on
     //   reporting a point Doug had cleared**;
     // - a recompile that kept the point re-emitted silently, so the hook's cross-check
     //   warned *"do NOT read it as Doug's context"* about a file that was correct.
@@ -1897,7 +1897,7 @@ pub fn write(ask: &Ask) -> std::io::Result<PathBuf> {
     result
 }
 
-/// A question Doug asked from the Context Bar.
+/// A question Doug asked from the Question Bar.
 pub struct Question<'a> {
     /// Its own sequence number, from the shared context counter.
     pub seq: u64,
@@ -1914,7 +1914,7 @@ pub struct Question<'a> {
 
 /// The instructions `question.json` carries for its reader, which is Claude.
 const QUESTION_INSTRUCTIONS: &str = "HRW question file. Doug typed this question into \
-HRW's Context Bar; it waits here until he types ? in the Claude chat. ANSWER IT FROM THE \
+HRW's Question Bar; it waits here until he types ? in the Claude chat. ANSWER IT FROM THE \
 CONVERSATION, NEVER IN HRW — using the chat, a VS Code tab, System Modeler or Wolfram \
 Desktop, alone or combined, whichever will teach best; the choice is Claude's. Commit an \
 answer to the repository only if Doug asks. `this` is what the word \"this\" in the question refers to, resolved by \
@@ -2398,7 +2398,7 @@ pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
 // }
 /// Build the focus document without writing it, for tests outside this module.
 ///
-/// `app.rs` owns the Context Bar and therefore owns "what happens when the point
+/// `app.rs` owns the Question Bar and therefore owns "what happens when the point
 /// is cleared", so that behaviour is tested there — but the assertion worth
 /// making is about the *emitted document*, not the app field. This exposes the
 /// document without the file I/O.
@@ -2918,7 +2918,7 @@ fn build_node(key_path: &[Seg], root: &Value, specimen: Option<&Path>) -> Value 
 /// Whether a key-path still addresses something in `root`.
 ///
 /// Used after a recompile to decide whether a retained point survived. A path
-/// that no longer resolves must not be kept: the Context Bar would name a node
+/// that no longer resolves must not be kept: the Question Bar would name a node
 /// that does not exist, and the emitted `node.subtree` would be `null` — a
 /// confident claim about nothing, which is the failure this design keeps
 /// eliminating.
@@ -3888,7 +3888,7 @@ mod tests {
         assert!(by_stage[2].get("mentions").is_none());
     }
 
-    /// Emission uses the same matching rules as the views, or the Context Bar
+    /// Emission uses the same matching rules as the views, or the Question Bar
     /// would describe context that differs from what is highlighted on screen.
     #[test]
     fn tracking_matches_like_the_views_do() {

@@ -289,7 +289,7 @@ pub struct ModuleSize {
 ///
 /// **Scanned, not listed.** A hard-coded list would let a new module be silently
 /// absent from the table, and absence leaves no gap where the missing thing was —
-/// the failure mode `CLAUDE.md` records for the Context Bar, which showed three
+/// the failure mode `CLAUDE.md` records for the Question Bar, which showed three
 /// true things and omitted a fourth for weeks.
 ///
 /// **It had the failure mode it was written to prevent** *(fixed 2026-08-20)*.

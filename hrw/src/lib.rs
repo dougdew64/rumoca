@@ -51,7 +51,6 @@ pub mod capture_suite;
 pub mod colors;
 pub mod compile_caches;
 pub mod connection_anim;
-pub mod context_bar;
 pub mod dae_counts;
 pub mod dae_expr_format;
 pub mod diagnostics;
@@ -91,6 +90,7 @@ pub mod plot_labels;
 pub mod pointing;
 pub mod pre_lowering_anim;
 pub mod promote;
+pub mod question_bar;
 pub mod reduction_anim;
 pub mod reduction_view;
 pub mod report;
@@ -515,7 +515,7 @@ impl LiveState {
 /// at** where it is a node (trees, stage tabs, incidence rows, spy blocks). The
 /// split is not arbitrary — a source token has no IR address, so "point at" is
 /// not even expressible there — but until you have clicked, nothing tells you
-/// which you are about to get. The Context Bar answers that afterwards; this
+/// which you are about to get. The Question Bar answers that afterwards; this
 /// answers it beforehand.
 ///
 /// The wording also admits that the click **sends** something. Doug's

@@ -69,7 +69,7 @@ use crate::worker::{StageBundle, StageKind};
 /// `tests::the_tabs_drawn_are_exactly_the_tabs_offered` compares the two sets.
 ///
 /// Every field is `pub(crate)` because `..Default::default()` in a test needs the whole
-/// struct visible, not only the fields being set (the `ContextBarState` lesson).
+/// struct visible, not only the fields being set (the `QuestionBarState` lesson).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) struct TabAvailability {
     /// The singular-system explanation, plus Index Reduction's own report.

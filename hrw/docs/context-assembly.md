@@ -9,6 +9,9 @@ point.
 from. **The composition primitives are frozen** — one point-at, one follow, background —
 until a practical scenario proves otherwise. Do not re-propose multi-follow or a third
 "compare" primitive from first principles.
+**Renamed since:** the Context Bar is the **Question Bar** as of 2026-11-07 (charter
+Decision 19, v1.18), with its code in `src/question_bar.rs`, because the context it shows
+exists only to ask a question about. This note keeps the old name, as the record it is.
 
 Renamed from `tracking-as-capture.md` on 2026-07-27. The original note covered
 one proposal (tracking should also capture); the discussion that followed showed

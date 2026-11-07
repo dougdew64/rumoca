@@ -115,7 +115,7 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 94,081 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 94,091 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
@@ -132,7 +132,7 @@ showing 48 equations. They are derived now, and
 | `tree.rs` | 1,432 |
 | `diagnostics.rs` | 1,421 |
 | `matching_anim.rs` | 1,310 |
-| `context_bar.rs` | 1,254 |
+| `question_bar.rs` | 1,264 |
 | `incidence_view.rs` | 1,219 |
 | `report_sub_view.rs` | 1,214 |
 | `playback.rs` | 1,135 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **94,081** |
+| **total** | **94,091** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1389,8 +1389,8 @@ on the platform, never in HRW.)*
 2. **`stages/<name>.json`** — one file per pipeline stage's full IR, rewritten
    each compile. Claude can diff any two stages by reading two files.
 
-2b. **`question.json`** *(2026-11-07)* — a question Doug typed into the Context Bar's
-   question field, **written in the same call as the context it is about**:
+2b. **`question.json`** *(2026-11-07)* — a question Doug typed into the Question Bar
+   (the Context Bar until 2026-11-07), **written in the same call as the context it is about**:
    `bridge::write_question` builds its `context` from the same `Ask` that
    `bridge::write` puts in `focus.json` that frame, so the two cannot disagree. It also
    carries `this` — what the word *"this"* resolves to by the bar's rule (the point, then
