@@ -3369,6 +3369,69 @@ Some prose.
         );
     }
 
+    /// **The context hook may only match action kinds the code actually records.**
+    ///
+    /// `scripts/hrw-context.ps1` resolves what Doug pointed at by filtering the action
+    /// trail on `$pointKinds`. Those strings are a contract with `record_action`, and
+    /// nothing checked it — the hook is PowerShell, so the Rust compiler never sees it.
+    ///
+    /// # The defect this is built from, which was mine and was silent
+    ///
+    /// The first draft matched `kind -eq 'capture'`. **No such kind is ever recorded**:
+    /// the word appears only inside a doc comment at `app.rs:2569`, and I read a grep
+    /// hit in prose as a code fact — the repository's own *filtered grep* failure, one
+    /// layer out. The hook would then have reported *"NO capture in the action trail"*
+    /// **forever**, which is strictly worse than the unreliable file age it replaced: a
+    /// confident claim of absence rather than a weak claim of presence. Nothing would
+    /// have failed, and the line would have read as reassurance.
+    ///
+    /// So this test exists because **a string shared between two languages has no
+    /// compiler**, and the cheapest substitute is to assert the overlap.
+    #[test]
+    fn the_hook_matches_real_action_kinds() {
+        let hook = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("scripts/hrw-context.ps1");
+        let text =
+            std::fs::read_to_string(&hook).expect("the context hook is part of the checkout");
+
+        // Pull the single-quoted names out of `$pointKinds = @('a', 'b')`.
+        let line = text
+            .lines()
+            .find(|l| l.trim_start().starts_with("$pointKinds"))
+            .unwrap_or_else(|| panic!("no $pointKinds assignment in {}", hook.display()));
+        let kinds: Vec<&str> = line
+            .split('\'')
+            .skip(1)
+            .step_by(2)
+            .filter(|s| !s.trim().is_empty())
+            .collect();
+
+        // Non-vacuity: an empty list would satisfy the loop below and prove nothing,
+        // which is the shape of guard this repository keeps catching itself writing.
+        assert!(
+            kinds.len() >= 2,
+            "expected several point kinds in the hook, parsed {kinds:?} from: {line}",
+        );
+
+        let sources = rust_source_texts();
+        let mut missing: Vec<&str> = kinds
+            .iter()
+            .copied()
+            .filter(|kind| {
+                let needle = format!("record_action(\"{kind}\"");
+                !sources.iter().any(|(_, src)| src.contains(&needle))
+            })
+            .collect();
+        missing.sort_unstable();
+
+        assert!(
+            missing.is_empty(),
+            "the hook filters the action trail on kinds that `record_action` never \
+             emits: {missing:?}\nIt will silently report an absence rather than fail. \
+             Either the kind was renamed in `src/`, or the hook invented it — the \
+             recorded instance was `'capture'`, which only ever existed in a doc comment.",
+        );
+    }
+
     /// **Every lab hyperlink looks the same: no glyph in the text, no bold around it.**
     ///
     /// Doug, 2026-08-30: *"In the labs, hyperlinks are given inconsistent visual
@@ -6486,7 +6549,16 @@ mod tests_orphaned_docs {
             // to. Ordinary prose in a prose-heavy module, which this test's own docs say to
             // raise the number for rather than reword.
             ("app/tests.rs", 5),
-            ("bridge.rs", 9),
+            // 9 -> 10 on 2026-11-06, with the reasoning this ratchet requires. The hit is
+            // `BRIDGE_DIR`'s long doc block, whose `# Under cargo test this is
+            // .hrw-bridge/test-run/` heading reads as a second opening summary — it has to,
+            // because it states the redirect that the whole block exists to justify.
+            // Triaged by the documented shortcut: every item added in that commit carries
+            // its own summary (each bridge-rooted const gained a `cfg(test)` twin, all
+            // documented), so there is no undocumented item for an orphan to belong to.
+            // Ordinary prose, which this test's own docs say to raise the number for
+            // rather than reword.
+            ("bridge.rs", 10),
             ("colors.rs", 1),
             // 3 -> 5 on 2026-08-22, with the reasoning the ratchet requires. Both new
             // hits are inside ONE doc block — `walked_prose_never_changes_silently` —

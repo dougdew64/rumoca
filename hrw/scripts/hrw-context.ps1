@@ -110,13 +110,71 @@ Write-Output "$tag context #$($ctx.seq) - $($where -join ' - ')"
 # launch, so a leftover focus.json from a previous run would otherwise read as a
 # recent capture. The session's own start is the first thing in the action trail.
 $started = ($session.actions | Where-Object { $_.kind -eq 'session' } | Select-Object -First 1).at
+
+# **ONE SOURCE PER CLAIM, and this line is the third version of that lesson.** The
+# capture's age now comes from the action trail -- the SAME file as the context printed
+# below -- because the previous version took the age from focus.json's mtime and the
+# content from session.json, so the two lines were never about the same event.
+#
+# On 2026-11-06 they openly disagreed and neither of us noticed until Doug asked how
+# Claude would know what "this" referred to: session.json described a prose selection
+# with no stage, focus.json held `RcCircuit` at `Flatten`, and that file's mtime had
+# been moved 28 minutes earlier by `cargo test` writing the live bridge. The writer is
+# gone (see `bridge::BRIDGE_DIR`, redirected under `cfg(test)` the same day), but the
+# conflation was a defect in its own right: a corruptible mtime was the only freshness
+# signal beside the referent, so a stale capture and a fresh one read identically.
+# **THESE ARE THE ACTUAL RECORDED KINDS, and the first draft of this block invented
+# one.** It matched `kind -eq 'capture'`, which exists nowhere in the trail -- the word
+# appears only inside a doc comment at `app.rs:2569`, and a grep hit in prose was read
+# as a code fact. The bug was silent in the worst way: the line would have reported
+# "NO capture" forever, a false absence replacing a merely-unreliable age.
+# `the_hook_matches_real_action_kinds` now fails by name if any name here stops being a
+# `record_action` literal in `src/`.
+$pointKinds = @('point-at', 'point-at-selection', 'point-dropped')
+$lastPoint = $session.actions | Where-Object { $pointKinds -contains $_.kind } | Select-Object -Last 1
+$captureTime = $null
+if ($lastPoint -and $lastPoint.at) {
+    try   { $captureTime = [datetime]::Parse($lastPoint.at.Replace(' UTC', '')) }
+    catch { $captureTime = $null }
+}
+$now = (Get-Date).ToUniversalTime()
+
+if ($captureTime -and $lastPoint.kind -eq 'point-dropped') {
+    # **A cleared point is not a stale point, and the difference decides the answer.**
+    # `pointing at` below is whatever the snapshot held; if the last thing Doug did was
+    # drop the point, there is no referent and a question's "this" is not in HRW.
+    $capAge = Format-Age ([int]($now - $captureTime).TotalSeconds)
+    Write-Output "$tag the point was CLEARED $capAge - nothing is being pointed at, so do not resolve 'this' from the context below"
+} elseif ($captureTime) {
+    $capAge = Format-Age ([int]($now - $captureTime).TotalSeconds)
+    Write-Output "$tag pointed at $capAge via $($lastPoint.kind) - from the action trail, the same file as the context below"
+} else {
+    # **The trail is capped at 200 actions, so say that rather than claim nothing was
+    # pointed at.** A long session can push an early point-at out, and "nothing was
+    # captured" would be a claim of absence the evidence does not support.
+    Write-Output "$tag NO point-at in the action trail (capped at 200 actions) - the context below may be startup state rather than something Doug pointed at"
+}
+
+# **focus.json is the DETAIL file, and its mtime is a CROSS-CHECK rather than a
+# freshness claim.** It carries the node value and tracking paths the summary below
+# does not, so it is what Claude opens for detail -- and if its mtime disagrees with
+# the recorded capture, something other than a capture wrote it and reading it would
+# describe that writer instead. That check is the one thing that would have caught
+# 2026-11-06 on the day rather than two months later.
 if (Test-Path $focusPath) {
-    $focusTime = (Get-Item $focusPath).LastWriteTime
-    $focusAge = Format-Age ([int]((Get-Date) - $focusTime).TotalSeconds)
-    if ($started -and $focusTime.ToUniversalTime() -lt [datetime]::Parse($started.Replace(' UTC', ''))) {
-        Write-Output "$tag focus.json ($focusAge) PREDATES this HRW session - nothing has been captured since launch"
+    $focusTime = (Get-Item $focusPath).LastWriteTime.ToUniversalTime()
+    $focusAge = Format-Age ([int]($now - $focusTime).TotalSeconds)
+    if ($captureTime) {
+        $skew = [math]::Abs((New-TimeSpan -Start $captureTime -End $focusTime).TotalSeconds)
+        if ($skew -gt 120) {
+            Write-Output "$tag WARNING focus.json ($focusAge) does NOT match the recorded capture - something else wrote it; do NOT read it as Doug's context"
+        } else {
+            Write-Output "$tag focus.json agrees with that capture ($focusAge) - safe to open for node detail"
+        }
+    } elseif ($started -and $focusTime -lt [datetime]::Parse($started.Replace(' UTC', ''))) {
+        Write-Output "$tag focus.json ($focusAge) PREDATES this HRW session - leftover from a previous run, not context"
     } else {
-        Write-Output "$tag focus.json written $focusAge"
+        Write-Output "$tag focus.json written $focusAge but no capture is recorded - treat it as leftover, not as context"
     }
 } else {
     Write-Output "$tag no focus.json - nothing has ever been captured in this clone"

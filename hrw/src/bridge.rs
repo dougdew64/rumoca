@@ -86,7 +86,39 @@ fn strip_windows_prefix(p: &Path) -> PathBuf {
 /// Using `CARGO_MANIFEST_DIR` (the directory containing `Cargo.toml`) makes
 /// this path repo-relative and stable regardless of the working directory.
 /// The directory is gitignored so focus files don't pollute version control.
+///
+/// # Under `cargo test` this is `.hrw-bridge/test-run/`, and every path below follows
+///
+/// **The test suite was overwriting the entire live bridge, and nothing said so.**
+/// Measured 2026-11-06: one `cargo test` run rewrote `focus.json`, **all eleven
+/// `stages/*.json`**, `answer.md`, `breakpoint-ack.json` and a scratch specimen — the
+/// capture Doug had assembled, the IR files `CLAUDE.md` names as *"the file the pane is
+/// actually fed"*, and the Answer artifact itself.
+///
+/// That is a trap laid exactly where it does the most damage. **The gate runs before
+/// every commit**, so the sequence is ordinary: Doug captures a node, Claude runs the
+/// gate, Doug asks *"what does this mean?"* — and the files Claude is told to reason
+/// over now describe the suite. Nothing in them is false, which is why it reads as a
+/// confident answer about the wrong thing: the most-recorded failure class in this
+/// repository, with a mechanism that fired on every gate run.
+///
+/// **The fix is not discipline in each test — it is that a test cannot address the live
+/// files at all.** Redirecting at the *definition* rather than at the writers makes it
+/// exhaustive by construction: all ~70 call sites across `src/` follow without being
+/// touched, and a writer nobody enumerated cannot escape. Tests still exercise the real
+/// write path, one directory over. `tests_never_write_the_live_bridge_files` fails by
+/// name if any of these stops being redirected.
+///
+/// This is `diagnostics::dir()`'s ruling applied to the other half of the bridge — that
+/// one was fixed on 2026-09-02 after an out-of-memory abort whose only record was
+/// `session.json`, and the same hazard sat unnoticed in `focus.json` and `stages/` for
+/// two more months. **Examples are deliberately NOT redirected**: `capture_suite` and
+/// the app itself must write the live files, and they are not compiled with `cfg(test)`.
+#[cfg(not(test))]
 pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge");
+/// The bridge directory under `cargo test` — see the non-test [`BRIDGE_DIR`].
+#[cfg(test)]
+pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/test-run");
 
 /// Path to the stage-files directory (one JSON file per pipeline stage).
 ///
@@ -94,23 +126,43 @@ pub const BRIDGE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge")
 /// by reading two files — e.g., comparing `instantiate.json` to `typecheck.json`
 /// shows what the instanced typecheck phase added (type_ids resolved, dimensions
 /// evaluated). This avoids bloating the focus file with all stages' IR.
+///
+/// Redirected under `cargo test`; see [`BRIDGE_DIR`] for why.
+#[cfg(not(test))]
 pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/stages");
+/// The stage-files directory under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub const STAGES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/test-run/stages");
 
 /// HRW writes breakpoint requests here; the VS Code extension watches it.
 ///
 /// `pub(crate)` to match [`BREAKPOINT_ACK_FILE`]: the shutdown-release test in
 /// `app.rs` asserts on the request this path receives, and a test that rebuilt
 /// the path itself could pass while the real one moved.
+#[cfg(not(test))]
 pub(crate) const BREAKPOINT_REQUEST_FILE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/.hrw-bridge/breakpoint-request.json"
 );
+/// The breakpoint request under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub(crate) const BREAKPOINT_REQUEST_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/breakpoint-request.json"
+);
 /// The extension writes this ack file after processing a request, confirming
 /// the breakpoint is registered with LLDB. HRW polls for it before spawning
 /// the algorithm thread (see `check_breakpoint_ack`).
+#[cfg(not(test))]
 pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/.hrw-bridge/breakpoint-ack.json"
+);
+/// The breakpoint ack under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/breakpoint-ack.json"
 );
 
 /// Scratch specimens written by Claude to answer a question (ideas #42).
@@ -126,8 +178,17 @@ pub(crate) const BREAKPOINT_ACK_FILE: &str = concat!(
 /// construction**, the same rule as `lab.md`: what persists is the *question*, in
 /// `docs/question-ledger.md`. A probe worth keeping gets promoted into `specimens/`
 /// deliberately, with a `// purpose:` line — which is the moment it stops being a probe.
+#[cfg(not(test))]
 pub const SCRATCH_SPECIMEN_DIR: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/specimens");
+/// Scratch specimens under `cargo test` — see [`BRIDGE_DIR`]. A test wrote
+/// `ScratchProbe.mo` into the live directory on 2026-11-06, where it then showed up in
+/// HRW's specimen list as though Claude had authored it to answer something.
+#[cfg(test)]
+pub const SCRATCH_SPECIMEN_DIR: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/specimens"
+);
 
 /// List the scratch specimens, sorted. Empty when none have been written — the common
 /// case, and not an error.
@@ -147,7 +208,15 @@ pub fn scratch_specimens() -> Vec<PathBuf> {
 /// An Answer written by Claude, rendered by HRW's lab mode (ideas #42).
 ///
 /// The only bridge file that flows *into* HRW rather than out of it.
+#[cfg(not(test))]
 pub const LAB_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/answer.md");
+/// The Answer under `cargo test` — see [`BRIDGE_DIR`]. This one mattered most of the
+/// set: *"an Answer is a primary artifact of HRW's purpose"*, and the suite overwrote it.
+#[cfg(test)]
+pub const LAB_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/answer.md"
+);
 
 /// Fixture labs — kept, versioned, and executed by `fixture_lab_links_all_resolve`.
 ///
@@ -161,8 +230,15 @@ pub const FIXTURE_NOTEBOOKS_DIR: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/docs/fixture-labs/notebooks");
 
 /// Notebooks Claude writes to answer one question — ephemeral, like `lab.md`.
+#[cfg(not(test))]
 pub const SCRATCH_NOTEBOOKS_DIR: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/notebooks");
+/// Scratch notebooks under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub const SCRATCH_NOTEBOOKS_DIR: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/notebooks"
+);
 
 /// The repository documents a lab may link to with `hrw://doc/<name>`.
 pub const DOCS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs");
@@ -428,9 +504,16 @@ pub fn read_lab() -> Option<(String, std::time::SystemTime)> {
 /// fields is the point: a capture-and-inspect run that navigated by its own private
 /// route would photograph a state no user gesture can produce, and then testify
 /// about it.
+#[cfg(not(test))]
 pub const SCREENSHOT_REQUEST_FILE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/.hrw-bridge/screenshot-request.json"
+);
+/// The screenshot request under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub const SCREENSHOT_REQUEST_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/screenshot-request.json"
 );
 
 /// HRW's reply to a [`SCREENSHOT_REQUEST_FILE`]: where the PNG landed, how big it
@@ -449,16 +532,30 @@ pub const SCREENSHOT_REQUEST_FILE: &str = concat!(
 /// rule `debug-state.json` already follows), `error` set whenever `image` is absent,
 /// and `notice` carrying HRW's own on-screen message — because a refused link
 /// ("no specimen loaded") leaves a perfectly healthy-looking window.
+#[cfg(not(test))]
 pub const SCREENSHOT_RESULT_FILE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/.hrw-bridge/screenshot-result.json"
+);
+/// The screenshot reply under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub const SCREENSHOT_RESULT_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/screenshot-result.json"
 );
 
 /// Where the PNGs land, one per honoured request, named by `seq`.
 ///
 /// Gitignored with the rest of `.hrw-bridge/`, which is what makes "nothing is
 /// committed" structural rather than a promise.
+#[cfg(not(test))]
 pub const SCREENSHOTS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/screenshots");
+/// The screenshot directory under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub const SCREENSHOTS_DIR: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/screenshots"
+);
 
 /// How long HRW lets the UI settle before shooting, when the request does not say.
 ///
@@ -2029,7 +2126,14 @@ pub(crate) fn remove_live_trace_breakpoint_to(
 /// both files. A stage with no IR (e.g., it failed or doesn't apply) has
 /// its file removed, keeping the directory in sync with the current specimen.
 /// `.hrw-bridge/view.json` — **what the pane on screen is currently showing.**
+#[cfg(not(test))]
 pub const VIEW_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/.hrw-bridge/view.json");
+/// The published view under `cargo test` — see [`BRIDGE_DIR`].
+#[cfg(test)]
+pub const VIEW_FILE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/.hrw-bridge/test-run/view.json"
+);
 
 /// Publish the current view's content, or remove the file when there is none.
 ///
@@ -4699,6 +4803,62 @@ mod tests {
         let content: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(content["seq"], json!(99));
         assert_eq!(content["model"], json!("TestWriteModel"));
+    }
+
+    /// **No test may address a live bridge file.**
+    ///
+    /// The companion to `diagnostics::tests_never_write_the_live_diagnostic_files`, and
+    /// written for the same reason two months later: on 2026-11-06 one `cargo test` run
+    /// was found to have rewritten `focus.json`, all eleven `stages/*.json`, `answer.md`,
+    /// `breakpoint-ack.json` and a scratch specimen in the **live** directory.
+    ///
+    /// **Why this is the dangerous kind of defect rather than untidiness.** The gate runs
+    /// before every commit, and `CLAUDE.md` sends Claude to `stages/` as *"the file the
+    /// pane is actually fed"*. So Doug captures a node, Claude runs the gate, Doug asks
+    /// *"what does this mean?"* — and the artifacts Claude is instructed to trust describe
+    /// the suite. **Nothing in them is false**, which is precisely why it produces a
+    /// confident answer about the wrong subject and no symptom either of them can see.
+    ///
+    /// The assertion walks the consts rather than one path, because the fix is only
+    /// exhaustive while **every** bridge-rooted const stays redirected — a new one added
+    /// without its `cfg(test)` twin is the way this comes back.
+    #[test]
+    fn tests_never_write_the_live_bridge_files() {
+        // Normalise separators on BOTH sides. `CARGO_MANIFEST_DIR` is backslashed on
+        // Windows while the literals below are not, so comparing one normalised string
+        // against one raw one fails on a path that is in fact correct.
+        let live = format!("{}/.hrw-bridge", env!("CARGO_MANIFEST_DIR")).replace('\\', "/");
+        let redirected = format!("{live}/test-run");
+
+        let paths: &[(&str, &str)] = &[
+            ("BRIDGE_DIR", BRIDGE_DIR),
+            ("STAGES_DIR", STAGES_DIR),
+            ("SCRATCH_SPECIMEN_DIR", SCRATCH_SPECIMEN_DIR),
+            ("SCRATCH_NOTEBOOKS_DIR", SCRATCH_NOTEBOOKS_DIR),
+            ("LAB_FILE", LAB_FILE),
+            ("VIEW_FILE", VIEW_FILE),
+            ("SCREENSHOTS_DIR", SCREENSHOTS_DIR),
+            ("SCREENSHOT_REQUEST_FILE", SCREENSHOT_REQUEST_FILE),
+            ("SCREENSHOT_RESULT_FILE", SCREENSHOT_RESULT_FILE),
+            ("BREAKPOINT_REQUEST_FILE", BREAKPOINT_REQUEST_FILE),
+            ("BREAKPOINT_ACK_FILE", BREAKPOINT_ACK_FILE),
+        ];
+
+        for (name, path) in paths {
+            let p = path.replace('\\', "/");
+            assert!(
+                p.starts_with(&redirected),
+                "{name} must resolve under {redirected} while testing, not the live \
+                 bridge — a `cargo test` run would overwrite Doug's own file. Got: {p}",
+            );
+        }
+
+        // Non-vacuity: the two prefixes must actually differ, or every assertion above
+        // passes on a redirect that redirects nothing.
+        assert_ne!(
+            live, redirected,
+            "the test prefix must differ from the live one",
+        );
     }
 
     fn test_file_path() -> String {
