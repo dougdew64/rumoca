@@ -7271,23 +7271,49 @@ struct OutputCapture {
 }
 
 #[cfg(unix)]
+#[allow(
+    unsafe_code,
+    reason = "libc::pipe writes exactly two fds through the pointer, and `fds` is a \
+              [i32; 2], so the write stays in bounds; the result is checked. A real OS \
+              pipe is required because Rumoca's tracing and C-level output write to fd \
+              1/2 below Rust's stdout"
+)]
 unsafe fn create_pipe(fds: &mut [i32; 2]) -> bool {
     unsafe { libc::pipe(fds.as_mut_ptr()) == 0 }
 }
 
 #[cfg(windows)]
+#[allow(
+    unsafe_code,
+    reason = "libc::pipe writes exactly two fds through the pointer, and `fds` is a \
+              [i32; 2], so the write stays in bounds; the result is checked. A real OS \
+              pipe is required because Rumoca's tracing and C-level output write to fd \
+              1/2 below Rust's stdout"
+)]
 unsafe fn create_pipe(fds: &mut [i32; 2]) -> bool {
     // _O_BINARY = 0x8000: no CR/LF translation.
     unsafe { libc::pipe(fds.as_mut_ptr(), 65536, 0x8000) == 0 }
 }
 
 #[cfg(unix)]
+#[allow(
+    unsafe_code,
+    reason = "takes ownership of a pipe read end OutputCapture::start has just created and \
+              hands to exactly one reader thread, so the fd is owned once and closed once, \
+              by that File's drop"
+)]
 unsafe fn file_from_raw_fd(fd: i32) -> std::fs::File {
     use std::os::unix::io::FromRawFd;
     unsafe { std::fs::File::from_raw_fd(fd) }
 }
 
 #[cfg(windows)]
+#[allow(
+    unsafe_code,
+    reason = "takes ownership of the OS handle behind a pipe read end OutputCapture::start \
+              has just created and hands to exactly one reader thread, so it is owned once \
+              and closed once, by that File's drop"
+)]
 unsafe fn file_from_raw_fd(fd: i32) -> std::fs::File {
     use std::os::windows::io::FromRawHandle;
     unsafe {
@@ -7305,6 +7331,13 @@ impl OutputCapture {
     /// matter how much a Rumoca phase writes, the readers keep the buffer
     /// from filling. The write side stays in normal blocking mode so
     /// `println!`/`eprintln!` never see `EAGAIN`.
+    #[allow(
+        unsafe_code,
+        reason = "dup/dup2/close on fds 1 and 2 and on pipes this function creates. Every \
+                  failure path closes what it opened before returning None, and the saved \
+                  originals are restored exactly once, by Drop. This is the one place HRW \
+                  can corrupt process-wide state, which is why the lint guards it"
+    )]
     fn start() -> Option<Self> {
         unsafe {
             let _ = std::io::Write::flush(&mut std::io::stdout());
@@ -7410,6 +7443,11 @@ impl OutputCapture {
 /// reader threads. Restoring the fds closes the pipe write ends (fd 1/2
 /// revert to the saved originals), which makes the reader threads see EOF.
 impl Drop for OutputCapture {
+    #[allow(
+        unsafe_code,
+        reason = "restores fds 1 and 2 from the copies start() saved, then closes each copy \
+                  once; this is what makes the reader threads see EOF and exit"
+    )]
     fn drop(&mut self) {
         unsafe {
             let _ = std::io::Write::flush(&mut std::io::stdout());

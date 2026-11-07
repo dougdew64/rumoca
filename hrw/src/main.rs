@@ -118,6 +118,11 @@ fn run_app() -> eframe::Result<()> {
 /// environment is not thread-safe. We call this at the very start of `main`,
 /// before any other thread exists, so it is safe here.
 #[cfg(unix)]
+#[allow(
+    unsafe_code,
+    reason = "env::remove_var is unsafe in edition 2024 because the environment is not \
+              thread-safe; this runs at the start of main, before any other thread exists"
+)]
 fn prefer_x11_if_wayland_dead() {
     let x11_available = std::env::var("DISPLAY")
         .map(|v| !v.is_empty())

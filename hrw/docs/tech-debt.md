@@ -1779,7 +1779,7 @@ sweep because each is real work or needs a decision. **Rank 0 first** (it shows 
 | 6 | Initialization has no field tooltips | `worker.rs` `ir_crate()` returns `None` for Initialization | waits on Doug's choice between the two options in the 11-04 entry |
 | 7 | No specimen declares `fixed = true`, none uses `edge`/`change` | `hrw/specimens/` | new specimens, oracle first |
 | 8 | A green fidelity row has no denominator | no engaged/coverage tallies anywhere | 50–150 lines plus a re-run |
-| 9 | `unsafe_code` not adopted; the entry's site list is stale (`main.rs:130` and `worker/tests.rs` sites too) | `hrw/Cargo.toml` `[lints.rust]` | one line plus ~12 `allow`s with reasons |
+| 9 | ~~`unsafe_code` not adopted~~ | **FIXED 2026-11-07** — adopted, nine item-level `allow`s with reasons; proved to fire | done |
 | 10 | ~~Mixed path separators grew from 20 to 28 sites~~ | **FIXED 2026-11-07 — and it was 72, not 28.** The 28 was a one-line grep; 40 more were `concat!(`s rustfmt had wrapped onto two lines, and the guard's own first draft had the same blind spot (the value test caught it, on `QUESTION_FILE`). All now use `manifest_path!` (crate root, beside `native_sep!`), and `no_manifest_path_mixes_separators` matches with whitespace removed. Five production `Path::join("a/b")` sites fixed with it; **74 remain, all in tests** | the `join` remainder, if ever |
 | 11 | `capture_suite` has no blank detection; `(tree root)` key collision; F7 cannot take an injected describer | the 11-04 and 11-06 entries | 30–60 lines each |
 | 12 | ~~`UNCOVERED_BUDGET = 5`'s composition may have shifted~~ | **FIXED 2026-11-07, budget 5 → 2.** It had shifted: three of the five were not the ones listed. Three covered by rendering tests — and covering `reduction_anim`'s showed its weak line was false (*"the stage was not reached"*, for a branch only a stage that RAN can reach); reworded. The two left are C17 | done |
@@ -2555,7 +2555,15 @@ reduction replay" in a lab and either deletes a working feature, or concludes th
 were already handled and stops looking. **Judge by where the frames came from, never by the
 word.** `CompileFrames` — which holds the good kind — was reworded to avoid it entirely.
 
-## `unsafe_code` is the one workspace lint HRW could adopt and has not
+## ~~`unsafe_code` is the one workspace lint HRW could adopt and has not~~ — ADOPTED 2026-11-07
+
+> **Done as the post-rebase sweep's open item 9.** `unsafe_code = "deny"` in `hrw/Cargo.toml`,
+> and one `#[allow(unsafe_code, reason = "…")]` per item: `create_pipe` ×2, `file_from_raw_fd`
+> ×2, `OutputCapture::start` and its `Drop`, `main.rs`'s `prefer_x11_if_wayland_dead`, and the
+> two capture tests plus `write_to_fd`. Each reason states the invariant, not *"needed"*. The lint
+> was proved to fire by removing the `Drop` allow. **The `unbuilt:` tag below was removed with
+> it** — its target was a phrase, not a symbol, so it could never have resolved, which is the
+> silently permanent tag `CLAUDE.md` warns of.
 
 **Logged 2026-08-05**, during the formatting work that found `hrw` inherits **no** workspace
 lints at all. Five were adopted the same day at zero cost (`hrw/Cargo.toml` records which, and
@@ -2574,7 +2582,6 @@ module in HRW that can corrupt process state; written as `reason = "needed"` the
 **Not urgent, and not free.** No defect traces to this code. The reason to do it is that
 `unsafe` is exactly the category where a **new** occurrence should be argued rather than
 noticed, and today nothing would notice.
-<!-- unbuilt: hrw unsafe_code lint -->
 
 ## ~~A flagged stage shows its error INSTEAD OF its artifact~~ — FIXED 2026-08-05
 
