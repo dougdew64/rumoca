@@ -6938,185 +6938,133 @@ header has the reasoning, and the defect it protects against — a checker re-de
 and passing while the app disagreed — cost a session already. A widening that pre-filtered the
 plan per specimen to save shots would reintroduce exactly that.
 
-## 92. Claude is positioned OUTSIDE HRW — the know, drive and see gaps — RAISED 2026-11-06 by Doug
+## 92. Resolving "this" — how Claude knows what Doug's question is about — RAISED 2026-11-06 by Doug
 
-**Doug's framing, and he explicitly set the bar above the friction work already discussed:** *"We
-had discussed how we might reduce some friction when I ask you questions, but that really doesn't
-go far enough."* His three claims were that Claude cannot see inside HRW unless HRW copies
-information out as files; that Claude is not monitoring for those files and so gets no sense of
-what Doug is doing from one click to the next; and that Claude cannot drive HRW, only write an
-Answer that Doug must click.
+**REWRITTEN 2026-11-07 around the problem, at Doug's direction.** It was first written as an
+architecture design — three gaps, two channels, four roads — and Doug redirected it: *"I think that
+we've been discussing architecture without being driven by real problems to solve. Our only real
+problem so far was at the very beginning when I asked about how you determine which context to use
+when answering my questions here."* The architecture survives at the foot of this entry as
+**measured facts about what already exists**, demoted from a plan. **Do not resume it as a
+design**; reach for one of those mechanisms only when a recorded failure needs it.
 
-**NOTHING IS DECIDED. The discussion resumes at Doug's request.** What follows is the measurement
-taken on 2026-11-06 so it restarts from facts rather than from the three claims, **one of which is
-already false and one of which is already half-built.**
+### The problem, in Doug's words
 
-### The three gaps, graded against the code
+> *"Despite having assembled a context in HRW, if I then come here and simply ask something like
+> 'What does this mean?' I have no reason to believe that you will correctly determine what 'this'
+> is referencing."*
 
-| gap | state | where |
+It began as a wider complaint — *"we had discussed how we might reduce some friction when I ask you
+questions, but that really doesn't go far enough"* — and that sentence is what took the discussion
+into architecture. **The narrower statement above is the one that turned out to be load-bearing.**
+
+### Two halves, and the first is done
+
+**The context half — does what Claude receives tell the truth?** Three defects, **each one the
+context lying**, all found by working this question and all fixed:
+
+| date | defect | what Claude received | guard |
+|---|---|---|---|
+| 11-06 | `cargo test` overwrote the live bridge — `focus.json`, all eleven `stages/*.json`, `answer.md` | after any gate, a description of the test suite | `bridge::tests::tests_never_write_the_live_bridge_files` |
+| 11-06 | the hook took the capture's age from `focus.json`'s mtime and its content from `session.json` | a stale point that looked fresh, timed by a file the row above could move | `doc_citations::the_hook_matches_real_action_kinds` |
+| 11-07 | every point carried a presumed `Explain` verb | every question pre-labelled as a request for an explanation Doug had not made | `bridge::tests::a_point_carries_no_verb_unless_a_gesture_declared_one` |
+
+**After these, the context states truthfully what Doug pointed at, when, and that he declared no
+verb.** That half is closed.
+
+**The resolution half — does Claude resolve it correctly? OPEN, and it is on Claude's side, not the
+context's.** Truthful context is not the same as a correct reading of it.
+
+### What is still open
+
+**The diagnosis, 2026-11-06.** Claude reads what is in front of him, chooses what to read next from
+the question's wording — a heuristic nothing checks — and stops. **The stopping rule is the
+defect: it stops on something CONSISTENT, and a consistent wrong artifact ends the search exactly as
+fast as the right one.** Nothing in the wrong one is false, so nothing signals the difference.
+
+That is the mechanism behind the most-recorded failure class here, *a true measurement of the wrong
+unit*. **In all four of `CLAUDE.md`'s 2026-09-04 instances the right artifact existed and was
+reachable**; a sibling was found first and checked out. **More context arriving automatically
+would not have changed one of them** — which is why the architecture below was the wrong first
+move.
+
+Two parts:
+
+- **Resolving.** *"This"* may mean the point, the follow, Claude's last answer, or the screen. One
+  point is the easy case. The failures are a point that is set but **is not** the referent, and
+  *"this"* meaning something Claude just said.
+- **Stating.** Claude resolves silently, so a wrong guess yields a fluent answer about the wrong
+  thing — and Doug cannot see the guess, so he cannot correct it. **The invisibility is the cost,
+  more than the error.**
+
+**There is no measurement of how often resolution fails.** `question-ledger.md` records Doug's
+questions and what made them click, not whether the referent was resolved correctly — checked
+2026-11-07. The only evidence is the four 09-04 instances, and they are all one kind: the wrong
+*copy* of the right artifact.
+
+### The open candidate — a ruling for Doug, not a build
+
+**Name the referent in one line, but only when it is in question:**
+
+- when a point or follow is live and the message leans on it, or
+- when a point is live and the message is **not** about it.
+
+Silent otherwise.
+
+- **Its cost, demonstrated 2026-11-07:** one sentence. A point was set on a sentence from the
+  causality Answer while Doug's message asked to resume this entry, and the reply opened by saying
+  the sentence was not the referent and #92 was.
+- **What it buys:** a wrong guess becomes a **one-word correction** instead of an answer to unpick;
+  and it **generates the measurement this entry lacks** — each correction Doug makes is a row in
+  `docs/tech-debt.md`'s *"who caught it?"* ledger.
+- **STATUS: PROPOSED 2026-11-07, NOT RULED.** Under charter Decision 16 it is category 3 — a habit
+  of Claude's whose failure is silent, with instances on record — **so it is Doug's to rule on, and
+  it is not written into `CLAUDE.md` until he does.** Doug's reply that day was to have this entry
+  rewritten; he did not rule on the candidate.
+
+### What already exists, if a recorded failure ever needs it — measured 2026-11-06, NOT a plan
+
+**The three things Doug said Claude lacked, graded against the code:**
+
+| claim | state | where |
 |---|---|---|
-| **Drive** HRW from outside | **EXISTS since 2026-11-04** | `.hrw-bridge/screenshot-request.json` → `dispatch_hrw_link` |
-| **See** inside HRW | **mostly exists**, one hole that may be correct | `.hrw-bridge/stages/`, `session.json`, `in-flight.json` |
-| **Know** what Doug just did | **genuinely absent** — and the file it needs already exists | `session.json`'s action trail |
+| Claude cannot **drive** HRW | **false — it exists, since 2026-11-04** | a `follow` list in `.hrw-bridge/screenshot-request.json` goes through `dispatch_hrw_link`, the same function a mouse click calls, woken by `spawn_waker`'s 250 ms `stat` |
+| Claude cannot **see** inside HRW | **mostly false** | `publish_current_view` refreshes `stages/` as state moves; `in-flight.json` records what was being rendered before the frame drew |
+| Claude does not **know** what Doug just did | **true — and the file already exists** | `.hrw-bridge/diagnostics/session.json` is rewritten on every recorded action |
 
-*(This row read **"Wake** when Doug acts" until later the same day. **Waking is a mechanism, and
-naming the gap after it chose the architecture before the problem was stated** — the whole
-correction below follows from putting the need back in the heading.)*
+- **Drive is misshapen rather than missing**: a camera that accepts commands. Every request is
+  phrased as *follow these links, then take a picture*, and what it lacks is a reply that is not an
+  image.
+- **`focus.json` is written only on a point, and that is correct by design**: a point is the
+  deliberate assembly of the noun, and publishing it continuously would conflate *what Doug points
+  at* with *what pane is open*.
+- **The trail's rate is unmeasured for a reading session.** The one measurement — 33 actions over
+  3m49s — came from a session that was mostly Claude driving HRW through an Answer, the densest kind
+  there is. Re-measure on a real lab session before trusting any volume claim.
 
-**Drive is not missing; it is misshapen.** Claude writes an increasing `seq` and a `follow` list of
-`hrw://` links. A dedicated thread — `spawn_waker`, whose whole body is a `stat` every
-`LAB_POLL_INTERVAL` (250 ms) — wakes the UI when the mtime moves, and the links go through
-`dispatch_hrw_link`, **the same function a mouse click calls**. Loading a specimen, switching
-stages, landing on a node, arming a breakpoint, opening a floating window: all available now,
-without Doug touching anything. **What is wrong is that it is a camera that accepts commands** —
-every request must be phrased as *follow these links, then take a picture*, one request and one
-reply, with a PNG usually not wanted. The `follow` queue is already a command interpreter; what it
-lacks is a **reply that is not an image**.
+**Three conclusions from the architecture discussion are kept, because each one prevents a wrong
+build:**
 
-**See is largely already outside.** `publish_current_view` refreshes the ten stage IRs as state
-moves rather than on a capture; `in-flight.json` records what HRW was *rendering* before the frame
-drew; `debug-state.json` and `screenshot-result.json` carry the debugger and the last shot. **The
-one hole is `focus.json`, which is written only on a capture click — and it may be correct that
-way.** A capture is the deliberate act of assembling the noun; publishing it continuously would
-conflate *what Doug is pointing at* with *what pane happens to be open*, which is the distinction
-the noun-verb paradigm rests on. **That is a charter-adjacent call for Doug, not craft.**
+1. **Pull, not push.** The `[hrw-context]` hook already fires at prompt submit — the only moment
+   the information is useful, so the facts arrive *with* the question rather than being gathered
+   after it. A `Monitor` wake is an **invitation to speak**, and there is **no watch-quietly
+   primitive**: being informed and interrupting Doug are the same mechanism, and ~240 notifications
+   a session would evict the very context they were meant to supply. **Push, if ever, is for
+   anomalies Doug cannot see — a refused link, contradictory panes — never for activity.**
+2. **An index, not a digest.** The hook has neither the question nor the semantics. Filtering the
+   trail by Doug's prompt would be keyword-matching his words against action details, which
+   `identity-and-provenance.md` forbids. **A digest is more dangerous than a count, because it
+   feels like knowledge**: *"you looked at Structural"* invites Claude to reason as if he knows where
+   Doug was. So if this is built, it emits counts, the last entry of each kind, refusals, and a
+   pointer to the full trail — and Claude reads the trail when the question warrants it.
+3. **The test any build must pass is whether Doug's session gets QUIETER.** Any design that needs
+   Claude to choose silence event by event has already failed it.
 
-### Knowing is the real gap, and the file is already written
+**Considered and set aside: embedding an agent inside HRW.** It is the literal answer to *"Claude
+is positioned outside HRW,"* and a different project, competing with step 1 of Doug's queue.
 
-`.hrw-bridge/diagnostics/session.json` is **rewritten on every recorded user action**, carrying a
-timestamped, kinded trail. It was built as crash evidence and incidentally answers Doug's question.
-Measured from a real session that night:
-
-```text
-33 actions over 3m49s  —  15 lab-link, 12 view, 2 specimen, 2 compiled, 1 split, 1 session
-```
-
-```json
-{ "at": "… 00:54:03.954 UTC", "kind": "lab-link", "detail": "load/ProportionalLoop/Dae" },
-{ "at": "… 00:54:05.159 UTC", "kind": "compiled",  "detail": "ProportionalLoop: reached Solve lowering" },
-{ "at": "… 00:54:09.304 UTC", "kind": "lab-link", "detail": "stage/Structural/Tree" }
-```
-
-**So the information is not the constraint. The invocation model is — and the asymmetry is
-temporal rather than informational.** HRW runs a thread whose only job is to watch for Claude's
-file. Claude has no thread whose job is to watch for HRW's: between prompts he is not blind, he is
-**absent**, a function invoked by a keystroke. The `[hrw-context]` hook is a `Get-Process` and a few
-`stat`s taken at that instant, which is why Claude reported HRW running when Doug had closed it
-**three times in one day** — a snapshot relayed as a present tense. `CLAUDE.md` carries that as a
-rule; this entry is the same fact seen from the architecture.
-
-### Two channels, and the first framing of this entry reached for the wrong one
-
-**REVISED 2026-11-06, same day, after Doug pushed on the interruption cost.** The entry originally
-named `Monitor` as the cheapest road and the one to start with. **That was a push architecture for
-a pull need**, and the correction is the most useful thing here.
-
-`Monitor` runs a script whose every stdout line becomes an event that **wakes Claude mid-turn**,
-re-armable in 30-minute blocks. Pointed at the action trail, Doug's clicks become notifications
-with no HRW change. **Three costs, and only the first is obvious:**
-
-1. **Displacement.** Each notification is a message in the conversation. Eight a minute across a
-   30-minute session is ~240 messages, so the mechanism meant to inform Claude would be **evicting
-   the context he needs to answer**, pushing Doug's question and Claude's reasoning toward
-   compaction. The instrument consumes what it serves.
-2. **A wake arrives mid-thought**, carrying a fact that is probably irrelevant to whatever is being
-   assembled, and cannot be un-known.
-3. **A WAKE IS AN INVITATION TO SPEAK, and this is the load-bearing one.** `Monitor` delivers
-   events *as conversation messages*. **There is no "watch quietly" primitive**: being informed and
-   interrupting Doug are the same mechanism. So *stay informed but stay quiet* is not a policy
-   Claude can hold — it is Claude fighting the architecture on every event, 240 times a session.
-   **That is a design flaw, not a discipline problem**, and the entry first recorded it as the
-   latter.
-
-**Doug's own sentence is a pull request, not a push one:** *"you aren't monitoring for those files
-and so don't really get a sense of what I'm doing from one of my clicks to the next."* He asked to
-be **understood when he asks**, not to be interrupted.
-
-**And the pull channel already exists and already fires at the right moment.** The
-`[hrw-context]` hook (`scripts/hrw-context.ps1`) runs on **every prompt submit** — it is what
-prints `mode: Lab`, `stage: Parse` above each of Doug's messages. Today it prints a **snapshot**.
-Printing the **delta since Claude's last turn** — the action trail's new rows, digested — delivers
-exactly what Doug described:
-
-- **Zero interruptions, zero extra messages.** It rides a hook already reading files.
-- The information arrives at the only moment it is useful: **when he asks something.**
-- **No HRW change**, the same as the `Monitor` road.
-- A burst of twelve clicks becomes three lines atop his next question. **Strictly better than the
-  same three lines arriving while he was still clicking.**
-
-### So what is push actually FOR? Anomalies, not activity
-
-**Once pull carries activity, the push case narrows sharply, and the thing that narrows it is
-Doug.** He is sitting in front of HRW. For anything on screen he is a far better event detector
-than Claude — he knows a compile finished or a pane looks wrong long before a notification could
-arrive. **The asymmetry runs opposite to how this entry first framed it.**
-
-What survives are the things **Doug cannot see**:
-
-- **A link HRW refused**, with the reason in the status bar he is not looking at — the defect class
-  reported three times as *"nothing happened"*.
-- **Two panes making contradictory claims**, which HRW could detect and neither of them would.
-- **A stage outcome disagreeing with the note beside it** — the `Flagged`-is-amber family.
-
-**So push carries anomalies and pull carries activity.** That dissolves the volume problem rather
-than managing it: anomalies are rare by construction, so **there is no settle digest to design and
-no interruption budget to keep** — and every interruption is one Doug would want. *An event that
-fires eight times a minute is reporting that nothing is wrong.*
-
-### Two caveats on this entry's own numbers
-
-**The eight-per-minute figure is probably biased, and in the direction that made the argument.** It
-came from one 3m49s session whose trail was **15 `lab-link` actions** — that is *link-following*,
-Claude driving HRW through an Answer, not Doug reading a lab. A reading-and-thinking session
-produces far fewer. **The densest available session was measured and generalised from**, which is
-the same error as counting checks from a typed string instead of the roster. **Re-measure against a
-real lab session before trusting any volume claim here.**
-
-**And Claude cannot say what 240 messages would cost him.** `CLAUDE.md` is explicit that he has no
-reliable introspective access to his own context size, so the displacement argument is **reasoning,
-not measurement**. If this gets built, that number comes from the tooling.
-
-### The prize is latency, which is why this outranks the friction work
-
-Doug, 2026-11-05: *"the latency for your answers is way too long… we need to find ways to reduce
-that."* `CLAUDE.md` already rules that most of that latency is **fact-gathering, which is the
-value**, and only verification ritual is waste. **This attacks the valuable half rather than the
-waste: the facts arrive WITH the question instead of being gathered after it.** That is the
-argument for this entry over anything that optimises the moment Doug types.
-
-**And it is the argument for pull specifically.** A tool call Claude does not have to make is
-latency removed; a notification he has to read is latency added, paid during Doug's thinking time
-instead of after his question. **Push makes the latency invisible rather than smaller**, which is
-the opposite of what Doug asked for.
-
-### Four roads, cheapest first
-
-1. **PULL the activity delta** into the `[hrw-context]` hook. No HRW change, no interruptions, and
-   it answers the gap Doug actually named. **The place to start.**
-2. **PUSH anomalies only** — `Monitor` on a stream HRW emits when it catches *itself* being
-   inconsistent, not on the action trail. Needs HRW to know what an anomaly is, which is the real
-   work and is the same work the fidelity checks already do in batch. **Rare by construction, so
-   no digest and no budget.**
-3. **DRIVE properly.** Let the request file ask for *state* instead of a PNG — *follow these links
-   and report the resulting focus, stage outcomes and node values*. Small, additive, `hrw/` only.
-   **Better driven by a specific thing Claude could not see than designed up front.**
-4. **EMBED.** An agent inside HRW via the Agent SDK. The literal answer to *"positioned outside"*,
-   and **a different project** — it competes directly with step 1 of Doug's queue, so it is
-   recorded rather than proposed.
-
-**Roads 1 and 2 are independent and 1 does not lead to 2.** Worth stating because the first
-framing of this entry treated a single "wake" road as one thing to build incrementally, and the
-two have different consumers, different volumes and different failure modes.
-
-### The caution, restated as a test rather than a discipline
-
-**The value is being already informed when the question comes — not speaking more.** A Claude
-interrupting Doug's reading with observations is the *"frequent pesters from you"* complaint that
-retired walk-tracking, in a new wrapper.
-
-**So the test is: does Doug's session get QUIETER?** A build of road 1 passes it trivially — the
-channel cannot speak. A build of road 2 passes it only if anomalies really are rare, which is
-measurable before anything is wired: count how often HRW could have fired one over a corpus run.
-**Any design that needs Claude to choose silence event-by-event has failed the test already**, for
-the reason three paragraphs up — there is no quiet-watch primitive to choose it with.
+**Why none of this is the next step.** Every item above improves *what Claude receives*, and the
+open half of this entry is *how Claude reads it*. The four recorded resolution failures all had
+the right artifact in reach. **Build one of these only when a recorded failure shows that the
+context was missing something, not that Claude misread what it had.**
 
