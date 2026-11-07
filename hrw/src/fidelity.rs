@@ -1139,9 +1139,24 @@ pub fn check_f9(stages: &StageBundle) -> Vec<String> {
 /// legitimately render differently as long as it still lands on the same
 /// node, and comparing strings would flag that as a failure.
 pub fn check_f7(label: &str, root: &Value) -> Vec<String> {
+    check_f7_with(label, root, crate::bridge::describe_path)
+}
+
+/// [`check_f7`] over **any describer** — the seam its must-fire test needs.
+///
+/// F7 is a round-trip property, so no input the real grammar handles correctly can
+/// falsify it; until 2026-11-07 its must-fire test leaned on a real grammar defect (a
+/// key spelled `(tree root)`), which made the defect load-bearing. With the describer
+/// injectable, the test hands in a deliberately broken one and the grammar could be
+/// fixed. Production always passes `bridge::describe_path`.
+pub fn check_f7_with(
+    label: &str,
+    root: &Value,
+    describe: impl Fn(&[crate::bridge::Seg]) -> String,
+) -> Vec<String> {
     let mut v = Vec::new();
     for path in sample_paths(root, 400) {
-        let described = crate::bridge::describe_path(&path);
+        let described = describe(&path);
         let Some(parsed) = crate::bridge::parse_path(&described) else {
             v.push(format!("{label}: {described:?} does not parse back"));
             continue;
@@ -2381,30 +2396,19 @@ mod tests {
     /// **F7 fires on a path whose description does not navigate back to it.**
     ///
     /// F7 is a round-trip property over `describe_path` / `parse_path` / `navigate`, so
-    /// it cannot be made to fail by an input the grammar handles correctly — which is
-    /// why it had no must-fire test. The input below is one the grammar does **not**
-    /// handle: a key spelled exactly like the string `describe_path` returns for the
-    /// empty path.
+    /// it cannot be made to fail by an input the real grammar handles correctly. **So
+    /// the failure is injected**: [`check_f7_with`] takes the describer, and the one
+    /// below drops each path's last segment — a describer that is well-formed, parses
+    /// back, and lands on the wrong node, which is the drift F7 exists to catch.
     ///
-    /// `key_needs_quoting` is `k.is_empty() || k.contains(['.', '[', ']', '"', '\\'])`,
-    /// and `(tree root)` contains none of those, so the key is written bare and its
-    /// description is indistinguishable from the root's. **That is a real collision in
-    /// the grammar, not a contrivance** — and F7 catching it is exactly the drift F7
-    /// exists to catch, which is what makes it the honest must-fire input.
+    /// # Until 2026-11-07 the input was a real, unfixed grammar defect
     ///
-    /// # This test's input is an UNFIXED defect, and that is a liability to retire
-    ///
-    /// Adding `(tree root)` to `key_needs_quoting` is a one-line fix, and it would make
-    /// this test fail — **the bug is currently load-bearing**, which is not a state to
-    /// leave unremarked. It is tolerable only because no Modelica IR key is spelled
-    /// `(tree root)`: the corpus run over 11 stage IRs per model has never produced one,
-    /// so the collision is latent rather than active.
-    ///
-    /// The principled repair is to make F7 **injectable** — parameterise the round trip
-    /// over its describer so a test can supply a deliberately broken one — after which
-    /// the grammar can be fixed and this input replaced. Recorded in
-    /// `docs/tech-debt.md` as a pair, because doing either half alone leaves F7 with no
-    /// must-fire coverage again.
+    /// A key spelled `(tree root)` was written bare and described exactly as the empty
+    /// path does, so it navigated back to the whole tree. That was the only input that
+    /// could fail F7, so **the bug was load-bearing**: fixing it would have left F7 with
+    /// no must-fire coverage. The describer was made injectable first, then
+    /// `bridge::key_needs_quoting` was taught the sentinel — and the same key is now
+    /// the second assertion below, **in the opposite direction**: it must round-trip.
     #[test]
     fn f7_catches_a_description_that_does_not_navigate_back() {
         // The baseline: ordinary keys, including ones that DO need quoting, round-trip.
@@ -2419,13 +2423,22 @@ mod tests {
             check_f7("T", &fine),
         );
 
-        // The collision: a key whose bare description is the root's own spelling.
-        let collides = serde_json::json!({ "(tree root)": { "x": 1 } });
-        let found = check_f7("T", &collides);
+        // The former collision: a key spelled like the root sentinel, now bracketed.
+        let sentinel_key = serde_json::json!({ "(tree root)": { "x": 1 } });
         assert!(
-            !found.is_empty(),
-            "a key that describes to the root sentinel cannot navigate back to itself, \
-             and F7 is the check that is supposed to notice",
+            check_f7("T", &sentinel_key).is_empty(),
+            "a key spelled like the root sentinel is quoted and must round-trip: {:?}",
+            check_f7("T", &sentinel_key),
+        );
+
+        // Must-fire: a describer that silently loses the last segment.
+        let truncating = |path: &[crate::bridge::Seg]| {
+            crate::bridge::describe_path(&path[..path.len().saturating_sub(1)])
+        };
+        assert!(
+            !check_f7_with("T", &fine, truncating).is_empty(),
+            "a description that parses back to a different node is the drift F7 exists \
+             to catch, and it must notice",
         );
     }
 

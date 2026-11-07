@@ -287,6 +287,67 @@ pub struct Row {
     pub outcome: Outcome,
 }
 
+/// The share of pixels that differ from the image's **most common colour** — how much
+/// of a photograph is drawn, as opposed to background.
+///
+/// # Why a measurement and not a "blank" verdict
+///
+/// The suite photographs frame 1 and decided `Landed` from the image's dimensions, so
+/// an animation that drew nothing landed exactly like one that drew a matrix —
+/// `docs/tech-debt.md`'s 11-04 entry, where the Reduction animation's empty canvas was
+/// caught only by stepping it by hand. **A threshold for "blank" would be a number
+/// nobody has measured**: an empty canvas still has its transport bar and labels, so
+/// it is not uniform. So the fraction is reported for every landed shot, and only an
+/// image of exactly one colour — which cannot be a drawn pane — is called blank.
+/// `samples` is bytes per pixel (3 for RGB, 4 for RGBA); alpha counts as part of the
+/// colour.
+#[must_use]
+pub fn ink_fraction(pixels: &[u8], samples: usize) -> Option<f64> {
+    if samples == 0 || pixels.is_empty() || !pixels.len().is_multiple_of(samples) {
+        return None;
+    }
+    let mut counts: std::collections::HashMap<&[u8], usize> = std::collections::HashMap::new();
+    for px in pixels.chunks_exact(samples) {
+        *counts.entry(px).or_insert(0) += 1;
+    }
+    let total = pixels.len() / samples;
+    let background = counts.values().copied().max().unwrap_or(0);
+    // Counts of pixels, far below 2^52, so the conversion is exact.
+    #[allow(clippy::cast_precision_loss)]
+    Some((total - background) as f64 / total as f64)
+}
+
+/// [`ink_fraction`] of an 8-bit RGB or RGBA PNG on disk. `None` when the file cannot be
+/// read or is another format — reported as unknown, never as blank.
+#[must_use]
+pub fn ink_fraction_of_png(path: &std::path::Path) -> Option<f64> {
+    let file = std::fs::File::open(path).ok()?;
+    let mut reader = png::Decoder::new(std::io::BufReader::new(file))
+        .read_info()
+        .ok()?;
+    let mut buf = vec![0; reader.output_buffer_size()?];
+    let frame = reader.next_frame(&mut buf).ok()?;
+    if frame.bit_depth != png::BitDepth::Eight {
+        return None;
+    }
+    let samples = match frame.color_type {
+        png::ColorType::Rgb => 3,
+        png::ColorType::Rgba => 4,
+        _ => return None,
+    };
+    ink_fraction(&buf[..frame.buffer_size()], samples)
+}
+
+/// How a landed shot's ink reads in the index: a percentage, **BLANK** for one colour,
+/// `ink ?` when the image could not be read.
+fn ink_cell(ink: Option<f64>) -> String {
+    match ink {
+        None => "ink ?".to_owned(),
+        Some(0.0) => "**BLANK** \u{2014} one colour, nothing drawn".to_owned(),
+        Some(f) => format!("ink {:.1}%", f * 100.0),
+    }
+}
+
 /// Render the run index that the reader opens.
 ///
 /// Markdown rather than JSON because **the consumer is a reader, not a program**: the
@@ -334,7 +395,12 @@ pub fn index_markdown(specimen: &str, region: bridge::ShotRegion, rows: &[Row]) 
     for row in rows {
         let (outcome, image) = match &row.outcome {
             Outcome::Landed { path, size } => (
-                format!("landed, {}x{}", size.0, size.1),
+                format!(
+                    "landed, {}x{}, {}",
+                    size.0,
+                    size.1,
+                    ink_cell(ink_fraction_of_png(std::path::Path::new(path))),
+                ),
                 format!("`{path}`"),
             ),
             Outcome::Refused { notice } => (
@@ -640,6 +706,74 @@ mod tests {
         assert!(
             out.contains("`region: pane`"),
             "the index says how much was kept"
+        );
+    }
+
+    /// **The ink fraction is the share of non-background pixels**, and one colour is 0.
+    #[test]
+    fn ink_is_the_share_of_pixels_off_the_background() {
+        let bg = [20u8, 20, 20, 255];
+        let fg = [200u8, 200, 200, 255];
+        let uniform: Vec<u8> = bg.repeat(16);
+        assert_eq!(ink_fraction(&uniform, 4), Some(0.0));
+
+        let mut quarter = bg.repeat(12);
+        quarter.extend(fg.repeat(4));
+        assert_eq!(ink_fraction(&quarter, 4), Some(0.25));
+
+        assert_eq!(
+            ink_fraction(&[1, 2, 3], 4),
+            None,
+            "a torn buffer is unknown"
+        );
+        assert_eq!(ink_fraction(&[], 4), None);
+    }
+
+    /// **A uniform photograph is flagged BLANK in the index; a drawn one shows its
+    /// ink; an unreadable one is unknown, never blank.** Written to real PNG files and
+    /// decoded, so the decoder path is exercised as the runner uses it.
+    #[test]
+    fn the_index_flags_a_one_colour_photograph_as_blank() {
+        let dir = std::env::temp_dir().join(format!("hrw-ink-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        let blank = dir.join("blank.png");
+        let drawn = dir.join("drawn.png");
+        let bg = [20u8, 20, 20, 255];
+        bridge::write_png(&blank, 4, 4, &bg.repeat(16)).expect("blank png");
+        let mut px = bg.repeat(12);
+        px.extend([200u8, 200, 200, 255].repeat(4));
+        bridge::write_png(&drawn, 4, 4, &px).expect("drawn png");
+
+        let row = |seq, path: &std::path::Path| Row {
+            shot: Shot {
+                stage: "IndexReduction",
+                view: "Animate",
+            },
+            seq,
+            outcome: Outcome::Landed {
+                path: path.to_string_lossy().into_owned(),
+                size: (4, 4),
+            },
+        };
+        let rows = vec![
+            row(1, &blank),
+            row(2, &drawn),
+            row(3, &dir.join("missing.png")),
+        ];
+        let out = index_markdown("Drivetrain", bridge::ShotRegion::Pane, &rows);
+        let _ = std::fs::remove_dir_all(&dir);
+
+        let line = |seq: &str| {
+            out.lines()
+                .find(|l| l.starts_with(&format!("| {seq} |")))
+                .unwrap_or_default()
+                .to_owned()
+        };
+        assert!(line("1").contains("**BLANK**"), "{out}");
+        assert!(line("2").contains("ink 25.0%"), "{out}");
+        assert!(
+            line("3").contains("ink ?") && !line("3").contains("BLANK"),
+            "an image that cannot be read is unknown, not blank: {out}",
         );
     }
 }

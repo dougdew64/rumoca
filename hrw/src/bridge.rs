@@ -1080,7 +1080,7 @@ impl Seg {
 /// pointed at the wrong node would be worse than one that visibly does nothing, because
 /// the reader would take the wrong subtree for the answer.
 pub fn parse_path(s: &str) -> Option<Vec<Seg>> {
-    if s.is_empty() || s == "(tree root)" {
+    if s.is_empty() || s == ROOT_SENTINEL {
         return Some(Vec::new());
     }
     let mut out = Vec::new();
@@ -1138,11 +1138,23 @@ fn parse_quoted_key(after_quote: &str) -> Option<(String, &str)> {
     None
 }
 
+/// How [`describe_path`] spells the empty path, and what [`parse_path`] reads back as
+/// one. **One constant because three places must agree on it** — and a key spelled the
+/// same way is the collision `key_needs_quoting` now guards.
+const ROOT_SENTINEL: &str = "(tree root)";
+
 /// Does this key need `["…"]` rather than a bare `.key`?
 ///
 /// Empty keys too: a bare empty key produces `a..b`, which `parse_path` rejects.
+///
+/// **And a key spelled [`ROOT_SENTINEL`]** (2026-11-07, the post-rebase sweep's open
+/// item 11). Written bare, `[Key("(tree root)")]` described exactly as the empty path
+/// does, and navigating the parsed description landed on the whole tree instead of
+/// the child. Latent — no Modelica IR key is spelled that way — but F7's must-fire test
+/// had been *using* it, which is why `fidelity::check_f7_with` was made injectable
+/// first: fixing the grammar alone would have left F7 with nothing that could fail it.
 fn key_needs_quoting(k: &str) -> bool {
-    k.is_empty() || k.contains(['.', '[', ']', '"', '\\'])
+    k.is_empty() || k == ROOT_SENTINEL || k.contains(['.', '[', ']', '"', '\\'])
 }
 
 /// Format a key-path as a human-readable dotted string.
@@ -1156,7 +1168,7 @@ fn key_needs_quoting(k: &str) -> bool {
 /// focus file as a human-readable path alongside the machine-readable key array.
 pub fn describe_path(path: &[Seg]) -> String {
     if path.is_empty() {
-        return "(tree root)".to_owned();
+        return ROOT_SENTINEL.to_owned();
     }
     let mut s = String::new();
     for seg in path {
