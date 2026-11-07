@@ -2120,6 +2120,35 @@ Some prose.
         );
     }
 
+    /// **Every stage's emitted `phase_source` names a function that exists.**
+    ///
+    /// `phase_source` tells Claude which Rumoca function to read for a stage's
+    /// algorithm. Six of its twelve entries named functions the v0.10.0 rebase had
+    /// removed, and nothing noticed for five days: the entries are strings, so the
+    /// compiler cannot see them. Found by the 2026-11-07 post-rebase sweep. The first
+    /// word of each entry, before any space or parenthesis, is the function, and its
+    /// last `::` segment must be defined somewhere in the workspace.
+    #[test]
+    fn every_phase_source_names_a_defined_function() {
+        let missing: Vec<String> = crate::worker::StageKind::ALL
+            .iter()
+            .filter_map(|&stage| {
+                let doc = crate::bridge::phase_source(stage);
+                let entry = doc["entry"].as_str().unwrap_or_default().to_owned();
+                let head = entry
+                    .split([' ', '('])
+                    .next()
+                    .unwrap_or_default()
+                    .to_owned();
+                (!symbol_is_defined(&head)).then(|| format!("{stage:?}: {entry}"))
+            })
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "phase_source sends Claude to functions that do not exist: {missing:#?}",
+        );
+    }
+
     /// Does a Rust symbol exist, as a **definition** rather than a mention?
     ///
     /// **Deliberately conservative, and the direction matters.** This test *fails

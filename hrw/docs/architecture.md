@@ -115,16 +115,16 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 94,423 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 94,522 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,565 |
-| `app.rs` | 8,720 |
-| `app/tests.rs` | 8,115 |
-| `doc_citations.rs` | 7,996 |
-| `worker.rs` | 7,866 |
-| `bridge.rs` | 5,652 |
+| `app.rs` | 8,731 |
+| `app/tests.rs` | 8,144 |
+| `doc_citations.rs` | 8,025 |
+| `worker.rs` | 7,867 |
+| `bridge.rs` | 5,666 |
 | `ui_tests.rs` | 2,979 |
 | `fidelity.rs` | 2,760 |
 | `equation_sheet.rs` | 1,569 |
@@ -142,8 +142,8 @@ showing 48 equations. They are derived now, and
 | `matching_ledger.rs` | 928 |
 | `lab_panel.rs` | 908 |
 | `dae_expr_format.rs` | 898 |
+| `stage_tabs.rs` | 850 |
 | `model_list.rs` | 849 |
-| `stage_tabs.rs` | 841 |
 | `screenshot.rs` | 832 |
 | `tearing_anim.rs` | 826 |
 | `canvas.rs` | 793 |
@@ -180,7 +180,7 @@ showing 48 equations. They are derived now, and
 | `equation_text.rs` | 279 |
 | `colors.rs` | 271 |
 | `report.rs` | 265 |
-| `stage_view.rs` | 257 |
+| `stage_view.rs` | 263 |
 | `test_support.rs` | 234 |
 | `log_view.rs` | 229 |
 | `worker/test_msl.rs` | 221 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **94,423** |
+| **total** | **94,522** |
 <!-- END GENERATED module-sizes -->
 
 

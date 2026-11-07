@@ -3629,13 +3629,19 @@ impl App {
         };
 
         let kind = body.as_ref().map(|_| key.as_str());
-        if let Err(e) = bridge::write_view(kind, body.as_ref()) {
-            // Reported, not swallowed: a bridge write that fails silently is a file
-            // Claude would read as "this pane is empty".
-            self.context.point_error = Some(format!("view.json: {e}"));
-        }
+        let written = match bridge::write_view(kind, body.as_ref()) {
+            Ok(()) => body.is_some(),
+            Err(e) => {
+                // Reported, not swallowed: a bridge write that fails silently is a file
+                // Claude would read as "this pane is empty".
+                self.context.point_error = Some(format!("view.json: {e}"));
+                false
+            }
+        };
         diagnostics::record_action("view", key.clone());
         self.viewport.last_published_view = Some(key);
+        // The claim, kept apart from the dedup key above: true only if a file exists.
+        self.viewport.view_file_written = written;
     }
 
     /// The application state a crash file should carry.
@@ -3680,9 +3686,14 @@ impl App {
             // **Which sub-tab of that stage**, which `stage_tab` alone does not say.
             // `null` means the stage has only one view, not that the field was omitted.
             "sub_view": sub_view_name_for(self.stage, &self.viewport),
-            // Whether `.hrw-bridge/view.json` currently describes this pane. A reader
-            // comparing the two can tell a stale file from a current one.
-            "view_published": self.viewport.last_published_view,
+            // Which pane `.hrw-bridge/view.json` currently describes, or `null` when no
+            // file was written (a pane with no publisher). A reader comparing the two
+            // can tell a stale file from a current one.
+            "view_published": self
+                .viewport
+                .view_file_written
+                .then_some(self.viewport.last_published_view.as_deref())
+                .flatten(),
             "viewing_log": self.viewing_log,
             "compiling": self.compiling,
             // Non-empty means the view is showing a library class, not the

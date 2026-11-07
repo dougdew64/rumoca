@@ -5849,9 +5849,10 @@ fn initialization_stage(
 /// function is pure. The old pane cloned a DAE and ran steps in an order HRW
 /// maintained by hand.
 ///
-/// *Shares its preparation with nothing yet.* When the index-reduction pane
-/// lands it will want `inspect_prepare_for_solve`, which does this work and
-/// returns the `ReductionReport` too — at that point one call should serve both.
+/// **It shares Index reduction's preparation** (since 2026-11-04): one
+/// `inspect_prepare_for_solve` per compile serves both stages — see
+/// [`initialization_stage`]. (This said "shares its preparation with nothing yet"
+/// until the 2026-11-07 sweep.)
 fn initialization_from_initial_pins(
     system: rumoca_phase_structural::PreparedSystem<'_, '_>,
     // The compile's own map, not the specimen text: a `start` attribute is often

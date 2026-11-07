@@ -4651,6 +4651,12 @@ which is its own small finding.
 
 ### 11-06, the fidelity sweep completed and reconciles — 2,780 measured, 0 violations, 7 checks
 
+*(This is the **morning** run, `fid-20261106-0710`, launched as "everything except F4". The
+afternoon run, `fid-20261106-1530`, launched a minute after F4's repair with no `-OnlyChecks`, ran
+all eight checks, and is the one `promote_run` committed to `docs/reports/`. The two report the same
+2,780 rows. Added in the 2026-11-07 sweep, after a reader took this entry for the committed run and
+the sidecar's F4 for an overclaim. Both transcripts are in `rumoca-runs/`.)*
+
 **The first fidelity sweep whose arithmetic closes.** Over the repaired 2,791-model corpus:
 
 | | |
