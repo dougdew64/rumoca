@@ -6493,6 +6493,35 @@ fn republishing_the_same_view_is_a_no_op() {
     assert_eq!(app.viewport.last_published_view, first);
 }
 
+/// **`view_published` names a view only when `view.json` was written for it.**
+///
+/// Logged 2026-09-04 and fixed in the 2026-11-07 sweep. `last_published_view` is a
+/// dedup key, so it must hold the key even when the pane has no publisher, or the
+/// file would be removed again every frame. The snapshot reported that key as
+/// `view_published`, so `session.json` claimed `view_published: "Parse"` while
+/// `view.json` did not exist. The key and the claim are now two fields.
+#[test]
+fn view_published_is_null_when_no_file_was_written() {
+    let mut app = App::test_default();
+    app.test_set_session_state("RcCircuit.mo", "RcCircuit", StageKind::Parse);
+
+    app.publish_current_view();
+    assert_eq!(
+        app.viewport.last_published_view.as_deref(),
+        Some("Parse"),
+        "the dedup key is still recorded, so the no-op path keeps working",
+    );
+    assert!(
+        !std::path::Path::new(bridge::VIEW_FILE).exists(),
+        "Parse has no publisher, so no view.json",
+    );
+    assert!(
+        app.diagnostic_snapshot()["view_published"].is_null(),
+        "and session.json must not claim one was published: {}",
+        app.diagnostic_snapshot()["view_published"],
+    );
+}
+
 #[cfg(test)]
 mod tests_incidence_row_link {
     use super::*;

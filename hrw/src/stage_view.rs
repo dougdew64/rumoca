@@ -230,6 +230,11 @@ pub(crate) struct Viewport {
     /// once per frame catches all of them; hooking each one would miss whichever is
     /// added next.
     pub(crate) last_published_view: Option<String>,
+    /// Whether the last publish **wrote** `view.json`. A dedup key and a claim cannot
+    /// share one field: [`Self::last_published_view`] holds the key even for a pane
+    /// with no publisher, and the snapshot's `view_published` reported it as if a file
+    /// had been written (logged 2026-09-04, separated in the 2026-11-07 sweep).
+    pub(crate) view_file_written: bool,
 }
 
 impl Default for Viewport {
@@ -252,6 +257,7 @@ impl Default for Viewport {
             highlighted_eq_row: None,
             highlighted_source_line: None,
             last_published_view: None,
+            view_file_written: false,
         }
     }
 }

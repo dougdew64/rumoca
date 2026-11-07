@@ -192,10 +192,15 @@ pub(crate) fn stage_tabs_ui(
             "Index reduction",
             &stages.index_reduction,
             Some(
-                "Structural analysis of the DAE AFTER index reduction (Pantelides / \
-                     dummy derivatives): the funnel differentiates constraints and demotes states \
-                     so a high-index singular system becomes matchable. For an already-index-1 \
-                     model this equals Structural. Same BLT spy-plot / tree.",
+                // Rewritten 2026-11-07: it described 0.9.20's "funnel", a fixed pipeline of
+                // steps that 0.10.0 replaced with a search (`worker::index_reduction_from_observation`).
+                "Rumoca's preparation for solving (inspect_prepare_for_solve). Reduction is a \
+                     search: rounds alternate a Direct and a Holonomic lane, and each attempt \
+                     rebuilds and re-sorts the whole system, so its outcome is measured, not \
+                     predicted. Before is the Structural report; after is the prepared system. \
+                     An index-1 model has nothing to reduce. A refusal here is not the \
+                     compiler's verdict: state selection in Solve lowering can still reduce \
+                     the model (CartesianPendulum is the case).",
             ),
         ),
         (
@@ -203,12 +208,13 @@ pub(crate) fn stage_tabs_ui(
             "Initialization",
             &stages.initialization,
             Some(
-                "The consistent-initial-condition solve plan (build_ic_plan): the \
-                     ordered blocks that compute a valid state at t=0 — direct symbolic solves, \
-                     scalar Newton, torn/coupled loops — plus the relaxation hint (equations \
-                     dropped / unknowns pinned) when the initial subsystem is singular, and a \
-                     determinacy check that flags an OVER-determined init (more explicit initial \
-                     conditions than states — conflicting/redundant ICs).",
+                // Rewritten 2026-11-07: it described 0.9.20's solve plan (`build_ic_plan`, a
+                // relaxation hint), which 0.10.0 replaced with pins.
+                "The initial-value pins of the same preparation Index reduction reports on. \
+                     Each initial equation (MLS §8.6) is rewritten onto the coordinate it is \
+                     about, with a role: Definition (it determines a state's initial value) or \
+                     Check (it stays a residual the initialization instant must satisfy). Not \
+                     a solve plan: the values themselves are computed when simulation starts.",
             ),
         ),
         (
@@ -216,10 +222,13 @@ pub(crate) fn stage_tabs_ui(
             "Events",
             &stages.events,
             Some(
-                "The DAE's hybrid / event structure: the conditions (relations that \
-                     trigger events), the discrete updates lowered from `when` clauses (f_z real, \
-                     f_m valued), and the event partition (zero-crossing root conditions + scheduled \
-                     time events). A smooth (continuous) model shows none.",
+                // Rewritten 2026-11-07: it named 0.9.20's flat f_z / f_m collections and a
+                // root partition. 0.10.0 states conditions as an algebra.
+                "The DAE's condition algebra. Relations are the comparisons an event can \
+                     hinge on; conditions are boolean terms over them (and, or, not, and the \
+                     edge-of-any a vector `when` needs, MLS 8.3.5.1); roots are relations \
+                     watched for a sign change, each with the condition that activates it; \
+                     event actions say what fires and when. A smooth model shows none.",
             ),
         ),
         (

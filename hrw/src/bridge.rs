@@ -1699,9 +1699,15 @@ impl View<'_> {
 /// file to open.
 ///
 /// These are facts about the build (HRW calls exactly these functions from
-/// `worker.rs`), not an interpretation of what the phases do. `None` for
-/// Simulation-adjacent entries that HRW reaches through a different path.
-fn phase_source(stage: StageKind) -> Value {
+/// `worker.rs`), not an interpretation of what the phases do.
+///
+/// **Six of the twelve named functions that no longer existed**, from the v0.10.0
+/// rebase until the 2026-11-07 sweep: `to_dae_with_options_traced`, two `dae_prepare`
+/// reductions, `build_ic_plan`, `lower_dae_to_solve_model` and `simulate_solve_model`.
+/// Claude was sent to read code that was not there, which is worse than no pointer.
+/// `every_phase_source_names_a_defined_function` now checks each entry's function
+/// against the workspace.
+pub(crate) fn phase_source(stage: StageKind) -> Value {
     // (crate directory, the entry point HRW actually calls)
     let (krate, entry) = match stage {
         StageKind::Parse => ("crates/rumoca-phase-parse", "parse_to_ast"),
@@ -1718,25 +1724,28 @@ fn phase_source(stage: StageKind) -> Value {
             "Session::compile_model_strict_reachable_with_recovery",
         ),
         // DAE construction runs inside the same reachable-closure pipeline as
-        // Flatten; `to_dae_with_options_traced` is the traced entry HRW calls
-        // separately to record pre()-lowering frames.
-        StageKind::Dae => ("crates/rumoca-phase-dae", "to_dae_with_options_traced"),
+        // Flatten, and the DAE comes back in its result; the construction record
+        // (pre() lowering included) is read from that DAE, not from a second call.
+        StageKind::Dae => (
+            "crates/rumoca-phase-dae",
+            "to_dae_with_evidence (run by the compile session, compile_support.rs)",
+        ),
         StageKind::Structural => ("crates/rumoca-phase-structural", "build_structural_report"),
         StageKind::IndexReduction => (
             "crates/rumoca-phase-structural",
-            "dae_prepare::reduce_constrained_dummy_derivatives / \
-             dae_prepare::index_reduce_missing_state_derivatives",
+            "inspect_prepare_for_solve",
         ),
-        StageKind::Initialization => ("crates/rumoca-phase-structural", "build_ic_plan"),
-        // Events are not produced by a phase call — the hybrid structure is
-        // already in the DAE and HRW reads it out. Naming the IR is the honest
-        // answer to "where is this computed?".
-        StageKind::Events => (
-            "crates/rumoca-ir-dae",
-            "Dae::discrete (populated during flatten)",
+        // The same preparation Index reduction reports on: its prepared system's
+        // initial-value pins (`worker::initialization_from_initial_pins`).
+        StageKind::Initialization => (
+            "crates/rumoca-phase-structural",
+            "inspect_prepare_for_solve (the prepared system's pins)",
         ),
-        StageKind::SolveLowering => ("crates/rumoca-phase-solve", "lower_dae_to_solve_model"),
-        StageKind::Simulation => ("crates/rumoca-sim", "simulate_solve_model"),
+        // Events are not produced by a phase call — the condition algebra is already
+        // in the DAE and HRW reads it out (`worker::events_from_condition_algebra`).
+        StageKind::Events => ("crates/rumoca-ir-dae", "DaeView::conditions"),
+        StageKind::SolveLowering => ("crates/rumoca-phase-solve", "lower_solve_problem"),
+        StageKind::Simulation => ("crates/rumoca-sim", "simulate_with_optional_step_records"),
     };
     json!({
         "note": "where this stage's algorithm lives in the Rumoca workspace — read \
@@ -4348,10 +4357,15 @@ mod tests {
         );
 
         assert_eq!(doc["phase_source"]["crate"], json!("crates/rumoca-ir-dae"));
+        // It asserted "discrete" — `Dae::discrete`, which 0.10.0 removed — until the
+        // 2026-11-07 sweep, so this test held the stale entry in place.
+        // `every_phase_source_names_a_defined_function` now checks existence for all.
         assert!(
             doc["phase_source"]["entry"]
                 .as_str()
-                .is_some_and(|e| e.contains("discrete"))
+                .is_some_and(|e| e.contains("DaeView::conditions")),
+            "Events reads the condition algebra: {}",
+            doc["phase_source"]["entry"],
         );
     }
 

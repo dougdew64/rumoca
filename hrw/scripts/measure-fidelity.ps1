@@ -51,14 +51,16 @@ param(
     # is not retried by default or a genuinely unfinishable model would burn
     # the full timeout on every re-run forever.
     [string[]]$RetryVerdicts = @('aborted:free-ram'),
-    # **Which checks to run, comma-separated — empty means all of F1-F9.**
+    # **Which checks to run, comma-separated — empty means every check on the roster
+    # below.** (It said "all of F1-F9" until the 2026-11-07 sweep; the roster is F2-F10.)
     #
     # Passed through to `fidelity_msl --only-checks`, which the binary has always
     # supported and this script had no way to reach. Added 2026-11-05 for a specific
     # situation that will recur: **a check that is known-broken makes the whole sweep
-    # unreadable.** F4 has been blind since v0.10.0 — it reports every `StructuredScalar`
-    # block as naming no equations — so a full-corpus run with it enabled buries the other
-    # eight checks under its own false positives. `docs/tech-debt.md`, 11-04 night.
+    # unreadable.** F4 was blind from v0.10.0 until its repair on 2026-11-06 — it reported
+    # every `StructuredScalar` block as naming no equations — so a full-corpus run with it
+    # enabled buried the other checks under its own false positives. `docs/tech-debt.md`,
+    # 11-04 night.
     #
     # The staging section of `docs/long-runs.md` is the same lesson at a different scale:
     # nine of twelve first-run violations were the check's fault, not HRW's. A sweep whose
@@ -71,8 +73,9 @@ param(
     # the absence of F10 silently dropped the only check that asks whether a pane's claim
     # about the compiler is honest. Five checks ran and the report was read as eight.
     #
-    # **To exclude only F4, pass the other seven: `F2,F3,F5,F6,F7,F9,F10`.** Naming what
-    # you want is safer than naming what you remember.
+    # **To exclude one check, pass the others** — for F4, which needed exactly this
+    # while it was blind: `F2,F3,F5,F6,F7,F9,F10`. Naming what you want is safer than
+    # naming what you remember.
     [string]$OnlyChecks  = ""
 )
 
