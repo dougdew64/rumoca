@@ -4909,6 +4909,73 @@ statements.
 document is a drift risk proportional to how many. Gate is done. `budget`/`ceiling` sits in four
 files and should go the same way.
 
+## 2026-09-01 — the document review, and the tour → lab rename
+
+*Written 2026-11-07, moved here from a box in `CLAUDE.md`'s `## Current work` that had carried
+it for two months under the title **"THE DOCUMENT REVIEW IS RUNNING."** It was not running, and
+this file had no entry for the day at all — so the box could not simply be deleted as a closed
+arc, because nothing else held the record. Moved, not copied; `CLAUDE.md` keeps only the standing
+rules that came out of it.*
+
+**The review.** Doug questioned every paragraph of `CLAUDE.md`, starting with whether it was
+needed at all: *"it seems to be as much a historical log as a policy statement."* He was right —
+the file was 1,420 lines, and `The rules` / `Current work` / `Running things` were 88 % of it.
+
+**The test was charter Decision 16's three questions, in order** — can it fail by name; is it a
+conclusion about a situation; is it about how Claude works, with a silent failure and an instance
+on record — with Decision 13 as the second axis and Decision 11 routing what survived.
+
+**Three passes completed that day.** The lab rules: 25 items, Doug ruling on each — 19 kept, 2
+cut, 1 named the standing loop target, the vocabulary settled, 2 renamed. `The rules` in
+`CLAUDE.md`: 8 mechanisms, 8 category 3, 27 judgements — 2 cut, 3 routed to procedure, 1
+duplicate removed, 21 kept. `docs/fixture-labs/README.md`: 40 sections — 6 mechanisms (all ten
+cited tests verified to resolve), 9 category 3, 17 judgements, three needing work and two of those
+carrying defects Claude had introduced the same day.
+
+**The result contradicted what both of us expected: Decision 16 is a CLASSIFICATION test, not a
+deletion test.** `The rules` grew from 622 to 640 lines. Most rules were category 3 doing real
+work with pieces missing, and the pieces were added because that was the day the rules fired. The
+dominant defect was still the one the lab sweep found six times — a mechanism exists, prose beside
+it does the same job by hand, and the hand copy rots. The mechanism was never the wrong one.
+
+**Claude was the wrong judge of what to cut, and twice that day proved it** — proposing to delete
+8,650 lines of Rumoca documentation on a premise only Doug could correct, and creating two
+duplicates while running the sweep that hunts duplicates. Hence *supply evidence, not verdicts.*
+
+**A checker gap closed the same day: `doc_citations::every_markdown_link_in_a_governing_document_resolves`.**
+Nothing had checked `[text](path)` links in the governing documents, only backtick citations, so
+the rename left five dead links in `CLAUDE.md` behind a green FULL gate. The checker found eleven
+on its first run, six in `running-things.md`, written that morning with `CLAUDE.md`-relative links
+and gated green four times. *(The box this entry replaces described the same gap twice: once as
+CLOSED and once, further down, as "STILL OPEN… worth closing on the next `src/` errand." The
+second was written before the first and never removed.)*
+
+**The rename — charter Decision 15, executed in TWO atomic passes.** The vocabulary is `lab` /
+`station` / `observation` / `instructor`, and you RUN a lab in a SESSION. The first pass took the
+nouns (127 files, ~3,750 occurrences) and **missed the verb entirely**; Doug caught it. The second
+took `walk` → `run` / `session` across 85 more files. Both gated green, and Doug verified the
+capture button and live debugging by hand — the half no gate can check.
+
+**`walk` and `stop` both collided, and traversal survived untouched:** `walk_modules()`,
+`fn walk(dir: &Path)`, `walk_blocks`, `walker`, `SIGSTOP`, `backstop`, *"Stop following"*. Ten
+`walk`s remained in the governing files on purpose — two of Doug's quotations, `last_walked`'s real
+name, Decision 14's own wording, and the collision analysis itself. `observation`, `Predict` and
+`Expected` were already lab-native. Among the kinds only `adjudication` → `calibration`.
+
+**The rename stopped cleanly at the VS Code extension**, which needed no functional change: it knows
+about debugging, and the bridge contract never carried the word. One doc comment was the entire
+surface — evidence that the separation is real rather than aspirational.
+
+**The prose risk it left, and its disposition.** Substitution changed the labs' prose
+(`Stop N` → `Station N`, `walk` → `run`), and the gate cannot tell whether a sentence still reads;
+four mangled sentences were found in the governing documents by grepping one predicted pattern.
+**The two highest-risk cases were checked by Doug that day and both passed** — `connect-expansion`'s
+opening, and Station 6 with `ScopedConnect`. What remained was ordinary risk across the other labs,
+to be read as they come up rather than as a campaign. **Only Doug can detect it.**
+
+**All four owed sweeps landed that day as one errand**, four items sharing a single FULL gate.
+`docs/tech-debt.md`, *"Owed sweeps"*, keeps that record.
+
 ## 2026-09-02 — egui's debug Id diagnostics are compiled out of dev builds
 
 **`[profile.dev.package.egui] debug-assertions = false`**, in the workspace `Cargo.toml`, because

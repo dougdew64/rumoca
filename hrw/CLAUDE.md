@@ -762,101 +762,31 @@ the next phase touches — is procedure and lives there.
 > checked by `docs/specimen-notebook/`, and nothing checks a pointer, because
 > `.hrw-bridge/answer.md` is gitignored and no checker reads it.
 >
-> ### ⟶ THE DOCUMENT REVIEW IS RUNNING — began 2026-09-01, **this file** first
+> ### ⟶ HOW THIS SECTION WORKS — and three guards the 2026-09-01 document review left behind
 >
-> **Doug is questioning every paragraph**, beginning with whether it is still needed: *"it seems to
-> be as much a historical log as a policy statement."* **He was right** — this file was 1,420 lines,
-> of which `The rules` / `Current work` / `Running things` were 88 %.
+> **The review and the tour → lab rename are closed, and their record is
+> [`DECISIONS.md`](DECISIONS.md), *2026-09-01*.** This box carried them for two months under the
+> title *"THE DOCUMENT REVIEW IS RUNNING"*, which stopped being true the day it was written — and it
+> described the markdown-link checker gap twice, once as CLOSED and once as STILL OPEN. **The
+> history was moved there on 2026-11-07, not deleted**: nothing else held it.
 >
-> **THE TEST IS CHARTER DECISION 16'S THREE QUESTIONS, IN ORDER** — not Decision 10 alone, which is
-> what this box said until the pass reached it. **(1)** Can it fail by name? → build the mechanism,
-> delete the prose. **(2)** Is it a conclusion about a situation? → it rots; ask Doug for a ruling.
-> **(3)** Is it about how Claude works, with a silent failure mode and an instance on record? →
-> keep it, and say that is why. **Decision 13** adds the second axis — a rule that binds can still
-> name something perishable — and **Decision 11** routes whatever survives.
+> **Three things from it still bind:**
 >
-> **Claude is the wrong judge of what to cut** and should supply evidence, not verdicts: this
-> history is the record of his own failures. **Vindicated twice today** — he proposed deleting
-> 8,650 lines of Rumoca documentation on a premise only Doug could correct, and created two
-> duplicates while conducting the sweep that hunts duplicates.
+> - **Claude is the wrong judge of what to cut; supply evidence, not verdicts.** Twice on the day
+>   it was learned — a proposed deletion of 8,650 lines of Rumoca documentation resting on a premise
+>   only Doug could correct, and two duplicates created while running the sweep that hunts them.
+> - **Two names were deliberately NOT renamed, and must stay that way.** **`DECISIONS.md`** is
+>   history and keeps *"tour"* — it carries a vocabulary note instead. **`end_to_end_tour.md`** is
+>   the real name of a file deleted 2026-08-01 and recoverable from git under it; a bulk pass once
+>   rewrote it and a corrective pass put it back. **A proper noun naming something in the past does
+>   not move when the vocabulary does.**
+> - **Traversal words survive any vocabulary pass**: `walk_modules()`, `fn walk(dir: &Path)`,
+>   `walk_blocks`, `walker`, `SIGSTOP`, `backstop`, *"Stop following"*. A rename that touches them
+>   is wrong.
 >
-> **THREE PASSES ARE COMPLETE.** The lab rules — 25 items, Doug ruling on each: 19 kept, 2 cut, 1
-> named the standing loop target, the vocabulary settled, 2 renamed. Then `The rules` here under
-> Decision 16 — 8 mechanisms, 8 category 3, 27 judgements: **2 cut, 3 routed to procedure, 1
-> duplicate removed, 21 kept.** Then `docs/fixture-labs/README.md` under Decision 16 — 40 sections,
-> **6 mechanisms (all ten cited tests verified to resolve), 9 category 3, 17 judgements**, of which
-> three needed work and two of those carried defects Claude had introduced the same day.
->
-> **CLOSED 2026-09-01: `doc_citations::every_markdown_link_in_a_governing_document_resolves`.**
-> Nothing checked `[text](path)` in the governing documents — only backtick citations — so the
-> rename left five dead links in this file behind a green FULL gate. **The checker found eleven on
-> its first run**, six of them in `running-things.md`, which was written that morning with
-> `CLAUDE.md`-relative links and gated green four times.
->
-> **⟶ THE LABS' PROSE WAS CHANGED BY SUBSTITUTION, AND NO CHECKER COVERS WHETHER IT STILL READS.**
-> `Stop N` → `Station N`, `walk` → `run`. The gate proves links resolve, tables match a real compile
-> and kinds are consistent; **it cannot tell whether a sentence still reads.** Four mangled
-> sentences were found in the governing documents by grepping one predicted pattern.
->
-> **THE TWO HIGHEST-RISK CASES WERE CHECKED BY DOUG ON 2026-09-01 AND BOTH PASSED** — do not redo
-> them. **`connect-expansion`'s opening**, the densest prose in the corpus, rewritten twice under
-> the provoke-questions and code-grounding rules. And **Station 6 with `ScopedConnect`**, which
-> carried two risks at once: authored 2026-08-31 to falsify Station 1's rule, machine-checked
-> numbers, and **prose that had never had a reader.**
->
-> **What remains is ordinary risk across the other labs**, no longer a known exposure — read them as
-> they come up rather than as a campaign. **Only Doug can detect this**, which is why it is recorded
-> here rather than queued as work.
->
-> **AND THE RESULT CONTRADICTS WHAT BOTH OF US EXPECTED, so do not read it as failure next time:
-> Decision 16 is a CLASSIFICATION test, not a deletion test.** `The rules` grew from 622 to 640
-> lines. Most rules were category 3 doing real work **with pieces missing**, and the pieces got
-> added because today is the day those rules fired. **The dominant defect was still the one the lab
-> sweep found six times** — a mechanism exists, prose beside it does the same job by hand, and the
-> hand copy rots. The mechanism was never the wrong one.
->
-> **⟶ THE RENAME IS DONE — charter Decision 15, executed 2026-09-01 in TWO atomic passes.**
->
-> **The vocabulary is `lab` / `station` / `observation` / `instructor`, and you RUN a lab in a
-> SESSION.** The first pass took the nouns — 127 files, ~3,750 occurrences — and **missed the verb
-> entirely**; Doug caught it. The second took `walk` → `run`/`session` across 85 more files. Both
-> gated green, and **Doug verified the capture button and live debugging by hand** — the half no
-> gate can check.
->
-> **`walk` and `stop` both collided, and traversal survives untouched**: `walk_modules()`,
-> `fn walk(dir: &Path)`, `walk_blocks`, `walker`, `SIGSTOP`, `backstop`, *"Stop following"*. **Ten
-> `walk`s remain in the governing files on purpose** — two of Doug's quotations, `last_walked`'s
-> real name, Decision 14's own wording, and the collision analysis itself. `observation`, `Predict` and `Expected`
-> were already lab-native and never moved. Among the kinds only `adjudication` → `calibration`;
-> `concept`, `feature` and `failure` keep their names, and `experiment` / `orientation` /
-> `diagnosis` are **rejected on domain collisions** recorded under Decision 15.
->
-> **Two things were deliberately NOT renamed, and both must stay that way.**
-> **`DECISIONS.md`** — 191 mentions — is history and does not bind, so an entry dated 2026-07-22
-> saying *"guided tours drive backlog prioritization"* stays true about that day; it carries a
-> vocabulary note instead. And **`end_to_end_tour.md`** is the real name of a file deleted
-> 2026-08-01 and recoverable from git under it. The bulk pass rewrote that one and a corrective
-> pass put it back; every later pass sentinel-protected it. **A proper noun naming something in the
-> past does not move when the vocabulary does.**
->
-> **A CHECKER GAP FOUND BY GREP, NOT BY A TEST, AND STILL OPEN.** `CLAUDE.md` carried **five broken
-> links** to `docs/fixture-tours/README.md` after the directory moved, and the **full gate passed**.
-> Nothing resolves this file's markdown links, though `fixture_lab_links_all_resolve` covers the
-> labs. That is a hole in the most-read file in the reading path — **worth closing on the next
-> `src/` errand.**
->
-> **The rename stopped cleanly at the VS Code extension**, which needed no functional change: it
-> knows about debugging, and the bridge contract it reads never carried the word. One doc comment
-> was the entire surface. That is evidence the separation is real rather than aspirational.
->
-> Nights 1-7 and what each found are in [`docs/unattended-run-log.md`](docs/unattended-run-log.md);
-> the nightly document step is in [`docs/unattended-runs.md`](docs/unattended-runs.md), which owns
-> both the *restore, never choose* boundary and the finding that document drift is **same-day** — so
-> the risk window is hours, and a day of heavy mechanism change should end with a sweep.
->
-> **NOTHING IS OWED.** All four sweeps landed 2026-09-01 as one errand — four items sharing a
-> single FULL gate is what made a deliberate errand cheaper than four ride-alongs.
-> [`docs/tech-debt.md`](docs/tech-debt.md), *"Owed sweeps"*, keeps the record.
+> **Unattended nights** are logged in [`docs/unattended-run-log.md`](docs/unattended-run-log.md);
+> the nightly document step is [`docs/unattended-runs.md`](docs/unattended-runs.md), which owns the
+> *restore, never choose* boundary and the finding that document drift is **same-day**.
 >
 > **This section holds ONLY what is in flight. Everything closed lives in
 > [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which
