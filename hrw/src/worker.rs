@@ -491,8 +491,8 @@ pub struct LibrarySource {
 /// harmless: `Stage::note_is_error` is `outcome != Ok`, so [`Outcome::Flagged`] — the
 /// outcome this enum exists to distinguish — painted exactly the red the split was
 /// introduced to stop meaning. Doug reported it on `CartesianPendulum`.
-/// `stage_tabs::tab_label` now branches on the outcome itself; the other callers of
-/// `note_is_error` are listed in `docs/tech-debt.md`.
+/// `stage_tabs::tab_label` now branches on the outcome itself, and the remaining UI
+/// readers followed on 2026-11-07 (see [`Stage::note_is_error`]).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Outcome {
     /// The stage produced its IR and Rumoca reported nothing about it. Also the
@@ -503,8 +503,10 @@ pub enum Outcome {
     /// it — a structurally singular system, typecheck diagnostics, a recovered
     /// parse tree, surplus initial conditions. The pipeline continued.
     ///
-    /// Rendered red like a failure, because the user should see it. Counted
-    /// separately from one, because it is not one.
+    /// Rendered amber, not red — the user should see it, and it is not a stop.
+    /// Counted separately from a failure, because it is not one. (This said
+    /// *"rendered red like a failure"* until 2026-11-07, a year-old truth about the
+    /// UI that the 11-05 tab fix had already falsified.)
     Flagged,
     /// The stage produced no IR of its own. `value` is either `None` or holds
     /// *only* the error payload under `"error"`. The pipeline stopped here.
@@ -721,13 +723,17 @@ impl Stage {
         }
     }
 
-    /// Should the note render red? True for both abnormal outcomes.
+    /// Did Rumoca report something about this stage? True for **both** abnormal
+    /// outcomes — it does not say whether the pipeline stopped.
     ///
-    /// **Preserves the old field's behaviour exactly**, so this split changed no
-    /// pixel and no control flow: every reader of the former `note_is_error`
-    /// field now calls this and sees what it saw before. The three-way truth is
-    /// available to whoever wants it via [`Stage::outcome`] — which, for now, is
-    /// the fidelity harness rather than the UI.
+    /// It preserved the old boolean field's behaviour exactly when the outcome split
+    /// landed, and that was the defect: every reader went on treating a flag as a
+    /// failure. **The UI's readers moved to [`Stage::outcome`] on 2026-11-05 and
+    /// 2026-11-07** (the tab, the note colour, the pipeline context, the action trail,
+    /// the landing stage). Two keep this predicate deliberately —
+    /// `App::central_panel_ui`'s `has_error_summary`, which also requires an `error`
+    /// payload, and `artifact_pane` — and **a new caller should ask which question it
+    /// means before reaching for this one.**
     pub fn note_is_error(&self) -> bool {
         self.outcome != Outcome::Ok
     }
@@ -6969,9 +6975,9 @@ fn flatten_stage(result: Option<&PhaseResult>, specimen: SpanFile<'_>) -> Stage 
                     // no flat model, so there is nothing to show; that is a different
                     // fact from failing, and a different one again from not running.
                     //
-                    // `last_successful_stage` is unaffected: its `ok` predicate is
-                    // `value.is_some() && !note_is_error()`, and `info` carries no
-                    // value, so Flatten does not become the furthest good stage. The
+                    // `last_successful_stage` is unaffected: its `ok` predicate
+                    // requires `value.is_some()` (and, since 2026-11-07, a
+                    // non-`Failed` outcome), and `info` carries no value, so Flatten does not become the furthest good stage. The
                     // 2026-07-29 comment named only the `note_is_error` half.
                     Stage::info(
                         "flatten completed \u{2014} the compile failed at DAE \

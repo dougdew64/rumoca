@@ -1840,7 +1840,8 @@ mod tests {
     /// stage-level error.** `IncompatibleConnect` reports structurally singular at
     /// Structural, and Index Reduction, Initialization, Events and Solve Lowering all
     /// genuinely **run** and produce IR afterwards. *"First stage with an error note"*
-    /// is what `compile_outcome` reports, not where the pipeline stopped —
+    /// is what `compile_outcome` reported until 2026-11-07, not where the pipeline
+    /// stopped —
     /// `not_reached_stage` fires on a failed `PhaseResult`, which is a different and
     /// rarer condition.
     ///

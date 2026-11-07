@@ -1804,11 +1804,22 @@ fn last_successful_stage_falls_back_to_parse() {
     assert_eq!(app.last_successful_stage(), StageKind::Parse);
 }
 
+/// **A flagged stage carries usable IR, so the tabs may land on it; a failed one does
+/// not.** This test asserted the opposite of its first half until 2026-11-07, under the
+/// name `last_successful_stage_skips_errored` — the `Flagged`-means-failed conflation
+/// pinned as intended behaviour. See `App::last_successful_stage`.
 #[test]
-fn last_successful_stage_skips_errored() {
+fn last_successful_stage_lands_on_a_flag_and_skips_a_failure() {
     let mut app = make_app_with_stages(StageKind::Structural);
     app.stages.structural = Stage::recovered(serde_json::json!({}), "singular");
-    assert_eq!(app.last_successful_stage(), StageKind::Flatten);
+    assert_eq!(app.last_successful_stage(), StageKind::Structural);
+
+    app.stages.structural = Stage::err_with_details(serde_json::json!({}), "boom");
+    assert_eq!(
+        app.last_successful_stage(),
+        StageKind::Flatten,
+        "a Failed stage's value is only its error payload, not IR",
+    );
 }
 
 #[test]
@@ -4914,6 +4925,11 @@ fn a_seek_that_never_lands_expires() {
 ///
 /// The **first** failing stage is what gets reported, because everything after it
 /// says "not reached" and carries no information.
+///
+/// **And a flag is reported as a flag** (2026-11-07). This wrote *"FAILED at
+/// Structural"* for every model flagged there, six of which simulate; the wording is
+/// now *"stopped at"*, because the stop is decided by `pipeline_context` and a stop's
+/// outcome need not be `Failed`.
 #[test]
 fn the_compile_outcome_names_the_first_failure() {
     let ok = Stage::ok(serde_json::json!({}));
@@ -4955,8 +4971,34 @@ fn the_compile_outcome_names_the_first_failure() {
     };
     let outcome = app.compile_outcome();
     assert_eq!(
-        outcome, "UnbalancedShaft: FAILED at Flatten",
+        outcome, "UnbalancedShaft: stopped at Flatten",
         "the first failure is the diagnostic; later stages are just not reached",
+    );
+
+    // A flag the compile ran past is named as one, and is not a stop.
+    let mut app = App::test_default();
+    app.model = Some("Drivetrain".to_owned());
+    app.stages = StageBundle {
+        parse: ok.clone(),
+        resolve: ok.clone(),
+        instantiate: ok.clone(),
+        typecheck: ok.clone(),
+        flatten: ok.clone(),
+        dae: ok.clone(),
+        structural: Stage::recovered(serde_json::json!({}), "structurally singular"),
+        index_reduction: ok.clone(),
+        initialization: ok.clone(),
+        events: ok.clone(),
+        solve_lowering: ok.clone(),
+    };
+    let outcome = app.compile_outcome();
+    assert_eq!(
+        outcome,
+        format!(
+            "Drivetrain: reached {} (flagged and carried past: {})",
+            StageKind::SolveLowering.name(),
+            StageKind::Structural.name(),
+        ),
     );
 }
 
@@ -7653,6 +7695,91 @@ fn a_flagged_stage_the_pipeline_survived_is_not_a_failure() {
         "Initialization ran and reported that it had nothing to plan; if this ever \
          becomes true, the specimen changed and claim 3 below is measuring nothing",
     );
+}
+
+/// **A `Failed` final stage is a stop, although nothing comes after it to be "not
+/// reached".** Found 2026-11-07, working the post-rebase sweep's open item 2.
+///
+/// `pipeline_context` decided "stop or flag" from the measured tail alone: a stage is
+/// a stop when a later stage says it never ran. That is right for every stage but the
+/// last. `IncompatibleConnect` and `TwiceDefined` read `OOOOOOFF.OX` — v0.10.0 **refuses
+/// to lower a structurally singular system** — and Solve lowering is the final
+/// compilation stage, so its tail is empty by construction and it was filed under
+/// `pipeline_flags`. **That section tells Claude *"the compile CONTINUED … These are not
+/// failures … Do not present one as a reason the model does not work"*** — about the
+/// one stage that is exactly why these two models do not simulate.
+///
+/// The tail still decides a `Flagged` stage (`DimensionMismatch`'s Typecheck stops,
+/// `Drivetrain`'s Structural does not). **A `Failed` stage needs no tail to be a stop**,
+/// because `Outcome::Failed` already means *the stage produced no IR of its own and the
+/// pipeline stopped here*, and at most one stage per compile may say it.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compiles specimens; run with --features slow-tests"
+)]
+#[cfg(feature = "slow-tests")]
+fn a_failed_final_stage_is_a_stop_not_a_flag() {
+    for name in ["IncompatibleConnect", "TwiceDefined"] {
+        let app = app_for(name);
+        // Non-vacuity: the claim is about a Failed final stage, so the specimen must
+        // still have one. If Rumoca starts lowering these, this says so rather than
+        // passing on a model that no longer exercises the case.
+        assert_eq!(
+            app.stages.get(StageKind::SolveLowering).outcome,
+            crate::worker::Outcome::Failed,
+            "{name}: Solve lowering is no longer Failed, so this test measures nothing",
+        );
+        let (flags, failure) = app.pipeline_context();
+        let failure = failure.unwrap_or_else(|| {
+            panic!("{name}: Solve lowering failed and the model cannot simulate; that is a stop")
+        });
+        assert_eq!(failure.stage, StageKind::SolveLowering.name(), "{name}");
+        assert!(
+            flags
+                .iter()
+                .all(|f| f.stage != StageKind::SolveLowering.name()),
+            "{name}: the stop must not also be offered as a stage the compile continued past",
+        );
+        // Structural and Index reduction are flagged and the compile did run past them
+        // -- to the stage that then refused. They stay flags.
+        assert!(
+            flags
+                .iter()
+                .any(|f| f.stage == StageKind::Structural.name()),
+            "{name}: Structural is flagged singular and later stages ran",
+        );
+
+        // And at the artefact Claude is handed.
+        let stage_values = app.stages.as_stage_pairs();
+        let ask = app.base_ask(1, None, Focus::Stage, &stage_values);
+        let doc = bridge::build_for_test(&ask);
+        assert_eq!(
+            doc["pipeline_failure"]["stage"],
+            StageKind::SolveLowering.name(),
+            "{name}: focus.json must name the stop",
+        );
+    }
+}
+
+/// **`DimensionMismatch` opens on its diagnosis** — the one corpus specimen whose
+/// landing moved when `last_successful_stage` stopped reading `Flagged` as failed
+/// (2026-11-07). Its Typecheck is `Flagged`, carries the instantiated overlay *and* the
+/// error, and stops the pipeline; the tabs used to land on Instantiate, one short.
+#[test]
+#[cfg_attr(
+    not(feature = "slow-tests"),
+    ignore = "compiles specimens; run with --features slow-tests"
+)]
+#[cfg(feature = "slow-tests")]
+fn a_flagged_stop_is_where_the_tabs_land() {
+    let app = app_for("DimensionMismatch");
+    assert_eq!(
+        app.stages.get(StageKind::Typecheck).outcome,
+        crate::worker::Outcome::Flagged,
+        "the specimen changed; this test measures nothing until it is re-keyed",
+    );
+    assert_eq!(app.last_successful_stage(), StageKind::Typecheck);
 }
 
 /// **The emitted file says `pipeline_flags` and not `pipeline_failure`** for a compile
