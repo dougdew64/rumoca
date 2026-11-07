@@ -115,16 +115,16 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 93,116 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 93,319 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
 | `worker/tests.rs` | 9,559 |
-| `app.rs` | 8,591 |
-| `app/tests.rs` | 8,006 |
+| `app.rs` | 8,611 |
+| `app/tests.rs` | 8,010 |
 | `worker.rs` | 7,862 |
 | `doc_citations.rs` | 7,344 |
-| `bridge.rs` | 5,279 |
+| `bridge.rs` | 5,386 |
 | `ui_tests.rs` | 3,037 |
 | `fidelity.rs` | 2,760 |
 | `equation_sheet.rs` | 1,569 |
@@ -138,10 +138,10 @@ showing 48 equations. They are derived now, and
 | `connection_anim.rs` | 1,106 |
 | `reduction_view.rs` | 1,048 |
 | `tarjan_anim.rs` | 1,001 |
+| `context_bar.rs` | 962 |
 | `lab_panel.rs` | 946 |
 | `matching_ledger.rs` | 928 |
 | `dae_expr_format.rs` | 898 |
-| `context_bar.rs` | 890 |
 | `model_list.rs` | 849 |
 | `stage_tabs.rs` | 841 |
 | `screenshot.rs` | 832 |
@@ -192,7 +192,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **93,116** |
+| **total** | **93,319** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -1358,9 +1358,18 @@ staged IR files, and the compiler-phase documentation.
 
 The `Ask` struct aggregates all context needed to write one focus file. It borrows
 everything (lifetime `'a`) to avoid cloning large IR trees. The `request` field is
-an `AskRequest` enum (`Explain`, `DebugWhereSet`) — type-safe, not stringly typed.
-The `stage` field is `Option<StageKind>` — `None` for navigated library definitions
-that don't correspond to a pipeline stage.
+`Option<AskRequest>` — **a verb a gesture declared, or `None`**, which is the ordinary
+case. `AskRequest` has one variant, `DebugWhereSet`, declared by the tree's
+**🐞 Show this being set (debugger)** menu item. The `stage` field is `Option<StageKind>` —
+`None` for navigated library definitions that don't correspond to a pipeline stage.
+
+**There is no `Explain` variant, deliberately** *(2026-11-07)*. There was one, every capture
+path except the debugger's supplied it, and nothing in HRW ever branched on it — it was only
+broadcast, as `(explain)` in the Context Bar and `"request": "explain"` in `focus.json`, so
+every question reached Claude pre-labelled as a request Doug had not made. His ruling: *the
+context bar shows nouns; a verb appears only when a gesture explicitly declares one.* The
+variant was **removed rather than hidden**, so a new capture path has no default verb to reach
+for; charter Decision 8 is the principle and `bridge::AskRequest` carries the account.
 
 ### The file protocol
 
@@ -1369,7 +1378,9 @@ Claude, and two carry a request **in**:
 
 1. **`focus.json`** — written on each capture. Contains:
    - `seq` — monotonic counter (each capture increments it)
-   - `request` — what the user wants: `"explain"` or `"debug-where-set"` (from `AskRequest`)
+   - `request` — a verb a gesture **declared**: `"debug-where-set"`, or `null` in the
+     ordinary case, meaning *the verb is in the chat message*. Pointing declares a noun
+     and never a verb.
    - `kind` — `"node"`, `"stage"`, or `"specimen"`
    - `model` — the Modelica model name
    - `stage` — which pipeline stage the capture came from

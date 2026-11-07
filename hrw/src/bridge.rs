@@ -25,8 +25,9 @@
 //!
 //! 1. **Focus file** (`.hrw-bridge/focus.json`): written on each capture. Contains
 //!    the `instructions` (self-describing), `seq` (monotonic counter), `request`
-//!    (what the user wants: "explain" or "debug-where-set"), `kind` (node/stage/
-//!    specimen), and the node/provenance/cross-stage data.
+//!    (a verb a gesture *declared* — only "debug-where-set" today — or null, which is
+//!    the ordinary case: pointing declares a noun, and the verb is in the chat), `kind`
+//!    (node/stage/specimen), and the node/provenance/cross-stage data.
 //!
 //! 2. **Stage files** (`.hrw-bridge/stages/<name>.json`): one file per pipeline
 //!    stage's full IR, rewritten once per compile. Claude can diff any two stages
@@ -984,11 +985,14 @@ Reason over it together with the specimen source, the staged IR under \
 `stages/`, the Rumoca phase code, and docs/compiler-phases.\n\n\
 It carries context in two shapes, and the difference matters:\n\
   • POINTING AT — the `kind`/`node`/`cross_stage`/`stage` fields at top level. \
-One node, one stage, chosen deliberately. For `explain` this is the subject; \
-for `debug-where-set` it wants ONE breakpoint, where that value is set.\n\
+One node, one stage, chosen deliberately. It is a NOUN: pointing declares no \
+verb, so `request` is normally null and THE VERB IS THE USER'S CHAT MESSAGE — \
+read it from there, and do not assume they want an explanation. Only when \
+`request` is `debug-where-set`, declared by the debugger menu item, is ONE \
+breakpoint wanted, where that value is set.\n\
   • FOLLOWING — the `tracking` section. One identifier, everywhere it appears \
-across every stage. For `explain` this is the lens; for `debug-where-set` it \
-wants SEVERAL breakpoints along the identifier's trajectory.\n\n\
+across every stage: a lens for whatever the user asks. When `request` is \
+`debug-where-set` it wants SEVERAL breakpoints along the identifier's trajectory.\n\n\
 Either may be absent, and absence is stated rather than implied. \
 `kind: \"none\"` means the user DELIBERATELY CLEARED the point (or never made \
 one), so the `tracking` section is the whole subject — do not fall back to \
@@ -1281,17 +1285,54 @@ pub enum Focus<'a> {
     },
 }
 
-/// What the user wants Claude to do with the captured focus.
+/// A verb the user **declared by a gesture** — never one HRW presumes.
+///
+/// # The rule, which is Doug's (2026-11-07)
+///
+/// *"The context bar is not supposed to presume verbs. It is only supposed to show a
+/// bunch of nouns which I have identified by pointing and clicking with my mouse. Unless
+/// I select something like a context menu item which explicitly declares a verb, no verbs
+/// should be associated with my context nouns."*
+///
+/// That is charter Decision 8 — *the noun is assembled by mouse; the verb is an
+/// unbounded utterance* — applied to the data model, and the data model had drifted from
+/// it. **So this type holds only verbs a gesture names in its own label**, and the field
+/// carrying it is an `Option`: `None` is the ordinary case and means *the verb is in the
+/// chat message*.
+///
+/// # Why there is no `Explain` variant, and why that is the fix rather than a detail
+///
+/// Until 2026-11-07 there was one, and **every capture path except the debugger's
+/// supplied it** — a tree-node click, a stage focus, a specimen focus, the context emit
+/// and a text selection all hard-wired `Explain`. **Nothing in HRW ever branched on
+/// it.** It was only broadcast: to the Context Bar as `(explain)`, into `focus.json`,
+/// into `session.json`, and through the `[hrw-context]` hook to Claude — so every
+/// question Doug asked reached Claude pre-labelled as a request for an explanation he had
+/// not made, biasing the reading of his actual sentence toward explaining.
+///
+/// **Hiding the label when it was the default was proposed first, and would have been
+/// wrong**: it hides a presumed verb while keeping it. Removing the variant makes the
+/// presumption *inexpressible* — charter Decision 16's strongest form, a design in which
+/// the error cannot be written — so a later capture path has no default verb to reach
+/// for. The compiler, not a test, is what stops it coming back.
+///
+/// # What a declared verb does, which is less than its name suggests
+///
+/// Not even this one makes HRW *act*: the status line answers a debugger point with
+/// *"say 'debug' in chat and I'll set the breakpoint."* **Every verb that takes effect is
+/// one Doug types.** What the declaration buys is that the noun was assembled *for* that
+/// verb — a field whose setting site is wanted — which changes what Claude should
+/// extract from it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AskRequest {
-    Explain,
+    /// Declared by **🐞 Show this being set (debugger)** on an IR tree node: find the
+    /// one place in Rumoca that sets this value, so a breakpoint can be armed there.
     DebugWhereSet,
 }
 
 impl AskRequest {
     pub fn as_str(self) -> &'static str {
         match self {
-            AskRequest::Explain => "explain",
             AskRequest::DebugWhereSet => "debug-where-set",
         }
     }
@@ -1726,8 +1767,10 @@ pub struct Ask<'a> {
     /// Monotonically increasing sequence number — lets Claude detect when a
     /// new capture has occurred since the last question.
     pub seq: u64,
-    /// What the user wants.
-    pub request: AskRequest,
+    /// The verb a gesture **declared**, if any. `None` is the ordinary case: the user
+    /// pointed at a noun, and the verb is whatever they then type. See [`AskRequest`]
+    /// for why there is no default verb to put here.
+    pub request: Option<AskRequest>,
     /// Path to the Modelica source file (`.mo`). `None` if no specimen is loaded.
     pub specimen: Option<&'a Path>,
     /// The class name being compiled (e.g., "RotationalInertia"). A specimen file
@@ -2216,7 +2259,8 @@ pub fn write_stages(stages: &[(&str, Option<&Value>)]) -> std::io::Result<()> {
 // {
 //   "instructions": <self-describing text>,
 //   "seq": <monotonic counter>,
-//   "request": "explain" | "debug-where-set" | null  (null: no point, so no request),
+//   "request": "debug-where-set" | null  (null: no gesture DECLARED a verb — the verb is
+//              in the chat message; this is the ordinary case, point or no point),
 //   "kind": "node" | "stage" | "specimen",
 //   "specimen": <path to .mo file>,
 //   "model": <class name>,
@@ -2291,15 +2335,19 @@ fn build(ask: &Ask) -> Value {
     let mut doc = json!({
         "instructions": INSTRUCTIONS,
         "seq": ask.seq,
-        // `request` is a property of the POINT — "explain this node" versus
-        // "show me where this node gets set". With no point there is no request,
-        // and emitting a default `"explain"` would claim an intent the user
-        // never expressed. Null rather than omitted, for the same reason
-        // `kind: "none"` beats a missing `kind`: absence stated, not implied.
-        "request": match ask.focus {
-            Focus::Nothing => Value::Null,
-            _ => Value::String(ask.request.as_str().to_owned()),
-        },
+        // **A declared verb, or null — never a default.** This comment used to say
+        // that *"emitting a default `"explain"` would claim an intent the user never
+        // expressed"* — and then applied that only when there was no point, emitting
+        // `"explain"` for every point anyway. The principle was right and drawn at the
+        // wrong boundary: a point is a NOUN, and pointing does not declare a verb.
+        // Fixed 2026-11-07 on Doug's ruling; see [`AskRequest`].
+        //
+        // Null rather than omitted, for the same reason `kind: "none"` beats a missing
+        // `kind`: absence stated, not implied. **Null here means "read the verb from the
+        // chat message"**, which the instructions above now say.
+        "request": ask
+            .request
+            .map_or(Value::Null, |r| Value::String(r.as_str().to_owned())),
         "kind": kind,
         "specimen": ask.specimen.map(|p| p.to_string_lossy().into_owned()),
         "model": ask.model,
@@ -2965,7 +3013,7 @@ mod tests {
     fn a_pane_selection_emits_selection_and_says_it_is_not_prose() {
         let ask = Ask {
             seq: 4,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("RcCircuit"),
             stage: None,
@@ -3032,7 +3080,7 @@ mod tests {
         let defs = BTreeMap::new();
         let ask = Ask {
             seq: 12,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: None,
             stage: None,
@@ -3445,7 +3493,7 @@ mod tests {
         });
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("UnbalancedShaft"),
             // Doug is looking at Structural, which is downstream of the real failure.
@@ -3498,7 +3546,7 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("RcCircuit"),
             stage: Some(StageKind::Structural),
@@ -3621,7 +3669,7 @@ mod tests {
         let key_path = vec![Seg::Key("components".into()), Seg::Key("c".into())];
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("M"),
             stage: Some(StageKind::Resolve),
@@ -3663,7 +3711,7 @@ mod tests {
     ) -> Ask<'a> {
         Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("M"),
             stage: Some(StageKind::Flatten),
@@ -3755,7 +3803,7 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("M"),
             stage: Some(StageKind::Parse),
@@ -4055,7 +4103,7 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("M"),
             stage: Some(StageKind::Events),
@@ -4156,7 +4204,7 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("M"),
             stage: Some(StageKind::Parse),
@@ -4184,7 +4232,7 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("M"),
             stage: Some(StageKind::Parse),
@@ -4342,7 +4390,7 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("M"),
             stage: Some(StageKind::Typecheck),
@@ -4371,8 +4419,67 @@ mod tests {
 
     #[test]
     fn ask_request_as_str_round_trips() {
-        assert_eq!(AskRequest::Explain.as_str(), "explain");
         assert_eq!(AskRequest::DebugWhereSet.as_str(), "debug-where-set");
+    }
+
+    /// **Pointing declares a noun, never a verb** — Doug's ruling of 2026-11-07, and the
+    /// must-fire half of removing `AskRequest::Explain`.
+    ///
+    /// The compiler already prevents a capture path from *presuming* `explain`, since the
+    /// variant is gone. What it cannot see is the emitted document, which is where the
+    /// presumption actually did its damage: `focus.json` said `"request": "explain"` for
+    /// every point, and that reached Claude as a request Doug had never made. So this
+    /// asserts on the **document**, for both cases, in the same test so they cannot
+    /// drift apart:
+    ///
+    /// - a plain point emits `"request": null` — absence stated, not a default;
+    /// - a point made through the debugger menu emits the verb it declared.
+    ///
+    /// Without the second case this would pass on a `build` that dropped the field
+    /// entirely, which is the vacuous shape this repository keeps catching itself
+    /// writing.
+    #[test]
+    fn a_point_carries_no_verb_unless_a_gesture_declared_one() {
+        let val = json!({"name": "x"});
+        let index = std::collections::BTreeMap::new();
+        let ask_with = |request: Option<AskRequest>| Ask {
+            seq: 1,
+            request,
+            specimen: None,
+            model: Some("M"),
+            stage: None,
+            libraries: Vec::new(),
+            def_index: &index,
+            parse_value: None,
+            resolve_value: None,
+            focus: Focus::Node {
+                key_path: vec![Seg::Key("name".to_owned())],
+                stage_value: &val,
+            },
+            tracking: None,
+            view: test_view(),
+            failure: None,
+            flags: vec![],
+        };
+
+        let plain = build(&ask_with(None));
+        assert_eq!(
+            plain["request"],
+            Value::Null,
+            "pointing declared no verb, so none may be emitted — the verb is in the chat",
+        );
+        assert_eq!(
+            plain["kind"],
+            json!("node"),
+            "the noun is still fully emitted"
+        );
+
+        let declared = build(&ask_with(Some(AskRequest::DebugWhereSet)));
+        assert_eq!(
+            declared["request"],
+            json!("debug-where-set"),
+            "a verb the debugger menu declared must still reach Claude",
+        );
     }
 
     #[test]
@@ -4380,7 +4487,7 @@ mod tests {
         let empty = BTreeMap::new();
         let ask = Ask {
             seq: 1,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("M"),
             stage: None,
@@ -4781,7 +4888,7 @@ mod tests {
         let val = json!({"name": "test_write_model"});
         let ask = Ask {
             seq: 99,
-            request: AskRequest::Explain,
+            request: None,
             specimen: None,
             model: Some("TestWriteModel"),
             stage: None,

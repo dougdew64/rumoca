@@ -5703,3 +5703,63 @@ red, or change the *shape* of what it publishes, which takes a check out of serv
 nothing red at all. **Only the first announces itself.** The fix — per-check coverage tallies in
 the sidecar — is deliberately not done here, because populating a denominator means re-running the
 three-hour sweep and would reopen the step to answer a question it did not ask.
+
+## 2026-11-07 — the context carries nouns; a verb only when a gesture declares one
+
+**Doug's ruling**, on seeing `Pointing at  causality(explain)` in the Context Bar and asking why
+`(explain)` was there when it could not be clicked: *"It feels like we've lost our way on this
+feature. The context bar is not supposed to presume verbs. It is only supposed to show a bunch of
+nouns which I have identified by pointing and clicking with my mouse. Unless I select something
+like a context menu item which explicitly declares a verb, no verbs should be associated with my
+context nouns."*
+
+**This is charter Decision 8 applied to the data model, which had drifted from it** — *the noun is
+assembled by mouse; the verb is an unbounded utterance.* A ruling about a case, so it is recorded
+here rather than amended into the charter (Decision 11).
+
+### How far the drift had gone, measured before anything was changed
+
+**Every capture path presumed a verb.** A tree-node click, a stage focus, a specimen focus, the
+context emit and a text selection all hard-wired `AskRequest::Explain`. Only one gesture declared
+one: **🐞 Show this being set (debugger)**, which names it in its own label.
+
+**And `explain` did nothing.** Nothing in HRW branched on it. It was only broadcast — to the
+Context Bar as `(explain)`, into `focus.json`, into `session.json`, and through the
+`[hrw-context]` hook, so **every question Doug asked reached Claude pre-labelled as a request for
+an explanation he had not made**, biasing the reading of his actual sentence toward explaining.
+That is what made it an accuracy defect rather than a cosmetic one.
+
+**Even the declared verb does not act alone**: the status line answers a debugger point with
+*"say 'debug' in chat and I'll set the breakpoint."* Every verb that takes effect is one Doug types.
+
+### Three things the fix found that a grep for the variant would not have
+
+- **`focus.json`'s own comment already stated the rule** — *"emitting a default `"explain"` would
+  claim an intent the user never expressed"* — and applied it only when there was no point,
+  emitting `"explain"` for every point. The principle was right and drawn at the wrong boundary.
+- **The test suite enforced the defect.** `every_point_and_follow_combination_emits_honestly`
+  asserted `request == "explain"` with the message *"a point does carry one"*, so the
+  presumption could not have been removed without that line failing. It is now inverted.
+- **Two presumed verbs the compiler could not see.** `status_line` took a `&str`, and one caller
+  passed the literal `"explain"`; and `session.json` used `format!("{:?}", p.request)`, which
+  compiles fine on an `Option` and would have written `"None"` into the file read after a crash.
+  `status_line` now takes the enum, so the first is a type error; the second is mapped to the slug.
+
+### The fix, and the alternative that was rejected
+
+**Claude's first recommendation was to hide `(explain)` when it was the default. That would have
+been wrong**: it hides a presumed verb while keeping it, and Doug's message is what showed it.
+
+**Instead the `Explain` variant was removed**, so the presumption is *inexpressible* — Decision
+16's strongest form. `request` is `Option<AskRequest>`, `None` for every ordinary point, and
+`focus.json` emits `null`, which its instructions now tell Claude means *the verb is the chat
+message*. The bar shows a verb only for the debugger's point, in the menu item's own words. The
+hook names a `null` as *no verb declared*, and names an `"Explain"` written by an HRW build from
+before the fix as **presumed** rather than passing it through — Doug's running binary predates
+the change, and relaying its `Explain` would repeat the defect until he rebuilds.
+
+**Guarded on the emitted document and the rendered bar**, not on the type alone, since the
+compiler already forbids the variant: `bridge::tests::a_point_carries_no_verb_unless_a_gesture_declared_one`
+and `context_bar::tests::the_bar_shows_a_noun_and_no_verb_unless_one_was_declared`, each asserting
+both the absence and the one declared verb so neither passes on a field dropped entirely. Both,
+and the inverted app test, were falsified by reinstating the presumed verb before being trusted.

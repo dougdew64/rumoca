@@ -2579,7 +2579,8 @@ impl App {
     fn base_ask<'a>(
         &'a self,
         seq: u64,
-        request: bridge::AskRequest,
+        // `None` unless a gesture declared a verb — see `bridge::AskRequest`.
+        request: Option<bridge::AskRequest>,
         focus: Focus<'a>,
         stage_values: &'a [(&'a str, Option<&'a Value>)],
     ) -> Ask<'a> {
@@ -2784,19 +2785,20 @@ impl App {
             Focus::Nothing => return,
             Focus::Selection { .. } => return,
         };
-        let ask = self.base_ask(seq, bridge::AskRequest::Explain, focus, &stage_values);
+        // A stage or specimen focus is a noun. No gesture here declares a verb.
+        let ask = self.base_ask(seq, None, focus, &stage_values);
         let result = bridge::write(&ask);
         self.context.pointed_at = Some(PointedAt {
             seq,
             target: target.clone(),
             kind,
             stage: Some(self.stage),
-            request: bridge::AskRequest::Explain,
+            request: None,
         });
         self.context.point_error = result.as_ref().err().map(std::string::ToString::to_string);
         // `None` on success: the Context Bar already names the point, and it
         // does so persistently. See `status_line`.
-        self.set_notice(status_line(seq, &target, "explain", result));
+        self.set_notice(status_line(seq, &target, None, result));
     }
 
     /// What HRW is showing, for the capture.
@@ -3708,7 +3710,11 @@ impl App {
                     // Null for a lab passage, which is not in a stage. Stated rather
                     // than filled with whichever tab happened to be selected.
                     "stage": p.stage.map(StageKind::name),
-                    "request": format!("{:?}", p.request),
+                    // A declared verb's slug, or null. **This was `format!("{:?}", …)`**,
+                    // which the compiler cannot flag once the field is an `Option`: it
+                    // would have written the strings `"None"` and `"Some(DebugWhereSet)"`
+                    // into the file Claude reads after a crash.
+                    "request": p.request.map(bridge::AskRequest::as_str),
                 })),
                 "following": self.tracked_identifier.as_ref().map(|name| json!({
                     "identifier": name,
@@ -3797,7 +3803,11 @@ impl App {
     /// - **Specimen stage** (nav stack empty): we're viewing the specimen's own
     ///   IR. The capture includes the Parse and Resolve values so Claude can
     ///   diff across stages (e.g. "what did Typecheck change vs Instantiate?").
-    fn emit_node_focus(&mut self, key_path: Vec<Seg>, request: bridge::AskRequest) {
+    ///
+    /// `request` is `Some` only when the user reached this through a gesture that
+    /// *declares* a verb — today, only the tree's 🐞 menu item. A plain node click is a
+    /// noun and passes `None`; see [`bridge::AskRequest`].
+    fn emit_node_focus(&mut self, key_path: Vec<Seg>, request: Option<bridge::AskRequest>) {
         // Same rule as `emit_focus`: a point of Doug's own supersedes the link's mark.
         // There are **two** capture paths — this one for nodes, `emit_focus` for stage
         // and specimen — and clearing in only one is exactly the omission the test for
@@ -3805,7 +3815,6 @@ impl App {
         self.context.jump_highlight = None;
         let seq = self.context.next_seq();
         let target = bridge::describe_path(&key_path);
-        let request_str = request.as_str();
 
         let status = if let Some(entry) = self.nav.last() {
             let ask = Ask {
@@ -3829,7 +3838,7 @@ impl App {
                 failure: self.failure_context(),
                 flags: self.flags_context(),
             };
-            status_line(seq, &target, request_str, bridge::write(&ask))
+            status_line(seq, &target, request, bridge::write(&ask))
         } else {
             let stage_value = self.current_stage().value.clone();
             match &stage_value {
@@ -3852,7 +3861,7 @@ impl App {
                     });
                     self.context.point_error =
                         result.as_ref().err().map(std::string::ToString::to_string);
-                    status_line(seq, &target, request_str, result)
+                    status_line(seq, &target, request, result)
                 }
                 None => Some("(no IR for this stage to point at)".to_owned()),
             }
@@ -4393,12 +4402,16 @@ impl App {
 fn status_line(
     seq: u64,
     target: &str,
-    request: &str,
+    // The enum, not a string. This took `&str` until 2026-11-07, which is how one
+    // caller came to pass the literal `"explain"` — a presumed verb the compiler could
+    // not see, because any string type-checks. Typed, a caller can only pass a verb a
+    // gesture declared, or none.
+    request: Option<bridge::AskRequest>,
     result: std::io::Result<std::path::PathBuf>,
 ) -> Option<String> {
     match result {
         Err(e) => Some(format!("\u{26a0} not emitted \u{2014} {e}")),
-        Ok(_) if request == "debug-where-set" => Some(format!(
+        Ok(_) if request == Some(bridge::AskRequest::DebugWhereSet) => Some(format!(
             "🐞 pointing at  {target}  for the debugger \u{2014} say \u{201c}debug\u{201d} \
              in chat and I'll set the breakpoint  (context #{seq})"
         )),
@@ -6071,7 +6084,7 @@ impl App {
             let ask = Ask {
                 seq: self.context.context_seq,
                 // NOT `Focus::Stage`. See `Focus::Nothing`.
-                request: bridge::AskRequest::Explain,
+                request: None,
                 specimen: self.selected.as_deref(),
                 model: self.model.as_deref(),
                 stage: Some(self.stage),
@@ -6338,7 +6351,10 @@ impl App {
             kind: PointKind::Selection { origin, in_source },
             // No stage. A passage of prose is not in one.
             stage: None,
-            request: bridge::AskRequest::Explain,
+            // No verb. "Point at selection" names a noun; whatever Doug wants done with
+            // it is his next message. This was `Explain`, which is how the bar came to
+            // print `(explain)` beside text he had only pointed at.
+            request: None,
         });
         self.emit_context();
         self.notify(format!(
@@ -7462,12 +7478,16 @@ impl App {
         if canvas_capture.is_some() {
             node_ask = canvas_capture;
         }
-        // Priority: debugger capture > explain capture > stage capture.
+        // Priority: debugger capture > node capture > stage capture.
         // Only one bridge write per frame.
+        //
+        // **Only the first declares a verb**: the 🐞 menu item names one in its label.
+        // A node click is a noun, so it passes `None` — this arm said "explain capture"
+        // and supplied `Explain` until 2026-11-07.
         if let Some(key_path) = debug_ask {
-            self.emit_node_focus(key_path, bridge::AskRequest::DebugWhereSet);
+            self.emit_node_focus(key_path, Some(bridge::AskRequest::DebugWhereSet));
         } else if let Some(key_path) = node_ask {
-            self.emit_node_focus(key_path, bridge::AskRequest::Explain);
+            self.emit_node_focus(key_path, None);
         } else if want_stage_ask {
             self.emit_focus(Focus::Stage);
         }

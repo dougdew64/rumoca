@@ -371,7 +371,7 @@ impl App {
                 in_source: true,
             },
             stage: None,
-            request: bridge::AskRequest::Explain,
+            request: None,
         });
     }
 
@@ -673,7 +673,7 @@ fn reselecting_the_same_specimen_keeps_the_context_but_switching_clears_it() {
         target: "components.src.V".to_owned(),
         kind: PointKind::Stage,
         stage: Some(StageKind::Flatten),
-        request: bridge::AskRequest::Explain,
+        request: None,
     });
     app.tracked_identifier = Some("emf.w".to_owned());
 
@@ -720,7 +720,7 @@ fn a_retained_point_that_no_longer_resolves_is_dropped_out_loud() {
         target: "variables.gone".to_owned(),
         kind: PointKind::Node(vec![Seg::Key("variables".into()), Seg::Key("gone".into())]),
         stage: Some(StageKind::Flatten),
-        request: bridge::AskRequest::Explain,
+        request: None,
     });
     app.revalidate_point_against_new_ir();
     assert!(
@@ -744,7 +744,7 @@ fn a_retained_point_that_no_longer_resolves_is_dropped_out_loud() {
         target: "variables.emf.w".to_owned(),
         kind: PointKind::Node(vec![Seg::Key("variables".into()), Seg::Key("emf.w".into())]),
         stage: Some(StageKind::Flatten),
-        request: bridge::AskRequest::Explain,
+        request: None,
     });
     app.revalidate_point_against_new_ir();
     assert!(
@@ -759,7 +759,7 @@ fn a_retained_point_that_no_longer_resolves_is_dropped_out_loud() {
         target: "stage".to_owned(),
         kind: PointKind::Stage,
         stage: Some(StageKind::Parse),
-        request: bridge::AskRequest::Explain,
+        request: None,
     });
     app.revalidate_point_against_new_ir();
     assert!(
@@ -925,7 +925,7 @@ fn every_point_and_follow_combination_emits_honestly() {
             target: "components.src.V".to_owned(),
             kind: PointKind::Stage,
             stage: Some(StageKind::Flatten),
-            request: bridge::AskRequest::Explain,
+            request: None,
         }
     }
 
@@ -965,10 +965,14 @@ fn every_point_and_follow_combination_emits_honestly() {
     let doc = emitted();
     assert_eq!(doc["kind"], serde_json::json!("stage"));
     assert_eq!(doc["tracking"]["identifier"], serde_json::json!("h"));
-    assert_eq!(
-        doc["request"],
-        serde_json::json!("explain"),
-        "a point does carry one"
+    // **This assertion PINNED the defect until 2026-11-07.** It read
+    // `assert_eq!(doc["request"], json!("explain"), "a point does carry one")` — so
+    // the suite actively enforced that pointing presumes a verb, and the presumption
+    // could not have been removed without this line failing. Doug's ruling inverts
+    // it: a point is a noun, and carries a verb only when a gesture declared one.
+    assert!(
+        doc["request"].is_null(),
+        "a point is a NOUN: it carries no verb unless a gesture declared one",
     );
 
     // 4. Point only — reached by dropping the follow, which must not
@@ -1007,7 +1011,7 @@ fn following_re_emits_without_losing_the_point() {
         target: "components.src.V".to_owned(),
         kind: PointKind::Node(vec![Seg::Key("components".into())]),
         stage: Some(StageKind::Flatten),
-        request: bridge::AskRequest::Explain,
+        request: None,
     });
 
     app.set_tracked_identifier("h".to_owned());
@@ -1092,7 +1096,7 @@ fn the_point_remembers_its_own_stage() {
         target: "x".to_owned(),
         kind: PointKind::Stage,
         stage: Some(StageKind::Flatten),
-        request: bridge::AskRequest::Explain,
+        request: None,
     });
 
     app.stage = StageKind::Structural;
@@ -1604,7 +1608,7 @@ fn clearing_the_point_emits_nothing_not_the_current_stage() {
     let stages: [(&str, Option<&Value>); 0] = [];
     let ask = Ask {
         seq: 3,
-        request: bridge::AskRequest::Explain,
+        request: None,
         specimen: None,
         model: Some("MotorWithBrake"),
         // A stage is still reported — it is where the user is looking —
@@ -1881,7 +1885,7 @@ fn a_successful_point_is_silent() {
     let msg = status_line(
         1,
         "equations.3.lhs",
-        "explain",
+        None,
         Ok(PathBuf::from("/tmp/focus.json")),
     );
     assert_eq!(
@@ -1897,7 +1901,7 @@ fn a_debug_point_still_tells_the_user_what_to_do() {
     let msg = status_line(
         2,
         "def_id",
-        "debug-where-set",
+        Some(bridge::AskRequest::DebugWhereSet),
         Ok(PathBuf::from("/tmp/f.json")),
     )
     .expect("debug requests carry an instruction");
@@ -1917,7 +1921,7 @@ fn a_debug_point_still_tells_the_user_what_to_do() {
 #[test]
 fn a_failed_emission_is_never_silent() {
     let err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
-    let msg = status_line(1, "x", "explain", Err(err)).expect("failures are always reported");
+    let msg = status_line(1, "x", None, Err(err)).expect("failures are always reported");
     assert!(
         msg.contains("not emitted"),
         "should say it was not emitted: {msg}"
@@ -4914,7 +4918,7 @@ fn a_node_link_marks_the_row_until_doug_moves_on() {
     );
 
     // A point of Doug's own answers a different question, so the mark goes.
-    app.emit_node_focus(vec![Seg::Key("blocks".into())], bridge::AskRequest::Explain);
+    app.emit_node_focus(vec![Seg::Key("blocks".into())], None);
     assert!(
         app.context.jump_highlight.is_none(),
         "Doug pointing at something supersedes the link's mark",
@@ -7534,7 +7538,7 @@ fn a_flagged_stage_the_pipeline_survived_is_not_a_failure() {
 fn the_emitted_capture_reports_a_flag_as_a_flag() {
     let app = app_for("Drivetrain");
     let stage_values = app.stages.as_stage_pairs();
-    let ask = app.base_ask(1, bridge::AskRequest::Explain, Focus::Stage, &stage_values);
+    let ask = app.base_ask(1, None, Focus::Stage, &stage_values);
     let doc = bridge::build_for_test(&ask);
 
     assert!(

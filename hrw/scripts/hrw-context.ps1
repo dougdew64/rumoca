@@ -189,7 +189,29 @@ if ($ctx.pointing_at) {
     # distinction this whole channel exists to keep. Same rule as `kind: "none"` in
     # focus.json and `variables: null` in debug-state.json.
     $stage = if ($null -eq $p.stage) { 'no stage - prose, not a phase' } else { $p.stage }
-    Write-Output "$tag pointing at: $($p.target)   ($($p.kind), $stage, $($p.request))"
+
+    # **The verb is the user's message unless a gesture DECLARED one** -- Doug's ruling,
+    # 2026-11-07: "Unless I select something like a context menu item which explicitly
+    # declares a verb, no verbs should be associated with my context nouns." This line
+    # printed `$p.request` raw, and every point arrived tagged `Explain` -- a verb nobody
+    # chose, read by Claude before Doug's actual sentence and biasing it toward
+    # explaining. Now `request` is null unless the 🐞 debugger menu item declared it.
+    #
+    # Three cases, each SAID rather than left blank (the rule above):
+    #   null              -> no verb declared; read it from the message
+    #   'Explain'/'explain' -> written by an HRW build from BEFORE the fix, which
+    #                        presumed it. Relaying it as a verb would repeat the defect
+    #                        for as long as the old binary runs, so it is named as
+    #                        presumed rather than passed through.
+    #   anything else     -> a verb a gesture declared, e.g. debug-where-set
+    $verb = if ($null -eq $p.request) {
+        'no verb declared - the verb is the message'
+    } elseif ($p.request -eq 'Explain' -or $p.request -eq 'explain') {
+        'no verb declared - "Explain" was PRESUMED by a pre-2026-11-07 HRW build; rebuild'
+    } else {
+        "verb declared: $($p.request)"
+    }
+    Write-Output "$tag pointing at: $($p.target)   ($($p.kind), $stage, $verb)"
 } else {
     Write-Output "$tag pointing at: nothing"
 }
