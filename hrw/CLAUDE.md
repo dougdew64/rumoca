@@ -579,14 +579,21 @@ the next phase touches — is procedure and lives there.
 >
 > ### ⟶ YOU ARE ON `hrw-rebase-0.10.4` NOW — hopped 2026-11-04, same day as the 0.10.0 rebase
 >
-> **Read this before anything else; `hrw-rebase-0.10.0` is the PREVIOUS branch and is behind.**
-> The 0.10.4 branch sits on top of `upstream/main@590ac739` (version 0.10.4), replayed
-> with `git rebase --onto`. **There is no v0.10.x tag** — upstream's tags stop at `v0.9.20` — so
-> the target was chosen as `main`, pinned to a SHA, because that is where merged PRs land.
-> `pre-0.10.4-rebase` tags the pre-hop tip.
+> **`hrw-rebase-0.10.0` is the PREVIOUS branch and is behind.** This one sits on
+> `upstream/main@590ac739` (version 0.10.4); `pre-0.10.4-rebase` tags the pre-hop tip. The hop
+> itself is in [`DECISIONS.md`](DECISIONS.md).
 >
-> **The split survived: 17 `crates/`-only commits, 0 mixed.** That is what makes the instrumentation
-> a clean cherry-pick for an upstream PR, and it must stay true.
+> **UPSTREAM NOW HAS TAGS** *(2026-11-06)* — `v0.10.0`…`v0.10.4`, and our base is **after**
+> `v0.10.4`, so step 0's *prefer a tag* is live next time. *(This box said none existed.)*
+>
+> **REBASING AGAIN WAS WEIGHED AND DECLINED, 2026-11-06 — do not re-open it without a reason.**
+> `main` means three things: **0** behind `origin/main`, **61** behind `upstream/main`, all landed
+> in 48 hours — a Jacobian/solver-performance arc, no version bump, no tag, ~30 commits a day, and
+> a hop would void step 10's three hours. Revisit on `v0.10.5` or when it settles; the content is
+> squarely step 3 (simulation).
+>
+> **No commit mixes `crates/` with `hrw/`, and it must stay true** — that is what keeps the
+> instrumentation a clean cherry-pick. *(Do not spell the commit count here; it rots.)*
 >
 > **THE MAINTAINER INVITED DOUG TO SUBMIT PRs** *(2026-11-04)*. That reorders
 > `docs/upstream-strategy.md`, whose ordering assumed cold outreach: the gifts were meant to buy
@@ -694,81 +701,29 @@ the next phase touches — is procedure and lives there.
 >
 > *(Two items left on 11-05: Debug on Index Reduction was pressed 11-04, and F1 is dead.)*
 >
-> ### ⟶ AN ADJUDICATED INITIALIZATION DEFECT IS READY TO FILE, AND IT GATES THE PLOT WORK — 2026-09-04
+> ### ⟶ THE INITIALIZATION ARC IS CLOSED — fixed upstream, and the file-it ruling is MOOT
 >
-> **Several models take the value that zeroes a state's derivative instead of its `start`.**
-> [`docs/upstream-issues.md`](docs/upstream-issues.md) carries both reproducers, the 11-of-11
-> corpus correlation, and **System Modeler 15.0's verdict**: `RcCircuit` charges `0 → 5` with
-> `tau = 0.1 s` matching the closed form to seven figures, where Rumoca reports a flat 5. Adding
-> `fixed = true` simulates identically there and makes Rumoca **fail to converge**.
+> **The 2026-09-04 defect** — several models taking the value that zeroes a state's derivative
+> instead of its `start` — **is fixed by the release we are on, measured not inferred.**
+> `RcCircuit` charges `0 → 5` against the closed form; every specimen the entry correlated now
+> initializes. [`docs/upstream-issues.md`](docs/upstream-issues.md) records the resolution with
+> the original preserved; the whole arc is in [`DECISIONS.md`](DECISIONS.md).
 >
-> **THE CAUSE IS NOT KNOWN, and the entry said it was until 2026-09-19.** `BareRc` — the same
-> circuit with **no library**, two equations — shows the `der → Const 0.0` substitution in its
-> residual, has the state among its plan's unknowns, and whose derivative-zero system also
-> solves to the wrong `v = 5` — **and it simulates correctly**, because the run keeps its seeded
-> value instead of applying the solve. Every condition once blamed holds in the model that
-> works. **Do not restate the old mechanism.**
+> **Three rulings inside it are spent. Do not re-apply any of them:** *do not rebase yet* (the
+> rebase happened), *do not fix it in the fork, wait for the release* (the release fixed it), and
+> *this entry is ready to file* (there is nothing left to report). The `msl_roots()` single-root
+> breakage it predicted is applied and working.
 >
-> **THE TRIGGER IS CONNECTORS, NOT THE MSL.** `ConnRc` — that topology with hand-written
-> connectors and **no library** — flat-lines on 0.9.20 and is correct in System Modeler. So the
-> deciding factor is reached through `connect` expansion, not through anything the MSL brings.
+> **What survives is one actionable item: `.hrw-bridge/specimens/CompliantDrive.mo` is already
+> oracle-validated and was blocked ONLY on this defect.** A motor driving a geared load through a
+> compliant shaft — in System Modeler `load.w` climbs `0 → 26.1 rad/s`, shaft torque rings at
+> **ω = 32.35 rad/s** decaying 2.59 → 1.16 N·m, and `rotor.w` is exactly `2 x load.w`. **It is
+> now promotable**, and only the curated ritual is left (`// purpose:`, notebook trace,
+> `purpose.md`, corpus baseline).
 >
-> ### ⟶ AND 0.10.0 FIXES IT — MEASURED, NOT INFERRED, 2026-09-19
->
-> **Built `msl-trace-parity-50` (`853791b`) and ran the reproducers.** `ConnRc` goes from 0 of 16
-> series moving to 10 of 16; `RcCircuit` from 0 of 24 to 15 of 24; both land on `C.v(1) =
-> 4.999773`, matching System Modeler and the closed form. **The wait-for-the-release ruling is
-> vindicated and the question it was blocked on is answered: the rebase buys the plots.**
->
-> **CLOSED 2026-11-04 — the rebase happened, and the ruling it replaced is spent.** It read
-> *DO NOT REBASE YET*, gated on a v0.10.0 tag or #340 merging, neither of which arrived; Doug
-> ruled the other way once the measurements were in. The reasoning is in `DECISIONS.md`. **Do not
-> re-apply it** — and do not read its *"blocked while we stay on 0.9.20"* list as current, because
-> the thing it blocked is now the thing that works.
->
-> **One breakage is already known: the MSL source-root shape changed.** HRW's `msl_roots()`
-> passes three roots (`Modelica 4.1.0`, `ModelicaServices 4.1.0`, `Complex.mo`); on 0.10.0 that
-> fails with an unresolved reference to `Integer_inf`. Passing the **parent directory as a
-> single root** works. Expect `worker.rs` and every example carrying `msl_roots()` to need it.
->
-> **THE ORACLE RUN IS DONE — and Claude can run these himself.** `Import[…, "MO"]` +
-> `SystemModelSimulate` through the Wolfram MCP server works on this machine, including on
-> specimens that use the MSL. **That is a standing capability, not a one-off**: the oracle-first
-> rule no longer costs Doug a manual step, so use it before concluding anything from Rumoca.
->
-> **The entry is Doug's to file, per `docs/upstream-issues.md`'s own rule.**
->
-> **RULED 2026-09-04 — DO NOT FIX IT IN THE FORK. WAIT FOR THE RELEASE.** Doug: *"We will
-> definitely not attempt a fix for the fixed = true stuff. Instead, we will wait for the next
-> rumoca release."* **Do not re-propose the fix**, and the reason is not caution: the pending
-> 0.10.0 branch already contains `lower/initial_pins.rs`, whose own doc describes *"a runtime that
-> seeds one value per state and then projects the algebraic unknowns"* — the formulation this
-> project independently derived — and has deleted the `Der => emit_const_at(0.0)` arm. Fixing it
-> here means a large semantic change to code upstream has already rewritten, and a harder rebase.
->
-> **Upstream is not abandoned; it is mid-release, which reads the same from outside.** `main` last
-> moved 2026-07-29 and Doug's outreach went unanswered, but PR **#340** (194 commits, 2,377 files)
-> was updated 2026-08-27. **So the work is waiting on `git fetch`, not on a person** — and the
-> instrumented reading of that is in [`docs/updating-rumoca.md`](docs/updating-rumoca.md) **step
-> 0**, which is new and exists to stop exactly the near-miss of that day: choose the target,
-> prefer a tag, and check whether the release already fixes what you were about to.
->
-> **What it explains.** Doug asked for a specimen that plots well and shows the animation panes.
-> **The corpus is not dull — 13 of 18 traced specimens are frozen at their own steady state**,
-> `RcCircuit` included. **So the plot gap is this defect, not a specimen shortage**, and curated
-> specimens for it wait until initialization is fixed.
->
-> **`.hrw-bridge/specimens/CompliantDrive.mo` IS ALREADY ORACLE-VALIDATED**, which is the
-> expensive half of promoting it. A motor driving a geared load through a compliant shaft: in
-> System Modeler `load.w` climbs `0 → 26.1 rad/s` while the shaft torque rings at
-> **ω = 32.35 rad/s** (10 cycles in 2 s, decaying 2.59 → 1.16 N·m), and `rotor.w` is exactly
-> `2 x load.w`, confirming the gear. **It fails at `t = 0` under Rumoca** — the same defect, not a
-> design error. When initialization is fixed, this is the specimen to promote, and only the
-> curated ritual is left (System Modeler authoring, `// purpose:`, notebook trace, `purpose.md`,
-> corpus baseline).
->
-> **Plausible and NOT to be stated in a report: this may subsume the open state-count entry** —
-> `Drivetrain` and `GearWithBrake` are its two specimens and both are frozen here.
+> **CLAUDE CAN RUN THE ORACLE HIMSELF, so oracle-first costs Doug nothing** — but **use
+> `scripts/oracle.wls`, not the MCP server, for anything beyond a single model**:
+> [`docs/long-runs.md`](docs/long-runs.md) carries why, and it cost 90 minutes to learn.
 >
 > ### ⟶ A STANDING FACT ABOUT THE VS CODE EXTENSION — the 2026-09-03 arc that left it is closed
 >
