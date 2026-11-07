@@ -754,6 +754,59 @@ mod tests {
         assert_eq!(anim.live_state(false), crate::LiveState::Idle);
     }
 
+    /// **The empty pane says why it is empty, on screen** — the half of the test above
+    /// that `doc_citations::every_absence_message_a_pane_shows_is_named_by_a_test`
+    /// found uncovered on 2026-11-07. Rendered through the real `ui`, so the claim is
+    /// the label a reader sees, not a string that happens to appear in the source.
+    #[test]
+    fn a_model_with_no_loops_says_so_on_screen() {
+        use egui_kittest::kittest::Queryable;
+        let mut anim = TearingAnimation {
+            playback: Playback::recorded(Vec::new(), FRAME_INTERVAL),
+            blocks: Vec::new(),
+        };
+        let harness = egui_kittest::Harness::new_ui(|ui| {
+            let _ = anim.ui(ui, false, true);
+        });
+        harness.get_by_label("No algebraic loops in this model \u{2014} nothing to tear.");
+        assert!(
+            harness.query_by_label_contains("Debug").is_none(),
+            "a model with nothing to tear offers no session to step through",
+        );
+    }
+
+    /// **"Nothing torn yet" while the tear set is empty, and the names once it is not.**
+    /// The running state is per-frame, so both halves are one cursor position apart.
+    #[test]
+    fn the_running_state_names_what_has_been_torn() {
+        use egui_kittest::kittest::Queryable;
+        let start = bf(
+            TearingStep::BlockStart {
+                ordinal: 0,
+                equations: 3,
+                unknowns: 3,
+            },
+            &[],
+            &[],
+        );
+        let harness =
+            egui_kittest::Harness::new_ui(|ui| render_running_state(ui, &start, &names()));
+        harness.get_by_label("Nothing torn yet.");
+
+        let torn = bf(
+            TearingStep::Torn {
+                variable: 1,
+                appearances: 3,
+                remaining_equations: 3,
+            },
+            &[1],
+            &[],
+        );
+        let harness = egui_kittest::Harness::new_ui(|ui| render_running_state(ui, &torn, &names()));
+        assert!(harness.query_by_label("Nothing torn yet.").is_none());
+        harness.get_by_label("Torn so far (1): error");
+    }
+
     /// End to end on a real coupled block: the compile must find
     /// `ProportionalLoop`'s 3x3 loop and report a `BlockStart`, at least one
     /// `Torn`, and the `PlanSelected` naming the plan it kept — the proof that

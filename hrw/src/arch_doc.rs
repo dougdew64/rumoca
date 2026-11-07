@@ -442,8 +442,8 @@ pub struct FieldGroup {
 /// the struct is; `the_working_tree_is_checked_out_with_lf_endings` is what keeps
 /// that split honest under CRLF.
 pub fn app_field_groups() -> Result<Vec<FieldGroup>, String> {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs");
-    let src = std::fs::read_to_string(&path)
+    let path = Path::new(crate::manifest_path!("src", "app.rs"));
+    let src = std::fs::read_to_string(path)
         .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
 
     let body = src

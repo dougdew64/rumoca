@@ -2765,14 +2765,16 @@ Some prose.
     /// the messages this repository has decided not to test, each with a reason on
     /// record in `docs/ui-findings.md`:
     ///
-    /// - **Three are unreachable (C17)** — `connection_anim`, `reduction_anim` and
-    ///   `pre_lowering_anim` each guard construction on a non-empty frame vector, so
-    ///   their internal absence branch never runs and `app.rs` speaks instead. A test on
-    ///   those strings would pass forever regardless of what the pane does, which is
-    ///   C1's reasoning for accepting rather than testing.
-    /// - **Two are per-frame running states**, not empty-pane messages: *"No slots
-    ///   created yet"* and *"No iteration needed yet"* describe a cursor position inside
-    ///   a populated replay. Worth covering, not yet covered.
+    /// - **Both are unreachable (C17)** — `connection_anim`'s *"No connections in this
+    ///   model."*, because `app.rs` builds the animation only from a non-empty frame
+    ///   vector, and `tarjan_anim`'s *"No Tarjan trace available."*, because
+    ///   `TarjanAnimation::from_captured_frames` returns `None` on an empty capture. In
+    ///   both cases `app.rs` speaks instead. A test on those strings would pass forever
+    ///   regardless of what the pane does, which is C1's reasoning for accepting rather
+    ///   than testing.
+    ///
+    /// *(This list described a different five until 2026-11-07 — see the dated section
+    /// below. The bullets are the CURRENT composition and are rewritten when it moves.)*
     ///
     /// **Lower it as those are covered; never raise it.** A new absence message with no
     /// test raises the count and fails here, which is the whole point.
@@ -2802,13 +2804,26 @@ Some prose.
     /// `tearing_anim`'s two are **not** unreachable and are genuinely uncovered —
     /// logged in `docs/tech-debt.md` rather than budgeted here, because the budget is
     /// already spent on the five above.
+    ///
+    /// # 5 → 2 on 2026-11-07, and the five were not the five this said
+    ///
+    /// Recounted as the post-rebase sweep's open item 12, with the budget set to 0 to
+    /// print the set. **The listed composition was stale while the number held**: the
+    /// two per-frame states had gone, `pre_lowering_anim`'s with its re-model, and the set was
+    /// Tarjan and connections (C17), `tearing_anim`'s two, and `reduction_anim`'s
+    /// message — rendered again since its pane returned on 2026-11-04.
+    ///
+    /// **Three were covered by rendering tests, and one of them was false.**
+    /// `reduction_anim`'s weak line said *"The stage was not reached"*, yet a stage that
+    /// was not reached has no `search` key and never builds the view — the branch is
+    /// reached only by an empty log from a stage that RAN. Covering a message is how
+    /// its words got read against the code. The two tearing messages were true.
     #[test]
     fn every_absence_message_a_pane_shows_is_named_by_a_test() {
-        /// 6 on 2026-08-24, the day this was built: three unreachable (C17) and two
-        /// per-frame states, plus one probe artifact that the punctuation trim below
-        /// removed. Anything above this is a pane that can say something false with
-        /// nothing to catch it.
-        const UNCOVERED_BUDGET: usize = 5;
+        /// 6 on 2026-08-24, the day this was built; 5 from then until 2026-11-07; 2
+        /// since, both C17. Anything above this is a pane that can say something false
+        /// with nothing to catch it.
+        const UNCOVERED_BUDGET: usize = 2;
 
         // Assembled, so this file's own prose cannot satisfy the scan.
         let openers = [
@@ -2894,6 +2909,68 @@ Some prose.
                 .map(|(m, f)| format!("[{f}] {m}"))
                 .collect::<Vec<_>>()
                 .join("\n  "),
+        );
+    }
+
+    /// **No path under the manifest directory is spelled with a foreign separator.**
+    ///
+    /// `concat!(env!("CARGO_MANIFEST_DIR"), "/…")` is mixed on Windows — the manifest dir
+    /// is native, the literal is not. Doug found one in the Settings dialog on 2026-11-05
+    /// and the two editable values were fixed; **the other twenty were left, counted, and
+    /// had grown to 32 by the post-rebase sweep of 2026-11-07** (its open item 10), which
+    /// is what a count with no mechanism behind it does. Every site now uses
+    /// `crate::manifest_path!`, and this keeps it that way.
+    ///
+    /// **`hrw/` only** — `crates/` is upstream code. Comment lines are skipped so the
+    /// accounts of the defect (this one, `lib.rs`'s) do not trip it, and the needle is
+    /// assembled so this function's own source cannot either.
+    ///
+    /// **Matched with whitespace removed, and its first draft was line-by-line.** That
+    /// draft passed while seven sites survived in `bridge.rs`, each `concat!(` that
+    /// rustfmt had wrapped so the literal sat on the line below the `env!` — the blind
+    /// spot `the_hook_matches_real_action_kinds` had on the same day. The value check
+    /// `the_default_paths_use_one_kind_of_separator` caught it, on `QUESTION_FILE`.
+    ///
+    /// **What it does not cover**: `Path::join("a/b")`, the runtime form of the same
+    /// mixing. On 2026-11-07 the five in production code and the tools were fixed with
+    /// it (`arch_doc`, `specimen_purpose`, `doc_report`, `gate`, `promote_run`); **74
+    /// remain, all in tests**, where the path is opened and never shown. Recorded in
+    /// `docs/tech-debt.md`.
+    #[test]
+    fn no_manifest_path_mixes_separators() {
+        // No spaces: the code is compared with all whitespace removed.
+        let needle = format!("{}\"CARGO_MANIFEST_DIR\"),\"", "env!(");
+        let mut found = Vec::new();
+        let mut scanned = 0;
+        for (path, text) in rust_source_texts() {
+            let rel = path.to_string_lossy().replace('\\', "/");
+            if !rel.contains("/hrw/") {
+                continue;
+            }
+            scanned += 1;
+            // Non-comment code, whitespace stripped, so a wrapped call is one string.
+            let code: String = text
+                .lines()
+                .filter(|l| !l.trim_start().starts_with("//"))
+                .flat_map(|l| l.chars().filter(|c| !c.is_whitespace()))
+                .collect();
+            let hits = code.matches(needle.as_str()).count();
+            if hits > 0 {
+                found.push(format!("{rel}: {hits}"));
+            }
+        }
+        // Non-vacuity: the walk must have reached HRW's sources at all.
+        assert!(
+            scanned > 50,
+            "only {scanned} hrw files scanned; the walk is broken"
+        );
+        assert!(
+            found.is_empty(),
+            "{} path(s) append a literal to CARGO_MANIFEST_DIR, which mixes separators on \
+             Windows -- use `crate::manifest_path!(\"seg\", \"seg\")` (or \
+             `hrw::manifest_path!` in an example):\n  {}",
+            found.len(),
+            found.join("\n  "),
         );
     }
 

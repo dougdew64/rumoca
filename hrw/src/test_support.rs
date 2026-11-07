@@ -19,7 +19,7 @@ use rumoca_compile::{Session, SessionConfig};
 
 /// The specimen directory, resolved at compile time relative to this crate.
 fn specimen_dir() -> PathBuf {
-    PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"))
+    PathBuf::from(crate::manifest_path!("specimens"))
 }
 
 /// Compile `specimens/<model>.mo` and return the model's DAE.

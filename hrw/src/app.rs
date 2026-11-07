@@ -226,42 +226,31 @@ const LIVE_DEBUG_ACK_TIMEOUT: std::time::Duration = std::time::Duration::from_se
 // rather than merely pausing it: a session that failed to spawn, a specimen
 // change, and app exit (`App::release_live_breakpoint_at_exit`).
 
-/// The platform's own path separator, as a literal `concat!` can take.
-///
-/// **Because `CARGO_MANIFEST_DIR` is native and a `"/..."` literal is not.** Doug,
-/// 2026-11-05, reading the Settings dialog: *"there is this specimens directory path
-/// which uses both back slashes and forward slashes:
-/// `C:\Users\dougd\source\repos\rumoca\hrw/specimens`. It seems that the slashes should
-/// all be the same kind."* He is right, and the seam is exactly the `concat!`: Cargo
-/// hands over a Windows path spelled with backslashes, and the literal appended to it
-/// was spelled with a forward slash.
-///
-/// Windows accepts both, so nothing malfunctioned — **this is a presentation defect in
-/// an editable field**, which is its own category: the value is not only displayed but
-/// offered back to the user to edit, so it should be spelled the way their platform
-/// spells paths.
-///
-/// **Fixed at the source rather than cleaned up afterwards.** Normalising the string
-/// where it reaches the dialog would leave the constant itself mixed, and
-/// `app::tests` compares paths against it with `starts_with` — so a display-only fix
-/// would put the two spellings one assertion apart. A `cfg`-selected literal makes the
-/// mixed form unconstructible instead, and costs nothing at runtime.
-#[cfg(windows)]
-macro_rules! native_sep {
-    () => {
-        "\\"
-    };
-}
-#[cfg(not(windows))]
-macro_rules! native_sep {
-    () => {
-        "/"
-    };
-}
+// **Why the default paths below are built with `manifest_path!`** — the macro, and
+// `native_sep!` under it, moved to `lib.rs` on 2026-11-07 so every module could use
+// them; the account stays here, beside the two values Doug saw.
+//
+// **Because `CARGO_MANIFEST_DIR` is native and a `"/..."` literal is not.** Doug,
+// 2026-11-05, reading the Settings dialog: *"there is this specimens directory path
+// which uses both back slashes and forward slashes:
+// `C:\Users\dougd\source\repos\rumoca\hrw/specimens`. It seems that the slashes should
+// all be the same kind."* He is right, and the seam is exactly the `concat!`: Cargo
+// hands over a Windows path spelled with backslashes, and the literal appended to it
+// was spelled with a forward slash.
+//
+// Windows accepts both, so nothing malfunctioned — **this is a presentation defect in
+// an editable field**, which is its own category: the value is not only displayed but
+// offered back to the user to edit, so it should be spelled the way their platform
+// spells paths.
+//
+// **Fixed at the source rather than cleaned up afterwards.** Normalising the string
+// where it reaches the dialog would leave the constant itself mixed, and
+// `app::tests` compares paths against it with `starts_with` — so a display-only fix
+// would put the two spellings one assertion apart. A `cfg`-selected literal makes the
+// mixed form unconstructible instead, and costs nothing at runtime.
 
 /// Default specimen directory: `specimens/` next to this crate's manifest.
-pub(crate) const DEFAULT_SPECIMEN_DIR: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), native_sep!(), "specimens");
+pub(crate) const DEFAULT_SPECIMEN_DIR: &str = crate::manifest_path!("specimens");
 
 /// Default library source roots, one path per line. Editable at runtime.
 ///
@@ -276,16 +265,11 @@ pub(crate) const DEFAULT_SPECIMEN_DIR: &str =
 /// *running app* starts with, so a stale value here means Doug's HRW cannot resolve
 /// the MSL at all, with nothing failing to say so.
 /// `no_second_copy_of_the_msl_root_list` now keeps the count at one.
-/// **Spelled with the platform's separator**, for the reason on [`native_sep`]: this is
-/// the other value the Settings dialog hands back to the user to edit, and it carried
-/// the same mixed-slash spelling Doug reported for the specimen directory.
-const DEFAULT_LIBRARIES: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    native_sep!(),
-    "vendor",
-    native_sep!(),
-    "msl"
-);
+/// **Spelled with the platform's separator**, for the reason in the comment above
+/// [`DEFAULT_SPECIMEN_DIR`]: this is the other value the Settings dialog hands back to
+/// the user to edit, and it carried the same mixed-slash spelling Doug reported for the
+/// specimen directory.
+const DEFAULT_LIBRARIES: &str = crate::manifest_path!("vendor", "msl");
 
 // ---- Layout constants ----
 // Named fractions for panel sizes and splits, replacing inline magic numbers.

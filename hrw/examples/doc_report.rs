@@ -51,7 +51,7 @@ fn hrw_dir() -> PathBuf {
 /// the two readers cannot disagree about a value — only about parsing, which the format
 /// makes hard to get differently wrong.
 fn ceiling(name: &str) -> usize {
-    let path = hrw_dir().join("docs/reading-budgets.txt");
+    let path = hrw_dir().join("docs").join("reading-budgets.txt");
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("{} must be readable: {e}", path.display()));
     for line in text.lines() {

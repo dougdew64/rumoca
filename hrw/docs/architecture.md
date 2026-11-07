@@ -113,20 +113,20 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 94,784 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 94,891 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `worker/tests.rs` | 9,567 |
-| `app.rs` | 8,766 |
-| `app/tests.rs` | 8,271 |
-| `doc_citations.rs` | 8,026 |
+| `worker/tests.rs` | 9,522 |
+| `app.rs` | 8,750 |
+| `app/tests.rs` | 8,282 |
+| `doc_citations.rs` | 8,103 |
 | `worker.rs` | 7,875 |
-| `bridge.rs` | 5,668 |
-| `ui_tests.rs` | 2,980 |
-| `fidelity.rs` | 2,769 |
-| `equation_sheet.rs` | 1,569 |
-| `lib.rs` | 1,459 |
+| `bridge.rs` | 5,636 |
+| `ui_tests.rs` | 2,981 |
+| `fidelity.rs` | 2,771 |
+| `equation_sheet.rs` | 1,565 |
+| `lib.rs` | 1,497 |
 | `tree.rs` | 1,426 |
 | `diagnostics.rs` | 1,421 |
 | `matching_anim.rs` | 1,310 |
@@ -138,14 +138,14 @@ showing 48 equations. They are derived now, and
 | `reduction_view.rs` | 1,048 |
 | `tarjan_anim.rs` | 1,001 |
 | `matching_ledger.rs` | 928 |
-| `stage_tabs.rs` | 912 |
+| `stage_tabs.rs` | 911 |
 | `lab_panel.rs` | 908 |
 | `dae_expr_format.rs` | 898 |
+| `tearing_anim.rs` | 879 |
 | `model_list.rs` | 849 |
 | `screenshot.rs` | 832 |
-| `tearing_anim.rs` | 826 |
+| `reduction_anim.rs` | 810 |
 | `canvas.rs` | 793 |
-| `reduction_anim.rs` | 786 |
 | `survey.rs` | 769 |
 | `arch_doc.rs` | 758 |
 | `lab.rs` | 734 |
@@ -172,7 +172,7 @@ showing 48 equations. They are derived now, and
 | `pointing.rs` | 389 |
 | `promote.rs` | 342 |
 | `dae_counts.rs` | 330 |
-| `specimen_purpose.rs` | 316 |
+| `specimen_purpose.rs` | 315 |
 | `machine_policy.rs` | 311 |
 | `equation_text.rs` | 281 |
 | `source_map.rs` | 281 |
@@ -190,7 +190,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **94,784** |
+| **total** | **94,891** |
 <!-- END GENERATED module-sizes -->
 
 

@@ -792,9 +792,8 @@ mod tests {
     /// the text rather than the types.
     #[test]
     fn no_compilation_stage_is_missing_from_the_tab_roster() {
-        let src =
-            std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/stage_tabs.rs"))
-                .expect("stage_tabs.rs must be readable");
+        let src = std::fs::read_to_string(crate::manifest_path!("src", "stage_tabs.rs"))
+            .expect("stage_tabs.rs must be readable");
         let after = src
             .split_once("let tabs: &[(StageKind")
             .expect("the tab row must still be built from a `tabs` array literal here")

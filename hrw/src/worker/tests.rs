@@ -58,10 +58,7 @@ fn open_def_extracts_a_navigated_class() {
     let name = "Modelica.Mechanics.Rotational.Components.Inertia";
     let result = {
         let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/RotationalInertia.mo"
-        ));
+        let path = Path::new(crate::manifest_path!("specimens", "RotationalInertia.mo"));
         w.compile(path, &|_: FromWorker| {}); // register the specimen document
         let FromWorker::DefTree { result, .. } = w.open_def(name) else {
             panic!("expected DefTree");
@@ -442,10 +439,7 @@ fn over_init_rc_is_answered_at_the_initialization_instant() {
 
     // `SimData` has no `Debug`, so the error is unwrapped by hand.
     let Err(refusal) = simulate_specimen(
-        Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/OverInitRc.mo"
-        )),
+        Path::new(crate::manifest_path!("specimens", "OverInitRc.mo")),
         "OverInitRc",
         1.0,
         msl_roots(),
@@ -472,10 +466,7 @@ fn over_init_rc_is_answered_at_the_initialization_instant() {
 fn single_inertia_simulates_to_a_correct_trajectory() {
     let report = {
         let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/SingleInertia.mo"
-        ));
+        let path = Path::new(crate::manifest_path!("specimens", "SingleInertia.mo"));
         let src = std::fs::read_to_string(path).unwrap();
         let uri = path.to_string_lossy().to_string();
         w.session.update_document(&uri, &src);
@@ -586,10 +577,7 @@ fn rc_circuit_charges_its_capacitor() {
     // `gen_trace` and the running app both use, and its result matches the committed
     // notebook byte for byte.
     let result = crate::worker::simulate_specimen(
-        Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/RcCircuit.mo"
-        )),
+        Path::new(crate::manifest_path!("specimens", "RcCircuit.mo")),
         "RcCircuit",
         // **2.0, the corpus baseline, and the horizon is load-bearing.** At `t_end = 1.0`
         // — the value the specimen's own `experiment` annotation asks for — this model
@@ -643,10 +631,7 @@ fn rc_circuit_charges_its_capacitor() {
 fn bench_actuator_simulates_stiff_spinup() {
     let d = {
         let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/BenchActuator.mo"
-        ));
+        let path = Path::new(crate::manifest_path!("specimens", "BenchActuator.mo"));
         w.simulate(
             CompileTarget::File(path),
             "BenchActuator",
@@ -710,10 +695,7 @@ fn discontinuity_segments_break_at_jumps() {
 fn bouncing_ball_velocity_plots_as_discontinuous() {
     let data = {
         let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/BouncingBall.mo"
-        ));
+        let path = Path::new(crate::manifest_path!("specimens", "BouncingBall.mo"));
         w.simulate(
             CompileTarget::File(path),
             "BouncingBall",
@@ -751,10 +733,7 @@ fn bouncing_ball_velocity_plots_as_discontinuous() {
 fn worker_simulate_runs_bouncing_ball() {
     let data = {
         let mut w = shared_worker().lock().unwrap_or_else(|e| e.into_inner());
-        let path = Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/BouncingBall.mo"
-        ));
+        let path = Path::new(crate::manifest_path!("specimens", "BouncingBall.mo"));
         w.simulate(
             CompileTarget::File(path),
             "BouncingBall",
@@ -900,9 +879,9 @@ fn bouncing_ball_has_events_smooth_model_has_none() {
 /// it doesn't bit-rot while deferred.
 #[test]
 fn planar_mechanics_library_parses() {
-    let roots = vec![PathBuf::from(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/lib/PlanarMechanics.mo"
+    let roots = vec![PathBuf::from(crate::manifest_path!(
+        "lib",
+        "PlanarMechanics.mo"
     ))];
     let mut state = WorkerState::new();
     let loaded = state
@@ -925,10 +904,7 @@ fn planar_mechanics_library_parses() {
 /// [`a_changed_fingerprint_defeats_the_memo`], which counts parses.
 #[test]
 fn a_memoised_source_root_parse_returns_the_same_documents() {
-    let root = PathBuf::from(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/lib/PlanarMechanics.mo"
-    ));
+    let root = PathBuf::from(crate::manifest_path!("lib", "PlanarMechanics.mo"));
     let first = parsed_source_root(&root).expect("first parse");
     let second = parsed_source_root(&root).expect("memoised parse");
 
@@ -968,7 +944,7 @@ fn a_memoised_source_root_parse_returns_the_same_documents() {
 #[test]
 fn the_session_holds_at_most_one_specimen_document() {
     let mut w = WorkerState::new();
-    let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/specimens");
+    let dir = crate::manifest_path!("specimens");
     // Three MSL-free specimens, so a bare session can resolve them.
     let names = ["SingleInertia", "BouncingBall", "TwoLoops"];
     let mut seen_uris = Vec::new();
@@ -4216,10 +4192,7 @@ fn all_healthy_specimens_simulate() {
 )]
 fn compile_specimen_headless_matches_worker() {
     let headless = compile_specimen(
-        Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/SingleInertia.mo"
-        )),
+        Path::new(crate::manifest_path!("specimens", "SingleInertia.mo")),
         msl_roots(),
     )
     .expect("compile_specimen");
@@ -4279,10 +4252,7 @@ fn compile_specimen_headless_matches_worker() {
 )]
 fn simulate_specimen_headless_produces_trajectories() {
     let data = simulate_specimen(
-        Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/SingleInertia.mo"
-        )),
+        Path::new(crate::manifest_path!("specimens", "SingleInertia.mo")),
         "SingleInertia",
         2.0,
         msl_roots(),
@@ -4320,10 +4290,7 @@ fn simulate_specimen_headless_produces_trajectories() {
 )]
 fn the_solver_diagnostics_plots_receive_the_steps_the_integrator_took() {
     let data = simulate_specimen(
-        Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/specimens/StiffDecay.mo"
-        )),
+        Path::new(crate::manifest_path!("specimens", "StiffDecay.mo")),
         "StiffDecay",
         2.0,
         msl_roots(),
@@ -6883,10 +6850,7 @@ fn simulate_invalid_syntax_reports_error() {
 
 #[test]
 fn compile_emits_progress_messages() {
-    let specimen = PathBuf::from(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/specimens/SingleInertia.mo"
-    ));
+    let specimen = PathBuf::from(crate::manifest_path!("specimens", "SingleInertia.mo"));
     let mut w = WorkerState::new();
     let progress = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
     let p = std::sync::Arc::clone(&progress);
@@ -6904,10 +6868,7 @@ fn compile_emits_progress_messages() {
 
 #[test]
 fn compile_produces_equation_sheet_for_healthy_specimen() {
-    let specimen = PathBuf::from(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/specimens/SingleInertia.mo"
-    ));
+    let specimen = PathBuf::from(crate::manifest_path!("specimens", "SingleInertia.mo"));
     let mut w = WorkerState::new();
     let result = w.compile(&specimen, &|_: FromWorker| {});
     let FromWorker::Compiled { equation_sheet, .. } = result else {
@@ -6919,10 +6880,7 @@ fn compile_produces_equation_sheet_for_healthy_specimen() {
 
 #[test]
 fn compile_produces_identifier_index_for_healthy_specimen() {
-    let specimen = PathBuf::from(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/specimens/SingleInertia.mo"
-    ));
+    let specimen = PathBuf::from(crate::manifest_path!("specimens", "SingleInertia.mo"));
     let mut w = WorkerState::new();
     let result = w.compile(&specimen, &|_: FromWorker| {});
     let FromWorker::Compiled {
@@ -7463,10 +7421,7 @@ fn is_terminal(msg: &FromWorker) -> bool {
 fn every_request_the_worker_answers_produces_exactly_one_response() {
     use std::time::Duration;
 
-    let missing = PathBuf::from(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/specimens/NoSuchSpecimen.mo"
-    ));
+    let missing = PathBuf::from(crate::manifest_path!("specimens", "NoSuchSpecimen.mo"));
     let requests: Vec<(&str, ToWorker)> = vec![
         ("SetLibraries", ToWorker::SetLibraries(Vec::new())),
         ("Compile", ToWorker::Compile(missing.clone())),
@@ -7900,7 +7855,7 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         ("UnclosedModel", "X.........."),
     ];
 
-    let dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"));
+    let dir = PathBuf::from(crate::manifest_path!("specimens"));
     let mut names: Vec<String> = std::fs::read_dir(&dir)
         .expect("the specimen directory must be readable")
         .flatten()
@@ -8478,7 +8433,7 @@ fn the_tests_blocked_on_a_remodel_are_still_blocked() {
         StageKind::Events,
     ];
 
-    let dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/src"));
+    let dir = PathBuf::from(crate::manifest_path!("src"));
     let mut sources: Vec<String> = Vec::new();
     let mut stack = vec![dir];
     while let Some(d) = stack.pop() {
@@ -8691,7 +8646,7 @@ fn blamed_phase(note: Option<&str>) -> Option<String> {
     ignore = "compiles the whole specimen corpus; run with --features slow-tests"
 )]
 fn the_not_reached_tail_is_contiguous_and_agrees_on_its_cause() {
-    let dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"));
+    let dir = PathBuf::from(crate::manifest_path!("specimens"));
     let mut names: Vec<String> = std::fs::read_dir(&dir)
         .expect("the specimen directory must be readable")
         .flatten()
@@ -9313,9 +9268,9 @@ fn two_compiles_of_one_specimen_log_the_same_structure() {
     ignore = "compile-heavy; run with --features slow-tests"
 )]
 fn an_authored_tolerance_reaches_the_solver() {
-    let base = std::fs::read_to_string(Path::new(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/specimens/SingleInertia.mo"
+    let base = std::fs::read_to_string(Path::new(crate::manifest_path!(
+        "specimens",
+        "SingleInertia.mo"
     )))
     .expect("read SingleInertia");
     // `SingleInertia` deliberately carries no experiment annotation, so each variant

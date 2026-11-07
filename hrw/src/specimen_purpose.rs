@@ -52,8 +52,7 @@ use crate::app::set_markdown_text_sizes;
 /// layout. `docs/specimen-notebook/<Model>/purpose.md`, beside that model's generated
 /// `trace/`.
 fn note_path(model: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("docs/specimen-notebook")
+    PathBuf::from(crate::manifest_path!("docs", "specimen-notebook"))
         .join(model)
         .join("purpose.md")
 }

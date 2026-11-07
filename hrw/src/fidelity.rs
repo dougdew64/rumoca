@@ -1225,9 +1225,10 @@ mod tests {
         // *(This said "the 10-specimen pre-commit gate" and named `promote-run.ps1`.
         // `MODELS` has since grown and the script was replaced by the Rust example; a
         // count and a filename in a comment both rot, and neither fails anything.)*
-        std::path::PathBuf::from(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/docs/reports/specimen-fidelity-report.csv"
+        std::path::PathBuf::from(crate::manifest_path!(
+            "docs",
+            "reports",
+            "specimen-fidelity-report.csv"
         ))
     }
 
@@ -2111,7 +2112,7 @@ mod tests {
     /// and why topping the report up is a few seconds of work.
     #[test]
     fn every_specimen_has_an_oracle_verdict() {
-        let dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"));
+        let dir = std::path::Path::new(crate::manifest_path!("specimens"));
         let mut specimens: Vec<String> = std::fs::read_dir(dir)
             .expect("the specimen directory is part of the checkout")
             .filter_map(|e| e.ok().map(|e| e.path()))
@@ -2120,9 +2121,10 @@ mod tests {
             .collect();
         specimens.sort_unstable();
 
-        let report = std::path::Path::new(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/docs/reports/specimen-oracle-report.csv"
+        let report = std::path::Path::new(crate::manifest_path!(
+            "docs",
+            "reports",
+            "specimen-oracle-report.csv"
         ));
         let text = std::fs::read_to_string(report)
             .expect("the committed oracle report is part of the checkout");

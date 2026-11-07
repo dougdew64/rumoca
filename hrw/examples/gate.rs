@@ -136,7 +136,7 @@ fn main() {
     let docs_only = hrw::gate_policy::is_docs_only(refs.iter().copied());
 
     if !docs_only {
-        let exe = repo.join("target/debug/hrw.exe");
+        let exe = repo.join("target").join("debug").join("hrw.exe");
         if binary_is_locked(&exe) {
             eprintln!(
                 "HRW is running, so the gate cannot relink hrw.exe.\n\

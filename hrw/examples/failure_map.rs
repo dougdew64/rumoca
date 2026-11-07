@@ -18,14 +18,13 @@
 use hrw::worker::{FromWorker, StageKind};
 
 fn main() {
-    let mut names: Vec<String> =
-        std::fs::read_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/specimens"))
-            .expect("specimens/ must be readable")
-            .filter_map(|e| {
-                let p = e.ok()?.path();
-                (p.extension()? == "mo").then(|| p.file_stem()?.to_str().map(str::to_owned))?
-            })
-            .collect();
+    let mut names: Vec<String> = std::fs::read_dir(hrw::manifest_path!("specimens"))
+        .expect("specimens/ must be readable")
+        .filter_map(|e| {
+            let p = e.ok()?.path();
+            (p.extension()? == "mo").then(|| p.file_stem()?.to_str().map(str::to_owned))?
+        })
+        .collect();
     names.sort();
 
     let libs = vec![std::path::PathBuf::from(format!(
