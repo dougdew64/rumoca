@@ -7046,6 +7046,16 @@ impl App {
 
     /// The **Question Bar** — what Claude will actually have behind the next question.
     ///
+    /// **It sits below the stage tabs because it depends on them**, and the position
+    /// says so. Doug proposed moving it above the tabs on 2026-11-07, on the premise that
+    /// below them it *"suggests incorrectly that the Question bar contents might change
+    /// by selecting a different tab"*; he withdrew it when shown that they do change. The
+    /// Always row names the tab's stage, *this* falls back to the tab when nothing is
+    /// pointed at or followed, the Following row counts matches in the tab's stage, and
+    /// the Pointing at row notes a point taken in another stage. Placing the bar above the
+    /// tabs would claim an independence it does not have, so do not move it unless those
+    /// four dependencies are gone first.
+    ///
     /// **What is left here is policy**, after the assembled state left for
     /// [`crate::question_bar`] on 2026-08-19: the empty-state branch (whose hint is
     /// built from view state this pane otherwise never touches), the one call that
