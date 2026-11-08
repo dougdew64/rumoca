@@ -593,11 +593,13 @@ the next phase touches — is procedure and lives there.
 > **UPSTREAM NOW HAS TAGS** *(2026-11-06)* — `v0.10.0`…`v0.10.4`, and our base is **after**
 > `v0.10.4`, so step 0's *prefer a tag* is live next time. *(This box said none existed.)*
 >
-> **REBASING AGAIN WAS WEIGHED AND DECLINED, 2026-11-06 — do not re-open it without a reason.**
-> `main` means three things: **0** behind `origin/main`, **61** behind `upstream/main`, all landed
-> in 48 hours — a Jacobian/solver-performance arc, no version bump, no tag, ~30 commits a day, and
-> a hop would void step 10's three hours. Revisit on `v0.10.5` or when it settles; the content is
-> squarely step 3 (simulation).
+> **WHEN TO REBASE AGAIN — the rule is `docs/updating-rumoca.md` step 0** *(Doug's decision,
+> 2026-11-08; it replaces 11-06's "revisit on `v0.10.5` or when it settles", which never fires if
+> the pace never drops)*. Rebase on **the next upstream tag**; **or, by 2026-11-27** (three weeks
+> after the 0.10.4 rebase closed) **with no tag, onto `upstream/main` anyway**; **or earlier** for a
+> specific need, such as an upstream fix for D3. On 11-08 there was still no tag after `v0.10.4`,
+> `upstream/main` was **116** commits past our base, and **8 crate files** were changed on both
+> sides. Waiting is not free.
 >
 > **No commit mixes `crates/` with `hrw/`, and it must stay true** — that is what keeps the
 > instrumentation a clean cherry-pick. *(Do not spell the commit count here; it rots.)*
