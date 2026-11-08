@@ -1,0 +1,31 @@
+{
+  "determinacy": {
+    "state_scalars": 3,
+    "determined": 2,
+    "only_guessed": [
+      "v_filt"
+    ],
+    "definitions": 1,
+    "checks": 0,
+    "partly_fixed_states": []
+  },
+  "pins": [
+    {
+      "role": "definition",
+      "coordinate": "v",
+      "scalar": 0,
+      "value": "1",
+      "source": "v_meas",
+      "source_scalar": 0,
+      "declared_at": {
+        "file": "hrw/specimens/MeasuredOscillator.mo",
+        "line": 22,
+        "column": 3,
+        "excerpt": "Real v_meas",
+        "line_text": "  Real v_meas(start = 1.0, fixed = true) \"tachometer reading: the measured velocity, stated at t = 0\";",
+        "byte_start": 1480,
+        "byte_end": 1491
+      }
+    }
+  ]
+}

@@ -1,0 +1,1462 @@
+{
+  "schema_version": 89,
+  "layout": {
+    "bindings": {
+      "x": {
+        "Y": {
+          "index": 0,
+          "byte_offset": 0
+        }
+      },
+      "v": {
+        "Y": {
+          "index": 1,
+          "byte_offset": 8
+        }
+      },
+      "omega": {
+        "P": {
+          "index": 0,
+          "byte_offset": 0
+        }
+      },
+      "threshold": {
+        "P": {
+          "index": 1,
+          "byte_offset": 8
+        }
+      },
+      "above": {
+        "P": {
+          "index": 2,
+          "byte_offset": 16
+        }
+      },
+      "rises": {
+        "P": {
+          "index": 3,
+          "byte_offset": 24
+        }
+      },
+      "crossings": {
+        "P": {
+          "index": 4,
+          "byte_offset": 32
+        }
+      }
+    },
+    "shapes": {},
+    "shape_spans": {},
+    "y_scalars": 2,
+    "p_scalars": 13
+  },
+  "solve_layout": {
+    "variable_storage_runs": [
+      {
+        "base": {
+          "P": {
+            "index": 0,
+            "byte_offset": 0
+          }
+        },
+        "scalar_count": 1,
+        "role": "Parameter",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "P": {
+            "index": 1,
+            "byte_offset": 8
+          }
+        },
+        "scalar_count": 1,
+        "role": "Parameter",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 0,
+            "byte_offset": 0
+          }
+        },
+        "scalar_count": 1,
+        "role": "State",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 1,
+            "byte_offset": 8
+          }
+        },
+        "scalar_count": 1,
+        "role": "State",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "P": {
+            "index": 2,
+            "byte_offset": 16
+          }
+        },
+        "scalar_count": 1,
+        "role": "DiscreteValue",
+        "value_kind": "Boolean"
+      },
+      {
+        "base": {
+          "P": {
+            "index": 3,
+            "byte_offset": 24
+          }
+        },
+        "scalar_count": 1,
+        "role": "DiscreteValue",
+        "value_kind": "Integer"
+      },
+      {
+        "base": {
+          "P": {
+            "index": 4,
+            "byte_offset": 32
+          }
+        },
+        "scalar_count": 1,
+        "role": "DiscreteValue",
+        "value_kind": "Integer"
+      }
+    ],
+    "variable_declarations": [
+      {
+        "role": "Parameter",
+        "value_kind": "Real",
+        "time_domain": "static"
+      },
+      {
+        "role": "Parameter",
+        "value_kind": "Real",
+        "time_domain": "static"
+      },
+      {
+        "role": "State",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "State",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "DiscreteValue",
+        "value_kind": "Boolean",
+        "time_domain": "event_discrete"
+      },
+      {
+        "role": "DiscreteValue",
+        "value_kind": "Integer",
+        "time_domain": "event_discrete"
+      },
+      {
+        "role": "DiscreteValue",
+        "value_kind": "Integer",
+        "time_domain": "event_discrete"
+      }
+    ],
+    "state_scalar_count": 2,
+    "algebraic_scalar_count": 0,
+    "output_scalar_count": 0,
+    "parameter_count": 2,
+    "compiled_parameter_len": 13,
+    "input_scalar_names": [],
+    "discrete_real_scalar_names": [],
+    "discrete_valued_scalar_names": [
+      "above",
+      "rises",
+      "crossings"
+    ],
+    "relation_memory_parameter_indices": [
+      11
+    ],
+    "initial_event_parameter_index": 12,
+    "terminal_event_parameter_index": null,
+    "initial_homotopy_parameter_index": null,
+    "pre_param_bindings": [
+      {
+        "dest_p_index": 5,
+        "source": {
+          "P": {
+            "index": 2
+          }
+        },
+        "clock_schedule": null
+      },
+      {
+        "dest_p_index": 6,
+        "source": {
+          "P": {
+            "index": 3
+          }
+        },
+        "clock_schedule": null
+      },
+      {
+        "dest_p_index": 7,
+        "source": {
+          "P": {
+            "index": 4
+          }
+        },
+        "clock_schedule": null
+      }
+    ]
+  },
+  "continuous": {
+    "implicit_rhs": {
+      "nodes": []
+    },
+    "implicit_row_targets": "Projection",
+    "algebraic_projection_plan": {
+      "blocks": []
+    },
+    "residual": {
+      "nodes": []
+    },
+    "manifold_residual": {
+      "nodes": []
+    },
+    "manifold_projection_plan": {
+      "blocks": []
+    },
+    "derivative_rhs": {
+      "nodes": [
+        {
+          "ScalarPrograms": {
+            "programs": [
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 0
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadP": {
+                    "dst": 0,
+                    "index": 0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 3,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 0
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 4,
+                    "index": 0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 5,
+                    "op": "Mul",
+                    "lhs": 3,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Unary": {
+                    "dst": 6,
+                    "op": "Neg",
+                    "arg": 5
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 6
+                  }
+                }
+              ]
+            ],
+            "program_spans": [
+              {
+                "source": 4654093078498546603,
+                "start": 2191,
+                "end": 2201
+              },
+              {
+                "source": 4654093078498546603,
+                "start": 2205,
+                "end": 2228
+              }
+            ],
+            "output_placements": {
+              "Dense": {
+                "count": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    "refresh_owners": {
+      "compact_projection": null,
+      "algebraic": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "derivative": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "root": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "event": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "clock_events": []
+    }
+  },
+  "initialization": {
+    "residual": {
+      "nodes": []
+    },
+    "row_roles": [],
+    "projection_plan": {
+      "blocks": [],
+      "iterates_discretes": false
+    },
+    "update_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "update_targets": [],
+    "manifold_row_count": 0,
+    "given_state_indices": [
+      0,
+      1
+    ]
+  },
+  "discrete": {
+    "event_iteration_plan": {
+      "runs": [
+        {
+          "variable": 4,
+          "pre_binding_start": 0,
+          "owner": {
+            "ScalarRows": {
+              "start_row": 0
+            }
+          }
+        },
+        {
+          "variable": 5,
+          "pre_binding_start": 1,
+          "owner": {
+            "GuardedAssignment": {
+              "program_index": 0,
+              "target_range_index": 0
+            }
+          }
+        },
+        {
+          "variable": 6,
+          "pre_binding_start": 2,
+          "owner": {
+            "GuardedAssignment": {
+              "program_index": 1,
+              "target_range_index": 0
+            }
+          }
+        }
+      ],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
+    },
+    "runtime_assignment_rhs": {
+      "programs": [
+        [
+          {
+            "FunctionConditional": {
+              "dst_start": 0,
+              "capture_start": 0,
+              "program": {
+                "owner": null,
+                "capture_count": 0,
+                "target_widths": [
+                  1
+                ],
+                "result_count": 1,
+                "arms": [
+                  {
+                    "condition_register_count": 1,
+                    "result_register_count": 3,
+                    "condition": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 12
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 0
+                        }
+                      }
+                    ],
+                    "result": [
+                      {
+                        "LoadY": {
+                          "dst": 0,
+                          "index": 0
+                        }
+                      },
+                      {
+                        "LoadP": {
+                          "dst": 1,
+                          "index": 1
+                        }
+                      },
+                      {
+                        "Compare": {
+                          "dst": 2,
+                          "op": "Gt",
+                          "lhs": 0,
+                          "rhs": 1
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 2
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "fallback_register_count": 1,
+                "fallback": [
+                  {
+                    "LoadP": {
+                      "dst": 0,
+                      "index": 11
+                    }
+                  },
+                  {
+                    "StoreOutput": {
+                      "src": 0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "StoreOutput": {
+              "src": 0
+            }
+          }
+        ]
+      ],
+      "program_spans": [
+        {
+          "source": 4654093078498546603,
+          "start": 2232,
+          "end": 2253
+        }
+      ],
+      "output_placements": {
+        "Dense": {
+          "count": 1
+        }
+      }
+    },
+    "runtime_assignment_targets": [
+      {
+        "P": {
+          "index": 2,
+          "byte_offset": 16
+        }
+      }
+    ],
+    "runtime_assignment_roles": [
+      "RelationFree"
+    ],
+    "post_commit_assignment_rhs": {
+      "programs": [
+        [
+          {
+            "FunctionConditional": {
+              "dst_start": 0,
+              "capture_start": 0,
+              "program": {
+                "owner": null,
+                "capture_count": 0,
+                "target_widths": [
+                  1
+                ],
+                "result_count": 1,
+                "arms": [
+                  {
+                    "condition_register_count": 1,
+                    "result_register_count": 3,
+                    "condition": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 12
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 0
+                        }
+                      }
+                    ],
+                    "result": [
+                      {
+                        "LoadY": {
+                          "dst": 0,
+                          "index": 0
+                        }
+                      },
+                      {
+                        "LoadP": {
+                          "dst": 1,
+                          "index": 1
+                        }
+                      },
+                      {
+                        "Compare": {
+                          "dst": 2,
+                          "op": "Gt",
+                          "lhs": 0,
+                          "rhs": 1
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 2
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "fallback_register_count": 1,
+                "fallback": [
+                  {
+                    "LoadP": {
+                      "dst": 0,
+                      "index": 11
+                    }
+                  },
+                  {
+                    "StoreOutput": {
+                      "src": 0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "StoreOutput": {
+              "src": 0
+            }
+          }
+        ]
+      ],
+      "program_spans": [
+        {
+          "source": 4654093078498546603,
+          "start": 2232,
+          "end": 2253
+        }
+      ],
+      "output_placements": {
+        "Dense": {
+          "count": 1
+        }
+      }
+    },
+    "post_commit_assignment_targets": [
+      {
+        "P": {
+          "index": 2,
+          "byte_offset": 16
+        }
+      }
+    ],
+    "post_commit_assignment_runtime_rows": [
+      0
+    ],
+    "rhs": {
+      "programs": [
+        [
+          {
+            "FunctionConditional": {
+              "dst_start": 0,
+              "capture_start": 0,
+              "program": {
+                "owner": null,
+                "capture_count": 0,
+                "target_widths": [
+                  1
+                ],
+                "result_count": 1,
+                "arms": [
+                  {
+                    "condition_register_count": 1,
+                    "result_register_count": 3,
+                    "condition": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 12
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 0
+                        }
+                      }
+                    ],
+                    "result": [
+                      {
+                        "LoadY": {
+                          "dst": 0,
+                          "index": 0
+                        }
+                      },
+                      {
+                        "LoadP": {
+                          "dst": 1,
+                          "index": 1
+                        }
+                      },
+                      {
+                        "Compare": {
+                          "dst": 2,
+                          "op": "Gt",
+                          "lhs": 0,
+                          "rhs": 1
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 2
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "fallback_register_count": 1,
+                "fallback": [
+                  {
+                    "LoadP": {
+                      "dst": 0,
+                      "index": 11
+                    }
+                  },
+                  {
+                    "StoreOutput": {
+                      "src": 0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "StoreOutput": {
+              "src": 0
+            }
+          }
+        ],
+        [
+          {
+            "FunctionConditional": {
+              "dst_start": 0,
+              "capture_start": 0,
+              "program": {
+                "owner": null,
+                "capture_count": 0,
+                "target_widths": [
+                  1
+                ],
+                "result_count": 1,
+                "arms": [
+                  {
+                    "condition_register_count": 1,
+                    "result_register_count": 3,
+                    "condition": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 12
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 0
+                        }
+                      }
+                    ],
+                    "result": [
+                      {
+                        "LoadY": {
+                          "dst": 0,
+                          "index": 0
+                        }
+                      },
+                      {
+                        "LoadP": {
+                          "dst": 1,
+                          "index": 1
+                        }
+                      },
+                      {
+                        "Compare": {
+                          "dst": 2,
+                          "op": "Gt",
+                          "lhs": 0,
+                          "rhs": 1
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 2
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "fallback_register_count": 1,
+                "fallback": [
+                  {
+                    "LoadP": {
+                      "dst": 0,
+                      "index": 11
+                    }
+                  },
+                  {
+                    "StoreOutput": {
+                      "src": 0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "StoreOutput": {
+              "src": 0
+            }
+          }
+        ],
+        [
+          {
+            "LoadP": {
+              "dst": 0,
+              "index": 2
+            }
+          },
+          {
+            "LoadP": {
+              "dst": 1,
+              "index": 5
+            }
+          },
+          {
+            "Unary": {
+              "dst": 2,
+              "op": "Not",
+              "arg": 1
+            }
+          },
+          {
+            "Binary": {
+              "dst": 3,
+              "op": "And",
+              "lhs": 0,
+              "rhs": 2
+            }
+          },
+          {
+            "StoreOutput": {
+              "src": 3
+            }
+          }
+        ],
+        [
+          {
+            "LoadP": {
+              "dst": 0,
+              "index": 2
+            }
+          },
+          {
+            "LoadP": {
+              "dst": 1,
+              "index": 5
+            }
+          },
+          {
+            "Compare": {
+              "dst": 2,
+              "op": "Ne",
+              "lhs": 0,
+              "rhs": 1
+            }
+          },
+          {
+            "StoreOutput": {
+              "src": 2
+            }
+          }
+        ]
+      ],
+      "program_spans": [
+        {
+          "source": 4654093078498546603,
+          "start": 2232,
+          "end": 2253
+        },
+        {
+          "source": 4654093078498546603,
+          "start": 2240,
+          "end": 2253
+        },
+        {
+          "source": 4654093078498546603,
+          "start": 2262,
+          "end": 2273
+        },
+        {
+          "source": 4654093078498546603,
+          "start": 2326,
+          "end": 2339
+        }
+      ],
+      "output_placements": {
+        "Dense": {
+          "count": 4
+        }
+      }
+    },
+    "update_targets": [
+      {
+        "P": {
+          "index": 2,
+          "byte_offset": 16
+        }
+      },
+      {
+        "P": {
+          "index": 8,
+          "byte_offset": 64
+        }
+      },
+      {
+        "P": {
+          "index": 9,
+          "byte_offset": 72
+        }
+      },
+      {
+        "P": {
+          "index": 10,
+          "byte_offset": 80
+        }
+      }
+    ],
+    "row_roles": [
+      "Equation",
+      "ConditionMemory",
+      "ConditionMemory",
+      "ConditionMemory"
+    ],
+    "pre_modes": [
+      "FollowCurrent",
+      "FollowCurrent",
+      "FollowCurrent",
+      "FollowCurrent"
+    ],
+    "observation_refresh": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "observation_refresh_reads_y": false,
+    "integrator_history_effects": [
+      "preserve",
+      "preserve",
+      "preserve",
+      "preserve"
+    ],
+    "clock_owners": [
+      null,
+      null,
+      null,
+      null
+    ],
+    "guarded_assignments": [
+      {
+        "program": [
+          {
+            "FunctionConditional": {
+              "dst_start": 0,
+              "capture_start": 0,
+              "program": {
+                "owner": null,
+                "capture_count": 0,
+                "target_widths": [
+                  1
+                ],
+                "result_count": 1,
+                "arms": [
+                  {
+                    "condition_register_count": 8,
+                    "result_register_count": 3,
+                    "condition": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 2
+                        }
+                      },
+                      {
+                        "LoadP": {
+                          "dst": 1,
+                          "index": 5
+                        }
+                      },
+                      {
+                        "Unary": {
+                          "dst": 2,
+                          "op": "Not",
+                          "arg": 1
+                        }
+                      },
+                      {
+                        "Binary": {
+                          "dst": 3,
+                          "op": "And",
+                          "lhs": 0,
+                          "rhs": 2
+                        }
+                      },
+                      {
+                        "LoadP": {
+                          "dst": 4,
+                          "index": 9
+                        }
+                      },
+                      {
+                        "Unary": {
+                          "dst": 5,
+                          "op": "Not",
+                          "arg": 4
+                        }
+                      },
+                      {
+                        "Binary": {
+                          "dst": 6,
+                          "op": "And",
+                          "lhs": 3,
+                          "rhs": 5
+                        }
+                      },
+                      {
+                        "Binary": {
+                          "dst": 7,
+                          "op": "And",
+                          "lhs": 6,
+                          "rhs": 3
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 7
+                        }
+                      }
+                    ],
+                    "result": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 6
+                        }
+                      },
+                      {
+                        "Const": {
+                          "dst": 1,
+                          "value": 1.0
+                        }
+                      },
+                      {
+                        "Binary": {
+                          "dst": 2,
+                          "op": "Add",
+                          "lhs": 0,
+                          "rhs": 1
+                        }
+                      },
+                      {
+                        "StoreOutputRange": {
+                          "start": 2,
+                          "count": 1,
+                          "stride": 1
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "fallback_register_count": 1,
+                "fallback": [
+                  {
+                    "TensorLoad": {
+                      "dst_start": 0,
+                      "input": "P",
+                      "input_start": 3,
+                      "count": 1,
+                      "seed_start": null,
+                      "lanes": 1
+                    }
+                  },
+                  {
+                    "StoreOutputRange": {
+                      "start": 0,
+                      "count": 1,
+                      "stride": 1
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "StoreOutputRange": {
+              "start": 0,
+              "count": 1,
+              "stride": 1
+            }
+          }
+        ],
+        "span": {
+          "source": 4654093078498546603,
+          "start": 2283,
+          "end": 2288
+        },
+        "target_ranges": [
+          {
+            "base": {
+              "P": {
+                "index": 3,
+                "byte_offset": 24
+              }
+            },
+            "count": 1
+          }
+        ],
+        "role": "Equation",
+        "pre_mode": "Fixed",
+        "observation_refresh": false,
+        "integrator_history_effect": "preserve",
+        "clock_owner": null
+      },
+      {
+        "program": [
+          {
+            "FunctionConditional": {
+              "dst_start": 0,
+              "capture_start": 0,
+              "program": {
+                "owner": null,
+                "capture_count": 0,
+                "target_widths": [
+                  1
+                ],
+                "result_count": 1,
+                "arms": [
+                  {
+                    "condition_register_count": 7,
+                    "result_register_count": 3,
+                    "condition": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 2
+                        }
+                      },
+                      {
+                        "LoadP": {
+                          "dst": 1,
+                          "index": 5
+                        }
+                      },
+                      {
+                        "Compare": {
+                          "dst": 2,
+                          "op": "Ne",
+                          "lhs": 0,
+                          "rhs": 1
+                        }
+                      },
+                      {
+                        "LoadP": {
+                          "dst": 3,
+                          "index": 10
+                        }
+                      },
+                      {
+                        "Unary": {
+                          "dst": 4,
+                          "op": "Not",
+                          "arg": 3
+                        }
+                      },
+                      {
+                        "Binary": {
+                          "dst": 5,
+                          "op": "And",
+                          "lhs": 2,
+                          "rhs": 4
+                        }
+                      },
+                      {
+                        "Binary": {
+                          "dst": 6,
+                          "op": "And",
+                          "lhs": 5,
+                          "rhs": 2
+                        }
+                      },
+                      {
+                        "StoreOutput": {
+                          "src": 6
+                        }
+                      }
+                    ],
+                    "result": [
+                      {
+                        "LoadP": {
+                          "dst": 0,
+                          "index": 7
+                        }
+                      },
+                      {
+                        "Const": {
+                          "dst": 1,
+                          "value": 1.0
+                        }
+                      },
+                      {
+                        "Binary": {
+                          "dst": 2,
+                          "op": "Add",
+                          "lhs": 0,
+                          "rhs": 1
+                        }
+                      },
+                      {
+                        "StoreOutputRange": {
+                          "start": 2,
+                          "count": 1,
+                          "stride": 1
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "fallback_register_count": 1,
+                "fallback": [
+                  {
+                    "TensorLoad": {
+                      "dst_start": 0,
+                      "input": "P",
+                      "input_start": 4,
+                      "count": 1,
+                      "seed_start": null,
+                      "lanes": 1
+                    }
+                  },
+                  {
+                    "StoreOutputRange": {
+                      "start": 0,
+                      "count": 1,
+                      "stride": 1
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "StoreOutputRange": {
+              "start": 0,
+              "count": 1,
+              "stride": 1
+            }
+          }
+        ],
+        "span": {
+          "source": 4654093078498546603,
+          "start": 2349,
+          "end": 2358
+        },
+        "target_ranges": [
+          {
+            "base": {
+              "P": {
+                "index": 4,
+                "byte_offset": 32
+              }
+            },
+            "count": 1
+          }
+        ],
+        "role": "Equation",
+        "pre_mode": "Fixed",
+        "observation_refresh": false,
+        "integrator_history_effect": "preserve",
+        "clock_owner": null
+      }
+    ],
+    "event_transactions": [],
+    "structured_rhs": {
+      "nodes": []
+    },
+    "structured_updates": [],
+    "clock_partition_order": [],
+    "clock_partition_intermediates": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "clock_partition_intermediate_targets": [],
+    "clock_partition_intermediate_clocks": []
+  },
+  "events": {
+    "root_conditions": {
+      "programs": [
+        [
+          {
+            "LoadY": {
+              "dst": 0,
+              "index": 0
+            }
+          },
+          {
+            "LoadP": {
+              "dst": 1,
+              "index": 1
+            }
+          },
+          {
+            "Binary": {
+              "dst": 2,
+              "op": "Sub",
+              "lhs": 1,
+              "rhs": 0
+            }
+          },
+          {
+            "StoreOutput": {
+              "src": 2
+            }
+          }
+        ]
+      ],
+      "program_spans": [
+        {
+          "source": 4654093078498546603,
+          "start": 2240,
+          "end": 2253
+        }
+      ],
+      "output_placements": {
+        "Dense": {
+          "count": 1
+        }
+      }
+    },
+    "root_relation_memory_targets": [
+      {
+        "P": {
+          "index": 11,
+          "byte_offset": 88
+        }
+      }
+    ],
+    "root_zero_domains": [
+      "Positive"
+    ],
+    "root_relation_refresh_roles": [
+      "Frozen"
+    ],
+    "condition_memory_parameter_indices": [
+      8,
+      9,
+      10
+    ],
+    "scheduled_root_conditions": [],
+    "scheduled_time_events": [],
+    "dynamic_time_event_names": [],
+    "dynamic_time_event_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "action_conditions": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "actions": [],
+    "has_terminal_event": false,
+    "delays": {
+      "source_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "delay_time_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "delay_max_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "value_parameter_indices": [],
+      "source_is_discrete": []
+    }
+  },
+  "clocks": {
+    "periodic_event_schedules": [],
+    "activation_parameter_indices": []
+  }
+}

@@ -1,0 +1,982 @@
+{
+  "schema_version": 89,
+  "layout": {
+    "bindings": {
+      "x": {
+        "Y": {
+          "index": 0,
+          "byte_offset": 0
+        }
+      },
+      "v": {
+        "Y": {
+          "index": 1,
+          "byte_offset": 8
+        }
+      },
+      "v_filt": {
+        "Y": {
+          "index": 2,
+          "byte_offset": 16
+        }
+      },
+      "v_meas": {
+        "Y": {
+          "index": 3,
+          "byte_offset": 24
+        }
+      },
+      "m": {
+        "P": {
+          "index": 0,
+          "byte_offset": 0
+        }
+      },
+      "k": {
+        "P": {
+          "index": 1,
+          "byte_offset": 8
+        }
+      },
+      "T": {
+        "P": {
+          "index": 2,
+          "byte_offset": 16
+        }
+      }
+    },
+    "shapes": {},
+    "shape_spans": {},
+    "y_scalars": 4,
+    "p_scalars": 3
+  },
+  "solve_layout": {
+    "variable_storage_runs": [
+      {
+        "base": {
+          "P": {
+            "index": 0,
+            "byte_offset": 0
+          }
+        },
+        "scalar_count": 1,
+        "role": "Parameter",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "P": {
+            "index": 1,
+            "byte_offset": 8
+          }
+        },
+        "scalar_count": 1,
+        "role": "Parameter",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "P": {
+            "index": 2,
+            "byte_offset": 16
+          }
+        },
+        "scalar_count": 1,
+        "role": "Parameter",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 0,
+            "byte_offset": 0
+          }
+        },
+        "scalar_count": 1,
+        "role": "State",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 1,
+            "byte_offset": 8
+          }
+        },
+        "scalar_count": 1,
+        "role": "State",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 3,
+            "byte_offset": 24
+          }
+        },
+        "scalar_count": 1,
+        "role": "Algebraic",
+        "value_kind": "Real"
+      },
+      {
+        "base": {
+          "Y": {
+            "index": 2,
+            "byte_offset": 16
+          }
+        },
+        "scalar_count": 1,
+        "role": "State",
+        "value_kind": "Real"
+      }
+    ],
+    "variable_declarations": [
+      {
+        "role": "Parameter",
+        "value_kind": "Real",
+        "time_domain": "static"
+      },
+      {
+        "role": "Parameter",
+        "value_kind": "Real",
+        "time_domain": "static"
+      },
+      {
+        "role": "Parameter",
+        "value_kind": "Real",
+        "time_domain": "static"
+      },
+      {
+        "role": "State",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "State",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "Algebraic",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      },
+      {
+        "role": "State",
+        "value_kind": "Real",
+        "time_domain": "continuous_time"
+      }
+    ],
+    "state_scalar_count": 3,
+    "algebraic_scalar_count": 1,
+    "output_scalar_count": 0,
+    "parameter_count": 3,
+    "compiled_parameter_len": 3,
+    "input_scalar_names": [],
+    "discrete_real_scalar_names": [],
+    "discrete_valued_scalar_names": [],
+    "relation_memory_parameter_indices": [],
+    "initial_event_parameter_index": null,
+    "terminal_event_parameter_index": null,
+    "initial_homotopy_parameter_index": null,
+    "pre_param_bindings": []
+  },
+  "continuous": {
+    "implicit_rhs": {
+      "nodes": [
+        {
+          "ScalarPrograms": {
+            "programs": [
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 1
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ]
+            ],
+            "program_spans": [
+              {
+                "source": 15745048465327979754,
+                "start": 1705,
+                "end": 1715
+              }
+            ],
+            "output_placements": {
+              "ProgramRanges": [
+                {
+                  "Range": {
+                    "start": 2,
+                    "end": 3
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "implicit_row_targets": "Projection",
+    "algebraic_projection_plan": {
+      "blocks": [
+        {
+          "Explicit": {
+            "rows": [
+              2
+            ],
+            "y_indices": [
+              3
+            ],
+            "tearing": null
+          }
+        }
+      ]
+    },
+    "residual": {
+      "nodes": [
+        {
+          "ScalarPrograms": {
+            "programs": [
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 1
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ]
+            ],
+            "program_spans": [
+              {
+                "source": 15745048465327979754,
+                "start": 1705,
+                "end": 1715
+              }
+            ],
+            "output_placements": {
+              "ProgramRanges": [
+                {
+                  "Range": {
+                    "start": 2,
+                    "end": 3
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "manifold_residual": {
+      "nodes": []
+    },
+    "manifold_projection_plan": {
+      "blocks": []
+    },
+    "derivative_rhs": {
+      "nodes": [
+        {
+          "ScalarPrograms": {
+            "programs": [
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 0
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadP": {
+                    "dst": 0,
+                    "index": 1
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Mul",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "Unary": {
+                    "dst": 3,
+                    "op": "Neg",
+                    "arg": 2
+                  }
+                },
+                {
+                  "LoadP": {
+                    "dst": 4,
+                    "index": 0
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 5,
+                    "value": 1.7976931348623157e+308
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 6,
+                    "value": -1.7976931348623157e+308
+                  }
+                },
+                {
+                  "Compare": {
+                    "dst": 7,
+                    "op": "Ge",
+                    "lhs": 4,
+                    "rhs": 6
+                  }
+                },
+                {
+                  "Compare": {
+                    "dst": 8,
+                    "op": "Le",
+                    "lhs": 4,
+                    "rhs": 5
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 9,
+                    "op": "And",
+                    "lhs": 7,
+                    "rhs": 8
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 10,
+                    "value": 0.0
+                  }
+                },
+                {
+                  "Select": {
+                    "dst": 11,
+                    "cond": 9,
+                    "if_true": 4,
+                    "if_false": 10
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 12,
+                    "op": "Div",
+                    "lhs": 3,
+                    "rhs": 11
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 12
+                  }
+                }
+              ],
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 3
+                  }
+                },
+                {
+                  "LoadY": {
+                    "dst": 1,
+                    "index": 2
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "LoadP": {
+                    "dst": 3,
+                    "index": 2
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 4,
+                    "value": 1.7976931348623157e+308
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 5,
+                    "value": -1.7976931348623157e+308
+                  }
+                },
+                {
+                  "Compare": {
+                    "dst": 6,
+                    "op": "Ge",
+                    "lhs": 3,
+                    "rhs": 5
+                  }
+                },
+                {
+                  "Compare": {
+                    "dst": 7,
+                    "op": "Le",
+                    "lhs": 3,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 8,
+                    "op": "And",
+                    "lhs": 6,
+                    "rhs": 7
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 9,
+                    "value": 0.0
+                  }
+                },
+                {
+                  "Select": {
+                    "dst": 10,
+                    "cond": 8,
+                    "if_true": 3,
+                    "if_false": 9
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 11,
+                    "op": "Div",
+                    "lhs": 2,
+                    "rhs": 10
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 11
+                  }
+                }
+              ]
+            ],
+            "program_spans": [
+              {
+                "source": 15745048465327979754,
+                "start": 1668,
+                "end": 1678
+              },
+              {
+                "source": 15745048465327979754,
+                "start": 1682,
+                "end": 1701
+              },
+              {
+                "source": 15745048465327979754,
+                "start": 1719,
+                "end": 1752
+              }
+            ],
+            "output_placements": {
+              "Dense": {
+                "count": 3
+              }
+            }
+          }
+        }
+      ]
+    },
+    "refresh_owners": {
+      "compact_projection": null,
+      "algebraic": {
+        "simultaneous_plan": {
+          "blocks": [
+            {
+              "Explicit": {
+                "rows": [
+                  2
+                ],
+                "y_indices": [
+                  3
+                ],
+                "tearing": null
+              }
+            }
+          ]
+        },
+        "simultaneous_block_indices": [
+          0
+        ],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [
+          {
+            "owner_id": 3,
+            "source": {
+              "node": 0,
+              "program": 0
+            },
+            "equation_index": 2,
+            "output_offset": 0,
+            "target_index": 3,
+            "assignment_target": 3,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 3,
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          }
+        ],
+        "causal_seed_rows": [
+          0
+        ],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [
+          0
+        ],
+        "value_stages": [
+          {
+            "CausalSeedSweep": {
+              "static_rows": [],
+              "dynamic_rows": [
+                0
+              ]
+            }
+          },
+          {
+            "ExactAssignments": {
+              "static_rows": [],
+              "dynamic_rows": [
+                0
+              ]
+            }
+          }
+        ],
+        "causal_solution_certified": true
+      },
+      "derivative": {
+        "simultaneous_plan": {
+          "blocks": [
+            {
+              "Explicit": {
+                "rows": [
+                  2
+                ],
+                "y_indices": [
+                  3
+                ],
+                "tearing": null
+              }
+            }
+          ]
+        },
+        "simultaneous_block_indices": [
+          0
+        ],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [
+          {
+            "owner_id": 3,
+            "source": {
+              "node": 0,
+              "program": 0
+            },
+            "equation_index": 2,
+            "output_offset": 0,
+            "target_index": 3,
+            "assignment_target": 3,
+            "assignment_shape": {
+              "Direct": {
+                "target_y_index": 3,
+                "expr_reg": 1,
+                "target_scale": 1.0,
+                "expr_eval_len": 2
+              }
+            },
+            "direct_assignment_certified": true,
+            "exact_assignment_certified": true
+          }
+        ],
+        "causal_seed_rows": [
+          0
+        ],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [
+          0
+        ],
+        "value_stages": [
+          {
+            "CausalSeedSweep": {
+              "static_rows": [],
+              "dynamic_rows": [
+                0
+              ]
+            }
+          },
+          {
+            "ExactAssignments": {
+              "static_rows": [],
+              "dynamic_rows": [
+                0
+              ]
+            }
+          }
+        ],
+        "causal_solution_certified": true
+      },
+      "root": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "event": {
+        "simultaneous_plan": {
+          "blocks": []
+        },
+        "simultaneous_block_indices": [],
+        "value_projection_plan": {
+          "blocks": []
+        },
+        "rows": [],
+        "causal_seed_rows": [],
+        "static_causal_seed_rows": [],
+        "dynamic_causal_seed_rows": [],
+        "value_stages": [],
+        "causal_solution_certified": true
+      },
+      "clock_events": []
+    }
+  },
+  "initialization": {
+    "residual": {
+      "nodes": [
+        {
+          "ScalarPrograms": {
+            "programs": [
+              [
+                {
+                  "LoadY": {
+                    "dst": 0,
+                    "index": 1
+                  }
+                },
+                {
+                  "Const": {
+                    "dst": 1,
+                    "value": 1.0
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 2,
+                    "op": "Sub",
+                    "lhs": 0,
+                    "rhs": 1
+                  }
+                },
+                {
+                  "StoreOutput": {
+                    "src": 2
+                  }
+                }
+              ]
+            ],
+            "program_spans": [
+              {
+                "source": 15745048465327979754,
+                "start": 1480,
+                "end": 1491
+              }
+            ],
+            "output_placements": {
+              "Dense": {
+                "count": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "row_roles": [
+      "Solved"
+    ],
+    "projection_plan": {
+      "blocks": [
+        {
+          "rows": [
+            0
+          ],
+          "unknowns": [
+            {
+              "Y": {
+                "index": 1,
+                "byte_offset": 8
+              }
+            }
+          ],
+          "scales": [
+            "Solver"
+          ]
+        }
+      ],
+      "iterates_discretes": false
+    },
+    "update_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "update_targets": [],
+    "manifold_row_count": 0,
+    "given_state_indices": [
+      0
+    ]
+  },
+  "discrete": {
+    "event_iteration_plan": {
+      "runs": [],
+      "partitions": [],
+      "schedule": {
+        "event_pass": [
+          "RelationOverrides",
+          "RuntimeAssignments",
+          "AlgebraicProjection",
+          "RuntimeAssignments",
+          "RelationRefresh",
+          "RelationSettle"
+        ],
+        "relation_pass": [
+          "DiscreteSettle",
+          "SettledIfRelationsUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "settle_pass": [
+          "DiscreteOwners",
+          "RuntimeAssignments",
+          "SettledIfUnchanged",
+          "AlgebraicProjection",
+          "RuntimeAssignments"
+        ],
+        "fixed_point_cap": 32,
+        "stalled_settle": {
+          "iteration_cap": 32,
+          "line_search_halvings": 16
+        },
+        "relation_surface_window": 8,
+        "mode_search_relations": 4
+      }
+    },
+    "runtime_assignment_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "runtime_assignment_targets": [],
+    "runtime_assignment_roles": [],
+    "post_commit_assignment_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "post_commit_assignment_targets": [],
+    "post_commit_assignment_runtime_rows": [],
+    "rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "update_targets": [],
+    "row_roles": [],
+    "pre_modes": [],
+    "observation_refresh": [],
+    "observation_refresh_reads_y": false,
+    "integrator_history_effects": [],
+    "clock_owners": [],
+    "guarded_assignments": [],
+    "event_transactions": [],
+    "structured_rhs": {
+      "nodes": []
+    },
+    "structured_updates": [],
+    "clock_partition_order": [],
+    "clock_partition_intermediates": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "clock_partition_intermediate_targets": [],
+    "clock_partition_intermediate_clocks": []
+  },
+  "events": {
+    "root_conditions": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "root_relation_memory_targets": [],
+    "root_zero_domains": [],
+    "root_relation_refresh_roles": [],
+    "condition_memory_parameter_indices": [],
+    "scheduled_root_conditions": [],
+    "scheduled_time_events": [],
+    "dynamic_time_event_names": [],
+    "dynamic_time_event_rhs": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "action_conditions": {
+      "programs": [],
+      "program_spans": [],
+      "output_placements": {
+        "Dense": {
+          "count": 0
+        }
+      }
+    },
+    "actions": [],
+    "has_terminal_event": false,
+    "delays": {
+      "source_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "delay_time_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "delay_max_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "value_parameter_indices": [],
+      "source_is_discrete": []
+    }
+  },
+  "clocks": {
+    "periodic_event_schedules": [],
+    "activation_parameter_indices": []
+  }
+}

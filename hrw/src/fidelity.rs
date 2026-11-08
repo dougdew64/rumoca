@@ -1398,6 +1398,14 @@ mod tests {
         // it* — only the hours-long MSL sweep did. With this here, a regression in F4's
         // compacted path fails the pre-commit suite in seconds.
         "ArrayFamily",
+        // **Added 2026-11-08 with the specimens themselves.** `MeasuredOscillator` is the
+        // first curated model with initial-value pins, so it is the first that gives the
+        // Initialization stage something for these checks to examine. `ThresholdCounter`
+        // is here for the reason the three above are: System Modeler disagrees with
+        // Rumoca's run of it (`upstream-issues.md` D3), and that mismatch is only a
+        // finding once fidelity is green for the model.
+        "MeasuredOscillator",
+        "ThresholdCounter",
     ];
 
     // ---------------------------------------------------------------- report

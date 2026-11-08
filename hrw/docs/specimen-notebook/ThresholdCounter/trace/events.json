@@ -1,0 +1,43 @@
+{
+  "summary": {
+    "conditions": 3,
+    "relations": 1,
+    "roots": 1,
+    "structured_roots": 0,
+    "time_events": 0,
+    "event_actions": 0,
+    "clocks": 0,
+    "previous_values": 0,
+    "terminals": 0,
+    "discrete_real_equations": 0,
+    "discrete_value_definitions": 3
+  },
+  "conditions": [
+    {
+      "id": "c[0]",
+      "term": "x > threshold"
+    },
+    {
+      "id": "c[1]",
+      "term": "above and not pre(above)"
+    },
+    {
+      "id": "c[2]",
+      "term": "above <> pre(above)"
+    }
+  ],
+  "relations": [
+    {
+      "id": "r[0]",
+      "expression": "x > threshold"
+    }
+  ],
+  "roots": [
+    {
+      "relation": "r[0]",
+      "expression": "x > threshold",
+      "activation": "x > threshold"
+    }
+  ],
+  "event_actions": []
+}

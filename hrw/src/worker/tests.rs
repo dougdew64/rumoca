@@ -7914,6 +7914,7 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         ("BouncingBall", "OOOOOOOOOOO"),
         ("HarmonicOscillator", "OOOOOOOOOOO"),
         ("LoopWithInertia", "OOOOOOOOOOO"),
+        ("MeasuredOscillator", "OOOOOOOOOOO"),
         ("MixedLoop", "OOOOOOOOOOO"),
         ("NonlinearLoop", "OOOOOOOOOOO"),
         ("ProportionalLoop", "OOOOOOOOOOO"),
@@ -7924,6 +7925,9 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         ("ScopedConnect", "OOOOOOOOOOO"),
         ("SingleInertia", "OOOOOOOOOOO"),
         ("StiffDecay", "OOOOOOOOOOO"),
+        // Clean all the way through, and System Modeler still disagrees with its RUN
+        // (`upstream-issues.md` D3) — the outcome matrix is about phases, not values.
+        ("ThresholdCounter", "OOOOOOOOOOO"),
         ("TwoLoops", "OOOOOOOOOOO"),
         // Initialization relaxed something and said so.
         ("OverInitRc", "OOOOOOOOOOO"),

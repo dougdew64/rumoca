@@ -1,0 +1,231 @@
+{
+  "rounds": 0,
+  "n_records": 1,
+  "outcome": {
+    "kind": "borrowed",
+    "admitted": true,
+    "rounds": 0,
+    "meaning": "the raw system sorted and normalization left it unchanged: already index-1, nothing rebuilt"
+  },
+  "lanes": [],
+  "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
+  "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
+  "before": {
+    "n_equations": 4,
+    "n_unknowns": 4,
+    "coupled_block_count": 0,
+    "matching": [
+      {
+        "equation": "f_x[0] (der(x) = v)",
+        "id": "f_x[0]",
+        "unknown": "der(x)"
+      },
+      {
+        "equation": "f_x[1] (m * der(v) = -k * x)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      },
+      {
+        "equation": "f_x[2] (v_meas = v)",
+        "id": "f_x[2]",
+        "unknown": "v_meas"
+      },
+      {
+        "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+        "id": "f_x[3]",
+        "unknown": "der(v_filt)"
+      }
+    ],
+    "blocks": [
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[0] (der(x) = v)",
+        "id": "f_x[0]",
+        "unknown": "der(x)"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[1] (m * der(v) = -k * x)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[2] (v_meas = v)",
+        "id": "f_x[2]",
+        "unknown": "v_meas"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+        "id": "f_x[3]",
+        "unknown": "der(v_filt)"
+      }
+    ],
+    "incidence": {
+      "n_eq": 4,
+      "n_var": 4,
+      "unknown_names": [
+        "der(x)",
+        "der(v)",
+        "v_meas",
+        "der(v_filt)"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (der(x) = v)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "0 = der(x) - v"
+        },
+        {
+          "equation": "f_x[1] (m * der(v) = -k * x)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "0 = m*der(v) - -(k*x)"
+        },
+        {
+          "equation": "f_x[2] (v_meas = v)",
+          "id": "f_x[2]",
+          "unknowns": [
+            2
+          ],
+          "equation_text": "0 = v_meas - v"
+        },
+        {
+          "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+          "id": "f_x[3]",
+          "unknowns": [
+            2,
+            3
+          ],
+          "equation_text": "0 = T*der(v_filt) - (v_meas - v_filt)"
+        }
+      ]
+    },
+    "n_states": 3,
+    "n_algebraics": 1
+  },
+  "after": {
+    "n_equations": 4,
+    "n_unknowns": 4,
+    "coupled_block_count": 0,
+    "matching": [
+      {
+        "equation": "f_x[0] (der(x) = v)",
+        "id": "f_x[0]",
+        "unknown": "der(x)"
+      },
+      {
+        "equation": "f_x[1] (m * der(v) = -k * x)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      },
+      {
+        "equation": "f_x[2] (v_meas = v)",
+        "id": "f_x[2]",
+        "unknown": "v_meas"
+      },
+      {
+        "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+        "id": "f_x[3]",
+        "unknown": "der(v_filt)"
+      }
+    ],
+    "blocks": [
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[0] (der(x) = v)",
+        "id": "f_x[0]",
+        "unknown": "der(x)"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[1] (m * der(v) = -k * x)",
+        "id": "f_x[1]",
+        "unknown": "der(v)"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[2] (v_meas = v)",
+        "id": "f_x[2]",
+        "unknown": "v_meas"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+        "id": "f_x[3]",
+        "unknown": "der(v_filt)"
+      }
+    ],
+    "n_states": 3,
+    "n_algebraics": 1,
+    "incidence": {
+      "n_eq": 4,
+      "n_var": 4,
+      "unknown_names": [
+        "der(x)",
+        "der(v)",
+        "v_meas",
+        "der(v_filt)"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (der(x) = v)",
+          "id": "f_x[0]",
+          "unknowns": [
+            0
+          ],
+          "equation_text": "0 = der(x) - v"
+        },
+        {
+          "equation": "f_x[1] (m * der(v) = -k * x)",
+          "id": "f_x[1]",
+          "unknowns": [
+            1
+          ],
+          "equation_text": "0 = m*der(v) - -(k*x)"
+        },
+        {
+          "equation": "f_x[2] (v_meas = v)",
+          "id": "f_x[2]",
+          "unknowns": [
+            2
+          ],
+          "equation_text": "0 = v_meas - v"
+        },
+        {
+          "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+          "id": "f_x[3]",
+          "unknowns": [
+            2,
+            3
+          ],
+          "equation_text": "0 = T*der(v_filt) - (v_meas - v_filt)"
+        }
+      ]
+    },
+    "n_manifold_constraints": 0
+  },
+  "search": [
+    {
+      "kind": "stopped",
+      "outcome": {
+        "kind": "borrowed"
+      }
+    }
+  ],
+  "stalled": null
+}
