@@ -474,9 +474,14 @@ functions — existed in neither.
 
 ```powershell
 cd C:/Users/dougd/source/repos/rumoca/hrw
-cargo run -p hrw --example promote_run -- --run-dir C:/Users/dougd/rumoca-runs
+cargo run -p hrw --example promote_run -- --report C:/Users/dougd/rumoca-runs/fid-<stamp>.csv --profile C:/Users/dougd/rumoca-runs/fid-<stamp>-memory.csv
 git add hrw/docs/reports/msl-fidelity-* ; git commit -m "hrw: MSL fidelity report"
 ```
+
+**Name the run; do not use `--run-dir` on the runs folder.** `--run-dir <d>` reads
+`<d>/fid-full.csv`, a name `overnight-sweep.ps1` does not write — it writes
+`fid-<stamp>.csv` — so pointed at `rumoca-runs` it found an August `fid-full.csv` on
+2026-11-07, and only the larger-report guard below stopped it promoting 2,614 stale rows.
 
 `examples/promote_run.rs` **copies** (never moves) into `docs/reports/` as `msl-fidelity-report.csv` plus a
 provenance sidecar, and **refuses to replace a larger report with a smaller one** unless
