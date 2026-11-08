@@ -34,6 +34,33 @@ are still moving, and `mergeable_state: unstable` on #340 means its own CI was n
 onto an unmerged branch means this fork's history depends on a ref that may be force-pushed,
 renamed, or abandoned.
 
+**When to rebase — the rule since 2026-11-08 (Doug's decision).** Three triggers; any one fires it:
+
+1. **A new upstream tag.** Rebase onto the tag, not onto `main` beside it. Tags have kept arriving
+   while `main` was busiest: v0.10.0 to v0.10.4 came 14, 1, 23 and 6 days apart, while `main`
+   ran 20–40 commits a day.
+2. **The backstop: three weeks since the last rebase with no new tag.** Then rebase onto
+   `upstream/main` anyway. Three weeks is just above the longest gap between v0.10.x tags, and
+   v0.9.20 to v0.10.0 took two months, so the backstop does fire.
+3. **Early, for a specific need** — upstream fixes something HRW is teaching wrong (an
+   `upstream-issues.md` entry, such as D3), or ships something a lesson needs.
+
+**Why "wait until `main` settles" was retired.** It was the rule from 11-06 to 11-08, and it is
+not a trigger: if the pace never drops, it never fires, as Doug pointed out. It also counted only
+the cost of a rebase and not the cost of *waiting*, which grows. On 11-08 this fork's crate
+instrumentation touched 38 files, upstream had changed 292 crate files since our base, and
+**8 were changed on both sides** — conflicts a rebase must resolve, and a number that only rises
+with drift. Measure it before choosing:
+
+```text
+base=$(git merge-base HEAD upstream/main)
+comm -12 <(git diff --name-only $base HEAD -- crates | sort) \
+         <(git diff --name-only $base upstream/main -- crates | sort)
+```
+
+And the three-hour corpus sweep (step 10) is the wrong thing to weigh against rebasing: it runs
+unattended overnight. What a rebase costs is the attended steps and the conflicts.
+
 **And check whether the release already fixes what we were about to fix.** On 2026-09-04 the
 0.10.0 branch turned out to contain `lower/initial_pins.rs` and `lower/implicit_derivative.rs`,
 and to have deleted the `BuiltinFunction::Der => emit_const_at(0.0)` arm — i.e. the initialization
