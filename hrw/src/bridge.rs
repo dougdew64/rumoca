@@ -1244,8 +1244,9 @@ pub enum Focus<'a> {
     ///
     /// **`text` is what the pane RENDERED**, markdown stripped — that is what egui can
     /// hand back, and Doug ruled it sufficient. It is enough to answer *"what does this
-    /// mean?"*; for *"improve this paragraph"* Claude locates the source itself, which
-    /// is where `docs/fixture-labs/README.md`'s `run:` and `authored:` rules bind.
+    /// mean?"*; for *"improve this paragraph"* Claude locates the source itself. Nothing in
+    /// that source marks who wrote a passage: the markers that did were retired on
+    /// 2026-08-31 (`DECISIONS.md`), and this doc named them as live until 2026-11-08.
     Selection {
         /// Where the text came from, declared by the region that rendered it.
         origin: &'a crate::pointing::PointOrigin,
@@ -2542,10 +2543,11 @@ fn build(ask: &Ask) -> Value {
                 "note": "prose the reader selected in HRW's lab panel and pointed at. This is \
                          the RENDERED text, so markdown markup is stripped and it will not \
                          match the source byte-for-byte -- locate it in the file named below, \
-                         which HRW verified does contain it. Before editing, check whether it \
-                         sits inside a `run:` region (may be fixed, and the marker re-dated in \
-                         the same commit) or an `authored:` region (Doug's own prose -- report \
-                         a false claim, never rewrite it).",
+                         which HRW verified does contain it. Lab prose carries no provenance \
+                         markers: nothing records who wrote a passage or whether Doug has run \
+                         it (retired 2026-08-31), so judge that from the conversation, as \
+                         docs/fixture-labs/README.md says. Change the file only when the \
+                         request asks for a change.",
                 "from": origin.describe(),
                 "file": file,
                 "text": text,
@@ -3263,12 +3265,21 @@ mod tests {
             doc["selection"]["text"],
             "A DAE is well posed when the counts agree.",
         );
+        // **Inverted 2026-11-08.** This asserted the note named the run and authored
+        // regions — markers retired on 2026-08-31 — so the test kept a dead rule alive, and
+        // Claude obeyed it while answering Doug about `the-pipeline.md`. The note must now
+        // say there are no markers and point at where the real rule lives.
+        let note = doc["selection"]["note"].as_str().unwrap_or_default();
         assert!(
-            doc["selection"]["note"]
-                .as_str()
-                .is_some_and(|n| n.contains("authored:") && n.contains("run:")),
-            "the note must carry the editing rules, since this capture is what a \
-             \"improve this paragraph\" request arrives with",
+            note.contains("no provenance markers")
+                && note.contains("judge that from the conversation")
+                && note.contains("docs/fixture-labs/README.md"),
+            "the note must carry the CURRENT editing rule, since this capture is what an \
+             \"improve this paragraph\" request arrives with: {note}",
+        );
+        assert!(
+            !note.contains("authored") && !note.contains("region"),
+            "the note revives the retired markers: {note}",
         );
     }
 

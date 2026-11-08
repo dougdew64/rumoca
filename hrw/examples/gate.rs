@@ -89,6 +89,21 @@ fn binary_is_locked(exe: &Path) -> bool {
     std::fs::OpenOptions::new().write(true).open(exe).is_err()
 }
 
+/// Whether Windows lists an `hrw.exe` process — asked of `tasklist`, not inferred.
+///
+/// `false` when `tasklist` is unavailable, so off Windows the message names the other
+/// causes rather than claiming a process it could not look for.
+fn hrw_process_running() -> bool {
+    Command::new("tasklist")
+        .args(["/FI", "IMAGENAME eq hrw.exe", "/NH"])
+        .output()
+        .is_ok_and(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .to_ascii_lowercase()
+                .contains("hrw.exe")
+        })
+}
+
 /// Repository-relative paths of everything the working tree has changed.
 ///
 /// `git status --porcelain` rather than `git diff --cached`: the two-gate rule is
@@ -138,10 +153,22 @@ fn main() {
     if !docs_only {
         let exe = repo.join("target").join("debug").join("hrw.exe");
         if binary_is_locked(&exe) {
+            // **Say what was measured, then what was looked for** (2026-11-08). This
+            // printed "HRW is running" from the lock alone, and on 11-08 the claim was
+            // false: no hrw.exe process existed, Claude relayed the message to Doug as
+            // fact — "you have it open" — and Doug corrected it. A locked file has more
+            // than one cause, and the process list is cheap to ask.
+            let cause = if hrw_process_running() {
+                "An hrw.exe process is running: close HRW and re-run."
+            } else {
+                "No hrw.exe process was found, so something else holds the file \u{2014} \
+                 a process still exiting, or a scanner reading the new binary. Re-run \
+                 in a moment; if it persists, find the holder before closing anything."
+            };
             eprintln!(
-                "HRW is running, so the gate cannot relink hrw.exe.\n\
-                 Close it and re-run \u{2014} after a clippy --all-targets that failure is \
-                 permanent, not transient."
+                "target\\debug\\hrw.exe cannot be opened for writing, so the gate cannot \
+                 relink it.\n{cause}\n\
+                 (After a clippy --all-targets that failure is permanent, not transient.)"
             );
             std::process::exit(1);
         }

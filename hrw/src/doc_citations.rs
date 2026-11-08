@@ -454,6 +454,96 @@ mod tests {
         );
     }
 
+    /// **The retired provenance markers stay retired — in the labs, and in what HRW tells
+    /// Claude.**
+    ///
+    /// `DECISIONS.md` 2026-08-31 retired the walked and authored markers, and the run
+    /// markers went the same day: Doug withdrew the goals they served (replacing Claude's
+    /// prose with his own, tracking which labs he had run). The labs were cleaned. **The
+    /// rule was not**: until 2026-11-08 every prose capture in `focus.json` told Claude to
+    /// check whether the passage sat in a run region or an authored one —
+    /// *"Doug's own prose — report a false claim, never rewrite it"* — and a test REQUIRED
+    /// that sentence. Claude followed it while answering a question about
+    /// `the-pipeline.md`, and Doug caught it: *"I thought that we had gotten rid of that
+    /// region stuff, as well as tracking who had written the content of labs."*
+    ///
+    /// So this scans two places, both crisply zero:
+    ///
+    /// - **every lab file** for the marker syntax itself (`<!-- run: … -->` and its two
+    ///   siblings) — `<!-- kind: … -->` is current and untouched;
+    /// - **every `src/` and `examples/` file** for the rule's phrasing — a backticked
+    ///   marker name, which is how an instruction to Claude names one. A dated history
+    ///   that needs to mention them can do so without the backticks.
+    ///
+    /// The patterns are assembled at run time so this file does not match itself.
+    #[test]
+    fn retired_provenance_markers_stay_retired() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let markers = ["run", "authored", "walked"];
+        let mut bad: Vec<String> = Vec::new();
+
+        let mut labs = 0usize;
+        let lab_dir = root.join("docs/fixture-labs");
+        for entry in std::fs::read_dir(&lab_dir).expect("labs").flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            labs += 1;
+            let text = std::fs::read_to_string(&path).unwrap_or_default();
+            for (i, line) in text.lines().enumerate() {
+                let squeezed: String = line.split_whitespace().collect();
+                for m in markers {
+                    if squeezed.contains(&format!("<!--{m}:")) {
+                        bad.push(format!("{}:{}  a `{m}:` marker", path.display(), i + 1));
+                    }
+                }
+            }
+        }
+
+        let mut sources = 0usize;
+        for dir in ["src", "examples"] {
+            let mut files = Vec::new();
+            collect_rs(&root.join(dir), &mut files);
+            for path in files {
+                sources += 1;
+                let text = std::fs::read_to_string(&path).unwrap_or_default();
+                for (i, line) in text.lines().enumerate() {
+                    for m in markers {
+                        if line.contains(&format!("`{m}:`")) {
+                            bad.push(format!("{}:{}  names `{m}:`", path.display(), i + 1));
+                        }
+                    }
+                }
+            }
+        }
+
+        assert!(labs >= 20, "only {labs} labs read — the scan is broken");
+        assert!(
+            sources >= 50,
+            "only {sources} source files read — the scan is broken"
+        );
+        assert!(
+            bad.is_empty(),
+            "the provenance markers retired 2026-08-31 are back (DECISIONS.md). Nothing \
+             tracks who wrote a lab passage or whether it has been run — judge from the \
+             conversation (`docs/fixture-labs/README.md`):\n  {}",
+            bad.join("\n  "),
+        );
+    }
+
+    /// Every `*.rs` file under `dir`, recursively.
+    fn collect_rs(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
+        for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                collect_rs(&p, out);
+            } else if p.extension().and_then(|x| x.to_str()) == Some("rs") {
+                out.push(p);
+            }
+        }
+    }
+
     /// Does this line use `stop` as the RETIRED NOUN, rather than the freed verb?
     ///
     /// # Why this is not another entry in the word list
