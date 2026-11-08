@@ -893,9 +893,31 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
 
 **What stays here, because it binds rather than instructs:**
 
-- **The gate is green before every commit**, via the runner: `cargo run -p hrw --example gate`.
-  It decides DOCS, FAST, LAB or FULL from the working tree; `gate_policy` is the rule and has
-  tests. **A DOCS diff — only `.md`/`.txt` under `hrw/` — skips clippy, so HRW may stay open.**
+> **THE COST RULES — Doug, 2026-11-08: conversation and documents must be CHEAP.** *"Having a
+> conversation or making a change to a document has become more expensive than making code
+> changes. This is entirely unacceptable."* These five outrank any older rule here that makes a
+> question or a doc edit slow:
+>
+> 1. **A conversation never triggers a gate, a test or a build.** Answering a question writes
+>    nothing unless Doug asks for a change. A side issue raised mid-question is recorded or done
+>    in the background — never in his thread (memory: don't block the learning thread).
+> 2. **A DOCS commit runs no tests.** The gate regenerates the lab catalogue and stops (~1 s);
+>    the doc checkers run with the next code change's gate, and what they find is fixed then, in
+>    a batch. Never force `--full` on a docs-only commit.
+> 3. **Edits may stay uncommitted during a conversation.** Commit at a natural break or when
+>    the session ends — not after every edit.
+> 4. **Ceremony is opt-in.** A ledger row, a `tech-debt.md` entry, a memory update or an
+>    architecture-doc update is written only for a **real defect** — one that taught or could
+>    teach Doug something false, or broke code — or when Doug asks. Not for every observation.
+> 5. **Commit messages are short**: what changed and why, in a few lines.
+>
+> *Code changes keep their bar*: tests, comments and the FULL gate when `src/`, `examples/` or
+> `crates/` change. The point is that prose and conversation stopped paying it.
+
+- **The gate is green before every commit that touches code**, via the runner:
+  `cargo run -p hrw --example gate`. It decides DOCS, FAST, LAB or FULL from the working tree;
+  `gate_policy` is the rule and has tests. **A DOCS diff — only `.md`/`.txt` under `hrw/` — runs
+  no tests and no clippy (cost rule 2), so HRW may stay open.**
 - **ITERATING AND GATING ARE DIFFERENT ACTS.** Filter while editing; gate once, before the commit.
   Conflating them cost 172 of one day's 274 compute-minutes for six commits.
 - **ANNOUNCE THE COST BEFORE PAYING IT** — before any command expected to exceed ~60 s, say what
