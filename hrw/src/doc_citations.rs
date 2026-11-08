@@ -7370,6 +7370,14 @@ mod tests_orphaned_docs {
             // it is worth noting that the other four were ordinary prose: the ratchet
             // earns its keep at roughly one in five.
             ("equation_sheet.rs", 1),
+            // Added on 2026-11-07 at 1. The hit is `fidelity.rs`'s `engages` doc: its
+            // bullet list ends `- **F5** needs a `matching` array.` — a one-sentence
+            // bullet before a blank line, which the scanner reads as an opening summary.
+            // Triaged the documented way: every item added in that commit (`Engagement`
+            // and its fields, `parse_engaged`, `parse_subjects`, `engages`,
+            // `SUBJECT_CHECKS`, three tests) carries its own summary, so there is no
+            // undocumented item for an orphan to belong to. Ordinary prose.
+            ("fidelity.rs", 1),
             // 2 → 3 on 2026-11-03. The new hit is at `lib.rs:598`, in the doc block
             // above the stepped-session frame budget: *"**A stepped session must give
             // egui several frame periods, not one** (`docs/ideas.md` #73)"*, which

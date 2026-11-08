@@ -274,8 +274,13 @@ pub fn specimens_without_oracle_verdict<'a>(
 /// on it, from the stage's own report — so the cap no longer drops a large model's
 /// reduced system from the sweep entirely. See [`subjects`].
 ///
-/// F8 (sizes) and F9 (failure faithfulness) are the runner's business, not this
-/// function's: they need the whole bundle rather than a subject.
+/// F8 (sizes) is the runner's business, not this function's: it is a measurement and
+/// raises nothing. *(This line said F9 was the runner's too, which stopped being true on
+/// 2026-11-06 when F9 moved in here — see [`CHECKS_OWNED_BY_RUNNER`].)*
+///
+/// **Returns what each check examined, beside what it found** — [`Engagement`], which a
+/// report row needs because a green row is otherwise indistinguishable from a row whose
+/// checks had nothing to look at. Added 2026-11-07, the post-rebase sweep's open item 8.
 pub fn check_model(
     stages: &StageBundle,
     dae: &rumoca_ir_dae::Dae,
@@ -293,16 +298,34 @@ pub fn check_model(
     // produced TWO scaling failures: seven timeouts and three memory blowouts
     // at up to 7.7 GB, and timing alone would have explained only the first.
     only: Option<&std::collections::BTreeSet<String>>,
-) -> Vec<Violation> {
+) -> (Vec<Violation>, Engagement) {
     let mut out = Vec::new();
     let want = |c: &str| only.is_none_or(|set| set.contains(c));
     let tag = |check: &'static str, v: Vec<String>| {
         v.into_iter().map(move |detail| Violation { check, detail })
     };
 
+    // **Every check that runs starts at 0**, so one with nothing to act on still
+    // appears in the row as `F4=0` — the case the column exists to show. A check
+    // `only` excluded gets no entry at all, which reads differently on purpose.
+    let mut engaged = Engagement::default();
+    for c in CHECKS.iter().copied().filter(|c| want(c)) {
+        engaged.by_check.insert(c, 0);
+    }
+
     // `Structural`, plus `IndexReduction` whenever the stage admitted a system; F2
     // on the second runs only when `reduced` was supplied. See `subjects`.
     for s in subjects(stages, dae, reduced) {
+        // F2-F5's unit is the subject: one per incidence-bearing report each could act on.
+        let acted: Vec<&'static str> = SUBJECT_CHECKS
+            .into_iter()
+            .filter(|c| want(c) && engages(c, &s))
+            .collect();
+        for c in acted.iter().copied() {
+            *engaged.by_check.entry(c).or_default() += 1;
+        }
+        engaged.subjects.push((s.label.clone(), acted));
+
         coverage.subjects += 1;
         if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
             coverage.with_blocks += 1;
@@ -341,6 +364,11 @@ pub fn check_model(
         coverage.with_index += 1;
     }
     if want("F6") {
+        // F6's unit is the derived view: it checks whichever of the two is present.
+        engaged.by_check.insert(
+            "F6",
+            usize::from(sheet.is_some()) + usize::from(index.is_some()),
+        );
         let t = std::time::Instant::now();
         out.extend(tag("F6", check_f6(sheet, index, dae)));
         timing.add("F6", t);
@@ -349,6 +377,8 @@ pub fn check_model(
         if let Some(root) = stages.get(*kind).value.as_ref() {
             coverage.stage_irs += 1;
             if want("F7") {
+                // F7's unit is the stage IR whose node paths it round-trips.
+                *engaged.by_check.entry("F7").or_default() += 1;
                 let t = std::time::Instant::now();
                 out.extend(tag("F7", check_f7(&format!("{kind:?}"), root)));
                 timing.add("F7", t);
@@ -356,11 +386,24 @@ pub fn check_model(
         }
     }
     if want("F9") {
+        // F9's unit is the abnormal stage — `check_f9` skips every `Ok` one — so a
+        // clean compile records `F9=0`, which is the truth about what F9 did there.
+        engaged.by_check.insert(
+            "F9",
+            crate::worker::StageKind::COMPILATION
+                .iter()
+                .filter(|k| stages.get(**k).outcome != crate::worker::Outcome::Ok)
+                .count(),
+        );
         let t = std::time::Instant::now();
         out.extend(tag("F9", check_f9(stages)));
         timing.add("F9", t);
     }
     if want("F10") {
+        // F10's unit is every compilation stage: its provenance clauses read them all.
+        engaged
+            .by_check
+            .insert("F10", crate::worker::StageKind::COMPILATION.len());
         let t = std::time::Instant::now();
         // Counted whether or not F10 finds anything: the question this answers is
         // "did the clause have anything to act on", which a violation count cannot.
@@ -371,7 +414,7 @@ pub fn check_model(
         out.extend(tag("F10", check_f10(stages)));
         timing.add("F10", t);
     }
-    out
+    (out, engaged)
 }
 
 /// **F10 — a pane's claim about the compiler, checked at corpus scale.**
@@ -468,6 +511,125 @@ pub struct Coverage {
     /// over.
     pub empty_stages: usize,
 }
+
+/// **What each check examined on ONE model** — the denominator a report row needs.
+///
+/// [`Coverage`] answers the same question for a whole run, and that was enough while
+/// one process checked the whole corpus. The sweep now runs **one process per model**
+/// (`scripts/measure-fidelity.ps1`, for memory), and each process prints its `Coverage`
+/// into a stderr file the next model overwrites — so **no committed artifact said what
+/// any check had looked at.** The 2026-11-07 run made that concrete: it added each
+/// model's reduced system as a subject, and its report came out **byte-identical** to the
+/// run without one, because a green row carried only `ok` and an empty failure list.
+/// *"A green row means the check found nothing, which is not the same as the check having
+/// had something to look at"* had been in the sidecar's own note for months.
+///
+/// So the row carries it:
+///
+/// - `subjects` — each incidence-bearing report checked, with the subject checks that
+///   could act on it, by [`engages`]. This is what answers *"how many reduced systems did
+///   F2 compare?"* without inference: an `IndexReduction` subject above
+///   `--max-reduce-eq` has no oracle, and its entry says so by omitting F2. **Read
+///   `IndexReduction` as "admitted by the stage", not "high-index"**: the first probe run
+///   showed `CriticalDamping`, index 1, carrying one — the stage admits an index-1 system
+///   unchanged — while an 801-row singular model the compile could not reduce has none.
+/// - `by_check` — for each check that **ran**, how many things it could act on. A check
+///   that ran with nothing to act on records **`0`**, which is the case this type exists
+///   to make visible; a check `--only-checks` skipped is **absent**, so the two stay
+///   distinguishable.
+///
+/// The units differ by check, because the checks act on different things: F2–F5 count
+/// subjects; F6 the equation sheet and identifier index present (0–2); F7 the stage IRs
+/// it round-tripped; F9 the abnormal stages, the only ones it inspects; F10 every
+/// compilation stage. A comment at each count in [`check_model`] names its unit.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct Engagement {
+    /// `(label, the subject checks that engaged it)`, in subject order.
+    pub subjects: Vec<(String, Vec<&'static str>)>,
+    /// Check → how many things it could act on, for the checks that ran.
+    pub by_check: BTreeMap<&'static str, usize>,
+}
+
+impl Engagement {
+    /// The `subjects` column: `Structural=F2/F3/F4/F5 IndexReduction=F3/F4/F5`.
+    ///
+    /// Space-separated tokens, a label and the checks that engaged it, so a subject no
+    /// check could act on still appears (`Structural=`) rather than vanishing.
+    pub fn subjects_column(&self) -> String {
+        self.subjects
+            .iter()
+            .map(|(label, checks)| format!("{label}={}", checks.join("/")))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    /// The `engaged` column: `F2=2 F3=2 F4=1 …`, in roster order.
+    pub fn engaged_column(&self) -> String {
+        CHECKS
+            .iter()
+            .filter_map(|c| self.by_check.get(c).map(|n| format!("{c}={n}")))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+}
+
+/// Read an `engaged` column back into counts. A malformed token is skipped, not
+/// guessed at — the same rule as the profile parser, for the same reason: a sidecar
+/// total built on an invented count is a published fiction.
+pub fn parse_engaged(column: &str) -> BTreeMap<String, usize> {
+    column
+        .split_whitespace()
+        .filter_map(|tok| {
+            let (check, n) = tok.split_once('=')?;
+            Some((check.to_owned(), n.parse().ok()?))
+        })
+        .collect()
+}
+
+/// Read a `subjects` column back into `(label, checks)` pairs. A token with no `=` is
+/// skipped; `Structural=` reads as a subject no check engaged.
+pub fn parse_subjects(column: &str) -> Vec<(String, Vec<String>)> {
+    column
+        .split_whitespace()
+        .filter_map(|tok| {
+            let (label, checks) = tok.split_once('=')?;
+            let checks = checks
+                .split('/')
+                .filter(|c| !c.is_empty())
+                .map(str::to_owned)
+                .collect();
+            Some((label.to_owned(), checks))
+        })
+        .collect()
+}
+
+/// **Can subject check `check` act on `s`?** — the conditions each one skips on, in one
+/// place, so a report row can say what was examined rather than only what failed.
+///
+/// - **F2** needs the DAE the subject describes as its oracle. `IndexReduction` has one
+///   only when the runner computed the reduced system under `--max-reduce-eq`.
+/// - **F3** always acts: every subject carries an incidence, and F3 checks the published
+///   counts against it.
+/// - **F4** needs a `blocks` array. A singular system has none, because the analysis
+///   stopped before BLT ran — skipped, not failed, and counted as not engaged.
+/// - **F5** needs a `matching` array.
+///
+/// **These are restatements of each check's own guard, and a restatement drifts.**
+/// `subject_checks_skip_exactly_what_they_do_not_engage` holds each check to this
+/// function in both directions — on a deliberately broken report it fires exactly when
+/// this says it engages — so a guard changed in one place fails by name.
+pub fn engages(check: &str, s: &Subject) -> bool {
+    match check {
+        "F2" => s.dae.is_some(),
+        "F3" => true,
+        "F4" => s.report["blocks"].is_array(),
+        "F5" => s.report["matching"].is_array(),
+        _ => false,
+    }
+}
+
+/// The subject checks, in the order [`check_model`] runs them.
+const SUBJECT_CHECKS: [&str; 4] = ["F2", "F3", "F4", "F5"];
 
 /// Violations grouped by check, most numerous first — the triage view.
 ///
@@ -1589,6 +1751,240 @@ mod tests {
             rows.len(),
             MODELS.len() + FAILING_MODELS.len(),
             "a model produced no row, so the loop exited early",
+        );
+    }
+
+    /// **[`engages`] is each subject check's own guard, held in both directions.**
+    ///
+    /// `engages` restates conditions that live inside `check_f2`…`check_f5`, and a
+    /// restatement drifts. So each check is driven on a report broken for every one of
+    /// them: wherever `engages` says the check can act, the check must FIRE; wherever it
+    /// says the check cannot, the check must stay silent even on that broken report. A
+    /// guard changed in one place and not the other fails here by name.
+    ///
+    /// F2's engaged direction needs a real DAE and is driven by
+    /// `check_model_reports_what_each_check_examined` instead; here it is the `dae: None`
+    /// case, which is the one the `--max-reduce-eq` cap produces.
+    #[test]
+    fn subject_checks_skip_exactly_what_they_do_not_engage() {
+        let broken = serde_json::json!({
+            "incidence": {
+                "n_eq": 2, "n_var": 2,
+                "rows": [
+                    {"equation": "e0", "unknowns": [0]},
+                    {"equation": "e1", "unknowns": [1]},
+                ],
+                "unknown_names": ["x", "y"],
+            },
+            // F3: the published count disagrees with the incidence.
+            "n_equations": 5,
+            // F4: the blocks cover one of the two equations.
+            "blocks": [{"equation": "e0"}],
+            // F5: e0 is matched to an unknown it does not reference.
+            "matching": [{"equation": "e0", "unknown": "y"}],
+        });
+        let mut stripped = broken.clone();
+        if let Some(m) = stripped.as_object_mut() {
+            m.remove("blocks");
+            m.remove("matching");
+        }
+
+        // A subject check's signature, named so the table below reads as one.
+        type SubjectCheck = fn(&Subject) -> Vec<String>;
+        let checks: [(&str, SubjectCheck); 4] = [
+            ("F2", check_f2),
+            ("F3", check_f3),
+            ("F4", check_f4),
+            ("F5", check_f5),
+        ];
+        let mut engaged_and_fired = 0usize;
+        let mut skipped = 0usize;
+        for (shape, report) in [("broken", &broken), ("stripped", &stripped)] {
+            let s = Subject {
+                label: shape.to_owned(),
+                report,
+                dae: None,
+            };
+            for (name, check) in checks {
+                let fired = !check(&s).is_empty();
+                assert_eq!(
+                    fired,
+                    engages(name, &s),
+                    "{name} on the {shape} report: fired = {fired}, but engages says {}",
+                    engages(name, &s),
+                );
+                if fired {
+                    engaged_and_fired += 1;
+                } else {
+                    skipped += 1;
+                }
+            }
+        }
+        // F3, F4, F5 on the broken report, F3 on the stripped one; F2 twice and F4/F5
+        // once each skipped. Pinned so the test cannot pass by every check going quiet.
+        assert_eq!(
+            engaged_and_fired, 4,
+            "the broken report must make each engaged check fire"
+        );
+        assert_eq!(skipped, 4);
+    }
+
+    /// The two denominator columns survive a write and a read, and **a zero stays a
+    /// zero**: `F4=0` (ran, nothing to act on) must not read back as absent (did not
+    /// run), and a subject no check engaged must not vanish from its column.
+    #[test]
+    fn the_engagement_columns_round_trip_and_keep_a_zero() {
+        let mut e = Engagement::default();
+        e.subjects
+            .push(("Structural".to_owned(), vec!["F2", "F3", "F5"]));
+        e.subjects.push(("IndexReduction".to_owned(), vec![]));
+        e.by_check.insert("F2", 1);
+        e.by_check.insert("F4", 0);
+        e.by_check.insert("F10", 11);
+
+        assert_eq!(e.engaged_column(), "F2=1 F4=0 F10=11", "roster order");
+        assert_eq!(e.subjects_column(), "Structural=F2/F3/F5 IndexReduction=");
+
+        let back = parse_engaged(&e.engaged_column());
+        assert_eq!(back.get("F4"), Some(&0), "the zero survived");
+        assert!(
+            !back.contains_key("F3"),
+            "a check that did not run stays absent"
+        );
+        let subs = parse_subjects(&e.subjects_column());
+        assert_eq!(
+            subs.len(),
+            2,
+            "the subject no check engaged is still listed"
+        );
+        assert!(subs[1].1.is_empty());
+        assert_eq!(
+            parse_engaged("F2=x junk F3=4"),
+            BTreeMap::from([("F3".to_owned(), 4)])
+        );
+    }
+
+    /// **`check_model` says what each check examined, in each check's own unit** — the
+    /// row's denominator, on every specimen.
+    ///
+    /// The units are checked against independent counts of the bundle (stage IRs for F7,
+    /// abnormal stages for F9, all stages for F10, the views present for F6), not
+    /// against the code that produced them. Then the two cases the corpus cap and
+    /// `--only-checks` produce: **without a reduced oracle the `IndexReduction` subject
+    /// loses F2 and keeps F3**, and a check excluded by `only` is absent rather than 0.
+    /// The non-vacuity floor at the end requires both an `IndexReduction` subject and a
+    /// subject F4 could not act on, so each branch is exercised.
+    #[test]
+    fn check_model_reports_what_each_check_examined() {
+        let mut reduced_subjects = 0usize;
+        let mut f4_skipped = 0usize;
+        for name in MODELS {
+            let FromWorker::Compiled {
+                stages,
+                dae,
+                equation_sheet,
+                identifier_index,
+                ..
+            } = compile_specimen_shared(name)
+            else {
+                panic!("{name}: expected Compiled");
+            };
+            let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
+            let prepared = rumoca_phase_structural::prepare_for_solve(&dae);
+            let reduced = prepared.as_ref().ok().map(|p| p.as_dae());
+
+            let run = |reduced: Option<&rumoca_ir_dae::Dae>,
+                       only: Option<&std::collections::BTreeSet<String>>| {
+                check_model(
+                    &stages,
+                    &dae,
+                    reduced,
+                    equation_sheet.as_ref(),
+                    identifier_index.as_ref(),
+                    &mut Coverage::default(),
+                    &mut CheckTiming::default(),
+                    only,
+                )
+                .1
+            };
+            let e = run(reduced, None);
+            let subs = subjects(&stages, &dae, reduced);
+
+            let labels: Vec<&str> = e.subjects.iter().map(|(l, _)| l.as_str()).collect();
+            let expected: Vec<&str> = subs.iter().map(|s| s.label.as_str()).collect();
+            assert_eq!(labels, expected, "{name}: one entry per subject, in order");
+            for c in CHECKS {
+                assert!(
+                    e.by_check.contains_key(c),
+                    "{name}: {c} ran and must be counted"
+                );
+            }
+            assert_eq!(
+                e.by_check["F3"],
+                subs.len(),
+                "{name}: F3 acts on every subject"
+            );
+            assert_eq!(
+                e.by_check["F7"],
+                crate::worker::StageKind::COMPILATION
+                    .iter()
+                    .filter(|k| stages.get(**k).value.is_some())
+                    .count(),
+                "{name}: F7 counts the stage IRs"
+            );
+            assert_eq!(
+                e.by_check["F9"],
+                crate::worker::StageKind::COMPILATION
+                    .iter()
+                    .filter(|k| stages.get(**k).outcome != crate::worker::Outcome::Ok)
+                    .count(),
+                "{name}: F9 counts the abnormal stages"
+            );
+            assert_eq!(
+                e.by_check["F10"],
+                crate::worker::StageKind::COMPILATION.len()
+            );
+            assert_eq!(
+                e.by_check["F6"],
+                usize::from(equation_sheet.is_some()) + usize::from(identifier_index.is_some()),
+            );
+            for (label, acted) in &e.subjects {
+                if !acted.contains(&"F4") {
+                    f4_skipped += 1;
+                }
+                if label == "IndexReduction" {
+                    reduced_subjects += 1;
+                    assert_eq!(
+                        acted.contains(&"F2"),
+                        reduced.is_some(),
+                        "{name}: the reduced subject has F2 exactly when it has an oracle"
+                    );
+                }
+            }
+
+            // Above the cap: no oracle. The reduced subject keeps F3-F5 and loses F2.
+            let capped = run(None, None);
+            if let Some((_, acted)) = capped.subjects.iter().find(|(l, _)| l == "IndexReduction") {
+                assert!(!acted.contains(&"F2"), "{name}: F2 with no oracle");
+                assert!(acted.contains(&"F3"), "{name}: F3 needs no oracle");
+            }
+
+            // `--only-checks F3`: every other check absent, not zero.
+            let only = std::collections::BTreeSet::from(["F3".to_owned()]);
+            let one = run(reduced, Some(&only));
+            assert_eq!(
+                one.by_check.keys().copied().collect::<Vec<_>>(),
+                vec!["F3"],
+                "{name}: an excluded check is absent"
+            );
+        }
+        assert!(
+            reduced_subjects >= 1,
+            "no specimen produced an IndexReduction subject"
+        );
+        assert!(
+            f4_skipped >= 1,
+            "no subject lacked blocks, so F4's skip was never counted"
         );
     }
 

@@ -402,6 +402,10 @@ fn main() {
         sizes.push((bytes, row.name.clone()));
 
         let mut violations = Vec::new();
+        // Empty when the model produced no DAE: no check ran, and the row's empty
+        // `subjects`/`engaged` columns are what say so, beside an outcome of `ok`
+        // that means only "nothing was found".
+        let mut engaged = hrw::fidelity::Engagement::default();
         if let Some(dae) = dae.as_ref() {
             // **The reduced oracle for F2, under the cap** (restored 2026-11-07, the
             // post-rebase sweep's open item 1). `prepare_for_solve` is the public entry
@@ -422,7 +426,7 @@ fn main() {
                 .as_ref()
                 .and_then(|p| p.as_ref().ok())
                 .map(|p| p.as_dae());
-            violations = check_model(
+            (violations, engaged) = check_model(
                 &stages,
                 dae,
                 reduced,
@@ -468,8 +472,8 @@ fn main() {
         if secs >= 10.0 {
             eprintln!("  [slow] {secs:.1}s  {}", row.name);
         }
-        let _ =
-            writeln!(sink, "{}", report_row(&row.name, &violations)).and_then(|()| sink.flush());
+        let _ = writeln!(sink, "{}", report_row(&row.name, &violations, &engaged))
+            .and_then(|()| sink.flush());
         all.extend(violations);
 
         if (i + 1) % 25 == 0 || i + 1 == rows.len() {
@@ -553,13 +557,18 @@ fn main() {
 
 /// One row of the fidelity report, sharing its first four columns with every
 /// other report so one loader serves all three (`docs/reports.md`).
-fn report_row(name: &str, violations: &[Violation]) -> String {
+///
+/// **The last two columns are the row's denominator** (2026-11-07, open item 8):
+/// `subjects` and `engaged`, from [`hrw::fidelity::Engagement`]. Without them a green
+/// row said `ok` and nothing else, and a run that added a whole subject wrote a report
+/// byte-identical to one that had not.
+fn report_row(name: &str, violations: &[Violation], engaged: &hrw::fidelity::Engagement) -> String {
     let mut checks: Vec<&str> = violations.iter().map(|v| v.check).collect();
     checks.sort_unstable();
     checks.dedup();
     let f = hrw::survey::csv_field;
     format!(
-        "{},{},{},{},{},{}",
+        "{},{},{},{},{},{},{},{}",
         f(name),
         f(&classify(name)),
         if violations.is_empty() {
@@ -570,13 +579,16 @@ fn report_row(name: &str, violations: &[Violation]) -> String {
         f(violations.first().map_or("", |v| v.detail.as_str())),
         f(&checks.join(" ")),
         violations.len(),
+        f(&engaged.subjects_column()),
+        f(&engaged.engaged_column()),
     )
 }
 
 /// One row for a model that produced **no checks at all**, with the reason in the
 /// `message` column.
 ///
-/// Shares [`report_row`]'s six columns so the report keeps one schema, and carries
+/// Shares [`report_row`]'s columns so the report keeps one schema — `subjects` and
+/// `engaged` left empty, because nothing was examined — and carries
 /// `panicked` or `no-compile` in `outcome` rather than `ok`. That distinction is the
 /// whole point: in the 2026-11-05 report, 2,613 rows meaning "measured and clean" and
 /// two models meaning "never compiled" were indistinguishable, because the second kind
@@ -585,7 +597,7 @@ fn report_row(name: &str, violations: &[Violation]) -> String {
 fn note_row(name: &str, outcome: &str, message: &str) -> String {
     let f = hrw::survey::csv_field;
     format!(
-        "{},{},{},{},,0",
+        "{},{},{},{},,0,,",
         f(name),
         f(&classify(name)),
         f(outcome),
@@ -612,7 +624,25 @@ fn json_bytes(v: &serde_json::Value) -> usize {
     serde_json::to_writer(&mut c, v).map_or(0, |()| c.0)
 }
 
+/// The report's header, in one place, because a resumed run checks it.
+const HEADER: &str = "name,kind,outcome,message,checks_failed,n_violations,subjects,engaged";
+
 fn open_sink(out: &str, fresh: bool) -> std::io::Result<BufWriter<File>> {
+    // **A resumed run appends, so it must be appending to THIS schema.** The
+    // 2026-11-07 columns made the header eight wide; resuming a six-column report
+    // from before would put eight-field rows under a six-field header, and the
+    // name-keyed loader would read every new row's `subjects` and `engaged` as
+    // absent — a report claiming nothing was examined, silently. Refuse instead.
+    if !fresh {
+        let existing = std::fs::read_to_string(out)?;
+        let header = existing.lines().next().unwrap_or_default();
+        if header.trim() != HEADER {
+            return Err(std::io::Error::other(format!(
+                "{out} has the header {header:?}, not this runner's {HEADER:?}; \
+                 resume into a fresh --out instead"
+            )));
+        }
+    }
     let mut f = BufWriter::new(
         OpenOptions::new()
             .create(true)
@@ -622,7 +652,7 @@ fn open_sink(out: &str, fresh: bool) -> std::io::Result<BufWriter<File>> {
             .open(out)?,
     );
     if fresh {
-        writeln!(f, "name,kind,outcome,message,checks_failed,n_violations")?;
+        writeln!(f, "{HEADER}")?;
         f.flush()?;
     }
     Ok(f)
