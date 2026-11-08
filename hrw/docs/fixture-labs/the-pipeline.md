@@ -13,30 +13,6 @@ with a named algorithm and a textbook behind it.
 
 ---
 
-## The route
-
-Each entry opens the lab in HRW. The file links are for reading outside it.
-
-1. [connect-expansion](hrw://lab/connect-expansion) — what does `connect` mean?
-2. [dae-construction](hrw://lab/dae-construction) — what is a well-posed system?
-3. [matching](hrw://lab/matching) — which equation solves which unknown?
-   - 3a · [matching-live](hrw://lab/matching-live) — *(debugger)* what does the
-     search look like from inside?
-4. [blt-ordering](hrw://lab/blt-ordering) — in what order can they be solved?
-5. [tearing](hrw://lab/tearing) — how do you solve a block that has no order?
-6. [index-reduction](hrw://lab/index-reduction) — which states are actually
-   independent?
-7. [initialization](hrw://lab/initialization) — where does it start?
-8. [solve-lowering](hrw://lab/solve-lowering) — how does a name become a number?
-9. [events](hrw://lab/events) — what happens at an instant?
-
-Two orderings, and they differ. The list above is *pipeline* order. If you would rather follow
-the mathematics than the machinery, run 3 → 4 → 5 first: matching, BLT and tearing are one
-continuous argument on the same three-equation model, and they are the densest linear algebra in
-the set.
-
----
-
 ## The one structural idea the whole pipeline turns on
 
 A permutation.
@@ -124,6 +100,30 @@ the right numbers, and may iterate on more of them than it had to.
 
 One lab needs a debugger and the bridge extension. `matching-live.md` alone — everything
 else runs from HRW.
+
+---
+
+## The route
+
+Each entry opens the lab in HRW. The file links are for reading outside it.
+
+1. [connect-expansion](hrw://lab/connect-expansion) — what does `connect` mean?
+2. [dae-construction](hrw://lab/dae-construction) — what is a well-posed system?
+3. [matching](hrw://lab/matching) — which equation solves which unknown?
+   - 3a · [matching-live](hrw://lab/matching-live) — *(debugger)* what does the
+     search look like from inside?
+4. [blt-ordering](hrw://lab/blt-ordering) — in what order can they be solved?
+5. [tearing](hrw://lab/tearing) — how do you solve a block that has no order?
+6. [index-reduction](hrw://lab/index-reduction) — which states are actually
+   independent?
+7. [initialization](hrw://lab/initialization) — where does it start?
+8. [solve-lowering](hrw://lab/solve-lowering) — how does a name become a number?
+9. [events](hrw://lab/events) — what happens at an instant?
+
+Two orderings, and they differ. The list above is *pipeline* order. If you would rather follow
+the mathematics than the machinery, run 3 → 4 → 5 first: matching, BLT and tearing are one
+continuous argument on the same three-equation model, and they are the densest linear algebra in
+the set.
 
 ---
 

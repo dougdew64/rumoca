@@ -379,10 +379,10 @@ Start here. This is the map for the labs of the compiler phases, in the order
 
 - **Stations:**
   - `the-pipeline-a-week-s-run-through-the-compiler` — The pipeline — a week's run through the compiler
-  - `the-route` — The route
   - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on
   - `three-graphs-three-classical-questions` — Three graphs, three classical questions
   - `three-things-worth-knowing-before-you-start` — Three things worth knowing before you start
+  - `the-route` — The route
   - `two-open-questions-you-may-hit` — Two open questions you may hit
   - `after-the-run-the-four-numbers-that-should-agree` — After the run — the four numbers that should agree
   - `what-to-tell-me-afterwards` — What to tell me afterwards
