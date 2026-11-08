@@ -1,10 +1,20 @@
 //! **Run the pre-commit sequence in the one order that works.**
 //!
 //! ```text
-//! cargo run -p hrw --example gate            # decides FAST, LAB or FULL from the diff
+//! cargo run -p hrw --example gate            # decides DOCS, FAST, LAB or FULL from the diff
 //! cargo run -p hrw --example gate -- --full  # force the full suite
 //! cargo run -p hrw --example gate -- --fast  # force the cheap suite
 //! ```
+//!
+//! # DOCS runs no tests — Doug's ruling, 2026-11-08
+//!
+//! A diff that cannot change the Rust build regenerates the lab catalogue and stops,
+//! in about a second. It used to run the whole `--lib` suite (968 tests, 68–132 s on
+//! 11-08), because the document checkers live there — so a one-line markdown fix cost
+//! more than many code changes. Doug: *"Having a conversation or making a change to a
+//! document has become more expensive than making code changes. This is entirely
+//! unacceptable."* The doc checkers still run, **with the next code change's gate**,
+//! and anything they find is fixed then, in a batch. `--full` still forces everything.
 //!
 //! # Why this exists, measured rather than assumed
 //!
@@ -204,11 +214,19 @@ fn main() {
         );
     }
 
-    let mut steps = vec![step(
-        "fmt hrw",
-        &["fmt", "-p", "hrw"],
-        "formatting rewraps lines, and the generated docs measure the source",
-    )];
+    // **DOCS is light: the catalogue and nothing else** (see the module doc). Every
+    // step skipped here either reads only the Rust source, which a docs-only diff
+    // cannot change, or is a test the next code gate runs anyway.
+    let light = docs_only && !full;
+
+    let mut steps = Vec::new();
+    if !light {
+        steps.push(step(
+            "fmt hrw",
+            &["fmt", "-p", "hrw"],
+            "formatting rewraps lines, and the generated docs measure the source",
+        ));
+    }
 
     // The two-gate rule, for whichever Rumoca crates this change touched.
     for name in &crates {
@@ -219,28 +237,32 @@ fn main() {
         ));
     }
 
-    steps.push(step(
-        "gen_architecture",
-        &["run", "-q", "-p", "hrw", "--example", "gen_architecture"],
-        "module sizes and App field groups are derived from the formatted source",
-    ));
+    if !light {
+        steps.push(step(
+            "gen_architecture",
+            &["run", "-q", "-p", "hrw", "--example", "gen_architecture"],
+            "module sizes and App field groups are derived from the formatted source",
+        ));
+    }
     steps.push(step(
         "gen_lab_catalogue",
         &["run", "-q", "-p", "hrw", "--example", "gen_lab_catalogue"],
         "any `##` heading edit changes a lab's stop list",
     ));
-    steps.push(step(
-        "gen_matching_reference",
-        &[
-            "run",
-            "-q",
-            "-p",
-            "hrw",
-            "--example",
+    if !light {
+        steps.push(step(
             "gen_matching_reference",
-        ],
-        "emit lines and anchors are read from matching.rs as compiled",
-    ));
+            &[
+                "run",
+                "-q",
+                "-p",
+                "hrw",
+                "--example",
+                "gen_matching_reference",
+            ],
+            "emit lines and anchors are read from matching.rs as compiled",
+        ));
+    }
 
     for name in &crates {
         steps.push(step(
@@ -298,8 +320,11 @@ fn main() {
     // that verify them against a real compile are slow-gated. So the old advice was "run
     // FULL" — right that a compile is needed, wrong that 910 tests are. Measured at
     // 11.1 s against ~101 s.
-    let lab = !full && hrw::gate_policy::touches_a_verified_lab_region(refs.iter().copied());
-    if full {
+    let lab =
+        !full && !light && hrw::gate_policy::touches_a_verified_lab_region(refs.iter().copied());
+    if light {
+        // No test suite: the doc checkers run with the next code change's gate.
+    } else if full {
         steps.push(step(
             "gate (full)",
             &[
@@ -353,7 +378,7 @@ fn main() {
             // Named separately from FAST because the difference is visible to the
             // reader: DOCS leaves `hrw.exe` alone, so it is the one verdict that runs
             // with HRW open.
-            "DOCS \u{2014} clippy skipped, HRW may stay open"
+            "DOCS \u{2014} no tests; the doc checkers run with the next code change"
         } else {
             "FAST"
         },
