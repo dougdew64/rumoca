@@ -251,8 +251,8 @@ not difficult.**
 **INSERT A TEST AFTER A FUNCTION'S CLOSING BRACE, never before its `fn` line** — anything placed
 between a doc comment and its item is adopted by the wrong one, and the old function silently
 stops being a test. The history and the mechanism are on
-`doc_citations::no_function_has_two_test_attributes` and
-`tests_orphaned_docs::no_doc_block_gains_a_second_summary`, which catch it.
+`doc_citations::no_function_has_two_test_attributes`, which catches it (its companion ratchet,
+`no_doc_block_gains_a_second_summary`, was retired 2026-11-08).
 
 **BITTEN EIGHT TIMES, FIVE OF THEM ON 2026-09-04 ALONE — so the rule is not the gap, the ANCHOR
 is.** Every instance came from anchoring an edit on the text being inserted *before*: `#[test]`,
@@ -293,10 +293,9 @@ the findings, while *never push* lives in one and has never drifted.
   hour of the sweep that was hunting exactly this. **The move is always a pointer, never a
   restatement**, and the moment to check is when prose is being *moved*, not when it is being added.
 
-**The forcing function is a mechanism, not goodwill** — a limit
-(`doc_citations::the_mandatory_reading_path_stays_small`, stated in
-[`docs/reading-budgets.txt`](docs/reading-budgets.txt)) plus a nightly sweep (`examples/doc_report`)
-— **and a pointer must resolve** (`doc_citations::qualified_citations_resolve`), which is what makes
+**The forcing function is a report, not a failing test** — the limits in
+[`docs/reading-budgets.txt`](docs/reading-budgets.txt), watched by `examples/doc_report` (the test
+that failed on them was retired 2026-11-08) — **and a pointer must resolve** (`doc_citations::qualified_citations_resolve`), which is what makes
 this safe against a rename.
 
 **EDIT FILES WITH THE EDIT/WRITE TOOLS. Do not generate source text through a shell.** Three
@@ -810,10 +809,9 @@ the next phase touches — is procedure and lives there.
 > [`DECISIONS.md`](DECISIONS.md)** — *"closed arcs move out of `CLAUDE.md`"*, 2026-08-22, which
 > names each arc and the file that holds its record. **Do not restate a closed arc here; link it.**
 >
-> **The rule, and it is now enforced rather than remembered:** what is in flight goes at the top,
-> standing context underneath, and **a ✅ box is history the moment its arc closes.**
-> `doc_citations::the_mandatory_reading_path_stays_small` fails by name if this section or the
-> reading path outgrows its limit. **The limits, the unit and what crossing one means live in
+> **The rule:** what is in flight goes at the top, standing context underneath, and **a ✅ box is
+> history the moment its arc closes.** `examples/doc_report` reports if this section or the
+> reading path outgrows its limit (the failing test was retired 2026-11-08). **The limits, the unit and what crossing one means live in
 > [`docs/reading-budgets.txt`](docs/reading-budgets.txt) and nowhere else.**
 >
 > **THE TWO MODES DOUG WORKS IN — running labs when he can focus, low-supervision work
@@ -915,7 +913,7 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
 > `crates/` change. The point is that prose and conversation stopped paying it.
 
 - **The gate is green before every commit that touches code**, via the runner:
-  `cargo run -p hrw --example gate`. It decides DOCS, FAST, LAB or FULL from the working tree;
+  `cargo run -p hrw --example gate`. It decides DOCS, FAST or FULL from the working tree;
   `gate_policy` is the rule and has tests. **A DOCS diff — only `.md`/`.txt` under `hrw/` — runs
   no tests and no clippy (cost rule 2), so HRW may stay open.**
 - **ITERATING AND GATING ARE DIFFERENT ACTS.** Filter while editing; gate once, before the commit.

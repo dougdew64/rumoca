@@ -75,8 +75,8 @@ rather than "the checker found nothing", and only the checkers below carry the r
 | `survey::all_zero_columns` | `a_column_that_is_always_zero_is_reported` |
 | `report::exceptions` | `exceptions_are_recognised_across_reports` — asserts *only* the failing row |
 | `doc_citations::every_documented_source_path_exists` | `a_missing_file_is_reported` |
-| `doc_citations::claims_of_absence_are_still_true` | `the_unbuilt_tag_is_parsed_and_both_verdicts_fire` |
-| `doc_citations::provenance_tags_are_well_formed` | `provenance_tags_are_recognised_by_form` |
+| `doc_citations::claims_of_absence_are_still_true` | **none since 2026-11-08** — its must-fire, `the_unbuilt_tag_is_parsed_and_both_verdicts_fire`, was retired with the cost rules |
+| ~~`doc_citations::provenance_tags_are_well_formed`~~ | retired 2026-11-08, with its must-fire |
 | `doc_citations::documents_contain_no_stray_control_characters` | **`a_stray_control_character_is_reported` — added by this audit** |
 | `app::fixture_lab_links_all_resolve` | `parse_hrw_link_invalid_stage` proves the predicate rejects; the test carries its own non-vacuity guard |
 | F8's stage-IR ceiling | non-vacuity guard on row count — *"a model produced no row, so the loop exited early"* |
@@ -160,6 +160,7 @@ tag; it does not read English. That limit is why the lint exists.
 `the_unbuilt_tag_is_parsed_and_both_verdicts_fire` (proves both verdicts are reachable, so the
 checker cannot pass by matching nothing), and `untagged_claims_of_absence_are_listed` (the
 lint — prints, never fails). The convention is in `CLAUDE.md` beside the must-fire rule.
+**Since 2026-11-08 only the first survives**; the other two were retired with the cost rules.
 
 **Two bugs in the checker, both found by running it rather than reading it:**
 

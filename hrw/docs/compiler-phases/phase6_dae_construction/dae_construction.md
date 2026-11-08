@@ -33,7 +33,7 @@
 > `rumoca-phase-dae` was reorganised: the twenty-odd single-purpose modules this document tabulates (`convert.rs`, `equation_conversion.rs`, `when_conversion.rs`, the `analysis/` family, …) collapsed into `construction/`, and the `dae_prepare/` steps moved to `dae_transform/` and were rewritten. The phase's **job** is unchanged — this is where variables and equations are partitioned per MLS Appendix B — so read the partition, the classification rules and the worked examples as current, and every file path and module table as 0.9.20.
 >
 > **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
-> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+> A checker (`historical_citations_are_really_gone`) guarded this until its retirement on 2026-11-08; nothing now fails if a path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
 
 ## Overview
 

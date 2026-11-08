@@ -175,8 +175,8 @@ to restate the rule was retired 2026-08-31)*.
 cargo run -p hrw --example gate
 ```
 
-**It reads the working tree and picks DOCS, FAST, LAB or FULL.** The rule itself is
-`gate_policy::is_docs_only`, `needs_full_gate` and `touches_a_verified_lab_region`, each with a
+**It reads the working tree and picks DOCS, FAST or FULL** (a LAB verdict existed until
+2026-11-08). The rule itself is `gate_policy::is_docs_only` and `needs_full_gate`, each with a
 test; the runner adds the generators and `fmt`/`clippy` for any touched Rumoca crate. `--fast` /
 `--full` override.
 

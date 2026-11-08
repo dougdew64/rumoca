@@ -1,8 +1,8 @@
 # Reading-path ceilings
 #
-# Size limits on the documents a session must read before acting, enforced by
-# `doc_citations::the_mandatory_reading_path_stays_small` and reported nightly by
-# `cargo run -p hrw --example doc_report`.
+# Size limits on the documents a session must read before acting, reported by
+# `cargo run -p hrw --example doc_report`. (The test that failed on them,
+# `the_mandatory_reading_path_stays_small`, was retired 2026-11-08.)
 #
 # ===========================================================================
 # THESE ARE CEILINGS, NOT RATCHETS -- 2026-08-31
