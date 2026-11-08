@@ -6,10 +6,17 @@
 //! cargo run --example gen_field_help
 //! ```
 //!
-//! It locates `rumoca-ir-ast`'s source via `cargo metadata` (robust to the
+//! It locates each harvested crate's source via `cargo metadata` (robust to the
 //! cargo-cache hash/rev — no hard-coded path), extracts every `///` doc comment
-//! that sits on a struct field, and writes the `field-name → doc` map the app
-//! embeds. Keying is by field name (v1); longest doc wins when a name recurs.
+//! that sits on a struct field, and writes two tables the app embeds:
+//!
+//! - **`fields`** — `field -> crate -> doc`, longest doc winning when a name recurs
+//!   within one crate. What a stage keyed by crate reads.
+//! - **`types`** — `crate -> type -> field -> doc`, the doc on **that type's** field.
+//!   Added 2026-11-08 because the first table cannot tell two same-named fields of one
+//!   crate apart: `rumoca-phase-structural` documents `scalar` on both
+//!   `InitialValuePin` ("zero for scalar pins") and `PinTerm` ("zero for scalar terms"),
+//!   and `PinTerm`'s is one character longer, so a pin's tooltip described a term.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -35,6 +42,9 @@ fn main() {
     // in rumoca-ir-ast as an import clause, supplied the tooltip for Solve lowering's
     // `solver_maps.names`.
     let mut docs: BTreeMap<String, BTreeMap<String, String>> = BTreeMap::new();
+    // **crate -> type -> field -> doc** — the owning type, so a stage whose value is a
+    // known type can ask for that type's field rather than for the crate's longest doc.
+    let mut types: TypeDocs = BTreeMap::new();
     for crate_name in IR_CRATES {
         let src_dir = src_dir_of(&meta, crate_name);
         eprintln!(
@@ -49,20 +59,33 @@ fn main() {
                 &std::fs::read_to_string(f).expect("read source"),
                 crate_name,
                 &mut docs,
+                &mut types,
             );
         }
     }
 
     // Write src/field_help.json (pretty, sorted for stable diffs).
     let out_path = hrw::manifest_path!("src", "field_help.json");
-    let json = serde_json::to_string_pretty(&docs).expect("serialize");
+    let json = serde_json::to_string_pretty(&serde_json::json!({
+        "fields": docs,
+        "types": types,
+    }))
+    .expect("serialize");
     std::fs::write(out_path, json + "\n").expect("write field_help.json");
     let pairs: usize = docs.values().map(BTreeMap::len).sum();
+    let typed: usize = types
+        .values()
+        .flat_map(BTreeMap::values)
+        .map(BTreeMap::len)
+        .sum();
     eprintln!(
-        "wrote {} field names, {pairs} (crate, doc) pairs → {out_path}",
+        "wrote {} field names, {pairs} (crate, doc) pairs, {typed} (type, field) docs → {out_path}",
         docs.len()
     );
 }
+
+/// `crate -> type -> field -> doc`.
+type TypeDocs = BTreeMap<String, BTreeMap<String, BTreeMap<String, String>>>;
 
 /// The `src/` dir of a resolved dependency package, from `cargo metadata`.
 fn src_dir_of(meta: &serde_json::Value, crate_name: &str) -> PathBuf {
@@ -96,8 +119,19 @@ fn collect_rs(dir: &Path, out: &mut Vec<PathBuf>) {
 /// Associate each `///` comment block with the struct field it precedes.
 /// `#[...]` attribute lines between the doc and the field are skipped so the
 /// doc still attaches. Longest doc wins when a field name appears on many types.
-fn extract(src: &str, crate_name: &str, docs: &mut BTreeMap<String, BTreeMap<String, String>>) {
+///
+/// Each field doc is also filed under the **type it sits in** — the most recent
+/// `struct`/`enum` line above it (see [`type_name`]). Structs do not nest, so the most
+/// recent one is the enclosing one for every field line a struct body can contain. A
+/// field doc that sits in an enum's struct-like variant is filed under the enum.
+fn extract(
+    src: &str,
+    crate_name: &str,
+    docs: &mut BTreeMap<String, BTreeMap<String, String>>,
+    types: &mut TypeDocs,
+) {
     let mut buf: Vec<String> = Vec::new();
+    let mut owner: Option<String> = None;
     for line in src.lines() {
         let t = line.trim_start();
         if let Some(rest) = t.strip_prefix("///") {
@@ -105,6 +139,9 @@ fn extract(src: &str, crate_name: &str, docs: &mut BTreeMap<String, BTreeMap<Str
         } else if t.starts_with("#[") {
             // attribute between the doc and the field — keep the buffer
         } else {
+            if let Some(name) = type_name(line) {
+                owner = Some(name);
+            }
             if !buf.is_empty()
                 && let Some(name) = field_name(line)
             {
@@ -115,6 +152,18 @@ fn extract(src: &str, crate_name: &str, docs: &mut BTreeMap<String, BTreeMap<Str
                     .collect::<Vec<_>>()
                     .join(" ");
                 if !doc.is_empty() {
+                    if let Some(ty) = &owner {
+                        // Longest wins only within ONE type, which happens only across
+                        // an enum's variants.
+                        let per_type = types
+                            .entry(crate_name.to_owned())
+                            .or_default()
+                            .entry(ty.clone())
+                            .or_default();
+                        if per_type.get(&name).is_none_or(|d| doc.len() > d.len()) {
+                            per_type.insert(name.clone(), doc.clone());
+                        }
+                    }
                     // Longest wins WITHIN a crate — a field name can appear on several
                     // types there. Across crates nothing is discarded any more, which is
                     // the whole point: the reader is told which crate they are reading.
@@ -130,6 +179,29 @@ fn extract(src: &str, crate_name: &str, docs: &mut BTreeMap<String, BTreeMap<Str
             buf.clear();
         }
     }
+}
+
+/// The type a line declares, from `pub struct Foo<'a> {` / `pub(crate) enum Bar {` /
+/// `struct Baz;` — the identifier after `struct` or `enum`, without generics.
+fn type_name(line: &str) -> Option<String> {
+    let mut t = line.trim();
+    if let Some(r) = t.strip_prefix("pub") {
+        t = r.trim_start();
+        if let Some(r) = t.strip_prefix('(') {
+            t = r.split_once(')')?.1.trim_start();
+        }
+    }
+    let rest = t
+        .strip_prefix("struct ")
+        .or_else(|| t.strip_prefix("enum "))?;
+    let name: String = rest
+        .chars()
+        .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+        .collect();
+    name.chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_uppercase())
+        .then_some(name)
 }
 
 /// The field name from a line like `pub foo: Bar,` / `foo: Bar,` — a snake_case

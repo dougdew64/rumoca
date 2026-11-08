@@ -1007,9 +1007,11 @@ impl StageKind {
     /// - **Structural/IndexReduction** — `structural_to_json` takes
     ///   `&rumoca_phase_structural::StructuralReport`. **A phase crate, not an IR crate**,
     ///   which is why the mapping could not be assumed from the stage list.
-    /// - **Initialization** is `None`: its source type was not established, and a wrong
-    ///   arm here reintroduces exactly the wrong-stage tooltip being fixed. `None` means
-    ///   "no preference", which still shows a labelled doc rather than nothing.
+    /// - **Initialization** is `None` **and gets its tooltips from
+    ///   [`field_help::routes`](crate::field_help::routes) instead** (2026-11-08). Its
+    ///   value is assembled by `initialization_from_initial_pins`, not serialised from
+    ///   one type, so a crate-level preference was the wrong shape: the pins' fields live
+    ///   on `InitialValuePin`, and the crate's longest doc for `scalar` is `PinTerm`'s.
     /// - **Simulation** is a plot, not IR.
     ///
     /// `every_stage_ir_crate_is_harvested_or_none` holds this against

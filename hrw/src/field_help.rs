@@ -5,7 +5,7 @@
 //! HRW provides two kinds of help for understanding IR fields:
 //!
 //! 1. **Fast tier (this module):** instant, offline, generic. The `///` doc
-//!    comments that Rumoca's authors wrote on `rumoca-ir-ast` IR struct fields
+//!    comments that Rumoca's authors wrote on struct fields in the [`IR_CRATES`]
 //!    are extracted at build time and embedded as `field_help.json`. When you
 //!    hover a field in the tree inspector, its doc comment appears as a tooltip
 //!    — no network call, no latency. The help is *generic* (it describes what
@@ -72,8 +72,108 @@ pub const IR_CRATES: &[&str] = &[
 
 // The field help table is embedded at compile time via `include_str!`.
 // This means the binary is self-contained — no runtime file I/O needed.
-// The JSON maps field names (strings) to their doc-comment text (strings).
+// Two tables: `fields` (field -> crate -> doc) and `types` (crate -> type -> field -> doc).
 const FIELD_HELP_JSON: &str = include_str!("field_help.json");
+
+/// The embedded file's shape, exactly as `gen_field_help` writes it.
+#[derive(serde::Deserialize, Default)]
+struct Table {
+    /// `field -> crate -> doc`, longest doc winning within a crate.
+    fields: HashMap<String, HashMap<String, String>>,
+    /// `crate -> type -> field -> doc`, the doc on that type's own field.
+    types: HashMap<String, HashMap<String, HashMap<String, String>>>,
+}
+
+/// Where the doc for one key a stage publishes lives: **a named Rumoca type's field**.
+///
+/// For a stage whose value HRW assembles by hand rather than serialises, the key is
+/// HRW's and the meaning is Rumoca's, so the link between them is a fact HRW must
+/// state. It cannot be inferred from the key: `role` is documented in two harvested
+/// crates, and the doc that means a pin's role is not the longest of them.
+#[derive(Debug, Clone, Copy)]
+pub struct Route {
+    /// The key as the stage publishes it.
+    pub key: &'static str,
+    /// The harvested crate that owns the type.
+    pub krate: &'static str,
+    /// The type, as declared (`InitialValuePin`).
+    pub ty: &'static str,
+    /// The type's field. Usually `key`; differs where HRW renames it.
+    pub field: &'static str,
+}
+
+/// The stages whose tooltips come from [`Route`]s instead of from a crate.
+///
+/// **A routed stage gets exactly its routes and nothing else** — no longest-doc
+/// fallback. That is the point: before 2026-11-08 the Initialization pane, having no
+/// crate, borrowed the longest doc for every key, and five of its nine tooltips were
+/// false (`definitions` read "The parsed class definitions", `role` described a
+/// Solve-lowering slot, `column` said "`y` or `p`"). A key with no route has no
+/// tooltip, which is the honest answer for the values HRW computes itself.
+pub fn routes(stage: StageKind) -> Option<&'static [Route]> {
+    match stage {
+        StageKind::Initialization => Some(INITIALIZATION_ROUTES),
+        _ => None,
+    }
+}
+
+/// `worker::initialization_from_initial_pins` builds each pin from one
+/// `rumoca_phase_structural::InitialValuePin`, and the stage's `pins` array is
+/// `PreparedSystem::pins`. Every route here is read from that function.
+const INITIALIZATION_ROUTES: &[Route] = &[
+    Route::same("pins", "PreparedSystem"),
+    Route::same("role", "InitialValuePin"),
+    Route::same("coordinate", "InitialValuePin"),
+    Route::same("scalar", "InitialValuePin"),
+    // HRW renders the pin's signed terms as one expression; the doc is the terms'.
+    Route::same("value", "InitialValuePin"),
+    Route::same("source", "InitialValuePin"),
+    Route::same("source_scalar", "InitialValuePin"),
+    // **Renamed**: HRW publishes the pin's `provenance` as a resolved source location.
+    Route {
+        key: "declared_at",
+        krate: "rumoca-phase-structural",
+        ty: "InitialValuePin",
+        field: "provenance",
+    },
+];
+
+/// Keys the Initialization stage publishes that **deliberately carry no tooltip**.
+///
+/// `determinacy` and its six counts are HRW's own summary over the pins and the DAE's
+/// states — Rumoca documents none of them, so any doc would be HRW-written prose, and
+/// that waits for real use (Doug's choice, 2026-11-08). The rest are the parts of a
+/// source location HRW resolves for `declared_at`.
+/// `the_initialization_pane_routes_every_key_it_publishes` holds the two lists, this
+/// and [`INITIALIZATION_ROUTES`], against what the stage actually publishes.
+pub const INITIALIZATION_UNDOCUMENTED: &[&str] = &[
+    "determinacy",
+    "state_scalars",
+    "determined",
+    "only_guessed",
+    "definitions",
+    "checks",
+    "partly_fixed_states",
+    "file",
+    "line",
+    "column",
+    "excerpt",
+    "line_text",
+    "byte_start",
+    "byte_end",
+];
+
+impl Route {
+    /// A route to `rumoca-phase-structural`'s `ty`, whose field is named like the key.
+    const fn same(key: &'static str, ty: &'static str) -> Self {
+        Self {
+            key,
+            krate: "rumoca-phase-structural",
+            ty,
+            field: key,
+        }
+    }
+}
 
 /// The embedded table, resolved per stage.
 ///
@@ -95,16 +195,22 @@ const FIELD_HELP_JSON: &str = include_str!("field_help.json");
 /// 1. **Prefer the stage's own crate** — [`StageKind::ir_crate`], every arm of which is
 ///    evidence from the `*_to_json` that builds that stage's value.
 /// 2. **Label every tooltip with the crate it came from**, always, even when it matches.
-///    That is what makes a residual mismatch *visible* rather than silent, and it is the
-///    only protection available where `ir_crate` is `None` — `Initialization`, whose
-///    source type was not established. It is also useful in itself while Doug is
-///    learning the IR: the tooltip says which crate owns the node.
+///    That is what makes a residual mismatch *visible* rather than silent. It is also
+///    useful in itself while Doug is learning the IR: the tooltip says which crate owns
+///    the node.
 ///
-/// Mechanism 2 is why this is not a regression for panes whose crate is unknown: they keep
-/// their tooltips, now marked with their true origin.
+/// # And a third, for a stage whose value HRW assembles — routes (2026-11-08)
+///
+/// Mechanism 2 was the only protection for `Initialization`, whose crate is `None`, and
+/// it was not enough: a labelled tooltip is still a false one when five of nine are
+/// borrowed from the wrong type. A stage with [`routes`] gets **exactly** its routed
+/// keys, each the doc on a named type's field, and no fallback. `Simulation` is the one
+/// stage still on the labelled fallback; giving it routes is a separate item.
 pub struct FieldHelp {
     /// `field -> crate -> doc`, exactly as `gen_field_help` writes it.
     by_field: HashMap<String, HashMap<String, String>>,
+    /// `crate -> type -> field -> doc`, exactly as `gen_field_help` writes it.
+    by_type: HashMap<String, HashMap<String, HashMap<String, String>>>,
     /// `stage slug -> field -> tooltip`, precomputed at load.
     per_stage: HashMap<&'static str, HashMap<String, String>>,
     /// Handed out for a stage with no table, so callers need no `Option`.
@@ -116,11 +222,32 @@ impl FieldHelp {
     ///
     /// An empty table if parsing fails — defensive, since our own tooling writes it.
     pub fn load() -> Self {
-        let by_field: HashMap<String, HashMap<String, String>> =
-            serde_json::from_str(FIELD_HELP_JSON).unwrap_or_default();
+        let Table {
+            fields: by_field,
+            types: by_type,
+        } = serde_json::from_str(FIELD_HELP_JSON).unwrap_or_default();
 
         let mut per_stage = HashMap::new();
         for stage in StageKind::ALL {
+            if let Some(routes) = routes(*stage) {
+                // Exactly the routed keys. A route that no longer resolves is dropped
+                // here and named by `every_route_resolves_to_a_harvested_doc`.
+                let table = routes
+                    .iter()
+                    .filter_map(|r| {
+                        let doc = type_doc(&by_type, r)?;
+                        Some((
+                            r.key.to_owned(),
+                            format!(
+                                "{doc}\n\n\u{2014} {} \u{00b7} {}::{}",
+                                r.krate, r.ty, r.field
+                            ),
+                        ))
+                    })
+                    .collect();
+                per_stage.insert(stage.slug(), table);
+                continue;
+            }
             let want = stage.ir_crate();
             let mut table: HashMap<String, String> = HashMap::new();
             for (field, by_crate) in &by_field {
@@ -139,9 +266,15 @@ impl FieldHelp {
 
         Self {
             by_field,
+            by_type,
             per_stage,
             empty: HashMap::new(),
         }
+    }
+
+    /// The doc a route points at, or `None` when that type's field is not harvested.
+    pub fn route_doc(&self, route: &Route) -> Option<&str> {
+        type_doc(&self.by_type, route)
     }
 
     /// The `field -> tooltip` table for one stage. Every tooltip names its crate.
@@ -169,6 +302,18 @@ impl FieldHelp {
     pub fn is_empty(&self) -> bool {
         self.by_field.is_empty()
     }
+}
+
+/// `route`'s doc in the `types` table.
+fn type_doc<'t>(
+    by_type: &'t HashMap<String, HashMap<String, HashMap<String, String>>>,
+    route: &Route,
+) -> Option<&'t str> {
+    by_type
+        .get(route.krate)?
+        .get(route.ty)?
+        .get(route.field)
+        .map(String::as_str)
 }
 
 #[cfg(test)]
@@ -292,8 +437,14 @@ mod tests {
         let mut checked = 0usize;
         for stage in StageKind::ALL {
             for (field, tip) in help.for_stage(*stage) {
+                // The label is the last paragraph: `— <crate>`, or for a routed stage
+                // `— <crate> · <Type>::<field>`.
+                let label = tip.rsplit("\n\n").next().unwrap_or_default();
                 assert!(
-                    IR_CRATES.iter().any(|c| tip.ends_with(c)),
+                    IR_CRATES.iter().any(|c| {
+                        label == format!("\u{2014} {c}")
+                            || label.starts_with(&format!("\u{2014} {c} \u{00b7} "))
+                    }),
                     "{}'s tooltip for `{field}` names no crate: {tip:?}",
                     stage.slug(),
                 );
@@ -307,15 +458,17 @@ mod tests {
         );
     }
 
-    /// `Initialization` keeps its tooltips rather than losing them to a `None` crate.
+    /// A stage with no crate **and no routes** keeps labelled help rather than none.
     ///
-    /// Keying strictly by stage would have emptied this pane. The fallback is what makes
-    /// the accuracy fix not a regression.
+    /// Keying strictly by stage would have emptied such a pane. This was `Initialization`
+    /// until 2026-11-08, when it got [`routes`] because its labelled fallback was mostly
+    /// false; `Simulation` is the stage left on the fallback, pending its own routes.
     #[test]
     fn a_stage_with_no_known_crate_still_gets_labelled_help() {
         let help = FieldHelp::load();
-        assert_eq!(StageKind::Initialization.ir_crate(), None, "premise");
-        let table = help.for_stage(StageKind::Initialization);
+        assert_eq!(StageKind::Simulation.ir_crate(), None, "premise");
+        assert!(routes(StageKind::Simulation).is_none(), "premise");
+        let table = help.for_stage(StageKind::Simulation);
         assert!(
             !table.is_empty(),
             "a stage whose crate is unknown must keep labelled help, not lose it",
@@ -401,5 +554,171 @@ mod tests {
              those stages render with no field help. Add them to `field_help::IR_CRATES` \
              and re-run `cargo run -p hrw --example gen_field_help`.",
         );
+    }
+
+    /// Every route names a type's field that the harvest actually documents.
+    ///
+    /// A route that stopped resolving — an upstream rename, a deleted doc comment — is
+    /// dropped silently by `load`, so its key loses its tooltip with nothing on screen to
+    /// say so. This is the loud half. The fabricated route proves the lookup can fail,
+    /// so the loop below is not passing because `route_doc` always answers.
+    #[test]
+    fn every_route_resolves_to_a_harvested_doc() {
+        let help = FieldHelp::load();
+        let mut checked = 0usize;
+        for stage in StageKind::ALL {
+            for route in routes(*stage).unwrap_or_default() {
+                assert!(
+                    help.route_doc(route).is_some(),
+                    "{}'s route for `{}` names {}::{}::{}, which the harvest does not \
+                     document \u{2014} re-run gen_field_help, or the type was renamed upstream",
+                    stage.slug(),
+                    route.key,
+                    route.krate,
+                    route.ty,
+                    route.field,
+                );
+                checked += 1;
+            }
+        }
+        assert!(checked >= 8, "only {checked} routes were checked");
+        let bogus = Route {
+            key: "scalar",
+            krate: "rumoca-phase-structural",
+            ty: "NoSuchType",
+            field: "scalar",
+        };
+        assert!(
+            help.route_doc(&bogus).is_none(),
+            "a missing type must not resolve"
+        );
+    }
+
+    /// The routed table is the reason for the `types` table: a pin's `scalar` is the
+    /// **pin's** doc, not the longer one on `PinTerm`.
+    ///
+    /// Before 2026-11-08 the Initialization pane showed *"zero for scalar terms"* for a
+    /// pin's `scalar`, because the crate-level table keeps one doc per name per crate and
+    /// `PinTerm`'s is one character longer. The premise assertion keeps this meaningful:
+    /// if the crate-level doc ever becomes the pin's, the type table is no longer what
+    /// this test is measuring.
+    #[test]
+    fn a_pins_scalar_is_described_as_a_pins() {
+        let help = FieldHelp::load();
+        let crate_level = help
+            .by_field
+            .get("scalar")
+            .and_then(|m| m.get("rumoca-phase-structural"))
+            .expect("rumoca-phase-structural documents `scalar`");
+        assert!(
+            crate_level.contains("terms"),
+            "premise: the crate-level doc is PinTerm's \u{2014} got {crate_level:?}",
+        );
+
+        let tip = help
+            .for_stage(StageKind::Initialization)
+            .get("scalar")
+            .expect("Initialization routes `scalar`");
+        assert!(
+            tip.contains("scalar pins") && !tip.contains("terms"),
+            "a pin's `scalar` must carry InitialValuePin's doc: {tip:?}",
+        );
+        assert!(tip.ends_with("InitialValuePin::scalar"), "{tip:?}");
+    }
+
+    /// A routed stage carries exactly its routes: no key borrows another type's doc.
+    ///
+    /// This is what removed the five false tooltips — `definitions` as "The parsed class
+    /// definitions", `role` as a Solve-lowering slot, `value` and `source` as a
+    /// modification's, `column` as "`y` or `p`". Each is checked by name.
+    #[test]
+    fn no_initialization_key_borrows_another_types_doc() {
+        let help = FieldHelp::load();
+        let table = help.for_stage(StageKind::Initialization);
+        let routed = routes(StageKind::Initialization).expect("Initialization has routes");
+        assert_eq!(
+            table.len(),
+            routed.len(),
+            "the table must be the routes and nothing else: {:?}",
+            table.keys().collect::<Vec<_>>(),
+        );
+        for key in INITIALIZATION_UNDOCUMENTED {
+            assert!(
+                !table.contains_key(*key),
+                "`{key}` is HRW's own value and must carry no tooltip, got {:?}",
+                table.get(*key),
+            );
+        }
+        for (key, must_not) in [
+            ("role", "announced_time"),
+            ("value", "modification"),
+            ("source", "eager resolution"),
+        ] {
+            let tip = table.get(key).expect("routed");
+            assert!(
+                !tip.contains(must_not),
+                "`{key}` borrowed a wrong doc: {tip:?}"
+            );
+        }
+    }
+
+    /// Every key the Initialization stage publishes is routed or deliberately bare, and
+    /// both lists name only keys it publishes.
+    ///
+    /// Read from the committed `MeasuredOscillator` trace — the first curated specimen
+    /// with pins, so the only one where a pin's keys are observable at all. A new key
+    /// in the stage fails here until someone decides whether it has a Rumoca doc; a key
+    /// the stage stops publishing fails here instead of leaving a dead route.
+    #[test]
+    fn the_initialization_pane_routes_every_key_it_publishes() {
+        fn keys(v: &serde_json::Value, out: &mut std::collections::BTreeSet<String>) {
+            match v {
+                serde_json::Value::Object(m) => {
+                    for (k, child) in m {
+                        out.insert(k.clone());
+                        keys(child, out);
+                    }
+                }
+                serde_json::Value::Array(a) => a.iter().for_each(|c| keys(c, out)),
+                _ => {}
+            }
+        }
+        let path = crate::manifest_path!(
+            "docs",
+            "specimen-notebook",
+            "MeasuredOscillator",
+            "trace",
+            "initialization.json"
+        );
+        let stage: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(path).expect("committed trace"))
+                .expect("trace parses");
+        assert!(
+            stage["pins"].as_array().is_some_and(|p| !p.is_empty()),
+            "premise: MeasuredOscillator publishes a pin, or a pin's keys are unobserved",
+        );
+        let mut published = std::collections::BTreeSet::new();
+        keys(&stage, &mut published);
+
+        let routed: Vec<&str> = routes(StageKind::Initialization)
+            .expect("routes")
+            .iter()
+            .map(|r| r.key)
+            .collect();
+        for key in &published {
+            let r = routed.contains(&key.as_str());
+            let u = INITIALIZATION_UNDOCUMENTED.contains(&key.as_str());
+            assert!(
+                r ^ u,
+                "`{key}` must be in exactly one of the routes and the undocumented list \
+                 (routed {r}, undocumented {u})",
+            );
+        }
+        for key in routed.iter().chain(INITIALIZATION_UNDOCUMENTED) {
+            assert!(
+                published.contains(*key),
+                "`{key}` is listed but the stage no longer publishes it",
+            );
+        }
     }
 }

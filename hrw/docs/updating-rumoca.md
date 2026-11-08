@@ -202,6 +202,17 @@ is the strongest single statement this project can make about a release.
   `IR_CRATES` failing to resolve is loud. `StageKind::ir_crate()` pointing a stage at a crate that
   no longer holds its type is silent — the stage simply loses its tooltips, or borrows another
   stage's. Re-check that mapping against the new crate layout by hand.
+- **A stage HRW assembles by hand takes ROUTES, and those are loud** *(2026-11-08)*. The table
+  also records each doc's owning type (`types`: crate → type → field → doc), and
+  `field_help::routes` maps each key such a stage publishes to a named type's field —
+  Initialization's pins to `InitialValuePin`. A routed stage gets only its routes, with no
+  fallback. An upstream rename of a routed type or field fails
+  `every_route_resolves_to_a_harvested_doc` by name, and a key the stage starts or stops
+  publishing fails `the_initialization_pane_routes_every_key_it_publishes`.
+- **Regenerate even when nothing seems to have changed.** On 2026-11-08 a regeneration added
+  `first_row` and `row_count`, documented in `rumoca-phase-structural` on 11-06 after the table
+  was last generated: the committed table had been two names stale for two days, and nothing
+  checks it against the sources.
 - **Review the diff.** New/renamed/removed fields are a signal: a renamed field the app reads
   (e.g. in `worker.rs` or `tree.rs`) may need a matching code change; new fields may be worth
   surfacing. Removed fields hint at API breakage step 2 should also have caught.
