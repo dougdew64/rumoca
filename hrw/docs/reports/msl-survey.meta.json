@@ -7,9 +7,9 @@
   "models_available": 2791,
   "partial_survey": false,
   "max_reduce_equations": null,
-  "largest_reduction_attempted": 0,
-  "reductions_skipped": 0,
+  "largest_reduction_attempted": 786,
+  "reductions_skipped": 96,
   "seconds": null,
-  "generated_unix": 1793968193,
-  "outcomes": {"failed:Flatten": 228, "failed:Instantiate": 41, "failed:ToDae": 447, "failed:Typecheck": 13, "no_result": 11, "panicked": 2, "success": 2049}
+  "generated_unix": 1794105528,
+  "outcomes": {"failed:Flatten": 228, "failed:Instantiate": 41, "failed:ToDae": 449, "failed:Typecheck": 13, "no_result": 11, "success": 2049}
 }

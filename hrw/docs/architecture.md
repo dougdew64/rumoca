@@ -113,7 +113,7 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**73 modules, 95,487 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**73 modules, 95,552 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
@@ -143,11 +143,11 @@ showing 48 equations. They are derived now, and
 | `dae_expr_format.rs` | 898 |
 | `tearing_anim.rs` | 879 |
 | `model_list.rs` | 849 |
+| `survey.rs` | 834 |
 | `screenshot.rs` | 832 |
 | `reduction_anim.rs` | 810 |
 | `canvas.rs` | 793 |
 | `capture_suite.rs` | 779 |
-| `survey.rs` | 769 |
 | `arch_doc.rs` | 758 |
 | `lab.rs` | 734 |
 | `pantelides_ladder.rs` | 723 |
@@ -190,7 +190,7 @@ showing 48 equations. They are derived now, and
 | `stage_caches.rs` | 117 |
 | `doc_sizes.rs` | 115 |
 | `compile_caches.rs` | 100 |
-| **total** | **95,487** |
+| **total** | **95,552** |
 <!-- END GENERATED module-sizes -->
 
 

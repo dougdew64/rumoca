@@ -654,11 +654,8 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
             row.structural = "ok".to_owned();
             fill_blocks(&mut row, &rep);
         }
-        Err(e) => {
-            row.structural = match e {
-                rumoca_phase_structural::StructuralError::Singular { .. } => "singular".to_owned(),
-                other => format!("error:{}", first_line(&other.to_string())),
-            };
+        Err(rumoca_phase_structural::StructuralError::Singular { .. }) => {
+            row.structural = "singular".to_owned();
             // **The index-reduction column, measured again since 2026-11-07.**
             //
             // It was empty from the v0.10.0 rebase: the old column re-ran reduction
@@ -671,6 +668,13 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
             //
             // **Only a singular raw system is reduced**, as before: an index-1 one has
             // nothing for reduction to do and its column stays at the seeded value.
+            // **And that is why this is its own arm.** The 2026-11-07 version reduced in
+            // every `Err` arm, so the 629 `EmptySystem` rows were handed to
+            // `prepare_for_solve` — which admits an empty system trivially — and came
+            // back `ok` with zero blocks. The column then said reduction had rescued six
+            // times as many models as it had, and `SurveyRow::is_solvable` counted every
+            // empty one as solvable. `survey::tests::the_committed_survey_reduces_only_singular_systems`
+            // pins the artifact.
             // Over the cap, the row says `skipped:too-large` rather than omitting the
             // fact, and `--only-skipped` revisits exactly those rows uncapped.
             //
@@ -694,6 +698,12 @@ fn survey_one(session: &mut Session, name: &str, max_reduce_eq: usize) -> Survey
                     Err(other) => format!("error:{}", first_line(&other.to_string())),
                 }
             };
+        }
+        Err(other) => {
+            // Not singular — an empty system, or a refusal about initial values or a
+            // constant call. Reduction is not the question for any of them, so
+            // `index_reduced` stays empty and the block columns stay unmeasured.
+            row.structural = format!("error:{}", first_line(&other.to_string()));
         }
     }
     row.secs = t.elapsed().as_secs_f64();

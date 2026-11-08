@@ -152,8 +152,16 @@ impl SurveyRow {
     /// **The honest reading of "usable"**, and not the same as `outcome ==
     /// "success"`: a compile that produces no equations, or a singular system
     /// index reduction cannot fix, has compiled without being simulatable.
+    ///
+    /// **The reduction route is open only to a singular raw system.** `prepare_for_solve`
+    /// admits an empty system trivially, so an `index_reduced == "ok"` on any other
+    /// row would say nothing about solvability — and on 2026-11-07 the survey wrote
+    /// exactly that on 629 empty systems. The survey no longer does; this reader no
+    /// longer depends on it.
     pub fn is_solvable(&self) -> bool {
-        self.outcome == "success" && (self.structural == "ok" || self.index_reduced == "ok")
+        self.outcome == "success"
+            && (self.structural == "ok"
+                || (self.structural == "singular" && self.index_reduced == "ok"))
     }
 }
 
@@ -539,6 +547,63 @@ mod tests {
         assert!(!row("M.D", "success", "singular", "singular").is_solvable());
         // Did not compile.
         assert!(!row("M.E", "failed:Flatten", "", "").is_solvable());
+        // **The 2026-11-07 defect's shape**: an empty system that `prepare_for_solve`
+        // admitted trivially. Reduction rescued nothing here, so it is not solvable.
+        assert!(
+            !row(
+                "M.F",
+                "success",
+                "error:empty system: no equations or unknowns",
+                "ok"
+            )
+            .is_solvable(),
+            "an empty system is not made solvable by a reduction that had nothing to do"
+        );
+    }
+
+    /// **`index_reduced` is measured only on a singular raw system — in the
+    /// committed artifact, not just in the code that writes it.**
+    ///
+    /// The 2026-11-07 survey ran `prepare_for_solve` in every structural-error arm.
+    /// It admits an empty system trivially, so 629 empty systems were published as
+    /// `index_reduced = ok` with zero blocks beside 105 genuine reductions, and the
+    /// column read as reduction rescuing six times what it did. A test of the writer
+    /// alone could not see it: the writer is an example binary, and the defect lived
+    /// in which arm a call sat in. So this reads the file HRW reads. The floor keeps
+    /// it from passing on a missing or truncated artifact, and the second assertion
+    /// keeps it from passing on a column that was never measured at all — the state
+    /// that column was in from the v0.10.0 rebase until 2026-11-07.
+    #[test]
+    fn the_committed_survey_reduces_only_singular_systems() {
+        let path = crate::manifest_path!("docs", "reports", "msl-survey.csv");
+        let text = std::fs::read_to_string(path).expect("the survey artifact is committed");
+        let rows = parse_csv(&text);
+        assert!(
+            rows.len() > 2000,
+            "only {} rows; truncated survey",
+            rows.len()
+        );
+
+        let stray: Vec<String> = rows
+            .iter()
+            .filter(|r| !r.index_reduced.is_empty() && r.structural != "singular")
+            .map(|r| {
+                format!(
+                    "{} (structural {:?}, index_reduced {:?})",
+                    r.name, r.structural, r.index_reduced
+                )
+            })
+            .collect();
+        assert!(
+            stray.is_empty(),
+            "{} rows report an index-reduction result on a system that was not singular, e.g. {:?}",
+            stray.len(),
+            stray.iter().take(3).collect::<Vec<_>>(),
+        );
+        assert!(
+            rows.iter().any(|r| r.index_reduced == "ok"),
+            "no row reports a reduction admitted, so the column measured nothing"
+        );
     }
 
     /// The summary separates the three fates of a singular raw system, because
