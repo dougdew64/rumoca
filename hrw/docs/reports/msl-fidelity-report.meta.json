@@ -1,12 +1,12 @@
 {
-  "generated_unix": 1794012145,
-  "generated_utc": "2026-11-07T00:42:25Z",
+  "generated_unix": 1794105616,
+  "generated_utc": "2026-11-08T02:40:16Z",
   "models": 2780,
   "outcomes": {"ok": 2780},
   "profile": "msl-fidelity-profile.csv",
   "run_verdicts": {"aborted:proc-ceiling": 11, "ok": 2780},
-  "source_report": "C:/Users/dougd/rumoca-runs/fid-20261106-1530.csv",
-  "not_checked": "11 model(s) exceeded the memory this machine can safely provide (observed above 12.1 GB and still growing when stopped) and were NOT checked. These are limits of the machine and the run configuration, not findings about HRW or Rumoca.",
+  "source_report": "C:/Users/dougd/rumoca-runs/fid-20261107-1725.csv",
+  "not_checked": "11 model(s) exceeded the memory this machine can safely provide (observed above 12.3 GB and still growing when stopped) and were NOT checked. These are limits of the machine and the run configuration, not findings about HRW or Rumoca.",
   "checks": ["F2", "F3", "F4", "F5", "F6", "F7", "F9", "F10"],
   "note": "Checks F2, F3, F4, F5, F6, F7, F9, F10 over the MSL corpus. Establishes that HRW agrees with Rumoca, NOT that Rumoca is correct, and does not test the rendered UI. A green row means the check found nothing, which is not the same as the check having had something to look at."
 }

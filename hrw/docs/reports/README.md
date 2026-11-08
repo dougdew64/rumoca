@@ -19,9 +19,9 @@ among the documents.*
 
 | File | Written by | Covers |
 |---|---|---|
-| `msl-survey.csv` | `examples/survey_msl.rs` | **The corpus definition.** Rumoca's reach across every MSL model, plus the IR-shape metrics that stratify a sample. 2,791 models as of 2026-11-06, up from 2,626 when the root list was consolidated and `ModelicaReference` and `ObsoleteModelica4` entered it — the count is whatever the file holds, and nothing should spell it. |
+| `msl-survey.csv` | `examples/survey_msl.rs` | **The corpus definition.** Rumoca's reach across every MSL model, plus the IR-shape metrics that stratify a sample. 2,791 models as of 2026-11-06, up from 2,626 when the root list was consolidated and `ModelicaReference` and `ObsoleteModelica4` entered it — the count is whatever the file holds, and nothing should spell it. **`n_equations` counts scalar equation rows since 2026-11-07** — each residual at its scalar size, each structured family at its row count, so 513 rows grew and none shrank; it read the residual arena before, which holds no family, and **`index_reduced` is measured again**, on singular raw systems only — `survey::tests::the_committed_survey_reduces_only_singular_systems` holds the artifact to that. |
 | `msl-survey.meta.json` | same | provenance for the above |
-| `msl-fidelity-report.csv` | `examples/fidelity_msl.rs`, promoted by `examples/promote_run.rs` | **The artifact.** Every check on the `fidelity::CHECKS` roster over the corpus — **2,780 of 2,791 models, all green (2026-11-06)**, the rest stopped by the memory ceiling and named in the sidecar. The roster is the sidecar's `checks` field, never a range spelled here: this cell read `F1-F9` for three months, by which time F1 was retired, F8 was a measurement rather than a check, and F10 existed. |
+| `msl-fidelity-report.csv` | `examples/fidelity_msl.rs`, promoted by `examples/promote_run.rs` | **The artifact.** Every check on the `fidelity::CHECKS` roster over the corpus — **2,780 of 2,791 models, all green (2026-11-07)**, the rest stopped by the memory ceiling and named in the sidecar. **The 11-07 run is the first with each model's reduced system as a subject** (`IndexReduction`, F2 against `prepare_for_solve` under `--max-reduce-eq`), and its CSV is **byte-identical** to 11-06's: an all-green row carries no subject count, so **nothing in this file can show how many reduced systems were checked** (`docs/tech-debt.md`, open item 8). The roster is the sidecar's `checks` field, never a range spelled here: this cell read `F1-F9` for three months, by which time F1 was retired, F8 was a measurement rather than a check, and F10 existed. |
 | `msl-fidelity-profile.csv` | `scripts/measure-fidelity.ps1` | peak resident memory and wall time per model, plus the abort verdict |
 | `msl-fidelity-report.meta.json` | `examples/promote_run.rs` | provenance, **including the `not_checked` bound** |
 | `specimen-fidelity-report.csv` | the pre-commit test in `src/fidelity.rs` | the specimens named by `fidelity::MODELS` — a **subset** of `specimens/*.mo`, not all of them. **Churns on every full test run** — that is expected. |
@@ -62,7 +62,7 @@ models** whose single process grew past what this machine can safely give one (`
 at 12.3 GB), with no timeouts and no free-RAM aborts. **Those are limits of the hardware and the
 run configuration, not findings about HRW or Rumoca**, and the field says so in those words.
 
-**The same 11 models were stopped by two independent runs that day**, byte-identical as a set. A
+**The same 11 models were stopped by two independent runs that day**, byte-identical as a set — and by a third on 2026-11-07. A
 deterministic stop is a property of those models, not a flaky machine — worth knowing before
 anyone reads a changed `not_checked` list as noise.
 
