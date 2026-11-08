@@ -1797,6 +1797,11 @@ impl App {
 
         cc.egui_ctx.set_fonts(hrw_font_definitions());
 
+        // **Wake when a lab file changes**, so an edit made while HRW sits idle — Claude
+        // revising a lab mid-conversation — appears without anyone touching the window.
+        // The poll alone runs only when egui paints. See `lab::spawn_lab_waker`.
+        crate::lab::spawn_lab_waker(cc.egui_ctx.clone());
+
         // **Catch the copy before egui discards it**, with a plugin of our own so it
         // runs AFTER egui's `LabelSelectionState` rather than before it. See
         // [`CopyCatcher`] for why the obvious `Context::on_end_pass` wrapper cannot

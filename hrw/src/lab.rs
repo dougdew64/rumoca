@@ -303,6 +303,56 @@ impl LabState {
     }
 }
 
+/// **Wake the UI when a lab file changes**, so an edit appears without anyone touching
+/// the window.
+///
+/// [`LabState::poll`] runs inside the paint path, and **egui does not paint an idle
+/// window**. On 2026-11-08 Claude reordered `the-pipeline.md` while Doug had it open,
+/// and the panel kept the old text: he was typing in VS Code, so HRW had no input,
+/// painted nothing, and never polled. It updated the moment the screenshot bridge
+/// forced a frame.
+///
+/// The same defect, and the same fix, as `screenshot::spawn_waker`: a thread that does
+/// one cheap `stat` sweep per [`LAB_POLL_INTERVAL`] and calls `request_repaint` **only
+/// on a change**. Repainting on a timer instead was rejected there, measured: every
+/// frame writes the session file to disk. The thread holds only a `Context` clone, and
+/// like the screenshot waker it runs for the life of the process with nothing to shut
+/// down.
+pub(crate) fn spawn_lab_waker(ctx: eframe::egui::Context) {
+    let _ = std::thread::Builder::new()
+        .name("hrw-lab-waker".to_string())
+        .spawn(move || {
+            let dir = std::path::Path::new(bridge::FIXTURE_LABS_DIR);
+            let mut seen = newest_lab_mtime(dir);
+            loop {
+                std::thread::sleep(LAB_POLL_INTERVAL);
+                let now = newest_lab_mtime(dir);
+                if now != seen {
+                    ctx.request_repaint();
+                }
+                seen = now;
+            }
+        });
+}
+
+/// The newest modification time among the lab files in `dir`, or `None` when there are
+/// none.
+///
+/// The **directory's own** mtime is included, so adding or deleting a lab — which changes
+/// no surviving file — still counts as a change. Only `.md` files are read; the
+/// generated `CATALOGUE.md` is among them, which is harmless (a regenerated catalogue
+/// costs one frame).
+pub(crate) fn newest_lab_mtime(dir: &std::path::Path) -> Option<std::time::SystemTime> {
+    let mtime = |p: &std::path::Path| std::fs::metadata(p).ok()?.modified().ok();
+    let files = std::fs::read_dir(dir).ok()?.flatten().filter_map(|e| {
+        let p = e.path();
+        (p.extension().and_then(|x| x.to_str()) == Some("md"))
+            .then(|| mtime(&p))
+            .flatten()
+    });
+    files.chain(mtime(dir)).max()
+}
+
 /// Which lab the Lab panel is showing.
 ///
 /// **One kind now: `Fixture`** — a file in `docs/fixture-labs/`, kept and versioned
@@ -730,5 +780,58 @@ mod tests_render_split {
             ..Default::default()
         };
         assert_eq!(lab.render_split(text), at);
+    }
+}
+
+#[cfg(test)]
+mod tests_lab_waker {
+    use super::newest_lab_mtime;
+    use std::time::{Duration, SystemTime};
+
+    /// **The waker sees a lab edit, and ignores what is not a lab.**
+    ///
+    /// `spawn_lab_waker` wakes the UI exactly when this value changes, so this is the
+    /// whole of its judgement. Times are set explicitly, in the future, so the
+    /// directory's own mtime (now) cannot be the newest and the test does not depend
+    /// on the filesystem clock's resolution.
+    #[test]
+    fn an_edited_lab_moves_the_newest_mtime_and_a_non_lab_file_does_not() {
+        let dir = std::env::temp_dir().join(format!("hrw-lab-waker-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        let base = SystemTime::now() + Duration::from_secs(3600);
+        let stamp = |name: &str, secs: u64| {
+            let path = dir.join(name);
+            std::fs::write(&path, "x").expect("write");
+            std::fs::File::options()
+                .write(true)
+                .open(&path)
+                .expect("open")
+                .set_modified(base + Duration::from_secs(secs))
+                .expect("set mtime");
+        };
+
+        stamp("a.md", 10);
+        stamp("b.md", 20);
+        assert_eq!(newest_lab_mtime(&dir), Some(base + Duration::from_secs(20)));
+
+        // Doug's case: a lab edited while HRW sits idle.
+        stamp("a.md", 30);
+        assert_eq!(
+            newest_lab_mtime(&dir),
+            Some(base + Duration::from_secs(30)),
+            "an edited lab must move the value the waker compares, or it never wakes",
+        );
+
+        // Not a lab: a notebook or data file changing must not count.
+        stamp("pinned-claims.txt", 99);
+        assert_eq!(newest_lab_mtime(&dir), Some(base + Duration::from_secs(30)));
+
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(
+            newest_lab_mtime(&dir),
+            None,
+            "a missing directory is no labs"
+        );
     }
 }
