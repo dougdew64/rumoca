@@ -111,6 +111,25 @@ fn main() {
         .collect();
     let checks_json = format!("[{}]", checks.join(", "));
     let checks_prose = hrw::fidelity::CHECKS.join(", ");
+    // **The denominator, summed** (2026-11-07, open item 8): what each check could act
+    // on, from the rows' `subjects` and `engaged` columns. `null` for a report written
+    // before the columns existed — zeros there would claim nothing was examined.
+    let engagement = match hrw::promote::engagement_tally(&parsed) {
+        None => "null".to_owned(),
+        Some(t) => format!(
+            "{{\"rows_examined\": {}, \"rows_not_examined\": {}, \"by_check\": {}, \
+             \"subjects\": {}, \"by_subject\": {{{}}}}}",
+            t.rows_examined,
+            t.rows_not_examined,
+            json_map(t.by_check.into_iter()),
+            json_map(t.subjects.into_iter()),
+            t.by_subject
+                .into_iter()
+                .map(|(label, per)| format!("\"{label}\": {}", json_map(per.into_iter())))
+                .collect::<Vec<_>>()
+                .join(", "),
+        ),
+    };
     let meta = format!(
         "{{\n  \"generated_unix\": {unix},\n  \"generated_utc\": \"{}\",\n  \
          \"models\": {incoming},\n  \
@@ -118,10 +137,15 @@ fn main() {
          \"run_verdicts\": {verdicts},\n  \"source_report\": \"{}\",\n  \
          \"not_checked\": \"{}\",\n  \
          \"checks\": {checks_json},\n  \
+         \"engagement\": {engagement},\n  \
          \"note\": \"Checks {checks_prose} over the MSL corpus. Establishes that HRW \
          agrees with Rumoca, NOT that Rumoca is correct, and does not test the rendered \
          UI. A green row means the check found nothing, which is not the same as the \
-         check having had something to look at.\"\n}}\n",
+         check having had something to look at; engagement says what each check had: \
+         F2-F5 count subjects, F6 derived views, F7 stage IRs, F9 abnormal stages, F10 \
+         stages. by_subject.IndexReduction counts the systems the Index reduction stage \
+         ADMITTED, and its F2 the ones F2 compared against an oracle; an index-1 system is \
+         admitted unchanged, so this is not a count of high-index models.\"\n}}\n",
         utc_now(),
         report.display().to_string().replace('\\', "/"),
         not_checked_sentence(&profile_rows).replace('"', "'"),

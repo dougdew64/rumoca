@@ -179,6 +179,64 @@ pub fn verdict_tally(profile: &[ProfileRow]) -> BTreeMap<String, usize> {
     out
 }
 
+/// **What the run examined, summed over its rows** — the sidecar's denominator.
+///
+/// Built from each row's `subjects` and `engaged` columns (`fidelity::Engagement`,
+/// 2026-11-07). The sidecar's note had said for months that *"a green row means the check
+/// found nothing, which is not the same as the check having had something to look at"*,
+/// and nothing in the artifact let a reader tell the two apart. This is what does.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct EngagementTally {
+    /// Rows that carry an `engaged` entry: models some check examined.
+    pub rows_examined: usize,
+    /// Rows with no `engaged` entry — no DAE, a panic, a model that did not compile.
+    /// **Their `ok` means nothing was found because nothing was looked at.**
+    pub rows_not_examined: usize,
+    /// Check → summed count of what it could act on (units per `fidelity::Engagement`).
+    pub by_check: BTreeMap<String, usize>,
+    /// Subject label → check → how many rows' subject of that label the check engaged.
+    /// `by_subject["IndexReduction"]["F2"]` is the number of systems the Index reduction
+    /// stage admitted that F2 compared against an oracle, read off the rows rather than
+    /// inferred from a difference. **Admitted, not high-index**: an index-1 system passes
+    /// through that stage unchanged and is counted here too.
+    pub by_subject: BTreeMap<String, BTreeMap<String, usize>>,
+    /// Subject label → how many rows carried that subject at all.
+    pub subjects: BTreeMap<String, usize>,
+}
+
+/// Sum the denominator columns, or `None` for a report that has none.
+///
+/// **`None` is a distinct answer, not an empty tally**: a report written before the
+/// columns existed has no denominator, and zeros in the sidecar would claim the run
+/// examined nothing — the opposite of the truth, in the file a maintainer trusts.
+pub fn engagement_tally(report: &crate::report::Report) -> Option<EngagementTally> {
+    if !report.columns.iter().any(|c| c.trim() == "engaged") {
+        return None;
+    }
+    let mut t = EngagementTally::default();
+    for row in &report.rows {
+        let engaged = crate::fidelity::parse_engaged(row.get("engaged").unwrap_or_default());
+        if engaged.is_empty() {
+            t.rows_not_examined += 1;
+            continue;
+        }
+        t.rows_examined += 1;
+        for (check, n) in engaged {
+            *t.by_check.entry(check).or_default() += n;
+        }
+        for (label, checks) in
+            crate::fidelity::parse_subjects(row.get("subjects").unwrap_or_default())
+        {
+            *t.subjects.entry(label.clone()).or_default() += 1;
+            let per = t.by_subject.entry(label).or_default();
+            for c in checks {
+                *per.entry(c).or_default() += 1;
+            }
+        }
+    }
+    Some(t)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -338,5 +396,49 @@ mod tests {
         assert_eq!(rows[0].name, "good");
         assert_eq!(rows[1].verdict, "aborted:timeout");
         assert_eq!(verdict_tally(&rows).get("aborted:timeout"), Some(&1));
+    }
+
+    /// **The sidecar's denominator is read off the rows, and an old report has none.**
+    ///
+    /// Three rows in the shapes a real run writes: a model with both subjects but no
+    /// reduced oracle above the cap, a model with an oracle, and a panic row with empty
+    /// columns. The totals must say exactly how many reduced systems F2 compared — the
+    /// question the 2026-11-07 run could not answer from its own report.
+    #[test]
+    fn the_engagement_tally_counts_what_was_examined_and_refuses_an_old_report() {
+        let text = "name,kind,outcome,message,checks_failed,n_violations,subjects,engaged\n\
+                    A,Examples,ok,,,0,Structural=F2/F3/F4/F5 IndexReduction=F3/F4/F5,F2=1 F3=2 F4=2 F5=2 F9=0\n\
+                    B,Examples,ok,,,0,Structural=F2/F3/F5 IndexReduction=F2/F3/F5,F2=2 F3=2 F4=0 F5=2 F9=0\n\
+                    C,Examples,panicked,boom,,0,,\n";
+        let t = engagement_tally(&crate::report::parse(text)).expect("the report has the columns");
+        assert_eq!(t.rows_examined, 2);
+        assert_eq!(t.rows_not_examined, 1, "the panic row examined nothing");
+        assert_eq!(t.subjects.get("IndexReduction"), Some(&2));
+        assert_eq!(
+            t.by_subject["IndexReduction"].get("F2"),
+            Some(&1),
+            "one reduced system had an oracle; the other was above the cap"
+        );
+        assert_eq!(t.by_subject["Structural"].get("F4"), Some(&1));
+        assert_eq!(t.by_check.get("F2"), Some(&3));
+        assert_eq!(
+            t.by_check.get("F4"),
+            Some(&2),
+            "B's F4=0 is a zero, and must sum as one"
+        );
+        assert_eq!(
+            t.by_check.get("F9"),
+            Some(&0),
+            "a check that ran on nothing is 0, not absent"
+        );
+        assert!(
+            !t.by_check.contains_key("F7"),
+            "a check no row ran is absent, not 0"
+        );
+
+        // A report from before the columns existed has no denominator. Zeros would
+        // say the run examined nothing, which is false.
+        let old = "name,kind,outcome,message,checks_failed,n_violations\nA,Examples,ok,,,0\n";
+        assert_eq!(engagement_tally(&crate::report::parse(old)), None);
     }
 }
