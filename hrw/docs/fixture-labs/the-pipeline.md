@@ -79,14 +79,35 @@ the distinction is what makes each algorithm the obvious choice rather than an a
 - edges: derived from the matching — directed
 - asks: *strongly* connected components · Tarjan
 
-The contrast worth carrying: the first and third ask the same question on different graphs.
-Both are *"find the components"* — and the only difference is undirected versus directed.
-That is exactly why one is union-find and the other is Tarjan: union-find merges symmetric
-relations and cannot express a dependency that runs one way, which is the whole content of an
-evaluation order.
+**Why the first and third need different algorithms.** Both ask *"which items belong
+together?"* The difference is whether the lines have arrows.
 
-So when Tarjan arrives in `blt-ordering.md` it is not a new idea. It is this idea, on a digraph,
-where "same node" has become "each needs the other".
+**In the connection graph they don't.** `connect(R.n, C.p)` says R.n and C.p are the same
+electrical node, and that is just as true read backwards. Belonging together is mutual, and it
+chains: if R.n is joined to C.p and C.p to L.p, all three are one node, whatever order the
+`connect`s were written in. **Union-find** is the algorithm for that: it keeps groups, and merges
+two whenever a line joins them.
+
+**In the dependency graph the lines are arrows.** After matching, each equation computes one
+unknown; draw an arrow from A to B when B needs the value A computes:
+
+```text
+e1:  x = 1           needs nothing
+e2:  y = 2*x         needs x  (from e1)
+e3:  z = y + w       needs y  (from e2) and w (from e4)
+e4:  w = z / 2       needs z  (from e3)
+```
+
+The arrows run e1 → e2 → e3, and e3 ⇄ e4. **The one-way arrows are information**: e1 → e2 says
+e1 can be solved first, on its own. Equations belong together only when *each needs the other* —
+here e3 and e4, which must be solved simultaneously. Such a group is a *strongly connected
+component*, and **Tarjan's algorithm** finds them and returns them in an order where each comes
+after everything it needs: `{e1} → {e2} → {e3, e4}`. That order *is* the evaluation order —
+solve x, then y, then z and w together — and it is what `blt-ordering.md` builds.
+
+**Union-find would get this wrong.** It ignores the arrows, so it would merge e1 with e2, e2 with
+e3, and report all four as one group to solve at once: not false, but the order is gone, and
+three easy steps have become one coupled solve.
 
 ---
 
