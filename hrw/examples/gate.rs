@@ -1,7 +1,7 @@
 //! **Run the pre-commit sequence in the one order that works.**
 //!
 //! ```text
-//! cargo run -p hrw --example gate            # decides DOCS, FAST, LAB or FULL from the diff
+//! cargo run -p hrw --example gate            # decides DOCS, FAST or FULL from the diff
 //! cargo run -p hrw --example gate -- --full  # force the full suite
 //! cargo run -p hrw --example gate -- --fast  # force the cheap suite
 //! ```
@@ -315,13 +315,9 @@ fn main() {
         ));
     }
 
-    // **LAB: the third verdict.** A docs-only edit to a lab is FAST by the path rule,
-    // and the FAST suite cannot see the guarded pane tables at all, because the tests
-    // that verify them against a real compile are slow-gated. So the old advice was "run
-    // FULL" — right that a compile is needed, wrong that 910 tests are. Measured at
-    // 11.1 s against ~101 s.
-    let lab =
-        !full && !light && hrw::gate_policy::touches_a_verified_lab_region(refs.iter().copied());
+    // There was a LAB verdict here until 2026-11-08: a lab edit ran the slow-gated
+    // checks that verify its tables against a compile. Retired with the cost rules —
+    // a lab edit is a DOCS edit, and those checks run with the next FULL gate.
     if light {
         // No test suite: the doc checkers run with the next code change's gate.
     } else if full {
@@ -341,24 +337,6 @@ fn main() {
             ],
             "the slow-gated checks are the ones a src/ change can break",
         ));
-    } else if lab {
-        steps.push(step(
-            "gate (lab)",
-            &[
-                "test",
-                "-p",
-                "hrw",
-                "--lib",
-                "--features",
-                "slow-tests",
-                "--",
-                "--test-threads=1",
-                "doc_citations",
-                "lab",
-            ],
-            "a lab's guarded tables are verified against a real compile, and the FAST \
-             suite gates those tests off",
-        ));
     } else {
         steps.push(step(
             "gate (fast)",
@@ -372,8 +350,6 @@ fn main() {
         repo.display(),
         if full {
             "FULL"
-        } else if lab {
-            "LAB"
         } else if docs_only {
             // Named separately from FAST because the difference is visible to the
             // reader: DOCS leaves `hrw.exe` alone, so it is the one verdict that runs

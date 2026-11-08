@@ -10,7 +10,7 @@
 > `ic_plan.rs` is gone — initial-condition planning moved out of this phase entirely and now appears as runtime projection (`crates/rumoca-solver/src/runtime/projection.rs`), and `projection_maps.rs` and `variable_scope.rs` went with the reorganisation. **Matching, BLT and tearing are current and were re-read on this rebase** — they are observable through `inspect_structural_report` and `inspect_sort`. The IC-plan passages are 0.9.20.
 >
 > **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
-> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+> A checker (`historical_citations_are_really_gone`) guarded this until its retirement on 2026-11-08; nothing now fails if a path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
 
 ## Overview
 

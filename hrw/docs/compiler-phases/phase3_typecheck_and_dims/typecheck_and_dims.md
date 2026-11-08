@@ -7,7 +7,7 @@
 > `rumoca-phase-typecheck/src/typechecker/equation_shape.rs` is gone. The typechecker was reorganised; the **rules** it applies are language rules (MLS §4.7, §10.3) and do not move with a release.
 >
 > **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
-> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+> A checker (`historical_citations_are_really_gone`) guarded this until its retirement on 2026-11-08; nothing now fails if a path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
 
 ## Overview
 

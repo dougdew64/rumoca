@@ -279,15 +279,10 @@ blurb trap twenty lines below has contradicted since 2026-08-22. Regenerate if a
 
 - **`connect-expansion.md` is the one expensive lab — but only its five guarded tables are.**
   It is the only lab carrying `<!-- pane-groups -->` / `pane-origins` / `pane-frames` tables,
-  which slow-gated tests verify against a real compile. **Editing one of those tables means the
-  LAB gate** — 11.1 s, not FULL's ~101 — whatever the diff-grep says; **editing its prose does
-  not, and never did.**
-
-  **YOU NO LONGER HAVE TO REMEMBER THAT** *(built 2026-08-22)*.
-  `doc_citations::editing_a_guarded_lab_table_needs_the_full_gate` compares every guarded region
-  against `HEAD` and **fails by name in the FAST suite** if one changed, naming the marker and
-  printing the FULL command. It is gated *off* under `slow-tests` — in a FULL run the real
-  checkers are executing, so **the cheap gate is the only place the warning is useful.**
+  which slow-gated tests verify against a real compile. **Since 2026-11-08 editing one is an
+  ordinary DOCS edit**: the tables are checked at the next FULL gate, not at the commit. (The LAB
+  gate and the test that forced it, `editing_a_guarded_lab_table_needs_the_full_gate`, were
+  retired with the cost rules.)
 
   **The gain is assurance, not permission.** Prose edits were always FAST; what was missing was
   any check that an edit believed to be prose actually was one. The filtered iteration line

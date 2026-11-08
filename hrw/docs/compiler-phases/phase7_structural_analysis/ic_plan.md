@@ -8,7 +8,7 @@
 > **This document's entire subject moved.** `rumoca-phase-structural/src/ic_plan.rs` does not exist on v0.10.0; what it described now lives in the solver as runtime projection (`crates/rumoca-solver/src/runtime/projection.rs` and its `scaling.rs`). The *problem* is unchanged and still worth reading — a consistent set of initial values has to be chosen before the first step, and which unknowns are free is a structural question — but every name, signature and file here is 0.9.20.
 >
 > **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
-> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+> A checker (`historical_citations_are_really_gone`) guarded this until its retirement on 2026-11-08; nothing now fails if a path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
 
 *Parent document: [structural_analysis.md](structural_analysis.md)*
 *Source: `crates/rumoca-phase-structural/src/ic_plan.rs`*

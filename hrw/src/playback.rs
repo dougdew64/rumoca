@@ -932,8 +932,7 @@ mod tests_animated_contract {
         // **The number is lowered, not removed.** Its job is to catch the scan
         // breaking — the floor is what makes "found nothing wrong" mean something —
         // so it has to move deliberately when a view genuinely goes, in the same
-        // commit as the reason. That is the same ratchet
-        // `doc_citations::no_doc_block_gains_a_second_summary` runs on.
+        // commit as the reason.
         assert!(
             views.len() >= 6,
             "six animated views exist since 2026-11-04; finding fewer means the \

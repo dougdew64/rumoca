@@ -9,7 +9,7 @@
 > Three cited modules are gone (`dummy_derivative.rs`, `event_actions.rs`, `residual_compute_block.rs`); solve lowering was reorganised under `rumoca-phase-solve/src/lower/`. The **shape** of what lowering produces — a straight-line instruction program over numbered registers, not an expression tree — is current and is the thing to take from this document.
 >
 > **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
-> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+> A checker (`historical_citations_are_really_gone`) guarded this until its retirement on 2026-11-08; nothing now fails if a path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
 
 ## Overview
 

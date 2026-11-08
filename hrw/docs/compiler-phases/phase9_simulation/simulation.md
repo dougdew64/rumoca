@@ -7,7 +7,7 @@
 > `rumoca-solver-diffsol/src/init_projection.rs` is gone. v0.10.0 reworked initialization — this is the release that fixed the `fixed = true` defect `upstream-issues.md` records — so the initialization passages here describe the **old, defective** behaviour and are the first thing a refresh should rewrite.
 >
 > **Kept rather than repointed at the nearest surviving filename**, which would make the document *look* verified while its mechanism prose stayed wrong.
-> `doc_citations::historical_citations_are_really_gone` fails if any path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
+> A checker (`historical_citations_are_really_gone`) guarded this until its retirement on 2026-11-08; nothing now fails if a path below returns, and the refresh is queued in [`tech-debt.md`](../../tech-debt.md).
 
 ## Overview
 

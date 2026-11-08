@@ -30,7 +30,7 @@
 > **Read every file path, function name and funnel ordering as 0.9.20.** They are kept rather
 > than repointed at the nearest new filename, which would have made the whole document *look*
 > verified while its mechanism prose stayed wrong.
-> `doc_citations::historical_citations_are_really_gone` fails if any of these paths returns.
+> A checker (`historical_citations_are_really_gone`) guarded this until its retirement on 2026-11-08; nothing now fails if one of these paths returns.
 >
 > **The refresh is queued, and it has a seam waiting.** Upstream grew a
 > `ReductionObserver` / `ReductionEvent` pair in

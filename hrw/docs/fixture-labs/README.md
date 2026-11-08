@@ -761,9 +761,8 @@ correctly having none."*
 
 ### The invariant is `Expected`, not `Predict`
 
-**Counted on every test run, not asserted here:**
-`doc_citations::a_lab_predicts_if_and_only_if_its_kind_says_so` enforces it — `Predict` appears
-once per station in a concept lab and nowhere else. No gradient, no partial cases.
+**A convention, no longer a test** *(`a_lab_predicts_if_and_only_if_its_kind_says_so` was
+retired 2026-11-08)*: `Predict` appears once per station in a concept lab and nowhere else.
 
 *(This paragraph used to quote the counts by hand — "all 12 non-concept labs … all 10 concept
 labs". There are **11** concept labs, and the section above already explains that per-kind counts
@@ -915,7 +914,7 @@ there. **Do not re-derive it.**
 | kept | why |
 |---|---|
 | the `#` title and `##` station headers | headings; they never carried `**` at all |
-| `**Predict.**` and `**Expected:**` | checked by `a_lab_predicts_if_and_only_if_its_kind_says_so` and `every_station_of_every_lab_owes_an_expected`, **and** they are the checkpoint grammar charter Decision 14 makes the pedagogical core |
+| `**Predict.**` and `**Expected:**` | the checkpoint grammar charter Decision 14 makes the pedagogical core (the two tests that checked them were retired 2026-11-08) |
 | the lab's **first bolded line** | `LabSource::blurb_of` reads it to build the catalogue; pinned by the `blurb` verb in `pinned-claims.txt` |
 
 **Do not re-bold a sentence to satisfy a checker.** `matching-live.md`'s vocabulary note was pinned

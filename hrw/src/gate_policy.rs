@@ -36,48 +36,6 @@ pub fn needs_full_gate<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
     })
 }
 
-/// Does a docs-only change touch a lab region that is verified against a **real
-/// compile**?
-///
-/// # Why a third verdict, when FAST and FULL had covered everything
-///
-/// Doug, 2026-08-31: *"every time that we are forced to perform a full gate simply because
-/// I've asked a question or offered an opinion about lab content… it's time for a pause on
-/// lab content improvement to focus on eliminating lab friction."*
-///
-/// A lab's `<!-- pane-groups -->`, `pane-origins` and `pane-frames` tables are checked by
-/// **slow-gated** tests that compile a specimen. Editing one touches only `docs/`, so
-/// [`needs_full_gate`] says FAST — correctly, since no `src/` file moved — and the FAST
-/// suite then **cannot see the change at all**, because those tests are gated off. The
-/// standing advice was therefore "run FULL", which is right about needing a compile and
-/// wrong about needing **910 tests**.
-///
-/// **Measured 2026-08-31: the lab-relevant slow tests cost 11.1 s** (median of 3, spread
-/// 2.5 %, via `examples/measure`), against ~101 s for FULL. The binary split was the
-/// problem, not either of its halves.
-///
-/// # What this is NOT
-///
-/// **Not a cheaper FULL.** It runs the fast suite plus the slow tests whose names match
-/// `doc_citations` and `lab` — enough to verify a lab's numbers against a compile, and
-/// nothing about `worker.rs`, simulation or the corpus. A change touching `src/` still
-/// needs FULL, which is why this is only ever consulted when [`needs_full_gate`] is false.
-/// **`README.md` and `CATALOGUE.md` are excluded, because neither carries a verified
-/// claim** *(2026-09-01)*. The predicate matched any `.md` under `fixture-labs/`, so
-/// editing the rules file or the generated catalogue selected TOUR (11.1 s) where FAST
-/// (6 s) would do — and this session edited the README more than thirty times. The
-/// catalogue is generated and pinned by `lab_catalogue_is_current`, which the fast suite
-/// already runs; the README holds prose about labs, never a `<!-- pane-* -->` table
-/// verified against a compile.
-pub fn touches_a_verified_lab_region<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
-    changed.into_iter().any(|p| {
-        p.starts_with("hrw/docs/fixture-labs/")
-            && p.ends_with(".md")
-            && !p.ends_with("/README.md")
-            && !p.ends_with("/CATALOGUE.md")
-    })
-}
-
 /// Is this diff the shape Doug ruled a **bug** on 2026-08-31?
 ///
 /// > *"Going forward, unless we are adding a specimen, I will consider a full gate run
@@ -99,7 +57,7 @@ pub fn touches_a_verified_lab_region<'a>(changed: impl IntoIterator<Item = &'a s
 /// # The one sanctioned exception, detected rather than remembered
 ///
 /// Adding a specimen genuinely needs FULL — a corpus-matrix baseline is established by a
-/// real compile, and `the_corpus_outcome_matrix_is_unchanged` is not in the LAB gate. A
+/// real compile, and `the_corpus_outcome_matrix_is_unchanged` runs only under FULL. A
 /// diff that adds or edits a `specimens/*.mo` is therefore silent, which is exactly the
 /// carve-out Doug stated rather than a judgement about it.
 pub fn full_gate_on_a_lab_edit_is_suspect<'a>(changed: impl IntoIterator<Item = &'a str>) -> bool {
@@ -271,50 +229,6 @@ mod tests {
             needs_full_gate(["hrw/docs/reading-budgets.txt", "hrw/src/doc_citations.rs"]),
             "editing the checker itself is still a src/ change",
         );
-    }
-
-    /// **A lab edit selects LAB: not FAST, which cannot see it, and not FULL.**
-    ///
-    /// The three-way verdict is the whole point, so all three are asserted together —
-    /// separate tests would each pass on one arm working, which is how a rule ends up
-    /// covering less than it claims.
-    #[test]
-    fn a_lab_edit_selects_the_lab_gate_and_a_source_edit_still_selects_full() {
-        let lab = "hrw/docs/fixture-labs/connect-expansion.md";
-        assert!(!needs_full_gate([lab]), "a lab is not a src/ change");
-        assert!(
-            touches_a_verified_lab_region([lab]),
-            "a lab's guarded tables need a compile the FAST suite gates off"
-        );
-
-        // Prose elsewhere in docs/ is genuinely FAST: nothing there is checked against a
-        // compile, so paying 11 s for it would be the same ritual at a smaller price.
-        assert!(!touches_a_verified_lab_region(["hrw/docs/ideas.md"]));
-        assert!(!touches_a_verified_lab_region(["hrw/CLAUDE.md"]));
-
-        // The data files that back the checkers are not labs, and neither is the
-        // generated catalogue — regenerating it must not drag in a compile.
-        assert!(!touches_a_verified_lab_region([
-            "hrw/docs/fixture-labs/pinned-claims.txt"
-        ]));
-
-        // **Neither is the rules file nor the catalogue** *(2026-09-01)*. This comment
-        // claimed the catalogue was excluded and nothing asserted it — the predicate
-        // matched every `.md` under the directory. Both are `.md`, both live there, and
-        // neither carries a `<!-- pane-* -->` table verified against a compile: the
-        // catalogue is generated and pinned by `lab_catalogue_is_current` in the FAST
-        // suite, and `README.md` is prose about labs. This session edited that README
-        // more than thirty times at 11.1 s instead of 6 s.
-        assert!(!touches_a_verified_lab_region([
-            "hrw/docs/fixture-labs/README.md"
-        ]));
-        assert!(!touches_a_verified_lab_region([
-            "hrw/docs/fixture-labs/CATALOGUE.md"
-        ]));
-
-        // And FULL still wins outright: `lab` is only consulted when needs_full_gate is
-        // false, but a caller that got that backwards would silently under-gate.
-        assert!(needs_full_gate([lab, "hrw/src/worker.rs"]));
     }
 
     /// **The lab-edit-plus-`src/` shape is reported, and the specimen carve-out is not.**
