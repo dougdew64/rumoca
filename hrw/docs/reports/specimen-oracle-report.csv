@@ -28,3 +28,5 @@ UnbalancedShaft,,refused,SystemModelSimulate returned $Failed,1,1.9
 UnclosedModel,,import-failed,System Modeler could not import the file,1,0.
 UndefinedRef,,refused,SystemModelSimulate returned $Failed,1,1.9
 ArrayFamily,Component,simulated,,1,10.
+MeasuredOscillator,Component,simulated,,1,9.7
+ThresholdCounter,Component,simulated,,1,4.2

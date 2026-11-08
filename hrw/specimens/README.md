@@ -2,7 +2,7 @@
 
 **Purpose:** what a specimen is, why each one exists, and the rules a new one must meet.
 **Status:** 👤 reference, written for a human — Doug, or a Rumoca maintainer reading the fork.
-**Read when:** adding a specimen, or wondering why HRW ships twenty-eight small models when the
+**Read when:** adding a specimen, or wondering why HRW ships its own small models when the
 Modelica Standard Library is right there.
 
 **For the order to *study* them in, see [`../docs/specimen-ladder.md`](../docs/specimen-ladder.md)** —
@@ -17,7 +17,7 @@ contain what a *study* instrument needs: a minimal case per behaviour, with the 
 written recorded next to it.
 
 The MSL is here too — 2,626 models, vendored and surveyed — and it is the better corpus for
-*scale* questions ("does an unseen IR shape break us?"). These twenty-eight are the better corpus
+*scale* questions ("does an unseen IR shape break us?"). These are the better corpus
 for *shape* questions ("what does index reduction actually do?"), because each isolates one
 thing and nothing else.
 
@@ -49,6 +49,9 @@ file wins.
 | `OverInitRc` | Conflicting initial equations over-determine the capacitor state |
 | `BouncingBall` | Events / hybrid structure — a state event with `reinit` |
 | `BenchActuator` | Stiffness — fast L/R coupled to a slow rotor. **BDF's reason to exist** |
+| `ArrayFamily` | A regular array equation family — the BLT report's `StructuredScalar` compaction |
+| `MeasuredOscillator` | Initialization determinacy — three states settled three ways: their own `fixed = true`, a value **transferred** from a measured alias, and not at all |
+| `ThresholdCounter` | Events — `edge` and `change` expand into `pre`. **System Modeler disagrees with Rumoca's run**: `upstream-issues.md` D3 |
 
 ### The failure specimens — marked DO NOT FIX
 

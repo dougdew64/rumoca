@@ -1,0 +1,1301 @@
+{
+  "predefined_string_declaration": 4,
+  "predefined_types": {
+    "real": 0,
+    "integer": 1,
+    "boolean": 2,
+    "string": 3,
+    "clock": 4
+  },
+  "effective_types": {
+    "8": {
+      "nominal_type": 0,
+      "canonical_type": 0,
+      "dimensions": []
+    }
+  },
+  "enumeration_types": [],
+  "type_ids_by_def_id": {
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "6": 4,
+    "98": 7
+  },
+  "enumeration_type_roots": [
+    5,
+    6
+  ],
+  "variables": {
+    "m": {
+      "instance_id": 2,
+      "name": "m",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15745048465327979754,
+          "start": 1242,
+          "end": 1248
+        },
+        "parts": [
+          {
+            "ident": "m",
+            "span": {
+              "source": 15745048465327979754,
+              "start": 1242,
+              "end": 1248
+            },
+            "subs": [],
+            "def_id": 99
+          }
+        ]
+      },
+      "source_span": {
+        "source": 15745048465327979754,
+        "start": 1242,
+        "end": 1248
+      },
+      "type_id": 8,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 17,
+            "start_column": 3,
+            "end_line": 17,
+            "end_column": 12,
+            "start": 1232,
+            "end": 1241,
+            "source": 15745048465327979754
+          },
+          "token_number": 18,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 1
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1251,
+            "end": 1252
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "mass",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Integer": 1
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1251,
+            "end": 1252
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "k": {
+      "instance_id": 3,
+      "name": "k",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15745048465327979754,
+          "start": 1273,
+          "end": 1279
+        },
+        "parts": [
+          {
+            "ident": "k",
+            "span": {
+              "source": 15745048465327979754,
+              "start": 1273,
+              "end": 1279
+            },
+            "subs": [],
+            "def_id": 100
+          }
+        ]
+      },
+      "source_span": {
+        "source": 15745048465327979754,
+        "start": 1273,
+        "end": 1279
+      },
+      "type_id": 8,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 18,
+            "start_column": 3,
+            "end_line": 18,
+            "end_column": 12,
+            "start": 1263,
+            "end": 1272,
+            "source": 15745048465327979754
+          },
+          "token_number": 25,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 4
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1282,
+            "end": 1283
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "spring stiffness",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Integer": 4
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1282,
+            "end": 1283
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "T": {
+      "instance_id": 4,
+      "name": "T",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15745048465327979754,
+          "start": 1316,
+          "end": 1322
+        },
+        "parts": [
+          {
+            "ident": "T",
+            "span": {
+              "source": 15745048465327979754,
+              "start": 1316,
+              "end": 1322
+            },
+            "subs": [],
+            "def_id": 101
+          }
+        ]
+      },
+      "source_span": {
+        "source": 15745048465327979754,
+        "start": 1316,
+        "end": 1322
+      },
+      "type_id": 8,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 19,
+            "start_column": 3,
+            "end_line": 19,
+            "end_column": 12,
+            "start": 1306,
+            "end": 1315,
+            "source": 15745048465327979754
+          },
+          "token_number": 32,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.1
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1325,
+            "end": 1328
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "filter time constant",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Real": 0.1
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1325,
+            "end": 1328
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "x": {
+      "instance_id": 5,
+      "name": "x",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15745048465327979754,
+          "start": 1355,
+          "end": 1361
+        },
+        "parts": [
+          {
+            "ident": "x",
+            "span": {
+              "source": 15745048465327979754,
+              "start": 1355,
+              "end": 1361
+            },
+            "subs": [],
+            "def_id": 102
+          }
+        ]
+      },
+      "source_span": {
+        "source": 15745048465327979754,
+        "start": 1355,
+        "end": 1361
+      },
+      "type_id": 8,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.5
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1370,
+            "end": 1373
+          }
+        }
+      },
+      "fixed": [
+        true
+      ],
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "position, fixed by its own declaration",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "v": {
+      "instance_id": 6,
+      "name": "v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15745048465327979754,
+          "start": 1433,
+          "end": 1439
+        },
+        "parts": [
+          {
+            "ident": "v",
+            "span": {
+              "source": 15745048465327979754,
+              "start": 1433,
+              "end": 1439
+            },
+            "subs": [],
+            "def_id": 103
+          }
+        ]
+      },
+      "source_span": {
+        "source": 15745048465327979754,
+        "start": 1433,
+        "end": 1439
+      },
+      "type_id": 8,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1433,
+            "end": 1439
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "velocity, with no start of its own",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "v_meas": {
+      "instance_id": 7,
+      "name": "v_meas",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15745048465327979754,
+          "start": 1480,
+          "end": 1491
+        },
+        "parts": [
+          {
+            "ident": "v_meas",
+            "span": {
+              "source": 15745048465327979754,
+              "start": 1480,
+              "end": 1491
+            },
+            "subs": [],
+            "def_id": 104
+          }
+        ]
+      },
+      "source_span": {
+        "source": 15745048465327979754,
+        "start": 1480,
+        "end": 1491
+      },
+      "type_id": 8,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 1.0
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1500,
+            "end": 1503
+          }
+        }
+      },
+      "fixed": [
+        true
+      ],
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "tachometer reading: the measured velocity, stated at t = 0",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "v_filt": {
+      "instance_id": 8,
+      "name": "v_filt",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 15745048465327979754,
+          "start": 1583,
+          "end": 1594
+        },
+        "parts": [
+          {
+            "ident": "v_filt",
+            "span": {
+              "source": 15745048465327979754,
+              "start": 1583,
+              "end": 1594
+            },
+            "subs": [],
+            "def_id": 105
+          }
+        ]
+      },
+      "source_span": {
+        "source": 15745048465327979754,
+        "start": 1583,
+        "end": 1594
+      },
+      "type_id": 8,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.0
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1603,
+            "end": 1606
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "filtered reading, whose start is only a guess",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "record_instances": {},
+  "record_types": {},
+  "variable_type_names": {
+    "m": "Real",
+    "k": "Real",
+    "T": "Real",
+    "x": "Real",
+    "v": "Real",
+    "v_meas": "Real",
+    "v_filt": "Real"
+  },
+  "variable_final_flags": {},
+  "equations": [
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 15745048465327979754,
+                          "start": 1355,
+                          "end": 1361
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 15745048465327979754,
+                              "start": 1355,
+                              "end": 1361
+                            },
+                            "subs": [],
+                            "def_id": 102
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 5,
+                      "generated": false
+                    },
+                    "subscripts": [],
+                    "span": {
+                      "source": 15745048465327979754,
+                      "start": 1672,
+                      "end": 1673
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 15745048465327979754,
+                "start": 1668,
+                "end": 1674
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1433,
+                    "end": 1439
+                  },
+                  "parts": [
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1433,
+                        "end": 1439
+                      },
+                      "subs": [],
+                      "def_id": 103
+                    }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 6,
+                "generated": false
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15745048465327979754,
+                "start": 1677,
+                "end": 1678
+              }
+            }
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1668,
+            "end": 1674
+          }
+        }
+      },
+      "span": {
+        "source": 15745048465327979754,
+        "start": 1668,
+        "end": 1678
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Binary": {
+              "op": "Mul",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "m",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1242,
+                        "end": 1248
+                      },
+                      "parts": [
+                        {
+                          "ident": "m",
+                          "span": {
+                            "source": 15745048465327979754,
+                            "start": 1242,
+                            "end": 1248
+                          },
+                          "subs": [],
+                          "def_id": 99
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 2,
+                    "generated": false
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1682,
+                    "end": 1683
+                  }
+                }
+              },
+              "rhs": {
+                "BuiltinCall": {
+                  "function": "Der",
+                  "args": [
+                    {
+                      "VarRef": {
+                        "name": {
+                          "name": "v",
+                          "component_ref": {
+                            "local": false,
+                            "span": {
+                              "source": 15745048465327979754,
+                              "start": 1433,
+                              "end": 1439
+                            },
+                            "parts": [
+                              {
+                                "ident": "v",
+                                "span": {
+                                  "source": 15745048465327979754,
+                                  "start": 1433,
+                                  "end": 1439
+                                },
+                                "subs": [],
+                                "def_id": 103
+                              }
+                            ]
+                          },
+                          "resolved_function": null,
+                          "instance_id": 6,
+                          "generated": false
+                        },
+                        "subscripts": [],
+                        "span": {
+                          "source": 15745048465327979754,
+                          "start": 1690,
+                          "end": 1691
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1686,
+                    "end": 1692
+                  }
+                }
+              },
+              "span": {
+                "source": 15745048465327979754,
+                "start": 1682,
+                "end": 1692
+              }
+            }
+          },
+          "rhs": {
+            "Unary": {
+              "op": "Minus",
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "k",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 15745048465327979754,
+                            "start": 1273,
+                            "end": 1279
+                          },
+                          "parts": [
+                            {
+                              "ident": "k",
+                              "span": {
+                                "source": 15745048465327979754,
+                                "start": 1273,
+                                "end": 1279
+                              },
+                              "subs": [],
+                              "def_id": 100
+                            }
+                          ]
+                        },
+                        "resolved_function": null,
+                        "instance_id": 3,
+                        "generated": false
+                      },
+                      "subscripts": [],
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1696,
+                        "end": 1697
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "x",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 15745048465327979754,
+                            "start": 1355,
+                            "end": 1361
+                          },
+                          "parts": [
+                            {
+                              "ident": "x",
+                              "span": {
+                                "source": 15745048465327979754,
+                                "start": 1355,
+                                "end": 1361
+                              },
+                              "subs": [],
+                              "def_id": 102
+                            }
+                          ]
+                        },
+                        "resolved_function": null,
+                        "instance_id": 5,
+                        "generated": false
+                      },
+                      "subscripts": [],
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1700,
+                        "end": 1701
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1696,
+                    "end": 1701
+                  }
+                }
+              },
+              "span": {
+                "source": 15745048465327979754,
+                "start": 1695,
+                "end": 1701
+              }
+            }
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1682,
+            "end": 1692
+          }
+        }
+      },
+      "span": {
+        "source": 15745048465327979754,
+        "start": 1682,
+        "end": 1701
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "v_meas",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1480,
+                    "end": 1491
+                  },
+                  "parts": [
+                    {
+                      "ident": "v_meas",
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1480,
+                        "end": 1491
+                      },
+                      "subs": [],
+                      "def_id": 104
+                    }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 7,
+                "generated": false
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15745048465327979754,
+                "start": 1705,
+                "end": 1711
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1433,
+                    "end": 1439
+                  },
+                  "parts": [
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1433,
+                        "end": 1439
+                      },
+                      "subs": [],
+                      "def_id": 103
+                    }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 6,
+                "generated": false
+              },
+              "subscripts": [],
+              "span": {
+                "source": 15745048465327979754,
+                "start": 1714,
+                "end": 1715
+              }
+            }
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1705,
+            "end": 1711
+          }
+        }
+      },
+      "span": {
+        "source": 15745048465327979754,
+        "start": 1705,
+        "end": 1715
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "Binary": {
+              "op": "Mul",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "T",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1316,
+                        "end": 1322
+                      },
+                      "parts": [
+                        {
+                          "ident": "T",
+                          "span": {
+                            "source": 15745048465327979754,
+                            "start": 1316,
+                            "end": 1322
+                          },
+                          "subs": [],
+                          "def_id": 101
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 4,
+                    "generated": false
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1719,
+                    "end": 1720
+                  }
+                }
+              },
+              "rhs": {
+                "BuiltinCall": {
+                  "function": "Der",
+                  "args": [
+                    {
+                      "VarRef": {
+                        "name": {
+                          "name": "v_filt",
+                          "component_ref": {
+                            "local": false,
+                            "span": {
+                              "source": 15745048465327979754,
+                              "start": 1583,
+                              "end": 1594
+                            },
+                            "parts": [
+                              {
+                                "ident": "v_filt",
+                                "span": {
+                                  "source": 15745048465327979754,
+                                  "start": 1583,
+                                  "end": 1594
+                                },
+                                "subs": [],
+                                "def_id": 105
+                              }
+                            ]
+                          },
+                          "resolved_function": null,
+                          "instance_id": 8,
+                          "generated": false
+                        },
+                        "subscripts": [],
+                        "span": {
+                          "source": 15745048465327979754,
+                          "start": 1727,
+                          "end": 1733
+                        }
+                      }
+                    }
+                  ],
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1723,
+                    "end": 1734
+                  }
+                }
+              },
+              "span": {
+                "source": 15745048465327979754,
+                "start": 1719,
+                "end": 1734
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Sub",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "v_meas",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1480,
+                        "end": 1491
+                      },
+                      "parts": [
+                        {
+                          "ident": "v_meas",
+                          "span": {
+                            "source": 15745048465327979754,
+                            "start": 1480,
+                            "end": 1491
+                          },
+                          "subs": [],
+                          "def_id": 104
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 7,
+                    "generated": false
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1737,
+                    "end": 1743
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "v_filt",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 15745048465327979754,
+                        "start": 1583,
+                        "end": 1594
+                      },
+                      "parts": [
+                        {
+                          "ident": "v_filt",
+                          "span": {
+                            "source": 15745048465327979754,
+                            "start": 1583,
+                            "end": 1594
+                          },
+                          "subs": [],
+                          "def_id": 105
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 8,
+                    "generated": false
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 15745048465327979754,
+                    "start": 1746,
+                    "end": 1752
+                  }
+                }
+              },
+              "span": {
+                "source": 15745048465327979754,
+                "start": 1737,
+                "end": 1752
+              }
+            }
+          },
+          "span": {
+            "source": 15745048465327979754,
+            "start": 1719,
+            "end": 1734
+          }
+        }
+      },
+      "span": {
+        "source": 15745048465327979754,
+        "start": 1719,
+        "end": 1752
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    }
+  ],
+  "structured_equations": [],
+  "assert_equations": [],
+  "initial_equations": [],
+  "initial_structured_equations": [],
+  "initial_assert_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "when_chains": [],
+  "functions": {},
+  "is_partial": false,
+  "class_type": "Model",
+  "model_description": "A mass on a spring, its velocity read by a tachometer and smoothed by a first-order filter",
+  "definite_roots": [],
+  "branches": [],
+  "optional_edges": [],
+  "potential_roots": [],
+  "top_level_connectors": [],
+  "top_level_input_components": [],
+  "top_level_output_components": [],
+  "oc_break_edge_scalar_count": 0,
+  "enum_literal_ordinals": {
+    "StateSelect.never": 1,
+    "StateSelect.'never'": 1,
+    "StateSelect.avoid": 2,
+    "StateSelect.'avoid'": 2,
+    "StateSelect.default": 3,
+    "StateSelect.'default'": 3,
+    "StateSelect.prefer": 4,
+    "StateSelect.'prefer'": 4,
+    "StateSelect.always": 5,
+    "StateSelect.'always'": 5,
+    "AssertionLevel.warning": 1,
+    "AssertionLevel.'warning'": 1,
+    "AssertionLevel.error": 2,
+    "AssertionLevel.'error'": 2
+  },
+  "enumeration_declarations": {},
+  "instance_relations": {
+    "1": {
+      "owner": null,
+      "declaration": 98,
+      "indices": [],
+      "kind": "Class"
+    },
+    "2": {
+      "owner": 1,
+      "declaration": 99,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "3": {
+      "owner": 1,
+      "declaration": 100,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "4": {
+      "owner": 1,
+      "declaration": 101,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "5": {
+      "owner": 1,
+      "declaration": 102,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "6": {
+      "owner": 1,
+      "declaration": 103,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "7": {
+      "owner": 1,
+      "declaration": 104,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "8": {
+      "owner": 1,
+      "declaration": 105,
+      "indices": [],
+      "kind": "Materialized"
+    }
+  }
+}

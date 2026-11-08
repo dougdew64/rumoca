@@ -1,0 +1,102 @@
+{
+  "n_equations": 4,
+  "n_unknowns": 4,
+  "coupled_block_count": 0,
+  "matching": [
+    {
+      "equation": "f_x[0] (der(x) = v)",
+      "id": "f_x[0]",
+      "unknown": "der(x)"
+    },
+    {
+      "equation": "f_x[1] (m * der(v) = -k * x)",
+      "id": "f_x[1]",
+      "unknown": "der(v)"
+    },
+    {
+      "equation": "f_x[2] (v_meas = v)",
+      "id": "f_x[2]",
+      "unknown": "v_meas"
+    },
+    {
+      "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+      "id": "f_x[3]",
+      "unknown": "der(v_filt)"
+    }
+  ],
+  "blocks": [
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[0] (der(x) = v)",
+      "id": "f_x[0]",
+      "unknown": "der(x)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[1] (m * der(v) = -k * x)",
+      "id": "f_x[1]",
+      "unknown": "der(v)"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[2] (v_meas = v)",
+      "id": "f_x[2]",
+      "unknown": "v_meas"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+      "id": "f_x[3]",
+      "unknown": "der(v_filt)"
+    }
+  ],
+  "incidence": {
+    "n_eq": 4,
+    "n_var": 4,
+    "unknown_names": [
+      "der(x)",
+      "der(v)",
+      "v_meas",
+      "der(v_filt)"
+    ],
+    "rows": [
+      {
+        "equation": "f_x[0] (der(x) = v)",
+        "id": "f_x[0]",
+        "unknowns": [
+          0
+        ],
+        "equation_text": "0 = der(x) - v"
+      },
+      {
+        "equation": "f_x[1] (m * der(v) = -k * x)",
+        "id": "f_x[1]",
+        "unknowns": [
+          1
+        ],
+        "equation_text": "0 = m*der(v) - -(k*x)"
+      },
+      {
+        "equation": "f_x[2] (v_meas = v)",
+        "id": "f_x[2]",
+        "unknowns": [
+          2
+        ],
+        "equation_text": "0 = v_meas - v"
+      },
+      {
+        "equation": "f_x[3] (T * der(v_filt) = v_meas - v_filt)",
+        "id": "f_x[3]",
+        "unknowns": [
+          2,
+          3
+        ],
+        "equation_text": "0 = T*der(v_filt) - (v_meas - v_filt)"
+      }
+    ]
+  }
+}

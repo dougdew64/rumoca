@@ -1,0 +1,1405 @@
+{
+  "predefined_string_declaration": 4,
+  "predefined_types": {
+    "real": 0,
+    "integer": 1,
+    "boolean": 2,
+    "string": 3,
+    "clock": 4
+  },
+  "effective_types": {
+    "8": {
+      "nominal_type": 0,
+      "canonical_type": 0,
+      "dimensions": []
+    },
+    "9": {
+      "nominal_type": 2,
+      "canonical_type": 2,
+      "dimensions": []
+    },
+    "10": {
+      "nominal_type": 1,
+      "canonical_type": 1,
+      "dimensions": []
+    }
+  },
+  "enumeration_types": [],
+  "type_ids_by_def_id": {
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "6": 4,
+    "98": 7
+  },
+  "enumeration_type_roots": [
+    5,
+    6
+  ],
+  "variables": {
+    "omega": {
+      "instance_id": 2,
+      "name": "omega",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 4654093078498546603,
+          "start": 1742,
+          "end": 1752
+        },
+        "parts": [
+          {
+            "ident": "omega",
+            "span": {
+              "source": 4654093078498546603,
+              "start": 1742,
+              "end": 1752
+            },
+            "subs": [],
+            "def_id": 99
+          }
+        ]
+      },
+      "source_span": {
+        "source": 4654093078498546603,
+        "start": 1742,
+        "end": 1752
+      },
+      "type_id": 8,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 24,
+            "start_column": 3,
+            "end_line": 24,
+            "end_column": 12,
+            "start": 1732,
+            "end": 1741,
+            "source": 4654093078498546603
+          },
+          "token_number": 25,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 10
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 1755,
+            "end": 1757
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "angular frequency",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Integer": 10
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 1755,
+            "end": 1757
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "threshold": {
+      "instance_id": 3,
+      "name": "threshold",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 4654093078498546603,
+          "start": 1791,
+          "end": 1805
+        },
+        "parts": [
+          {
+            "ident": "threshold",
+            "span": {
+              "source": 4654093078498546603,
+              "start": 1791,
+              "end": 1805
+            },
+            "subs": [],
+            "def_id": 100
+          }
+        ]
+      },
+      "source_span": {
+        "source": 4654093078498546603,
+        "start": 1791,
+        "end": 1805
+      },
+      "type_id": 8,
+      "variability": {
+        "Parameter": {
+          "text": "parameter",
+          "location": {
+            "start_line": 25,
+            "start_column": 3,
+            "end_line": 25,
+            "end_column": 12,
+            "start": 1781,
+            "end": 1790,
+            "source": 4654093078498546603
+          },
+          "token_number": 32,
+          "token_type": 48
+        }
+      },
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Real": 0.5
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 1808,
+            "end": 1811
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "level the position is compared against",
+      "state_select": "Default",
+      "binding": {
+        "Literal": {
+          "value": {
+            "Real": 0.5
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 1808,
+            "end": 1811
+          }
+        }
+      },
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "x": {
+      "instance_id": 4,
+      "name": "x",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 4654093078498546603,
+          "start": 1856,
+          "end": 1862
+        },
+        "parts": [
+          {
+            "ident": "x",
+            "span": {
+              "source": 4654093078498546603,
+              "start": 1856,
+              "end": 1862
+            },
+            "subs": [],
+            "def_id": 101
+          }
+        ]
+      },
+      "source_span": {
+        "source": 4654093078498546603,
+        "start": 1856,
+        "end": 1862
+      },
+      "type_id": 8,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 1
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 1871,
+            "end": 1872
+          }
+        }
+      },
+      "fixed": [
+        true
+      ],
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "position",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "v": {
+      "instance_id": 5,
+      "name": "v",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 4654093078498546603,
+          "start": 1902,
+          "end": 1908
+        },
+        "parts": [
+          {
+            "ident": "v",
+            "span": {
+              "source": 4654093078498546603,
+              "start": 1902,
+              "end": 1908
+            },
+            "subs": [],
+            "def_id": 102
+          }
+        ]
+      },
+      "source_span": {
+        "source": 4654093078498546603,
+        "start": 1902,
+        "end": 1908
+      },
+      "type_id": 8,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 0
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 1917,
+            "end": 1918
+          }
+        }
+      },
+      "fixed": [
+        true
+      ],
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "velocity",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": false,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "above": {
+      "instance_id": 6,
+      "name": "above",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 4654093078498546603,
+          "start": 1948,
+          "end": 1961
+        },
+        "parts": [
+          {
+            "ident": "above",
+            "span": {
+              "source": 4654093078498546603,
+              "start": 1948,
+              "end": 1961
+            },
+            "subs": [],
+            "def_id": 103
+          }
+        ]
+      },
+      "source_span": {
+        "source": 4654093078498546603,
+        "start": 1948,
+        "end": 1961
+      },
+      "type_id": 9,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Boolean": false
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 1948,
+            "end": 1961
+          }
+        }
+      },
+      "fixed": null,
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "the position is above the threshold",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": true,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "rises": {
+      "instance_id": 7,
+      "name": "rises",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 4654093078498546603,
+          "start": 2003,
+          "end": 2016
+        },
+        "parts": [
+          {
+            "ident": "rises",
+            "span": {
+              "source": 4654093078498546603,
+              "start": 2003,
+              "end": 2016
+            },
+            "subs": [],
+            "def_id": 104
+          }
+        ]
+      },
+      "source_span": {
+        "source": 4654093078498546603,
+        "start": 2003,
+        "end": 2016
+      },
+      "type_id": 10,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 0
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 2025,
+            "end": 2026
+          }
+        }
+      },
+      "fixed": [
+        true
+      ],
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "upward crossings, counted with edge",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": true,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    },
+    "crossings": {
+      "instance_id": 8,
+      "name": "crossings",
+      "component_ref": {
+        "local": false,
+        "span": {
+          "source": 4654093078498546603,
+          "start": 2083,
+          "end": 2100
+        },
+        "parts": [
+          {
+            "ident": "crossings",
+            "span": {
+              "source": 4654093078498546603,
+              "start": 2083,
+              "end": 2100
+            },
+            "subs": [],
+            "def_id": 105
+          }
+        ]
+      },
+      "source_span": {
+        "source": 4654093078498546603,
+        "start": 2083,
+        "end": 2100
+      },
+      "type_id": 10,
+      "variability": "Empty",
+      "causality": "Empty",
+      "flow": false,
+      "stream": false,
+      "dims": [],
+      "connected": false,
+      "start": {
+        "Literal": {
+          "value": {
+            "Integer": 0
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 2109,
+            "end": 2110
+          }
+        }
+      },
+      "fixed": [
+        true
+      ],
+      "min": null,
+      "max": null,
+      "nominal": null,
+      "quantity": null,
+      "unit": null,
+      "display_unit": null,
+      "description": "crossings in either direction, counted with change",
+      "state_select": "Default",
+      "binding": null,
+      "binding_from_modification": false,
+      "evaluate": false,
+      "evaluate_refused": false,
+      "is_discrete_type": true,
+      "is_primitive": true,
+      "from_expandable_connector": false,
+      "is_overconstrained": false,
+      "is_protected": false,
+      "oc_record_path": null,
+      "oc_eq_constraint_size": null
+    }
+  },
+  "record_instances": {},
+  "record_types": {},
+  "variable_type_names": {
+    "omega": "Real",
+    "threshold": "Real",
+    "x": "Real",
+    "v": "Real",
+    "above": "Boolean",
+    "rises": "Integer",
+    "crossings": "Integer"
+  },
+  "variable_final_flags": {},
+  "equations": [
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "x",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 4654093078498546603,
+                          "start": 1856,
+                          "end": 1862
+                        },
+                        "parts": [
+                          {
+                            "ident": "x",
+                            "span": {
+                              "source": 4654093078498546603,
+                              "start": 1856,
+                              "end": 1862
+                            },
+                            "subs": [],
+                            "def_id": 101
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 4,
+                      "generated": false
+                    },
+                    "subscripts": [],
+                    "span": {
+                      "source": 4654093078498546603,
+                      "start": 2195,
+                      "end": 2196
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 4654093078498546603,
+                "start": 2191,
+                "end": 2197
+              }
+            }
+          },
+          "rhs": {
+            "VarRef": {
+              "name": {
+                "name": "v",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 1902,
+                    "end": 1908
+                  },
+                  "parts": [
+                    {
+                      "ident": "v",
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 1902,
+                        "end": 1908
+                      },
+                      "subs": [],
+                      "def_id": 102
+                    }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 5,
+                "generated": false
+              },
+              "subscripts": [],
+              "span": {
+                "source": 4654093078498546603,
+                "start": 2200,
+                "end": 2201
+              }
+            }
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 2191,
+            "end": 2197
+          }
+        }
+      },
+      "span": {
+        "source": 4654093078498546603,
+        "start": 2191,
+        "end": 2201
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "BuiltinCall": {
+              "function": "Der",
+              "args": [
+                {
+                  "VarRef": {
+                    "name": {
+                      "name": "v",
+                      "component_ref": {
+                        "local": false,
+                        "span": {
+                          "source": 4654093078498546603,
+                          "start": 1902,
+                          "end": 1908
+                        },
+                        "parts": [
+                          {
+                            "ident": "v",
+                            "span": {
+                              "source": 4654093078498546603,
+                              "start": 1902,
+                              "end": 1908
+                            },
+                            "subs": [],
+                            "def_id": 102
+                          }
+                        ]
+                      },
+                      "resolved_function": null,
+                      "instance_id": 5,
+                      "generated": false
+                    },
+                    "subscripts": [],
+                    "span": {
+                      "source": 4654093078498546603,
+                      "start": 2209,
+                      "end": 2210
+                    }
+                  }
+                }
+              ],
+              "span": {
+                "source": 4654093078498546603,
+                "start": 2205,
+                "end": 2211
+              }
+            }
+          },
+          "rhs": {
+            "Unary": {
+              "op": "Minus",
+              "rhs": {
+                "Binary": {
+                  "op": "Mul",
+                  "lhs": {
+                    "Binary": {
+                      "op": "Exp",
+                      "lhs": {
+                        "VarRef": {
+                          "name": {
+                            "name": "omega",
+                            "component_ref": {
+                              "local": false,
+                              "span": {
+                                "source": 4654093078498546603,
+                                "start": 1742,
+                                "end": 1752
+                              },
+                              "parts": [
+                                {
+                                  "ident": "omega",
+                                  "span": {
+                                    "source": 4654093078498546603,
+                                    "start": 1742,
+                                    "end": 1752
+                                  },
+                                  "subs": [],
+                                  "def_id": 99
+                                }
+                              ]
+                            },
+                            "resolved_function": null,
+                            "instance_id": 2,
+                            "generated": false
+                          },
+                          "subscripts": [],
+                          "span": {
+                            "source": 4654093078498546603,
+                            "start": 2215,
+                            "end": 2220
+                          }
+                        }
+                      },
+                      "rhs": {
+                        "Literal": {
+                          "value": {
+                            "Integer": 2
+                          },
+                          "span": {
+                            "source": 4654093078498546603,
+                            "start": 2223,
+                            "end": 2224
+                          }
+                        }
+                      },
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 2215,
+                        "end": 2224
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "VarRef": {
+                      "name": {
+                        "name": "x",
+                        "component_ref": {
+                          "local": false,
+                          "span": {
+                            "source": 4654093078498546603,
+                            "start": 1856,
+                            "end": 1862
+                          },
+                          "parts": [
+                            {
+                              "ident": "x",
+                              "span": {
+                                "source": 4654093078498546603,
+                                "start": 1856,
+                                "end": 1862
+                              },
+                              "subs": [],
+                              "def_id": 101
+                            }
+                          ]
+                        },
+                        "resolved_function": null,
+                        "instance_id": 4,
+                        "generated": false
+                      },
+                      "subscripts": [],
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 2227,
+                        "end": 2228
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 2215,
+                    "end": 2228
+                  }
+                }
+              },
+              "span": {
+                "source": 4654093078498546603,
+                "start": 2214,
+                "end": 2228
+              }
+            }
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 2205,
+            "end": 2211
+          }
+        }
+      },
+      "span": {
+        "source": 4654093078498546603,
+        "start": 2205,
+        "end": 2228
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    },
+    {
+      "residual": {
+        "Binary": {
+          "op": "Sub",
+          "lhs": {
+            "VarRef": {
+              "name": {
+                "name": "above",
+                "component_ref": {
+                  "local": false,
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 1948,
+                    "end": 1961
+                  },
+                  "parts": [
+                    {
+                      "ident": "above",
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 1948,
+                        "end": 1961
+                      },
+                      "subs": [],
+                      "def_id": 103
+                    }
+                  ]
+                },
+                "resolved_function": null,
+                "instance_id": 6,
+                "generated": false
+              },
+              "subscripts": [],
+              "span": {
+                "source": 4654093078498546603,
+                "start": 2232,
+                "end": 2237
+              }
+            }
+          },
+          "rhs": {
+            "Binary": {
+              "op": "Gt",
+              "lhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "x",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 1856,
+                        "end": 1862
+                      },
+                      "parts": [
+                        {
+                          "ident": "x",
+                          "span": {
+                            "source": 4654093078498546603,
+                            "start": 1856,
+                            "end": 1862
+                          },
+                          "subs": [],
+                          "def_id": 101
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 4,
+                    "generated": false
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 2240,
+                    "end": 2241
+                  }
+                }
+              },
+              "rhs": {
+                "VarRef": {
+                  "name": {
+                    "name": "threshold",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 1791,
+                        "end": 1805
+                      },
+                      "parts": [
+                        {
+                          "ident": "threshold",
+                          "span": {
+                            "source": 4654093078498546603,
+                            "start": 1791,
+                            "end": 1805
+                          },
+                          "subs": [],
+                          "def_id": 100
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 3,
+                    "generated": false
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 2244,
+                    "end": 2253
+                  }
+                }
+              },
+              "span": {
+                "source": 4654093078498546603,
+                "start": 2240,
+                "end": 2253
+              }
+            }
+          },
+          "span": {
+            "source": 4654093078498546603,
+            "start": 2232,
+            "end": 2237
+          }
+        }
+      },
+      "span": {
+        "source": 4654093078498546603,
+        "start": 2232,
+        "end": 2253
+      },
+      "origin": {
+        "ComponentEquation": {
+          "component": ""
+        }
+      },
+      "scalar_count": 1
+    }
+  ],
+  "structured_equations": [],
+  "assert_equations": [],
+  "initial_equations": [],
+  "initial_structured_equations": [],
+  "initial_assert_equations": [],
+  "algorithms": [],
+  "initial_algorithms": [],
+  "when_chains": [
+    {
+      "first": {
+        "condition": {
+          "BuiltinCall": {
+            "function": "Edge",
+            "args": [
+              {
+                "VarRef": {
+                  "name": {
+                    "name": "above",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 1948,
+                        "end": 1961
+                      },
+                      "parts": [
+                        {
+                          "ident": "above",
+                          "span": {
+                            "source": 4654093078498546603,
+                            "start": 1948,
+                            "end": 1961
+                          },
+                          "subs": [],
+                          "def_id": 103
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 6,
+                    "generated": false
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 2267,
+                    "end": 2272
+                  }
+                }
+              }
+            ],
+            "span": {
+              "source": 4654093078498546603,
+              "start": 2262,
+              "end": 2273
+            }
+          }
+        },
+        "equations": [
+          {
+            "Assign": {
+              "target": "rises",
+              "value": {
+                "Binary": {
+                  "op": "Add",
+                  "lhs": {
+                    "BuiltinCall": {
+                      "function": "Pre",
+                      "args": [
+                        {
+                          "VarRef": {
+                            "name": {
+                              "name": "rises",
+                              "component_ref": {
+                                "local": false,
+                                "span": {
+                                  "source": 4654093078498546603,
+                                  "start": 2003,
+                                  "end": 2016
+                                },
+                                "parts": [
+                                  {
+                                    "ident": "rises",
+                                    "span": {
+                                      "source": 4654093078498546603,
+                                      "start": 2003,
+                                      "end": 2016
+                                    },
+                                    "subs": [],
+                                    "def_id": 104
+                                  }
+                                ]
+                              },
+                              "resolved_function": null,
+                              "instance_id": 7,
+                              "generated": false
+                            },
+                            "subscripts": [],
+                            "span": {
+                              "source": 4654093078498546603,
+                              "start": 2295,
+                              "end": 2300
+                            }
+                          }
+                        }
+                      ],
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 2291,
+                        "end": 2301
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Literal": {
+                      "value": {
+                        "Integer": 1
+                      },
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 2304,
+                        "end": 2305
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 2291,
+                    "end": 2305
+                  }
+                }
+              },
+              "span": {
+                "source": 4654093078498546603,
+                "start": 2283,
+                "end": 2288
+              },
+              "origin": "when equation assignment to rises"
+            }
+          }
+        ],
+        "span": {
+          "source": 4654093078498546603,
+          "start": 2262,
+          "end": 2273
+        }
+      },
+      "else_when": [],
+      "span": {
+        "source": 4654093078498546603,
+        "start": 2262,
+        "end": 2266
+      }
+    },
+    {
+      "first": {
+        "condition": {
+          "BuiltinCall": {
+            "function": "Change",
+            "args": [
+              {
+                "VarRef": {
+                  "name": {
+                    "name": "above",
+                    "component_ref": {
+                      "local": false,
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 1948,
+                        "end": 1961
+                      },
+                      "parts": [
+                        {
+                          "ident": "above",
+                          "span": {
+                            "source": 4654093078498546603,
+                            "start": 1948,
+                            "end": 1961
+                          },
+                          "subs": [],
+                          "def_id": 103
+                        }
+                      ]
+                    },
+                    "resolved_function": null,
+                    "instance_id": 6,
+                    "generated": false
+                  },
+                  "subscripts": [],
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 2333,
+                    "end": 2338
+                  }
+                }
+              }
+            ],
+            "span": {
+              "source": 4654093078498546603,
+              "start": 2326,
+              "end": 2339
+            }
+          }
+        },
+        "equations": [
+          {
+            "Assign": {
+              "target": "crossings",
+              "value": {
+                "Binary": {
+                  "op": "Add",
+                  "lhs": {
+                    "BuiltinCall": {
+                      "function": "Pre",
+                      "args": [
+                        {
+                          "VarRef": {
+                            "name": {
+                              "name": "crossings",
+                              "component_ref": {
+                                "local": false,
+                                "span": {
+                                  "source": 4654093078498546603,
+                                  "start": 2083,
+                                  "end": 2100
+                                },
+                                "parts": [
+                                  {
+                                    "ident": "crossings",
+                                    "span": {
+                                      "source": 4654093078498546603,
+                                      "start": 2083,
+                                      "end": 2100
+                                    },
+                                    "subs": [],
+                                    "def_id": 105
+                                  }
+                                ]
+                              },
+                              "resolved_function": null,
+                              "instance_id": 8,
+                              "generated": false
+                            },
+                            "subscripts": [],
+                            "span": {
+                              "source": 4654093078498546603,
+                              "start": 2365,
+                              "end": 2374
+                            }
+                          }
+                        }
+                      ],
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 2361,
+                        "end": 2375
+                      }
+                    }
+                  },
+                  "rhs": {
+                    "Literal": {
+                      "value": {
+                        "Integer": 1
+                      },
+                      "span": {
+                        "source": 4654093078498546603,
+                        "start": 2378,
+                        "end": 2379
+                      }
+                    }
+                  },
+                  "span": {
+                    "source": 4654093078498546603,
+                    "start": 2361,
+                    "end": 2379
+                  }
+                }
+              },
+              "span": {
+                "source": 4654093078498546603,
+                "start": 2349,
+                "end": 2358
+              },
+              "origin": "when equation assignment to crossings"
+            }
+          }
+        ],
+        "span": {
+          "source": 4654093078498546603,
+          "start": 2326,
+          "end": 2339
+        }
+      },
+      "else_when": [],
+      "span": {
+        "source": 4654093078498546603,
+        "start": 2326,
+        "end": 2332
+      }
+    }
+  ],
+  "functions": {},
+  "is_partial": false,
+  "class_type": "Model",
+  "model_description": "Counts how often an oscillation crosses a threshold, upward and either way",
+  "definite_roots": [],
+  "branches": [],
+  "optional_edges": [],
+  "potential_roots": [],
+  "top_level_connectors": [],
+  "top_level_input_components": [],
+  "top_level_output_components": [],
+  "oc_break_edge_scalar_count": 0,
+  "enum_literal_ordinals": {
+    "StateSelect.never": 1,
+    "StateSelect.'never'": 1,
+    "StateSelect.avoid": 2,
+    "StateSelect.'avoid'": 2,
+    "StateSelect.default": 3,
+    "StateSelect.'default'": 3,
+    "StateSelect.prefer": 4,
+    "StateSelect.'prefer'": 4,
+    "StateSelect.always": 5,
+    "StateSelect.'always'": 5,
+    "AssertionLevel.warning": 1,
+    "AssertionLevel.'warning'": 1,
+    "AssertionLevel.error": 2,
+    "AssertionLevel.'error'": 2
+  },
+  "enumeration_declarations": {},
+  "instance_relations": {
+    "1": {
+      "owner": null,
+      "declaration": 98,
+      "indices": [],
+      "kind": "Class"
+    },
+    "2": {
+      "owner": 1,
+      "declaration": 99,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "3": {
+      "owner": 1,
+      "declaration": 100,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "4": {
+      "owner": 1,
+      "declaration": 101,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "5": {
+      "owner": 1,
+      "declaration": 102,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "6": {
+      "owner": 1,
+      "declaration": 103,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "7": {
+      "owner": 1,
+      "declaration": 104,
+      "indices": [],
+      "kind": "Materialized"
+    },
+    "8": {
+      "owner": 1,
+      "declaration": 105,
+      "indices": [],
+      "kind": "Materialized"
+    }
+  }
+}

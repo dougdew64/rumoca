@@ -2557,6 +2557,112 @@ the pipeline merely continues. Only `OverInitRc` reports nothing at all, and onl
 STRUCTURAL ANALYSIS … the specimen that shows why counting is not enough"*, and Rumoca's
 `Structural: singular` is the intended diagnosis.
 
+## D3. **Rumoca** — a `when` over a Boolean variable fires at the initial instant when that Boolean's `start` differs from its initialized value
+
+**Project:** Rumoca, [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca).
+**Baseline:** `0.10.4`, branch `hrw-rebase-0.10.4`. Reproduced 2026-11-08.
+**Adjudicated against System Modeler 15.0**, and admissible: the specimen that found it,
+`hrw/specimens/ThresholdCounter.mo`, is in `fidelity::MODELS` and its specimen-report row is
+`ThresholdCounter,Component,ok,,,0`.
+
+### Reproduction
+
+```modelica
+model PreAtInitialInstant
+  Real x(start = 1, fixed = true);
+  Real v(start = 0, fixed = true);
+  Boolean above "default start (false); true at t = 0";
+  Boolean below(start = true) "start true; false at t = 0";
+  Integer n_rel(start = 0, fixed = true);
+  Integer n_above(start = 0, fixed = true);
+  Integer n_below(start = 0, fixed = true);
+equation
+  der(x) = v;
+  der(v) = -100 * x;
+  above = x > 0.5;
+  below = x < 0.5;
+  when x > 0.5 then
+    n_rel = pre(n_rel) + 1;
+  end when;
+  when above then
+    n_above = pre(n_above) + 1;
+  end when;
+  when change(below) then
+    n_below = pre(n_below) + 1;
+  end when;
+end PreAtInitialInstant;
+```
+
+`x = cos(10 t)`. Over `[0, 2]` it crosses 0.5 upward 3 times and in either direction 7 times.
+
+### Expected vs actual — both tools run on this exact model, to `t = 2`
+
+| counter | condition | System Modeler 15.0 | Rumoca 0.10.4 |
+|---|---|---|---|
+| `n_rel` | `x > 0.5` — the relation itself | 0 → 3 | 0 → 3 |
+| `n_above` | `above`, a Boolean whose start (`false`) differs from its value at `t = 0` (`true`) | 0 → 3 | **1 → 4** |
+| `n_below` | `change(below)`, start `true`, value at `t = 0` `false` | 0 → 7 | **1 → 8** |
+
+Each failing counter is incremented once at `t = 0`, and every later event is counted correctly.
+
+**Expected per MLS 3.6 §8.6**, which Rumoca's own contract suite quotes as **FS-EQN-002**
+(`crates/rumoca-contracts/data/formal_statements.toml`): *"Before the start of integration every
+variable satisfies v = pre(v), so an activation buffer cannot present a rising edge at the
+initial event unless the condition itself rises there."* Neither `above` nor `below` changes at
+`t = 0`.
+
+### What separates the failing cases from the passing ones — measured, four probes
+
+| condition | `start` vs value at `t = 0` | Rumoca at `t = 0` |
+|---|---|---|
+| `when x > 0.5` (the relation) | — | correct |
+| `when above` | `false` vs `true` | **fires** |
+| `when above`, with `above(start = true)` | agree | correct |
+| `when below` | `true` vs `false` | correct — no rising edge either way |
+| `when change(below)` | `true` vs `false` | **fires** |
+| `when edge(above)` | `false` vs `true` | **fires** |
+| `when x > 2`, `x(start = 0)` moved to 5 by an `initial equation` | — | correct |
+
+Every row is consistent with **`pre(b)` at the initial instant being `b`'s declared `start`
+rather than the value initialization gave `b`**, for a Boolean variable `b`. The last row is
+the important negative: a Real state moved by initialization is handled correctly, which
+matches FS-EQN-020 (*"pre values … are seeded from the values the initialization system
+settled"*). So the gap is narrower than "pre is seeded from declared starts", and no broader
+claim is made.
+
+### Suspect location — UNVERIFIED
+
+**FS-SIM-017** in the same file records the design choice that would produce this: *"an
+activation buffer enters the initial instant holding its condition on the start values while
+initial() is false in that seed."* For a condition written on `time` or on fixed states, the
+start values *are* the initialized values, so that reading gives the right answer. For a
+condition that reads a Boolean computed by an equation, the declared start is a separate number
+from the initialized value. (Which shapes `crates/rumoca/tests/suite_core/time_event_when_activation.rs`
+covers was not audited; only its model names and its list of recorded divergences were read.) FS-SIM-017 weighs
+three alternatives — `pre` as the identity during initialization, seeding buffers to `false`,
+seeding with `initial()` true — and does not list a fourth: **evaluating the seed on the settled
+initialization values with `initial()` false**, which appears to satisfy both FS-EQN-002 and
+the `when initial()` case FS-SIM-017 exists to protect. That is offered as a reading of the
+contract text, not as a located fix: the code that seeds the buffer was not read.
+
+The nearest recorded divergence in that test file, *"a `discrete Boolean` assigned by a relation
+equation"*, is a different defect: there `b` is never updated at all, while here `above` and
+`below` update correctly at every crossing.
+
+### Impact
+
+A counter, a latch or a mode switch written as `when b then` over a Boolean computed from the
+model's state records a spurious event at `t = 0` whenever the model starts in the `true` state
+and leaves the Boolean's start at its default. Nothing reports it: every phase is `Ok`, and the
+trajectories differ only in the discrete values.
+
+### Honestly bounded
+
+Measured through HRW, which simulates with `rumoca_sim::SimOptions::default()` — solver mode
+`SimSolverMode::Auto` — and only `t_end` changed. No explicit solver mode was requested, so
+whether the diffsol session behaves the same is not known. Only the condition shapes in the
+table were probed.
+
 ## Adding to this file
 
 One entry per bug, and only for bugs **reproduced**, not suspected. Include the

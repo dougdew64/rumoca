@@ -1,0 +1,61 @@
+{
+  "model": "MeasuredOscillator",
+  "specimen": "specimens/MeasuredOscillator.mo",
+  "specimen_fnv1a": "f773c1f2ec458f7c",
+  "rumoca_rev": "327dd5e4",
+  "rumoca_version": "0.10.4",
+  "stages": {
+    "parse": {
+      "has_ir": true,
+      "note": null
+    },
+    "resolve": {
+      "has_ir": true,
+      "note": null
+    },
+    "instantiate": {
+      "has_ir": true,
+      "note": null
+    },
+    "typecheck": {
+      "has_ir": true,
+      "note": null
+    },
+    "flatten": {
+      "has_ir": true,
+      "note": null
+    },
+    "dae": {
+      "has_ir": true,
+      "note": "3 state(s), 1 algebraic(s), 4 continuous equation(s)"
+    },
+    "structural": {
+      "has_ir": true,
+      "note": null
+    },
+    "index_reduction": {
+      "has_ir": true,
+      "note": "already index-1: no reduction needed"
+    },
+    "initialization": {
+      "has_ir": true,
+      "note": null
+    },
+    "events": {
+      "has_ir": true,
+      "note": null
+    },
+    "solve_lowering": {
+      "has_ir": true,
+      "note": null
+    }
+  },
+  "simulation": {
+    "simulated": true,
+    "t_end": 2.0,
+    "n_variables": 4,
+    "n_time_points": 501,
+    "n_states": 3,
+    "has_discontinuities": false
+  }
+}

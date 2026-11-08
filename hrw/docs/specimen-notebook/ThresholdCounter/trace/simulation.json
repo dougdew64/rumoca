@@ -1,0 +1,56 @@
+{
+  "t_end": 2.0,
+  "n_time_points": 515,
+  "n_variables": 5,
+  "n_states": 2,
+  "has_discontinuities": true,
+  "t_start": 0.0,
+  "t_final": 2.0,
+  "variables": [
+    {
+      "name": "x",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.40803628900803945,
+      "min": -0.9998739223227807,
+      "max": 1.0
+    },
+    {
+      "name": "v",
+      "is_state": true,
+      "state_coordinate": null,
+      "initial": 0.0,
+      "final": -9.128891750075905,
+      "min": -9.999405447275702,
+      "max": 9.999559001868777
+    },
+    {
+      "name": "above",
+      "is_state": false,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 0.0,
+      "min": 0.0,
+      "max": 1.0
+    },
+    {
+      "name": "rises",
+      "is_state": false,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 4.0,
+      "min": 1.0,
+      "max": 4.0
+    },
+    {
+      "name": "crossings",
+      "is_state": false,
+      "state_coordinate": null,
+      "initial": 1.0,
+      "final": 8.0,
+      "min": 1.0,
+      "max": 8.0
+    }
+  ]
+}

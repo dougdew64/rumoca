@@ -5,8 +5,13 @@
    oracle.wls -- adjudicate models against System Modeler, one row at a time.
 
    Usage:
-     wolframscript -file hrw/scripts/oracle.wls
+     wolframscript -file hrw/scripts/oracle.wls --
          -models  <file>   one .mo path OR one model name per line
+
+   **The `--` is required.** Without it wolframscript parses `-models`, `-out`
+   and the rest as ITS options and stops with "Error: Parsing of options
+   failed." before this script runs (found 2026-11-08; the invocation had not
+   been written down anywhere, so it had to be rediscovered).
          -out     <csv>    appended; rows already present are SKIPPED (resume)
         [-kinds   <csv>]   a survey/fidelity report to take the `kind` column from
         [-tend    <n>]     simulation end time, default 1
