@@ -230,7 +230,7 @@ pub(crate) enum PointKind {
     ///
     /// **The text is the rendered prose, not the markdown source**, on his ruling:
     /// egui hands back what the pane displays. Locating it in the source is Claude's
-    /// job, and is where the `run:` / `authored:` rules apply.
+    /// job; nothing there marks who wrote a passage (retired 2026-08-31, `DECISIONS.md`).
     Selection {
         /// **Where the text came from, declared by the region that rendered it.**
         ///
