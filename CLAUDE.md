@@ -5,8 +5,8 @@ branch**, this workspace additionally hosts the **HRW observatory** — an egui 
 Rumoca compiler — as the workspace member **`hrw/`**.
 
 **The live branch is `hrw-rebase-0.10.4`.** "The `hrw` branch" below names the fork's line of work;
-the git branch literally called `hrw` is frozen before the 0.10.4 rebase. Setting up another
-machine: `hrw/docs/setup-windows.md`, *Resuming on another machine*.
+the git branch literally called `hrw` is frozen before the 0.10.4 rebase. Switching machines:
+`hrw/docs/setup-windows.md`, *Switching machines*.
 
 ## Where the instructions live
 
