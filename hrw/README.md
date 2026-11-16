@@ -95,7 +95,8 @@ HRW's own views — to answer a question that prose alone cannot.
 app, and on to live-trace debugging. The short version:
 
 ```powershell
-git clone https://github.com/dougdew64/rumoca.git && cd rumoca && git checkout hrw
+git clone https://github.com/dougdew64/rumoca.git && cd rumoca && git checkout hrw-rebase-0.10.4
+# (not `hrw`: that branch is frozen before the 0.10.4 rebase)
 # stage MSL 4.1.0 into hrw/vendor/msl/  — a fresh clone has none; see the setup guide
 cargo run -p hrw
 ```

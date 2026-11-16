@@ -37,8 +37,13 @@ is what to install.**
 ```powershell
 git clone https://github.com/dougdew64/rumoca.git
 cd rumoca
-git checkout hrw
+git checkout hrw-rebase-0.10.4
 ```
+
+**The working branch is `hrw-rebase-0.10.4`, not `hrw`** *(corrected 2026-11-16)*. `hrw` is frozen
+at 2026-09-25, before the 0.10.4 rebase, and checking it out gives two-month-old code on the old
+Rumoca. Clone to `C:\Users\<you>\source\repos\rumoca` — the same path as the main machine — so
+Claude's memory folder name matches (see [Resuming on another machine](#resuming-on-another-machine)).
 
 **Line endings are handled for you, but check if tests fail oddly.**
 [`../.gitattributes`](../.gitattributes) pins `eol=lf` for everything under `hrw/`, because
@@ -327,6 +332,31 @@ Observatory"** from the launch-configuration dropdown.
 
 Note these files are force-added: the repo root's `.gitignore` excludes `.vscode/`, so new
 files there need `git add -f` to be tracked.
+
+## Resuming on another machine
+
+*(Added 2026-11-16, before travelling with the Dell XPS.)* Steps 1–9 set a machine up from
+nothing. These are the things that **do not travel with `git pull`**, and what to do about each.
+
+| what | where it lives | how it gets to the other machine |
+|---|---|---|
+| the code, docs, labs, specimens, hooks | the repository, branch `hrw-rebase-0.10.4` | `git fetch` then `git checkout hrw-rebase-0.10.4` (an older clone is probably on `hrw`, which is stale) |
+| the Modelica Standard Library | `hrw/vendor/` — gitignored | step 3: copy `hrw/vendor/` across, or download MSL 4.1.0 |
+| **Claude's memory** — who Doug is, how he works, what is in flight | `%USERPROFILE%\.claude\projects\c--Users-dougd-source-repos-rumoca\memory\` | copy the folder by hand (see below). **It never goes in this repository**: it is personal, and the repository is public |
+| the long-run sweep scripts (`overnight-sweep.ps1`, `fidelity-sweep.ps1`) | `C:\Users\dougd\rumoca-runs\` | only needed for a corpus sweep; copy them if one is planned |
+| System Modeler / Wolfram | installed software | only needed for oracle runs (`scripts/oracle.wls`) and the Wolfram tools |
+
+**The memory folder's name is derived from the clone's path.** Claude Code keys project memory by
+the working directory, with `:` and `\` turned into `-`: a clone at
+`C:\Users\dougd\source\repos\rumoca` reads `...\.claude\projects\c--Users-dougd-source-repos-rumoca\memory\`.
+Clone to the same path on both machines and the copied folder is found as-is; clone elsewhere and
+the folder must be renamed to match. **Copy it back the other way when returning**, or the two
+machines' memories diverge.
+
+**Checking it worked:** open the repository in VS Code on the XPS, start Claude Code, and ask what
+the session pointer says. A session that knows about the cost rules and the 2026-11-16 solver-plot
+fix has the memory; one that does not, does not. Then run `cargo run -p hrw --example gate -- --full`
+once — green means the clone, the toolchain and the MSL are all in place.
 
 ## Using it
 

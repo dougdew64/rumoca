@@ -4,6 +4,10 @@ This is **Doug's fork of Rumoca** (`dougdew64/rumoca`, upstream `CogniPilot/rumo
 branch**, this workspace additionally hosts the **HRW observatory** — an egui app for *studying* this
 Rumoca compiler — as the workspace member **`hrw/`**.
 
+**The live branch is `hrw-rebase-0.10.4`.** "The `hrw` branch" below names the fork's line of work;
+the git branch literally called `hrw` is frozen before the 0.10.4 rebase. Setting up another
+machine: `hrw/docs/setup-windows.md`, *Resuming on another machine*.
+
 ## Where the instructions live
 
 - **HRW work → read [`hrw/CLAUDE.md`](hrw/CLAUDE.md)** (authoritative for the observatory) and
