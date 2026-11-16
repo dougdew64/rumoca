@@ -353,6 +353,34 @@ Clone to the same path on both machines and the copied folder is found as-is; cl
 the folder must be renamed to match. **Copy it back the other way when returning**, or the two
 machines' memories diverge.
 
+### If the other machine runs Linux (the XPS runs Fedora Workstation since 2026-11-16)
+
+**HRW has never been built or run on Linux.** What follows is read from the code, not tested,
+and the first build will probably surface something this list misses. That is fine: Claude Code
+runs on Linux, so the session on the XPS fixes what it finds — each one is a real portability
+defect, and worth committing.
+
+- **Rust**: `rustup` from rustup.rs; `rust-toolchain.toml` pins the nightly as on Windows. eframe
+  needs a C toolchain and the windowing libraries — on Fedora `sudo dnf install gcc` plus whatever
+  `-devel` package the first build names as missing (wayland/X11/xkbcommon are the usual ones).
+- **The context hook needs `powershell`.** `.claude/settings.json` runs
+  `powershell … hrw-context.ps1` on every prompt. Install PowerShell for Linux (Microsoft's
+  `powershell` RPM, which provides `pwsh`) and give it the name the hook uses:
+  `sudo ln -s "$(command -v pwsh)" /usr/local/bin/powershell`. The script's one OS-facing call,
+  `Get-Process -Name hrw`, matches the Linux binary (no `.exe`). Without this every prompt loses
+  HRW's context, silently.
+- **The memory folder has a different name.** Claude Code keys it by path, so a clone at
+  `/home/<you>/source/repos/rumoca` gets a folder like `~/.claude/projects/-home-<you>-source-repos-rumoca/`.
+  Start Claude Code in the repository once so the folder exists, then copy the memory files into
+  its `memory/` subfolder.
+- **The gate** works as on Windows. Its relink check looks for `target/debug/hrw.exe`, which does
+  not exist on Linux, so it is skipped; Linux replaces a running binary without complaint anyway.
+- **Windows-only, for now**: the corpus sweep scripts (`measure-fidelity.ps1` and the two in
+  `rumoca-runs` read Windows memory counters) and the VS Code bridge extension's install step,
+  which uses a junction — on Linux use `ln -s` into `~/.vscode/extensions/` instead.
+- **System Modeler / Wolfram** exist for Linux; the oracle script needs `wolframscript` on the
+  path and a licence on that machine.
+
 **Checking it worked:** open the repository in VS Code on the XPS, start Claude Code, and ask what
 the session pointer says. A session that knows about the cost rules and the 2026-11-16 solver-plot
 fix has the memory; one that does not, does not. Then run `cargo run -p hrw --example gate -- --full`
