@@ -46,17 +46,24 @@
 /// business reading.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StepRow {
+    /// The time the step started from (`MeStepRecord::start_time`).
+    pub start: f64,
+    /// The time the step reached (`MeStepRecord::accepted_time`).
     pub t: f64,
+    /// `t - start`: the size of **this** step.
     pub h: f64,
     pub order: usize,
 }
 
 /// The hover label for the **solver diagnostics** plot.
 ///
-/// `index` is `egui_plot`'s nearest-data-point index, which both series share because both are
-/// built from `solver_steps` in order. When the cursor is not near a point, `index` is `None` and
-/// the cursor position is reported instead — still at full precision, because a cursor reading of
-/// `0.000` is the defect this module exists to fix.
+/// `index` is the step under the cursor, found by [`step_at`] from the cursor's time. **It was
+/// `egui_plot`'s nearest-point index until 2026-11-16**, which was wrong twice over: a staircase
+/// draws two points per step, so the index ran ahead of the step number and past the end; and
+/// with one line per run (see [`step_runs`]) the index is relative to whichever line is nearest.
+/// When no step covers the cursor, `index` is `None` and the cursor position is reported instead —
+/// still at full precision, because a cursor reading of `0.000` is the defect this module exists
+/// to fix.
 pub(crate) fn solver_step_label(
     steps: &[StepRow],
     index: Option<usize>,
@@ -84,61 +91,109 @@ pub(crate) fn solver_step_label(
             // 2026-11-05 on `SingleInertia`: 0 of 34 rows differ. A reader hovering saw
             // "next h" and could only conclude the controller had chosen that size
             // next, which HRW does not know.
-            format!(
+            let mut label = format!(
                 "step {} of {}\nt = {:.6}\norder = {}\nh (this step) = {:.3e}",
                 i,
                 steps.len(),
                 s.t,
                 s.order,
                 s.h,
-            )
+            );
+            // **Say when the solver went back over this step.** A later step that starts
+            // before this one ended means integration restarted inside it — at a state event,
+            // whose crossing is only found after a step has gone past it.
+            if let Some(restart) = restarted_inside(steps, i) {
+                label.push_str(&format!(
+                    "\nintegration restarted inside this step, at t = {restart:.6}"
+                ));
+            }
+            label
         }
         None => format!("t = {:.6}\ny = {:.3e}", cursor.0, cursor.1),
     }
 }
 
-/// Staircase for a value describing the interval that **ended** at its point — the BDF order.
+/// **Each step drawn over the interval it covered**, `[start, t]`, holding `value` flat across it.
 ///
 /// # Why a line chart of these series was a false statement
 ///
 /// Doug, 2026-09-25, on the BDF order series: a `Line` interpolates between its points, so between
 /// a step at order 1 and the next at order 2 it draws 1.3, 1.6, 1.8 — **orders the solver never
-/// used**. Order is an integer that changes discontinuously. The same is true of the step size:
-/// `h` is constant across a step and jumps, and a diagonal between two step sizes describes a ramp
-/// that never happened.
+/// used**. Order is an integer that changes discontinuously, and `h` is constant across a step and
+/// jumps. So both are flat segments.
 ///
-/// **The two series hold their value over *different* intervals**, which is why there are two
-/// functions here rather than one with a flag — and why each takes the boundary it actually needs:
+/// # Why each step carries its own interval — 2026-11-16
 ///
-/// - **order** belongs to the step that *ended* at `t_n`, so it spans `[t_{n-1}, t_n]` and needs
-///   the **run start** for its first segment. That is this function.
-/// - **`h`** is the size selected for the step *about to be taken*, so it spans `[t_n, t_{n+1}]`
-///   and needs the **run end** for its last. That is [`staircase_leading`].
+/// This replaced two staircases built from consecutive step *ends*, and they were wrong two ways:
 ///
-/// **Getting that backwards would draw a truthful-looking staircase offset by one step**, which no
-/// amount of looking at it would reveal.
-pub(crate) fn staircase_trailing(points: &[(f64, f64)], run_start: f64) -> Vec<[f64; 2]> {
-    let mut out: Vec<[f64; 2]> = Vec::with_capacity(points.len() * 2);
-    let mut from = run_start;
-    for &(t, v) in points {
-        out.push([from, v]);
-        out.push([t, v]);
-        from = t;
-    }
-    out
+/// - **The step size was offset by one step.** It held each `h` *forward*, from its step's end to
+///   the next, because on Rumoca 0.9.20 `h` was the size chosen for the step *about to be taken*.
+///   Since 0.10.x `h` is `accepted_time - start_time`, the step that *ended* there — so every `h`
+///   was drawn over the following step's interval, the exact error the old doc warned *"no amount
+///   of looking at it would reveal"*. Nobody did see it; the time-travel defect below led here.
+/// - **At an event the line ran backwards in time.** Doug, 2026-11-16, on `BouncingBall`: *"The
+///   plots for BDF order and step size go backwards in time occasionally."* A state event is found
+///   only after a step has passed it; the solver then restarts from the event time, so the next
+///   step **starts earlier than the previous one ended**. Joining consecutive ends drew that as a
+///   segment pointing back in time. [`step_runs`] now breaks the line there instead.
+///
+/// With `start` carried per step, neither needs a run boundary or a neighbour: each segment is a
+/// fact about one record.
+pub(crate) fn step_segments(rows: &[StepRow], value: impl Fn(&StepRow) -> f64) -> Vec<[f64; 2]> {
+    rows.iter()
+        .flat_map(|r| {
+            let v = value(r);
+            [[r.start, v], [r.t, v]]
+        })
+        .collect()
 }
 
-/// Staircase for a value describing the interval that **starts** at its point — the step size.
+/// The steps split into **runs of continuous integration**, as index ranges into `rows`.
 ///
-/// The counterpart of [`staircase_trailing`], which carries the reasoning for both.
-pub(crate) fn staircase_leading(points: &[(f64, f64)], run_end: f64) -> Vec<[f64; 2]> {
-    let mut out: Vec<[f64; 2]> = Vec::with_capacity(points.len() * 2);
-    for (i, &(t, v)) in points.iter().enumerate() {
-        let to = points.get(i + 1).map_or(run_end, |&(nt, _)| nt);
-        out.push([t, v]);
-        out.push([to.max(t), v]);
+/// A new run begins wherever a step starts before the previous step ended — an integration
+/// restart, which on this corpus is a state event (`BouncingBall` restarts at each bounce). Each
+/// run is drawn as its own line, so no segment ever joins a later time to an earlier one. The step
+/// that overshot the event stays drawn over its whole interval: it **was** taken, and the overlap
+/// with the restart is what a restart looks like.
+pub(crate) fn step_runs(rows: &[StepRow]) -> Vec<std::ops::Range<usize>> {
+    let mut runs = Vec::new();
+    let mut from = 0;
+    for i in 1..rows.len() {
+        if rows[i].start < rows[i - 1].t - restart_tolerance(rows[i - 1].t) {
+            runs.push(from..i);
+            from = i;
+        }
     }
-    out
+    if !rows.is_empty() {
+        runs.push(from..rows.len());
+    }
+    runs
+}
+
+/// How far a step may start before its predecessor's end and still count as continuous.
+///
+/// Consecutive records share the boundary exactly or to rounding (`BouncingBall`'s contiguous
+/// rows agree to ~1e-14); a restart backs up by a sizeable fraction of a step (0.054 s at the
+/// first bounce). A relative tolerance keeps rounding on the continuous side.
+fn restart_tolerance(t: f64) -> f64 {
+    1e-9 * t.abs().max(1.0)
+}
+
+/// The step covering time `x` — **the latest one**, in the order the solver took them.
+///
+/// Where a restart overlaps an earlier step, the later step is the one the trajectory was
+/// finally computed from, so it is the honest answer for a cursor there.
+pub(crate) fn step_at(rows: &[StepRow], x: f64) -> Option<usize> {
+    rows.iter().rposition(|r| r.start <= x && x <= r.t)
+}
+
+/// If integration later restarted from inside step `i`, the time it restarted from.
+pub(crate) fn restarted_inside(rows: &[StepRow], i: usize) -> Option<f64> {
+    let end = rows.get(i)?.t;
+    rows.get(i + 1..)?
+        .iter()
+        .find(|r| r.start < end - restart_tolerance(end))
+        .map(|r| r.start)
 }
 
 /// The hover label for a **trajectory** series.
@@ -203,24 +258,37 @@ pub(crate) fn log_step_tick(log_value: f64) -> String {
 mod tests {
     use super::*;
 
+    /// Three contiguous steps in the v0.10.x shape: each `h` is its own `t - start`.
     fn rows() -> Vec<StepRow> {
-        // The first three steps of `SingleInertia` on Rumoca 0.9.20, measured 2026-09-24.
+        let row = |start: f64, t: f64, order| StepRow {
+            start,
+            t,
+            h: t - start,
+            order,
+        };
         vec![
-            StepRow {
-                t: 0.0001,
-                h: 1.0e-4,
-                order: 1,
-            },
-            StepRow {
-                t: 0.0002,
-                h: 2.0e-4,
-                order: 2,
-            },
-            StepRow {
-                t: 0.0004,
-                h: 2.0e-4,
-                order: 2,
-            },
+            row(0.0, 0.0001, 1),
+            row(0.0001, 0.0003, 2),
+            row(0.0003, 0.0005, 2),
+        ]
+    }
+
+    /// `BouncingBall`'s first bounce, records 34–38 as Rumoca 0.10.4 recorded them
+    /// (`solver_steps`, 2026-11-16): record 35 passes the bounce at `t ≈ 0.451524`, and 36 and
+    /// 37 restart from it — over the same interval twice.
+    fn first_bounce() -> Vec<StepRow> {
+        let row = |start: f64, t: f64, order| StepRow {
+            start,
+            t,
+            h: t - start,
+            order,
+        };
+        vec![
+            row(0.34976546, 0.42752487, 3),
+            row(0.42752487, 0.50528428, 3),
+            row(0.45152364, 0.45156161, 1),
+            row(0.45152364, 0.45156161, 1),
+            row(0.45156161, 0.45159957, 2),
         ]
     }
 
@@ -286,58 +354,87 @@ mod tests {
         );
     }
 
-    /// **The order staircase holds each value to the step that ENDED at its time.**
+    /// **Each step's `h` and order are held over the interval THAT step covered.**
     ///
-    /// A `Line` through the raw points draws a diagonal from order 1 to order 2, asserting
-    /// fractional orders the solver never used. The staircase asserts only what happened.
+    /// The step-size staircase this replaced held each `h` forward over the *next* step's
+    /// interval — a 0.9.20 meaning `h` lost in 0.10.x. Here step 1 (`h = 2e-4`) covers
+    /// `[0.0001, 0.0003]`; the old staircase drew `1e-4` there.
     #[test]
-    fn the_order_staircase_holds_a_value_across_the_step_that_ended_at_it() {
-        // Two steps: order 1 reaching t = 0.1, then order 2 reaching t = 0.3.
-        let pts = staircase_trailing(&[(0.1, 1.0), (0.3, 2.0)], 0.0);
+    fn each_step_holds_its_values_over_the_interval_it_covered() {
+        let steps = rows();
+        let h = step_segments(&steps, |r| r.h);
         assert_eq!(
-            pts,
-            vec![[0.0, 1.0], [0.1, 1.0], [0.1, 2.0], [0.3, 2.0]],
-            "expected a flat-then-jump staircase anchored at the run start",
+            h[2],
+            [0.0001, steps[1].h],
+            "step 1's own size, from its own start"
         );
-        // The jump is vertical: two points share an x and differ in y.
-        assert_eq!(pts[1][0], pts[2][0]);
-        assert_ne!(pts[1][1], pts[2][1]);
-        // **No interpolated order exists anywhere in the series.**
+        assert_eq!(h[3], [0.0003, steps[1].h], "...to its own end");
+        assert_ne!(
+            steps[0].h, steps[1].h,
+            "premise: the two sizes differ, so an offset shows"
+        );
+        let order = step_segments(&steps, |r| r.order as f64);
+        assert_eq!(
+            order,
+            vec![
+                [0.0, 1.0],
+                [0.0001, 1.0],
+                [0.0001, 2.0],
+                [0.0003, 2.0],
+                [0.0003, 2.0],
+                [0.0005, 2.0],
+            ],
+            "flat segments, vertical jumps, and no fractional order anywhere",
+        );
+        assert_eq!(
+            step_runs(&steps),
+            vec![0..3],
+            "contiguous steps are one run"
+        );
+        assert!(step_segments(&[], |r| r.h).is_empty());
+        assert!(step_runs(&[]).is_empty());
+    }
+
+    /// **At an event the line breaks instead of running backwards in time.**
+    ///
+    /// Doug, 2026-11-16, on `BouncingBall`. Step 35 passes the bounce and steps 36 and 37
+    /// restart from it, each starting before its predecessor ended; joining the ends drew a
+    /// segment from `0.5053` back to `0.4516`.
+    #[test]
+    fn an_event_restart_starts_a_new_run_and_no_segment_runs_backwards() {
+        let steps = first_bounce();
+        let runs = step_runs(&steps);
+        assert_eq!(runs, vec![0..2, 2..3, 3..5], "one break per restart");
+        for run in runs {
+            let pts = step_segments(&steps[run.clone()], |r| r.order as f64);
+            assert!(
+                pts.windows(2).all(|w| w[1][0] >= w[0][0]),
+                "run {run:?} has a segment running backwards in time: {pts:?}",
+            );
+        }
+    }
+
+    /// **The cursor finds the step under it, and a cut-back step says so.**
+    #[test]
+    fn hovering_finds_the_step_under_the_cursor_and_names_a_restart() {
+        let steps = first_bounce();
+        // Only step 1 covers 0.44: before the bounce, after step 0.
+        assert_eq!(step_at(&steps, 0.44), Some(1));
+        // Past the bounce, the restart's steps cover it too, and the latest one wins.
+        assert_eq!(step_at(&steps, 0.45158), Some(4));
+        assert_eq!(step_at(&steps, 0.9), None);
+
+        let label = solver_step_label(&steps, step_at(&steps, 0.44), (0.44, 3.0));
+        assert!(label.contains("step 1 of 5"), "{label}");
         assert!(
-            pts.iter().all(|p| p[1] == 1.0 || p[1] == 2.0),
-            "a fractional order appeared: {pts:?}",
+            label.contains("integration restarted inside this step, at t = 0.451524"),
+            "the step that overshot the bounce must say it was gone back over:\n{label}",
         );
-    }
-
-    /// **The step-size staircase holds each value FORWARD**, because `h` is the size selected for
-    /// the step about to be taken. Offsetting this by one would look equally plausible and be
-    /// wrong by exactly one step.
-    #[test]
-    fn the_step_size_staircase_holds_a_value_forward_to_the_next_point() {
-        let pts = staircase_leading(&[(0.1, 1e-3), (0.3, 2e-3)], 0.5);
-        assert_eq!(
-            pts,
-            vec![[0.1, 1e-3], [0.3, 1e-3], [0.3, 2e-3], [0.5, 2e-3]],
-            "expected each h held from its own time to the next, ending at the run end",
+        let plain = solver_step_label(&steps, Some(0), (0.0, 0.0));
+        assert!(
+            !plain.contains("restarted"),
+            "an ordinary step says nothing:\n{plain}"
         );
-    }
-
-    /// Neither builder panics or inverts on a single point or none at all.
-    #[test]
-    fn a_staircase_of_one_point_or_none_is_well_formed() {
-        assert!(staircase_trailing(&[], 0.0).is_empty());
-        assert!(staircase_leading(&[], 1.0).is_empty());
-        assert_eq!(
-            staircase_trailing(&[(0.2, 3.0)], 0.0),
-            vec![[0.0, 3.0], [0.2, 3.0]]
-        );
-        assert_eq!(
-            staircase_leading(&[(0.2, 3.0)], 1.0),
-            vec![[0.2, 3.0], [1.0, 3.0]]
-        );
-        // A run end before the last point must not draw backwards.
-        let pts = staircase_leading(&[(0.9, 3.0)], 0.5);
-        assert!(pts[1][0] >= pts[0][0], "segment ran backwards: {pts:?}");
     }
 
     /// **The label reports one step size, and names which one it is.**
