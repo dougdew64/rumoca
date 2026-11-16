@@ -11,9 +11,8 @@
 //! A diff that cannot change the Rust build regenerates the lab catalogue and stops,
 //! in about a second. It used to run the whole `--lib` suite (968 tests, 68–132 s on
 //! 11-08), because the document checkers live there — so a one-line markdown fix cost
-//! more than many code changes. Doug: *"Having a conversation or making a change to a
-//! document has become more expensive than making code changes. This is entirely
-//! unacceptable."* The doc checkers still run, **with the next code change's gate**,
+//! more than many code changes, which Doug ruled out. The doc checkers still run, **with the
+//! next code change's gate**,
 //! and anything they find is fixed then, in a batch. `--full` still forces everything.
 //!
 //! # Why this exists, measured rather than assumed
