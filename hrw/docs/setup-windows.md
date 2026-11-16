@@ -42,8 +42,7 @@ git checkout hrw-rebase-0.10.4
 
 **The working branch is `hrw-rebase-0.10.4`, not `hrw`** *(corrected 2026-11-16)*. `hrw` is frozen
 at 2026-09-25, before the 0.10.4 rebase, and checking it out gives two-month-old code on the old
-Rumoca. Clone to `C:\Users\<you>\source\repos\rumoca` — the same path as the main machine — so
-Claude's memory folder name matches (see [Resuming on another machine](#resuming-on-another-machine)).
+Rumoca. See [Switching machines](#switching-machines) for what a pull does not bring.
 
 **Line endings are handled for you, but check if tests fail oddly.**
 [`../.gitattributes`](../.gitattributes) pins `eol=lf` for everything under `hrw/`, because
@@ -333,58 +332,22 @@ Observatory"** from the launch-configuration dropdown.
 Note these files are force-added: the repo root's `.gitignore` excludes `.vscode/`, so new
 files there need `git add -f` to be tracked.
 
-## Resuming on another machine
+## Switching machines
 
-*(Added 2026-11-16, before travelling with the Dell XPS.)* Steps 1–9 set a machine up from
-nothing. These are the things that **do not travel with `git pull`**, and what to do about each.
+**The routine: `git pull` (on `hrw-rebase-0.10.4`), then `cargo run -p hrw --example check_machine`.**
+The checker verifies what a pull does not bring — the context hook's settings, a locked binary,
+the parsed-MSL cache, sleep settings — and session state travels in `CLAUDE.md`'s handoff box.
 
-| what | where it lives | how it gets to the other machine |
-|---|---|---|
-| the code, docs, labs, specimens, hooks | the repository, branch `hrw-rebase-0.10.4` | `git fetch` then `git checkout hrw-rebase-0.10.4` (an older clone is probably on `hrw`, which is stale) |
-| the Modelica Standard Library | `hrw/vendor/` — gitignored | step 3: copy `hrw/vendor/` across, or download MSL 4.1.0 |
-| **Claude's memory** — who Doug is, how he works, what is in flight | `%USERPROFILE%\.claude\projects\c--Users-dougd-source-repos-rumoca\memory\` | copy the folder by hand (see below). **It never goes in this repository**: it is personal, and the repository is public |
-| the long-run sweep scripts (`overnight-sweep.ps1`, `fidelity-sweep.ps1`) | `C:\Users\dougd\rumoca-runs\` | only needed for a corpus sweep; copy them if one is planned |
-| System Modeler / Wolfram | installed software | only needed for oracle runs (`scripts/oracle.wls`) and the Wolfram tools |
+Two things it cannot carry, both deliberately outside the repository:
 
-**The memory folder's name is derived from the clone's path.** Claude Code keys project memory by
-the working directory, with `:` and `\` turned into `-`: a clone at
-`C:\Users\dougd\source\repos\rumoca` reads `...\.claude\projects\c--Users-dougd-source-repos-rumoca\memory\`.
-Clone to the same path on both machines and the copied folder is found as-is; clone elsewhere and
-the folder must be renamed to match. **Copy it back the other way when returning**, or the two
-machines' memories diverge.
+- **The MSL** (`hrw/vendor/`, gitignored) — step 3.
+- **Claude's memory** (`%USERPROFILE%\.claude\projects\<path-key>\memory\`) is per machine and
+  personal, so it never goes in this public repository. A session on the other machine works
+  from the repository alone unless the folder is copied across by hand.
 
-### If the other machine runs Linux (the XPS runs Fedora Workstation since 2026-11-16)
+*(A Linux section was drafted here on 2026-11-16 for a Fedora laptop and withdrawn the same day:
+HRW has never been built on Linux, and the plan to try was cancelled.)*
 
-**HRW has never been built or run on Linux.** What follows is read from the code, not tested,
-and the first build will probably surface something this list misses. That is fine: Claude Code
-runs on Linux, so the session on the XPS fixes what it finds — each one is a real portability
-defect, and worth committing.
-
-- **Rust**: `rustup` from rustup.rs; `rust-toolchain.toml` pins the nightly as on Windows. eframe
-  needs a C toolchain and the windowing libraries — on Fedora `sudo dnf install gcc` plus whatever
-  `-devel` package the first build names as missing (wayland/X11/xkbcommon are the usual ones).
-- **The context hook needs `powershell`.** `.claude/settings.json` runs
-  `powershell … hrw-context.ps1` on every prompt. Install PowerShell for Linux (Microsoft's
-  `powershell` RPM, which provides `pwsh`) and give it the name the hook uses:
-  `sudo ln -s "$(command -v pwsh)" /usr/local/bin/powershell`. The script's one OS-facing call,
-  `Get-Process -Name hrw`, matches the Linux binary (no `.exe`). Without this every prompt loses
-  HRW's context, silently.
-- **The memory folder has a different name.** Claude Code keys it by path, so a clone at
-  `/home/<you>/source/repos/rumoca` gets a folder like `~/.claude/projects/-home-<you>-source-repos-rumoca/`.
-  Start Claude Code in the repository once so the folder exists, then copy the memory files into
-  its `memory/` subfolder.
-- **The gate** works as on Windows. Its relink check looks for `target/debug/hrw.exe`, which does
-  not exist on Linux, so it is skipped; Linux replaces a running binary without complaint anyway.
-- **Windows-only, for now**: the corpus sweep scripts (`measure-fidelity.ps1` and the two in
-  `rumoca-runs` read Windows memory counters) and the VS Code bridge extension's install step,
-  which uses a junction — on Linux use `ln -s` into `~/.vscode/extensions/` instead.
-- **System Modeler / Wolfram** exist for Linux; the oracle script needs `wolframscript` on the
-  path and a licence on that machine.
-
-**Checking it worked:** open the repository in VS Code on the XPS, start Claude Code, and ask what
-the session pointer says. A session that knows about the cost rules and the 2026-11-16 solver-plot
-fix has the memory; one that does not, does not. Then run `cargo run -p hrw --example gate -- --full`
-once — green means the clone, the toolchain and the MSL are all in place.
 
 ## Using it
 
