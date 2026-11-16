@@ -170,6 +170,51 @@ pub(crate) fn step_runs(rows: &[StepRow]) -> Vec<std::ops::Range<usize>> {
     runs
 }
 
+/// One run of steps as drawn: the solid line, and the overshooting step's **discarded tail**.
+pub(crate) struct RunDrawing {
+    /// The run's steps, with its last step ending where the next run restarted.
+    pub kept: Vec<[f64; 2]>,
+    /// The part of the run's last step past the restart: integrated, then thrown away when the
+    /// solver found an event inside it and went back. `None` when nothing restarted inside it.
+    pub discarded: Option<[[f64; 2]; 2]>,
+}
+
+/// The steps as drawn: **one solid line per run, ending where the next run restarted**, plus each
+/// overshoot's discarded tail.
+///
+/// # Why the overshoot is cut, not drawn whole — Doug, 2026-11-16, the second report
+///
+/// Breaking the line at each restart ([`step_runs`]) stopped segments joining a later time to an
+/// earlier one, and the plots *"still go backwards"*: the step that passed the bounce was drawn
+/// over its whole interval, so two lines covered the same times. That tail is real — the solver
+/// integrated it — but **the trajectory did not keep it**: finding the bounce inside it, the solver
+/// went back to the bounce and integrated forward again from there. So the solid line stops at the
+/// restart and the tail is returned separately, for a dashed line labelled as discarded. Every
+/// time is then covered by exactly one solid segment, and the overshoot is still shown.
+///
+/// The cut step's segment is shorter than its `h`; its height is still that step's `h`, which the
+/// hover label reports.
+pub(crate) fn run_drawings(rows: &[StepRow], value: impl Fn(&StepRow) -> f64) -> Vec<RunDrawing> {
+    let runs = step_runs(rows);
+    runs.iter()
+        .enumerate()
+        .map(|(k, run)| {
+            let mut kept = step_segments(&rows[run.clone()], &value);
+            let last = &rows[run.end - 1];
+            let restart = runs.get(k + 1).map(|next| rows[next.start].start);
+            let discarded = restart.filter(|&at| at < last.t).map(|at| {
+                let at = at.max(last.start);
+                if let Some(end) = kept.last_mut() {
+                    end[0] = at;
+                }
+                let v = value(last);
+                [[at, v], [last.t, v]]
+            });
+            RunDrawing { kept, discarded }
+        })
+        .collect()
+}
+
 /// How far a step may start before its predecessor's end and still count as continuous.
 ///
 /// Consecutive records share the boundary exactly or to rounding (`BouncingBall`'s contiguous
@@ -412,6 +457,37 @@ mod tests {
                 "run {run:?} has a segment running backwards in time: {pts:?}",
             );
         }
+    }
+
+    /// **The solid lines never cover a time twice** — Doug's second report: with the overshoot
+    /// drawn whole, the pre-bounce line ran on past the bounce while the restart began at it.
+    ///
+    /// Taken across ALL runs in order, the kept points must never step back in time; the step that
+    /// passed the bounce ends at the restart, and its tail comes back as `discarded`.
+    #[test]
+    fn the_overshoot_is_cut_at_the_restart_and_its_tail_is_discarded() {
+        let steps = first_bounce();
+        let drawings = run_drawings(&steps, |r| r.order as f64);
+        let kept: Vec<[f64; 2]> = drawings.iter().flat_map(|d| d.kept.clone()).collect();
+        assert!(
+            kept.windows(2).all(|w| w[1][0] >= w[0][0]),
+            "a solid line covers a time twice: {kept:?}",
+        );
+        assert_eq!(
+            drawings[0].discarded,
+            Some([[0.45152364, 3.0], [0.50528428, 3.0]]),
+            "the step that passed the bounce keeps its tail, marked as discarded",
+        );
+        assert_eq!(
+            drawings[0].kept.last(),
+            Some(&[0.45152364, 3.0]),
+            "...and ends at the bounce"
+        );
+        assert!(
+            drawings[2].discarded.is_none(),
+            "the last run restarted nowhere"
+        );
+        assert!(run_drawings(&[], |r| r.h).is_empty());
     }
 
     /// **The cursor finds the step under it, and a cut-back step says so.**

@@ -4278,9 +4278,26 @@ impl App {
                     // verify a single one of lecture 1's solver claims because of it. The rows
                     // are rebuilt here rather than borrowed so the closure owns them.
                     let label_rows: Vec<crate::plot_labels::StepRow> = data.solver_steps.to_vec();
-                    // One line per run of continuous integration, so an event restart breaks
-                    // the line rather than drawing it backwards in time (`plot_labels::step_runs`).
-                    let runs = crate::plot_labels::step_runs(&label_rows);
+                    // One solid line per run of continuous integration, ending where the next
+                    // run restarted; an overshoot's discarded tail is dashed. See
+                    // `plot_labels::run_drawings`, and `draw_runs` below.
+                    let draw_runs = |plot_ui: &mut egui_plot::PlotUi,
+                                     name: &str,
+                                     color: egui::Color32,
+                                     value: &dyn Fn(&crate::plot_labels::StepRow) -> f64| {
+                        for run in crate::plot_labels::run_drawings(&label_rows, value) {
+                            let kept: PlotPoints = run.kept.into_iter().collect();
+                            plot_ui.line(Line::new(name, kept).color(color));
+                            if let Some(tail) = run.discarded {
+                                let tail: PlotPoints = tail.into_iter().collect();
+                                plot_ui.line(
+                                    Line::new("discarded past an event", tail)
+                                        .color(color)
+                                        .style(egui_plot::LineStyle::dashed_dense()),
+                                );
+                            }
+                        }
+                    };
 
                     // **Two plots, not one, and the step size on a LOG axis** — Doug, 2026-09-25,
                     // asked for zoom and the measurement said zoom could not reach it.
@@ -4330,18 +4347,12 @@ impl App {
                             // Each step's `h` held flat over the interval that step covered —
                             // `plot_labels::step_segments` carries why, and the two defects
                             // the previous staircase had.
-                            for run in &runs {
-                                let h_pts: PlotPoints = crate::plot_labels::step_segments(
-                                    &label_rows[run.clone()],
-                                    |r| crate::plot_labels::log_step(r.h),
-                                )
-                                .into_iter()
-                                .collect();
-                                plot_ui.line(
-                                    Line::new("step size h", h_pts)
-                                        .color(crate::colors::SOLVER_STEP_SIZE),
-                                );
-                            }
+                            draw_runs(
+                                plot_ui,
+                                "step size h",
+                                crate::colors::SOLVER_STEP_SIZE,
+                                &|r| crate::plot_labels::log_step(r.h),
+                            );
                         });
 
                     with_shared_x_span(Plot::new("solver_bdf_order"), (x_lo, x_hi))
@@ -4373,18 +4384,12 @@ impl App {
                             // Each step's order held flat over the interval that step covered.
                             // Doug, 2026-09-25: a line between order 1 and order 2 draws 1.3,
                             // 1.6, 1.8 — orders no solver ever ran.
-                            for run in &runs {
-                                let order_pts: PlotPoints = crate::plot_labels::step_segments(
-                                    &label_rows[run.clone()],
-                                    |r| r.order as f64,
-                                )
-                                .into_iter()
-                                .collect();
-                                plot_ui.line(
-                                    Line::new("BDF order k", order_pts)
-                                        .color(crate::colors::SOLVER_BDF_ORDER),
-                                );
-                            }
+                            draw_runs(
+                                plot_ui,
+                                "BDF order k",
+                                crate::colors::SOLVER_BDF_ORDER,
+                                &|r| r.order as f64,
+                            );
                         });
                 }
             }
