@@ -4277,15 +4277,10 @@ impl App {
                     // 1e-4 step as `0.000`, and Doug reported on 2026-09-25 that he could not
                     // verify a single one of lecture 1's solver claims because of it. The rows
                     // are rebuilt here rather than borrowed so the closure owns them.
-                    let label_rows: Vec<crate::plot_labels::StepRow> = data
-                        .solver_steps
-                        .iter()
-                        .map(|s| crate::plot_labels::StepRow {
-                            t: s.t,
-                            h: s.h,
-                            order: s.order,
-                        })
-                        .collect();
+                    let label_rows: Vec<crate::plot_labels::StepRow> = data.solver_steps.to_vec();
+                    // One line per run of continuous integration, so an event restart breaks
+                    // the line rather than drawing it backwards in time (`plot_labels::step_runs`).
+                    let runs = crate::plot_labels::step_runs(&label_rows);
 
                     // **Two plots, not one, and the step size on a LOG axis** — Doug, 2026-09-25,
                     // asked for zoom and the measurement said zoom could not reach it.
@@ -4318,42 +4313,35 @@ impl App {
                         .y_grid_spacer(egui_plot::log_grid_spacer(10))
                         .y_axis_formatter(|mark, _| crate::plot_labels::log_step_tick(mark.value))
                         .label_formatter(move |hover| {
-                            let (index, position) = match hover {
-                                egui_plot::HoverPosition::NearDataPoint {
-                                    position, index, ..
-                                } => (Some(*index), *position),
-                                egui_plot::HoverPosition::Elsewhere { position } => {
-                                    (None, *position)
-                                }
+                            let position = match hover {
+                                egui_plot::HoverPosition::NearDataPoint { position, .. }
+                                | egui_plot::HoverPosition::Elsewhere { position } => *position,
                             };
+                            // The step is found by the cursor's TIME, not by egui's point
+                            // index — see `solver_step_label` for why the index was wrong.
                             Some(crate::plot_labels::solver_step_label(
                                 &step_rows,
-                                index,
+                                crate::plot_labels::step_at(&step_rows, position.x),
                                 // The cursor's y is a logarithm; report the step size it means.
                                 (position.x, 10_f64.powf(position.y)),
                             ))
                         })
                         .show(ui, |plot_ui| {
-                            // **A staircase, and it leads.** `h` is the size chosen for the
-                            // step about to be taken, so it is held from its own time forward
-                            // to the next step's time — not backward. A `Line` through the raw
-                            // points would draw a ramp between two step sizes, describing a
-                            // gradual change that never happened.
-                            let h_edges: Vec<(f64, f64)> = data
-                                .solver_steps
-                                .iter()
-                                .map(|s| (s.t, crate::plot_labels::log_step(s.h)))
+                            // Each step's `h` held flat over the interval that step covered —
+                            // `plot_labels::step_segments` carries why, and the two defects
+                            // the previous staircase had.
+                            for run in &runs {
+                                let h_pts: PlotPoints = crate::plot_labels::step_segments(
+                                    &label_rows[run.clone()],
+                                    |r| crate::plot_labels::log_step(r.h),
+                                )
+                                .into_iter()
                                 .collect();
-                            let run_end = x_hi
-                                .unwrap_or_else(|| data.solver_steps.last().map_or(0.0, |s| s.t));
-                            let h_pts: PlotPoints =
-                                crate::plot_labels::staircase_leading(&h_edges, run_end)
-                                    .into_iter()
-                                    .collect();
-                            plot_ui.line(
-                                Line::new("step size h", h_pts)
-                                    .color(crate::colors::SOLVER_STEP_SIZE),
-                            );
+                                plot_ui.line(
+                                    Line::new("step size h", h_pts)
+                                        .color(crate::colors::SOLVER_STEP_SIZE),
+                                );
+                            }
                         });
 
                     with_shared_x_span(Plot::new("solver_bdf_order"), (x_lo, x_hi))
@@ -4365,40 +4353,38 @@ impl App {
                         .x_axis_label("time")
                         .y_axis_label("BDF order k")
                         .y_axis_min_width(SIM_Y_AXIS_WIDTH)
-                        .label_formatter(move |hover| {
-                            let (index, position) = match hover {
-                                egui_plot::HoverPosition::NearDataPoint {
-                                    position, index, ..
-                                } => (Some(*index), *position),
-                                egui_plot::HoverPosition::Elsewhere { position } => {
-                                    (None, *position)
-                                }
-                            };
-                            Some(crate::plot_labels::solver_step_label(
-                                &label_rows,
-                                index,
-                                (position.x, position.y),
-                            ))
+                        .label_formatter({
+                            let label_rows = label_rows.clone();
+                            move |hover| {
+                                let position = match hover {
+                                    egui_plot::HoverPosition::NearDataPoint {
+                                        position, ..
+                                    }
+                                    | egui_plot::HoverPosition::Elsewhere { position } => *position,
+                                };
+                                Some(crate::plot_labels::solver_step_label(
+                                    &label_rows,
+                                    crate::plot_labels::step_at(&label_rows, position.x),
+                                    (position.x, position.y),
+                                ))
+                            }
                         })
                         .show(ui, |plot_ui| {
-                            // **A staircase, and it trails.** The order belongs to the step
-                            // that ENDED at this time, so it is held backward to the previous
-                            // step. Doug, 2026-09-25: a line between order 1 and order 2 draws
-                            // 1.3, 1.6, 1.8 — orders no solver ever ran.
-                            let order_edges: Vec<(f64, f64)> = data
-                                .solver_steps
-                                .iter()
-                                .map(|s| (s.t, s.order as f64))
+                            // Each step's order held flat over the interval that step covered.
+                            // Doug, 2026-09-25: a line between order 1 and order 2 draws 1.3,
+                            // 1.6, 1.8 — orders no solver ever ran.
+                            for run in &runs {
+                                let order_pts: PlotPoints = crate::plot_labels::step_segments(
+                                    &label_rows[run.clone()],
+                                    |r| r.order as f64,
+                                )
+                                .into_iter()
                                 .collect();
-                            let run_start = x_lo.unwrap_or(0.0);
-                            let order_pts: PlotPoints =
-                                crate::plot_labels::staircase_trailing(&order_edges, run_start)
-                                    .into_iter()
-                                    .collect();
-                            plot_ui.line(
-                                Line::new("BDF order k", order_pts)
-                                    .color(crate::colors::SOLVER_BDF_ORDER),
-                            );
+                                plot_ui.line(
+                                    Line::new("BDF order k", order_pts)
+                                        .color(crate::colors::SOLVER_BDF_ORDER),
+                                );
+                            }
                         });
                 }
             }

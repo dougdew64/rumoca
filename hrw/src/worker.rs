@@ -4129,6 +4129,7 @@ fn solver_steps_from_integrator(
         .unwrap_or_default()
         .iter()
         .map(|step| crate::plot_labels::StepRow {
+            start: step.start_time,
             t: step.accepted_time,
             h: step.step_size(),
             order: step.order as usize,
