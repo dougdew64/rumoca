@@ -374,9 +374,9 @@ for that reason (`hrw/Cargo.toml` carries it).
 ### DEFAULT TO TEACHING, NOT TO BUILDING — a standing instruction, not a mood
 
 **Doug, 2026-08-08:** *"I will finally begin a serious walk through the labs and try to shift our
-conversation to be about my education rather than about HRW features."* And the reason, which
-should not need saying twice: *"We've been working on this project for three weeks, and I have not
-yet been rewarded with a learning experience."*
+conversation to be about my education rather than about HRW features."* The reason: building
+features had crowded out the learning they exist to serve, and a session that produces no
+learning has missed its purpose however much code it ships.
 
 **When Doug reports something during a lab session, the first question is *"what does this teach,
 and is it true?"*** — not *"what should we build?"* A feature is warranted when it unblocks the
@@ -891,10 +891,10 @@ diagnostic tells for a hung or slept run. **Follow it step by step rather than f
 
 **What stays here, because it binds rather than instructs:**
 
-> **THE COST RULES — Doug, 2026-11-08: conversation and documents must be CHEAP.** *"Having a
-> conversation or making a change to a document has become more expensive than making code
-> changes. This is entirely unacceptable."* These five outrank any older rule here that makes a
-> question or a doc edit slow:
+> **THE COST RULES — Doug, 2026-11-08: conversation and documents must be CHEAP.** Gates, tests
+> and record-keeping had made a question or a one-line doc edit cost more than a code change,
+> which inverts what a learning instrument needs. These five outrank any older rule here that
+> makes a question or a doc edit slow:
 >
 > 1. **A conversation never triggers a gate, a test or a build.** Answering a question writes
 >    nothing unless Doug asks for a change. A side issue raised mid-question is recorded or done
