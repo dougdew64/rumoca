@@ -50,8 +50,14 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug HRW Observatory (lldb — see note)",
+      // `-p hrw` is REQUIRED, not tidiness (2026-11-26). Without it, at the
+      // workspace root, `--bin=hrw` builds every member with their features
+      // unified — which enables rumoca-sim's `input-gamepad`, so the debugged
+      // binary differs from the one `cargo build -p hrw`, the tests and the gate
+      // build. On Linux that feature's gilrs -> libudev-sys also fails to build
+      // without libudev headers, which is how it was found.
       "cargo": {
-        "args": ["build", "--bin=hrw"],
+        "args": ["build", "-p", "hrw", "--bin=hrw"],
         "filter": { "name": "hrw", "kind": "bin" }
       },
       "args": [],

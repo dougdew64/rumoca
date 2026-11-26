@@ -372,9 +372,18 @@ this one is what actually happened.)*
    junction:
    `ln -sfn "$PWD" ~/.vscode/extensions/dougdew64.hrw-debugger-bridge-0.1.0`.
 
-**Not yet done on Linux:** live trace debugging (step 6's `cppvsdbg` is Windows-only, so
-`launch.json` needs a CodeLLDB or `cppdbg` configuration), and `scripts/oracle.wls`, which needs
-a Wolfram kernel — the plan is to reach the Windows machine's, [`remote-wolfram.md`](remote-wolfram.md).
+5. **Debugging:** use the **CodeLLDB** config, *"Debug HRW Observatory (lldb — see note)"* —
+   step 6's `cppvsdbg` is Windows-only. Two traps found on the first launch:
+   - **Start VS Code from a shell that has `~/.cargo/bin` on `PATH`.** A VS Code opened before
+     rustup was installed keeps its old environment through *Reload Window*; quit it entirely.
+   - **The config's cargo args must include `-p hrw`** (fixed in `launch.json`). Without it the
+     workspace-wide build enables `input-gamepad`, whose `libudev-sys` fails here for want of
+     libudev headers — and on Windows it silently debugged a differently-featured binary.
+
+   HRW launches under it; **live trace stepping (`ns`/`si`/`so`) is not yet tried on Linux.**
+
+**Not yet done on Linux:** `scripts/oracle.wls`, which needs a Wolfram kernel — the plan is to
+reach the Windows machine's, [`remote-wolfram.md`](remote-wolfram.md).
 
 **The full gate is green on Linux** (1073 tests, 2026-11-26). The first run found one test
 defect, not a Linux one: `worker::tests::no_committed_trace_mentions_the_workspace_root` looked
