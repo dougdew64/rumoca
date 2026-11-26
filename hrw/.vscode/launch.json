@@ -41,8 +41,10 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug HRW Observatory",
+      // `-p hrw` matches the workspace-root copy, where it is required (see the
+      // note there); from hrw/ cargo already selects this package.
       "cargo": {
-        "args": ["build", "--bin=hrw"],
+        "args": ["build", "-p", "hrw", "--bin=hrw"],
         "filter": { "name": "hrw", "kind": "bin" }
       },
       "args": [],
@@ -75,7 +77,7 @@
       "request": "launch",
       "name": "Debug unit tests (worker/parse)",
       "cargo": {
-        "args": ["test", "--no-run", "--bin=hrw"],
+        "args": ["test", "--no-run", "-p", "hrw", "--bin=hrw"],
         "filter": { "name": "hrw", "kind": "bin" }
       },
       "args": [],
