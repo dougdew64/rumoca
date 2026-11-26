@@ -2,6 +2,9 @@
 name = "hrw"
 version = "0.1.0"
 edition = "2024"
+# `src/bin/hrw-context.rs` is the second binary (the prompt hook), so `cargo run -p hrw`
+# needs to be told which one is the app.
+default-run = "hrw"
 
 # **Clippy is DENIED here as of 2026-08-01**, after clearing 75 warnings
 # (`docs/verification-plan.md` item 0c).

@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/hrw/scripts/hrw-context.ps1\"",
+            "command": "\"$CLAUDE_PROJECT_DIR/target/debug/hrw-context\" || echo \"[hrw-context] THE HOOK DID NOT RUN - target/debug/hrw-context is missing or failed, so this prompt carries NO HRW context; build it with: cargo build -p hrw\"",
             "timeout": 10
           }
         ]

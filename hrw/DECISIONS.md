@@ -5948,3 +5948,28 @@ ask. **Do not reintroduce one.**
 beside a question field"* as an example of a provoking feature, and said the Question Bar
 *"is what makes 'this' certain"*. The example is now the Question Bar's Text field, and the
 claim is cut.
+
+## 2026-11-26 — HRW builds on Linux; the context hook is Rust, not PowerShell
+
+**HRW now builds and runs on the Fedora XPS**, natively rather than under WSL2 (where egui was
+too slow, the reason for going Windows-only). Setup is in `docs/setup-windows.md`, *On Linux*.
+
+**The `[hrw-context]` hook was the one thing that could not come along**: `hrw-context.ps1`
+needed Windows PowerShell. Of three options — install `pwsh` on both machines, port to bash, or
+rewrite in Rust — **Doug chose the rewrite**. Bash would have been a second 385-line copy to keep
+in step, and `pwsh` is on neither machine.
+
+- **`src/context_hook.rs` holds the logic**, a line-for-line port carrying the script's
+  comments; **`src/bin/hrw-context.rs` is a thin `main`**. `cargo build -p hrw` builds both,
+  so building the app builds the hook (`default-run = "hrw"` keeps `cargo run -p hrw` the app).
+- **The behavioural tests now run everywhere.** They were `#[cfg(windows)]` and spawned
+  `powershell`; they now call `context_hook::report` with a fixed clock and process probe.
+  `the_hook_matches_real_action_kinds` reads `POINT_KINDS`/`EMIT_KINDS` instead of parsing
+  the script.
+- **`.claude/settings.json` calls the binary and echoes a tagged *"THE HOOK DID NOT RUN"* line
+  if it is missing**, so an unbuilt clone is loud. It relies on Claude Code running hook
+  commands in a POSIX shell on Windows too (Git Bash, which resolves `hrw-context` to
+  `hrw-context.exe`) — **verified on Linux only**; check the first prompt on Windows.
+- **Two observable changes:** the process line's time is now UTC and says so (no time-zone
+  dependency), and the seen-file key is `question_mtime_ms` — an old seen-file reads as unseen,
+  costing one extra "waiting" reminder.

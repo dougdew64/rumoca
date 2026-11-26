@@ -850,6 +850,52 @@ fn civil_from_millis(ms: u128) -> (i64, u32, u32, u32, u32, u32, u32) {
     )
 }
 
+/// The inverse of [`format_utc_millis`]: `"2026-11-07 12:34:56.789 UTC"` → Unix ms.
+///
+/// The `[hrw-context]` hook (`context_hook.rs`) reads the action trail's `at`
+/// stamps back to compare them with file mtimes, so the parser lives beside the
+/// formatter that defines the format. The milliseconds and the ` UTC` suffix are
+/// optional, which is what PowerShell's `[datetime]::Parse` accepted when the hook
+/// was a script. Returns `None` for anything else rather than guessing.
+pub(crate) fn parse_utc_millis(stamp: &str) -> Option<u128> {
+    let stamp = stamp.trim();
+    let stamp = stamp.strip_suffix(" UTC").unwrap_or(stamp);
+    let (date, time) = stamp.split_once(' ')?;
+
+    let mut ymd = date.split('-');
+    let y: i64 = ymd.next()?.parse().ok()?;
+    let mo: i64 = ymd.next()?.parse().ok()?;
+    let d: i64 = ymd.next()?.parse().ok()?;
+    if ymd.next().is_some() || !(1..=12).contains(&mo) || !(1..=31).contains(&d) {
+        return None;
+    }
+
+    let (hms, milli) = match time.split_once('.') {
+        Some((hms, frac)) => (hms, frac.parse::<u128>().ok()?),
+        None => (time, 0),
+    };
+    let mut parts = hms.split(':');
+    let h: i64 = parts.next()?.parse().ok()?;
+    let mi: i64 = parts.next()?.parse().ok()?;
+    let s: i64 = parts.next()?.parse().ok()?;
+    if parts.next().is_some() || h > 23 || mi > 59 || s > 60 || milli > 999 {
+        return None;
+    }
+
+    // Hinnant's `days_from_civil`, the inverse of the `civil_from_days` above:
+    // the same March-based year, so the leap day is again the last day of it.
+    let y = if mo <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y.rem_euclid(400); // 0..=399
+    let mp = if mo > 2 { mo - 3 } else { mo + 9 }; // March = 0
+    let doy = (153 * mp + 2) / 5 + d - 1; // 0..=365
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy; // 0..=146096
+    let days = era * 146_097 + doe - 719_468;
+
+    let secs = days * 86_400 + h * 3600 + mi * 60 + s;
+    u128::try_from(secs).ok().map(|secs| secs * 1000 + milli)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1417,5 +1463,40 @@ mod tests {
             .count();
         assert_eq!(n, 1, "the full file is written when not suppressed");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// `parse_utc_millis` inverts `format_utc_millis` exactly, across leap days and
+    /// century boundaries — and refuses what it cannot read rather than guessing.
+    ///
+    /// The context hook compares parsed trail stamps against file mtimes with a 5 s
+    /// tolerance, so a parser that was off by a day in March would report every
+    /// `focus.json` as written by something other than HRW.
+    #[test]
+    fn parse_utc_millis_inverts_format_utc_millis() {
+        let samples: [u128; 6] = [
+            0,                 // the epoch
+            951_782_400_000,   // 2000-02-29, a leap day in a century leap year
+            951_868_799_999,   // 2000-02-29 23:59:59.999
+            4_107_542_400_000, // 2100-03-01, after a skipped century leap day
+            1_794_355_200_123, // 2026-11-11, with milliseconds
+            1_795_000_000_000, // late 2026
+        ];
+        for ms in samples {
+            let text = format_utc_millis(ms);
+            assert_eq!(parse_utc_millis(&text), Some(ms), "round trip of {text}");
+        }
+        assert_eq!(
+            parse_utc_millis("1970-01-01 00:00:01"),
+            Some(1000),
+            "milliseconds and the UTC suffix are optional",
+        );
+        for bad in [
+            "",
+            "yesterday",
+            "2026-13-01 00:00:00",
+            "2026-11-07T12:00:00",
+        ] {
+            assert_eq!(parse_utc_millis(bad), None, "refused: {bad:?}");
+        }
     }
 }

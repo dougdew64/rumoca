@@ -161,7 +161,7 @@ fn main() {
             "missing, so every Bash call prompts and the context hook cannot run",
             "it is checked in now: `git checkout .claude/settings.json`",
         ),
-        Ok(text) if !text.contains("hrw-context.ps1") => r.line(
+        Ok(text) if !text.contains("target/debug/hrw-context") => r.line(
             Verdict::Fail,
             "project settings",
             "present, but the UserPromptSubmit context hook is gone",
@@ -175,19 +175,26 @@ fn main() {
         ),
     }
 
-    // The hook's own script, which the settings file points at. Checked separately
-    // because the two rot independently: a rename here leaves the settings pointing at
-    // nothing, and PowerShell's failure would arrive as an empty prompt rather than an
-    // error Doug sees.
-    let hook = repo.join("hrw").join("scripts").join("hrw-context.ps1");
+    // The hook's own binary, which the settings file points at. Checked separately
+    // because the two rot independently — and since 2026-11-26 the hook is a BUILT
+    // artifact (`src/bin/hrw-context.rs`), not a checked-in script, so a fresh clone
+    // has none until `cargo build -p hrw` runs. Without it the settings command prints
+    // its own "THE HOOK DID NOT RUN" line, so the failure is loud, but this says so
+    // before the first prompt rather than on it.
+    let hook_name = if cfg!(windows) {
+        "hrw-context.exe"
+    } else {
+        "hrw-context"
+    };
+    let hook = repo.join("target").join("debug").join(hook_name);
     if hook.exists() {
-        r.line(Verdict::Pass, "context hook script", "present", "");
+        r.line(Verdict::Pass, "context hook binary", "built", "");
     } else {
         r.line(
             Verdict::Fail,
-            "context hook script",
-            "hrw/scripts/hrw-context.ps1 is missing; every prompt loses HRW's context",
-            "`git checkout hrw/scripts/hrw-context.ps1`",
+            "context hook binary",
+            "target/debug/hrw-context is not built; every prompt loses HRW's context",
+            "`cargo build -p hrw` (it builds the app and the hook together)",
         );
     }
 

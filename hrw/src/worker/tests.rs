@@ -3526,8 +3526,71 @@ fn keys(value: &serde_json::Value) -> Vec<&str> {
         .unwrap_or_default()
 }
 
-/// The two committed strings that name this machine's workspace root, each one
-/// Rumoca's own rendered message rather than a path HRW chose to publish.
+/// Does `text` name a workspace root — this machine's, or ANY machine's?
+///
+/// `root` is this machine's root and `top_dirs` the workspace's own top-level
+/// directory names (`hrw`, `crates`, …), both already lowercase with `/` separators,
+/// as `text` must be.
+///
+/// **This machine's root alone is not enough, and that was a defect** (found
+/// 2026-11-26, the first run on a second machine). The committed traces are generated
+/// on whichever machine ran `gen_trace`, so on the Fedora XPS the needle was
+/// `/home/…/rumoca` while the traces quote `c:/users/…/rumoca`: the privacy half
+/// checked nothing and the must-fire half failed. So a root is also recognised by its
+/// SHAPE — an absolute path (`/…` or a drive `x:/…`) that continues into one of the
+/// workspace's own top-level directories. Relative paths (`hrw/specimens/…`) and URLs
+/// (`https://…/hrw/…`) are not absolute and do not match.
+fn names_a_workspace_root(text: &str, root: &str, top_dirs: &[String]) -> bool {
+    if text.contains(root) {
+        return true;
+    }
+    // Characters that end a path token in rendered text, JSON-escaped or not.
+    let ends_token = |c: char| c.is_whitespace() || "\"'`[(<,=".contains(c);
+    top_dirs.iter().any(|dir| {
+        let needle = format!("/{dir}/");
+        text.match_indices(&needle).any(|(at, _)| {
+            let start = text[..at].rfind(ends_token).map_or(0, |i| i + 1);
+            let prefix = &text[start..at];
+            let b = prefix.as_bytes();
+            let unix = b.len() > 1 && b[0] == b'/';
+            let drive = b.len() > 2 && b[0].is_ascii_alphabetic() && b[1] == b':' && b[2] == b'/';
+            unix || drive
+        })
+    })
+}
+
+/// The detector finds a root by shape on either OS, and never in a relative path or
+/// a URL — so the test below neither misses another machine's traces nor flags the
+/// repository-relative paths every trace legitimately carries.
+#[test]
+fn names_a_workspace_root_recognises_any_machines_root_and_nothing_else() {
+    let dirs = ["hrw".to_owned(), "crates".to_owned()];
+    let here = "/home/someone/dev/rumoca";
+    for named in [
+        "/home/someone/dev/rumoca", // this machine's, exactly
+        "╭─[c:/users/someone/repos/rumoca/hrw/specimens/x.mo:11:1]", // a Windows root
+        "at /opt/build/rumoca/crates/rumoca-core/src/lib.rs", // another Unix root
+    ] {
+        assert!(
+            names_a_workspace_root(named, here, &dirs),
+            "must name a root: {named}"
+        );
+    }
+    for clean in [
+        "hrw/specimens/x.mo",
+        "https://github.com/someone/rumoca/blob/main/hrw/src/app.rs",
+        "see crates/rumoca-core/src/lib.rs",
+        "/hrw/ alone is not a root",
+    ] {
+        assert!(
+            !names_a_workspace_root(clean, here, &dirs),
+            "must not: {clean}"
+        );
+    }
+}
+
+/// The two committed strings that name a workspace root, each one Rumoca's own
+/// rendered message rather than a path HRW chose to publish.
 ///
 /// A baseline rather than a blanket exemption for `message` and `note`: a *new*
 /// rendered message carrying a path should fail and be justified, not be waved
@@ -3551,9 +3614,11 @@ const RENDERED_MESSAGES_NAMING_THE_ROOT: [(&str, &str); 2] = [
 ///
 /// So this one asks the privacy question directly — does the published text contain
 /// the root at all — and is therefore indifferent to which key, shape or nesting a
-/// path arrives under. **The needle is derived from `CARGO_MANIFEST_DIR`**, never
-/// written down: this repository is public, and a test that hardcoded the account
-/// name would be the thing it is checking for.
+/// path arrives under. **The needles are derived — this machine's root from
+/// `CARGO_MANIFEST_DIR`, and any other machine's by shape from the workspace's own
+/// top-level directories** (`names_a_workspace_root`) — never written down: this
+/// repository is public, and a test that hardcoded the account name would be the
+/// thing it is checking for.
 ///
 /// # What a failure means
 ///
@@ -3573,6 +3638,20 @@ fn no_committed_trace_mentions_the_workspace_root() {
     assert!(
         root.len() > 3,
         "the workspace root came out as {root:?}, so this check has no needle",
+    );
+    let workspace = manifest.parent().expect("the crate directory has a parent");
+    let top_dirs: Vec<String> = std::fs::read_dir(workspace)
+        .expect("the workspace root is readable")
+        .flatten()
+        .filter(|e| e.path().is_dir())
+        .map(|e| e.file_name().to_string_lossy().to_lowercase())
+        .filter(|name| !name.starts_with('.'))
+        .collect();
+    assert!(
+        ["hrw", "crates"]
+            .iter()
+            .all(|d| top_dirs.iter().any(|t| t == d)),
+        "the shape needle needs the workspace's own directories, found {top_dirs:?}",
     );
 
     let mut offenders: Vec<String> = Vec::new();
@@ -3621,7 +3700,8 @@ fn no_committed_trace_mentions_the_workspace_root() {
                         // Separators are mixed in these names and case can differ
                         // between halves joined by different code, so compare the
                         // same normalized form the needle is in.
-                        if s.replace('\\', "/").to_lowercase().contains(&root) {
+                        let normalized = s.replace('\\', "/").to_lowercase();
+                        if names_a_workspace_root(&normalized, &root, &top_dirs) {
                             let here = format!("{shown}: {key}");
                             if RENDERED_MESSAGES_NAMING_THE_ROOT
                                 .iter()
@@ -3647,7 +3727,7 @@ fn no_committed_trace_mentions_the_workspace_root() {
     offenders.dedup();
     assert!(
         offenders.is_empty(),
-        "{} committed trace string(s) name this machine's workspace root \u{2014} this \
+        "{} committed trace string(s) name a workspace root \u{2014} this \
          repository is public, and a committed trace must be checkable on another \
          machine:\n  {}",
         offenders.len(),
