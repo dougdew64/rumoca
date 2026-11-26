@@ -600,6 +600,14 @@ the next phase touches — is procedure and lives there.
 > `upstream/main` was **116** commits past our base, and **8 crate files** were changed on both
 > sides. Waiting is not free.
 >
+> **THE 11-27 BACKSTOP IS DEFERRED FOR v0.11.0 — Doug's decision, 2026-11-26.** Step 0 ran that
+> day: no tag, `upstream/main` **285** commits past our base, **17** crate files changed on both
+> sides — but release PR **#755 (0.11.0)** was open, blocked only on review and 5 failing checks.
+> So: **wait for the `v0.11.0` release and rebase onto its tag** — Doug: *"We will wait for the
+> v0.11.0 release."* **No fallback date**; do not invent one, and never rebase onto the unmerged
+> `release/0.11.0` branch. **D3 is probably fixed upstream** — #746, already on
+> `main`, per the release's `95490bafe` — unverified until step 3c re-runs our reproduction.
+>
 > **No commit mixes `crates/` with `hrw/`, and it must stay true** — that is what keeps the
 > instrumentation a clean cherry-pick. *(Do not spell the commit count here; it rots.)*
 >
