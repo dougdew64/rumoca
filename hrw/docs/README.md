@@ -81,6 +81,7 @@ on a tab showing 48 equations.
 |---|---|
 | [`running-things.md`](running-things.md) | **Procedure, not rules.** Gate commands and what each suite protects, the notebook content check, long-run safety, and the diagnostic tells for a hung or slept run. Split out of `CLAUDE.md` on 2026-09-01 under charter Decision 11. |
 | 👤 [`setup-windows.md`](setup-windows.md) | A fresh Windows machine → running HRW → live-trace debugging. |
+| 👤 [`remote-wolfram.md`](remote-wolfram.md) | **Plan, untested:** using this machine's Wolfram / System Modeler from a session on another machine, via the MCP server over SSH. |
 | 👤 [`long-runs.md`](long-runs.md) | The MSL survey and the fidelity sweep, including the retry pass. **Never run the sweep unbounded.** |
 | 👤 [`updating-rumoca.md`](updating-rumoca.md) | Rebasing the `hrw` branch on upstream. |
 | [`writing-a-lab.md`](writing-a-lab.md) | The keyboard-level mechanics of producing a lab — per-kind templates, the `hrw://` wiring a hub lab requires, and the edit/gate loop with its two traps. Split out of [`fixture-labs/README.md`](fixture-labs/README.md) on 2026-09-22 when that file hit its reading ceiling; **what a lab may *claim* stayed there.** |
