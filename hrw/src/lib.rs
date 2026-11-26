@@ -90,6 +90,7 @@ pub mod capture_suite;
 pub mod colors;
 pub mod compile_caches;
 pub mod connection_anim;
+pub mod context_hook;
 pub mod dae_counts;
 pub mod dae_expr_format;
 pub mod diagnostics;

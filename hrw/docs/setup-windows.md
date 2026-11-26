@@ -251,6 +251,12 @@ honest correction is that reaching for a scripting language to edit code was the
 things a session needs — the **permission allowlist** and the **`UserPromptSubmit` context hook** —
 and since 2026-08-30 `.gitignore` re-includes it, so both arrive with a checkout.
 
+**But the hook is a BUILT binary since 2026-11-26**, `target/debug/hrw-context` (source
+`src/bin/hrw-context.rs`, logic in `src/context_hook.rs`), so it exists only after step 4's
+`cargo build -p hrw`, which builds it alongside the app. It replaced a PowerShell script that
+could not run on Linux. Before the first build every prompt carries a tagged *"THE HOOK DID NOT
+RUN"* line instead of HRW's context — loud, not silent.
+
 **It did not always, and the reason it changed is worth keeping.** Upstream Rumoca ignores
 `.claude/` wholesale, so this file was per machine and this section used to be a recipe for
 recreating it by hand. Doug reported the allowlist's absence as real friction while running labs:
@@ -345,8 +351,35 @@ Two things it cannot carry, both deliberately outside the repository:
   personal, so it never goes in this public repository. A session on the other machine works
   from the repository alone unless the folder is copied across by hand.
 
-*(A Linux section was drafted here on 2026-11-16 for a Fedora laptop and withdrawn the same day:
-HRW has never been built on Linux, and the plan to try was cancelled.)*
+## On Linux — Fedora Workstation, first done 2026-11-26
+
+**HRW builds and runs on the Dell XPS** (Fedora 45 Workstation, Wayland). The window is
+responsive, which WSL2 never was — the reason HRW moved to Windows-only builds in the first
+place. *(A Linux section drafted on 2026-11-16 from reading the code was withdrawn the same day;
+this one is what actually happened.)*
+
+1. **Rust:** rustup into the home directory, no sudo:
+   `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y`, then a new shell.
+   The pinned nightly installs on first build. For rust-analyzer, as on Windows:
+   `rustup component add rust-src --toolchain stable`.
+2. **No extra system packages were needed.** The stock Workstation install already had `gcc`,
+   `pkg-config`, `openssl-devel` and `libX11-devel`; the first `cargo build -p hrw` succeeded
+   (about 10 minutes from cold).
+3. **The MSL**, from the release rather than another machine:
+   `gh release download v4.1.0 -R modelica/ModelicaStandardLibrary -p 'ModelicaStandardLibrary_v4.1.0.zip'`
+   — its top level is already step 3's layout, so unzip it as `hrw/vendor/msl/`.
+4. **The bridge extension:** step 7's `npm` commands unchanged, then a symlink instead of the
+   junction:
+   `ln -sfn "$PWD" ~/.vscode/extensions/dougdew64.hrw-debugger-bridge-0.1.0`.
+
+**Not yet done on Linux:** live trace debugging (step 6's `cppvsdbg` is Windows-only, so
+`launch.json` needs a CodeLLDB or `cppdbg` configuration), and `scripts/oracle.wls`, which needs
+a Wolfram kernel — the plan is to reach the Windows machine's, [`remote-wolfram.md`](remote-wolfram.md).
+
+**The full gate is green on Linux** (1073 tests, 2026-11-26). The first run found one test
+defect, not a Linux one: `worker::tests::no_committed_trace_mentions_the_workspace_root` looked
+only for *this* machine's root, while the committed traces quote the machine that generated them.
+It now also recognises any machine's root by shape (`names_a_workspace_root`).
 
 
 ## Using it
