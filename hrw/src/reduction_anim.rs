@@ -27,9 +27,12 @@
 //! already-completed report into the frame channel on a timer would be **a recording
 //! wearing a live label**, the fiction this repository has removed twice.
 //!
-//! **The seam that makes it real is ours and is additive**: `watch_prepare_for_solve`
-//! and the `ReductionWatcher` trait in `rumoca-phase-structural`, observation-only and
-//! committed separately from `hrw/` so an upstream cherry-pick stays clean. Before it
+//! **The seam that makes it real is ours and is additive**: since 2026-11-27,
+//! `preparation_trace::set_live_listener` in `rumoca-phase-structural`, which hands each
+//! reduction record of solve lowering's real preparation over as it happens
+//! (`live_trace::spawn_reduction_live`); before that, `watch_prepare_for_solve`, which
+//! reduced the raw DAE. Observation-only, and committed separately from `hrw/` so an
+//! upstream cherry-pick stays clean. Before any seam
 //! existed, `start_live` returned `None` unconditionally and this pane's Debug button
 //! armed a breakpoint that reported nothing — the same symptom PreLowering had, but for
 //! the opposite reason: the seam here was merely *private*, not absent. `CLAUDE.md`
@@ -139,7 +142,9 @@ impl ReductionAnimation {
     /// Run reduction on a worker thread and step its records as they arrive.
     ///
     /// **A real live session since 2026-11-04**, when `watch_prepare_for_solve` landed
-    /// in `rumoca-phase-structural`. It returned `None` unconditionally before that,
+    /// in `rumoca-phase-structural` (replaced 2026-11-27 by the preparation trace's live
+    /// listener, so the session watches the run that simulates). It returned `None`
+    /// unconditionally before that,
     /// because the only crate-external surface handed back a finished report and
     /// replaying one on a timer would have been a recording wearing a live label.
     ///

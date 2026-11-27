@@ -174,7 +174,7 @@ rather than leaving you to notice.
 
 Two kinds of nothing, then. It is worth establishing both before the next station, so that *"the
 counts did not move"* does not become your test for whether anything happened — because in
-Station 5 it will be wrong.
+Station 5 a model loses its only state while its equation count stays exactly where it was.
 
 ---
 
@@ -234,39 +234,47 @@ with the definition next to it.
 `Drivetrain` is a motor, an ideal gear, a shaft and a compliant mount: nine states, 97 equations,
 and a rank deficiency of 4.
 
-> **Predict.** Nine states will become five. Two parts to this one.
+> **Predict.** Nine states will become three. Two parts to this one.
 >
-> **(a)** The system has 97 equations before reduction. How many after?
+> **(a)** The system has 97 equations before reduction. How many after — fewer, the same, or
+> more?
 >
 > **(b)** One of the six passes selects a candidate and the residue afterwards is **the same
 > number** it was before. Was that pass wasted?
 
 [Look — Drivetrain → Index reduction → Summary](hrw://load/Drivetrain/IndexReduction/Summary)
 
-**Expected:** **97 equations before and 97 after.** States fall 9 → 5 and algebraics rise
-88 → 92; the equation count does not move at all.
+**Expected:** **97 equations before and 122 after.** States fall 9 → 3 and algebraics rise
+88 → 119. The tab's `route` ends `reduced to a formal-derivative basis`.
 
-Falsified if: the after-count of equations is anything other than 97.
+Falsified if: the after-count of equations is 97 or fewer.
 
-**Expected:** Pass 3 takes the gear ratio — `phi_a = ratio*phi_b`, in
+**Expected:** Pass 3 opens with two unmatched equations, `f_x[39] (phi_a = ratio*phi_b)` and
+`f_x[54] (flange_a.s = s - L/2)`, and takes the gear ratio — `phi_a = ratio*phi_b`, in
 `IdealGear.mo:16` — with the outcome **`held`** and residue **4 → 4**. Then open pass 4 and read
-its unmatched equation: it is **`f_x[33] (w = der(phi))`**, where pass 3's was
-`f_x[92] (SI.Angle phi)`. Pass 4 then reduces 4 → 2.
+its unmatched equations: **`f_x[33] (w = der(phi))`** and `f_x[54]`. The gear ratio is no longer
+among them. Pass 4 then reduces 4 → 2.
 
-Falsified if: pass 4's unmatched equation is the same one pass 3 reported, or pass 3's outcome is
-anything other than `held`.
+Falsified if: pass 4's unmatched equations are the same ones pass 3 reported, or pass 3's outcome
+is anything other than `held`.
 
 ### What just happened
 
-**(a) Nothing is eliminated.** Demoting a state does not delete its equation — it moves the
-unknown from the integrated set to the algebraic set, and the equation stays to determine it. Four
-states became four algebraic unknowns, which is exactly the `88 → 92` beside it. A phase that
-made systems *smaller* would be a different phase.
+**(a) Nothing is eliminated — the system grows.** Demoting a state does not delete its equation:
+it moves the unknown from the integrated set to the algebraic set, and the equation stays to
+determine it. And the after row is not the reducer's output alone. It is the system lowering
+consumed, after **state selection** — the step that runs next, in the same solve-lowering call —
+rebuilt the reduced system on a *formal-derivative basis*: it keeps the system's equations and
+appends differentiated copies, then picks independent coordinates among them. The 25 extra
+equations come from differentiation done along the way — that basis, and the Holonomic pass of
+Station 5 — and the trace does not split them between the two. A phase that made systems
+*smaller* would be a different phase.
 
 **(b) The residue held and the system still changed.** That is the whole point, and pass 4's
-unmatched equation is the proof: pass 3 was stuck on `SI.Angle phi` and pass 4 is stuck on
-`w = der(phi)`. The gear ratio did not reduce the count of things left to match — it changed
-*which* things they were, and the new one had a candidate the old one did not.
+unmatched equations are the proof: pass 3 was stuck on the gear ratio `phi_a = ratio*phi_b`, and
+pass 4 is stuck on `w = der(phi)` instead. Taking the gear ratio did not reduce the count of things
+left to match — it changed *which* things they were, and the new one had a candidate the old one
+did not.
 
 So the search is not hill-climbing on a number. A pass that holds is accepted in the Direct lane
 precisely because *held* is progress on something the residue cannot see.
@@ -287,51 +295,58 @@ before the search and advances one record at a time:
 
 ## Station 5 — Two lanes, and one of them sees what the other cannot
 
-`CapacitorLoop` is a capacitor straight across an ideal voltage source. One state. It is the
-model [matching](hrw://lab/matching) left structurally singular in its Station 3.
+Stay on `Drivetrain`. Station 4 followed its search to pass 4; follow it to the end.
 
-> **Predict.** The Direct lane searches first and finds **nothing** — zero candidates in both of
-> its proof groups. Does that make this system irreducible?
+> **Predict.** At pass 5 the Direct lane searches and finds **nothing** — zero candidates in both
+> of its proof groups, at residue 2. Does that make this system irreducible?
 
-[Look — CapacitorLoop → Index reduction → Summary](hrw://load/CapacitorLoop/IndexReduction/Summary)
+[Look — Drivetrain → Index reduction → Summary](hrw://load/Drivetrain/IndexReduction/Summary)
 
-**Expected:** two passes. Pass 1 is the Direct lane with `direct_admissible: 0 candidates` and
-`direct_conditional: 0 candidates` — *nothing to try*. Pass 2 is the **Holonomic** lane, which
+**Expected:** pass 5 is the Direct lane at residue 2, with `direct_admissible: 0 candidates` and
+`direct_conditional: 0 candidates` — *nothing to try*. Pass 6 is the **Holonomic** lane, which
 finds **2**, and its first attempt **sorts** the system, on
 
 ```text
-hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/TwoPin.mo:10
-    v = p.v - n.v
+hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGearR2T.mo:9
+    (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s - internalSupportT.s)
 ```
 
-Falsified if: the Direct lane discovers any candidate, or the system is not admitted.
-
-> **Now the part Station 2 warned you about.** Look at the before/after grid.
-
-**Expected:** **every count is identical** — 1 state, 13 algebraics, 14 equations, both rows. And
-the manifold column reads **1** where the before row has an em dash.
-
-Falsified if: any of the three counts differs across the grid.
+Falsified if: pass 5's Direct lane discovers any candidate, or pass 6 is not the Holonomic lane.
 
 ### What just happened
 
-Reduction admitted a system it changed without resizing. **If the counts had been your test for
-whether anything happened, you would have concluded nothing did** — and the pane says otherwise in
-a sentence, because that conclusion is the one worth preventing.
-
-What it added is a **manifold constraint**: a statement that the reduced system's states are not
-free to wander, but must stay on the surface the original constraint describes. One state, one
-constraint, the same 14 equations — and a matching that now completes.
-
 **Why the Direct lane could not see it.** The Direct lane looks for a state that some equation
-*defines* outright, and demotes it. `v = p.v - n.v` is not that shape: it relates three
-quantities with no single one of them being defined by the others in a way reduction can take
-directly. The Holonomic lane looks for the other shape — a constraint among coordinates that can
-be differentiated into a statement about rates — which is what this is.
+*defines* outright, and demotes it — `w = der(phi)` in pass 4 is that shape. The rack-and-pinion's
+equation is not: it ties a *rotation* to a *translation* through a ratio, with no single quantity
+defined by the others in a way reduction can take directly. The Holonomic lane looks for the other
+shape — a constraint among positions that can be differentiated into a statement about rates —
+which is what this is.
 
-Two lanes, alternating as a fixed point until neither can move. `Drivetrain` ends the same way:
-its first five passes are the Direct lane, which stalls at residue 2, and its sixth is the
-Holonomic lane taking the rack-and-pinion in `IdealGearR2T.mo:9` and sorting what was left.
+Two lanes, alternating as a fixed point until neither can move: five Direct passes stall at
+residue 2, and one Holonomic pass sorts what was left.
+
+### And the warning from Station 2
+
+`CapacitorLoop` is a capacitor straight across an ideal voltage source — one state, and the model
+[matching](hrw://lab/matching) left structurally singular in its Station 3.
+
+> **Predict.** Reduction takes one pass here. Look only at the equation counts before and after:
+> could you tell from them whether anything happened?
+
+[Look — CapacitorLoop → Index reduction → Summary](hrw://load/CapacitorLoop/IndexReduction/Summary)
+
+**Expected:** one pass, the Direct lane, which finds 2 candidates and sorts on its first attempt,
+on `TwoPin.mo:10`, `v = p.v - n.v`. In the before/after grid, **14 equations both sides** — but
+states go **1 → 0** and algebraics **13 → 14**, and the tab note ends *integrates 0 state
+coordinate(s)*.
+
+Falsified if: the equation counts differ, or the state count after is not 0.
+
+**If the equation count had been your test for whether anything happened, you would have
+concluded nothing did** — and the model lost its only state. The capacitor's voltage is pinned by
+the ideal source, so `v = p.v - n.v` *defines* it, and the Direct lane demotes it: a capacitor
+across an ideal source has nothing left to integrate. The simulation agrees — it runs, and `C.v`
+sits at the source's 5 V throughout.
 
 ---
 
@@ -352,13 +367,17 @@ and the second differentiation is what brings `lambda` within reach.
 
 [Look — CartesianPendulum → Index reduction → Summary](hrw://load/CartesianPendulum/IndexReduction/Summary)
 
-**Expected:** not admitted, stopped `singular` at residue 2, and **no reduced side** — the after
-row is em dashes. Three passes, alternating Direct → Holonomic → Direct. The Direct lane's two
-groups report **0** candidates every time; the **Holonomic lane discovers 1**, and there is
-**exactly one attempt record**, which refuses with `would_create_vacuous_residual`.
+**Expected:** the reducer's outcome is not admitted, `singular` at residue 2. Three passes,
+alternating Direct → Holonomic → Direct. The Direct lane's two groups report **0** candidates
+every time; the **Holonomic lane discovers 1**, and there is **exactly one attempt record**,
+which refuses with `would_create_vacuous_residual`.
 
 Falsified if: the Direct lane discovers anything, or the attempt count is not one, or the refusal
-is any other reason, or an after row has numbers in it.
+is any other reason.
+
+**And yet the after row has numbers in it** — 2 states, 11 algebraics, 13 equations — and the
+`route` reads `singular system recovered via formal derivatives`. Hold that; the last part of
+this station is what it means.
 
 ### What just happened
 
@@ -379,7 +398,7 @@ algebra, not the search.
 
 Look at where the diagnosis comes from, because it is the same pair you found by hand:
 
-[Point at the raw system's error](hrw://stage/IndexReduction/Tree/node/before.error)
+[Point at the simplified system's error](hrw://stage/IndexReduction/Tree/node/before.error)
 
 **Expected:** `rank_deficiency: 1`, `unmatched_equations: ["f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)"]`,
 `unmatched_unknowns: ["lambda"]`.
@@ -400,18 +419,22 @@ and the reduction then confirms the substitution route has no move for it.
 
 Falsified if: the run fails, or the state count is 4.
 
-**Two states, from a model whose DAE has four.** The index came down — just not here. Rumoca
-v0.10.4 reduces this model in the *next* phase: `rumoca-phase-solve`'s **state selection** picks
-independent coordinates on the constraint manifold instead of differentiating in place. The rod
-says the point has one degree of freedom, so one coordinate and its rate suffice, and the chart it
-takes is `{y, der(y)}` — the same pair System Modeler selects.
+**Two states, from a model whose DAE has four.** The index came down — just not by this reducer.
+The reducer runs *inside* `rumoca-phase-solve`'s **state selection**, in the same solve-lowering
+call, and state selection took its refusal and routed the model through **formal derivatives**:
+it keeps the system's equations, appends differentiated copies of them as new rows and unknowns,
+and then picks an independent set of coordinates among the result. That is the after row's 13
+equations. The rod says the point has one degree of freedom, so one coordinate and its rate
+suffice, and the chart it takes is `{y, der(y)}` — the same pair System Modeler selects.
 
-**Changing coordinates and differentiating the constraint are two routes to index 1, and this
-model separates them cleanly.** Differentiate-and-substitute is the textbook route and it is the
-one that goes vacuous here. Choosing a chart never rewrites the constraint at all, so there is
-nothing to drift: compare the two in the corpus and the rod length holds to **4.6e-12** here
-against **2.9e-06** for `StabilizedPendulum`, which damps a twice-differentiated constraint by
-hand. Six orders of magnitude, same physics, both right.
+**Substituting the differentiated constraint in place and keeping it beside its derivatives are
+two routes to index 1, and this model separates them cleanly.** Differentiate-and-substitute is
+the textbook route and it is the one that goes vacuous here. The formal-derivative route keeps the
+original constraint `x² + y² = L²` in the system rather than replacing it. Compare the two in the
+corpus and the rod length holds to **4.6e-12** here against **2.9e-06** for
+`StabilizedPendulum`, which damps a twice-differentiated constraint by hand — six orders of
+magnitude, same physics, both right. *(That keeping the constraint is why the drift is so small is
+a reading of the code's structure; the trace shows the two numbers, not the cause.)*
 
 ### The thing to carry out of this station
 
@@ -451,7 +474,8 @@ assemble by opening two sections and comparing a string. If that reads as arithm
 as insight, the station has failed at the thing it exists for and I want to know.
 
 **Whether the two-lane structure means anything to you yet.** The lab shows the Direct lane
-stalling and the Holonomic lane finishing, twice, and explains the shapes they look for in a
+stalling and the Holonomic lane finishing once, in `Drivetrain`, and the Holonomic lane
+refusing once, in the pendulum, and explains the shapes they look for in a
 paragraph. It does not show you *why* those are the two shapes, because that is the Pantelides
 material and this lab deliberately stops at the boundary.
 
@@ -460,11 +484,12 @@ material and this lab deliberately stops at the boundary.
 6's reading is calibrated rather than inferred, and `the-oracle.md` is still the lab for repeating
 the gesture yourself.
 
-**What this lab does NOT show is the route that actually reduces the pendulum.** Station 6 reports
-that state selection happened and what it produced, because that is all the compiler publishes:
-`rumoca-phase-solve::state_selection` is a private module with no observation seam, so there is no
-search to step through the way Stations 2-5 step through this one. A lab for *choosing coordinates
-on a manifold* is owed and cannot be written yet.
+**What this lab does NOT show is the route that actually reduces the pendulum, step by step.**
+State selection's *decisions* are observed — the route it took and what it integrates come from
+`rumoca_phase_solve::preparation_trace`, which is where the tab's `route` and `integrated` are
+read — but its search is not stepped, so there is nothing to step through the way Stations 2-5
+step through the reducer's. A lab for *choosing coordinates on a manifold* is owed and cannot be
+written yet.
 <!-- unbuilt: rumoca_phase_solve::watch_state_selection -->
 
 ---

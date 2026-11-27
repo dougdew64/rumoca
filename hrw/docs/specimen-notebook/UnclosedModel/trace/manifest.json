@@ -2,7 +2,7 @@
   "model": "UnclosedModel",
   "specimen": "specimens/UnclosedModel.mo",
   "specimen_fnv1a": "673623c1cb3db0a9",
-  "rumoca_rev": "75f844c42",
+  "rumoca_rev": "0ad078cef",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

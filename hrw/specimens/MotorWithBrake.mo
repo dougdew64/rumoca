@@ -18,7 +18,8 @@ model MotorWithBrake "DC motor with speed-limit events"
   //   DAE construction — states (i, phi, w), algebraics (constraint forces),
   //                      parameters, residual-form equations
   //   Index reduction  — the EMF's internal support creates a position-level
-  //                      constraint, producing index > 1; Pantelides demotes it
+  //                      constraint, producing index > 1; Rumoca's reducer (not
+  //                      Pantelides) demotes it in one Direct round, 4 states to 3
   //   Structural       — structurally singular before reduction (expected for
   //                      high-index); nontrivial matching and BLT after
   //   Initialization   — start values for electrical + mechanical states

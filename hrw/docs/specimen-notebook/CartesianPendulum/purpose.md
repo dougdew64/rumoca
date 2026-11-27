@@ -13,10 +13,10 @@ x ^ 2 + y ^ 2 = L ^ 2;          // the constraint
 
 ## Why this specimen exists
 
-**Every other constraint in the corpus is an *alias*** — one variable equal to another times a
-constant — which substitution removes without differentiating anything. `Drivetrain`'s nine
-states fall to three that way, and the lab written from it could not show differentiation
-because the model never needs it.
+**Every other constraint in the corpus is *linear*** — an alias, or one variable equal to another
+times a constant — which the reducer's lanes accept. `Drivetrain`'s reducer sorts its nine states
+in six rounds, and state selection then integrates three (route: *reduced to a formal-derivative
+basis*).
 
 **`x² + y² = L²` cannot be substituted away.** It is nonlinear in two states at once, so the only
 route to a solvable system is to differentiate it — twice — until the constraint speaks about
@@ -62,15 +62,17 @@ two variables is not a direct definition of anything.
 So the **Index Reduction payload is a refusal, and the model simulates anyway.** That is not a
 contradiction and it is the most instructive thing this specimen now does.
 
-*The tab itself says so as of 2026-11-05: its note reads* "this reducer's search stayed singular;
-solve lowering selected 2 independent coordinate(s) on the constraint manifold and lowered the
-model", *and the stage's outcome is `Ok`. The rounds and the refusal are still there in the pane —
-what changed is that the stage no longer passes one phase's refusal off as the compiler's verdict.*
+*The tab itself says so: its note reads* "reducer stayed singular; singular system recovered via
+formal derivatives — integrates 2 state coordinate(s)", *and the stage's outcome is `Ok`. Since
+2026-11-26 the reducer's refusal and state selection's recovery are one observed run of solve
+lowering, shown together; the refusal is still there in the pane, but no longer passed off as the
+compiler's verdict.*
 
-**Solve lowering carries it, by changing coordinates instead of differentiating in place.**
-`rumoca-phase-solve`'s state selection — *"static independent coordinates for structurally
-constrained state manifolds"* — constructs formal derivatives and picks a chart on the manifold.
-The lowered system has exactly **one** `State` declaration:
+**State selection carries it, by differentiating formally rather than substituting in place.** On
+the reducer's refusal, `rumoca-phase-solve`'s state selection takes the route it names *singular
+system recovered via formal derivatives*: it constructs formal derivatives of the system and
+selects an independent basis (`state_selection.rs`, `recover_singular_via_formal`). The lowered
+system has exactly **one** `State` declaration:
 
 ```text
 $state_coordinates     State      shape [2]     <- the two integrated scalars
@@ -106,22 +108,24 @@ simulating correctly. If a pane and a trajectory disagree, the trajectory is the
 2026-11-04; the **stage outcome underneath it was not**, so for a day this specimen showed *Reduced
 by state selection* in green under a tab painted red. Doug found it by loading the model. One fact
 had two homes — the pane and the label — and fixing the home you are looking at feels like fixing
-the fact. Both now read the same `state_scalar_count` from solve lowering, which is the only
-arrangement in which they cannot drift apart again.
+the fact. Both now come from the one real run of solve lowering — the outcome from whether it
+lowered, the banner's count from its `state_scalar_count` — which is the only arrangement in which
+they cannot drift apart again.
 
-**Reduction is not the only way down from high index.** Differentiate-and-substitute is the
-textbook route and it is the one that fails here. Choosing independent coordinates on the
-constraint manifold reaches index 1 without ever rewriting the constraint — the same destination
-by a different road, and the road a commercial tool takes too.
+**The reducer is not the only way down from high index.** Differentiate-and-substitute in place
+is the textbook route and it is the one that fails here. Differentiating formally and selecting an
+independent basis reaches index 1 without substituting the differentiated constraint back into
+itself — the same destination by a different road, and the kind of road a commercial tool takes
+too.
 
 So the corpus now spans the full range:
 
 | specimen | constraint kind | what reduction does |
 |---|---|---|
 | `BouncingBall` | none | nothing, correctly — already index-1 |
-| `BenchActuator` | alias | 1 differentiation, 4 states → 3 |
-| `Drivetrain` | aliases at scale | 6 differentiations, 9 states → 3 |
-| **`CartesianPendulum`** | **nonlinear** | **the reducer refuses; state selection takes a chart, 4 states → 2** |
+| `BenchActuator` | alias | 1 reduction round, 4 states → 3 |
+| `Drivetrain` | aliases at scale | 6 reduction rounds, 9 states → 3 |
+| **`CartesianPendulum`** | **nonlinear** | **the reducer refuses; state selection recovers it, 4 → 2** |
 
 **That last row is the one that makes the phase legible**, because it is the only specimen where
 the two routes separate: every other row is rescued by the reducer, and this one is not rescued by
@@ -151,7 +155,7 @@ establish are in [`../../upstream-issues.md`](../../upstream-issues.md).
 
 **"Rumoca implements a narrower strategy" was an adjudicated fact, and v0.10.4 retired it.** The
 reducer *is* still narrower — it refuses this constraint — but the compiler is not, because state
-selection reaches index 1 without it.
+selection, called by the same preparation, reaches index 1 when the reducer does not.
 
 **Charter §4.3 now passes for this specimen, and that is a change of status worth recording.** It
 was authored to hold a disagreement: it ran in one toolchain and not the other. Both run it now,

@@ -12,13 +12,14 @@ depends on the solution.
 
 That is genuinely hard, and it is worth being precise about why. The integrator advances in steps.
 If the bounce happens between two steps, integrating straight through it produces nonsense — the
-ball ends up below the floor, moving down. So the solver must detect the instant, stop there,
+ball ends up below the floor, moving down. So the solver must detect the instant, halt there,
 apply the change, and restart. The Events tab shows what can change and what has to be watched.
 It is not a phase of its own: DAE construction records all of it, and the tab reads that
-record. Solve lowering later turns it into code the solver runs.
+record — and, under `lowered`, what solve lowering made of it in the run that simulates.
 
-Run [initialization](hrw://lab/initialization) first. Every count below is read from a generated
-trace, so if one disagrees with your screen, the lab is wrong and I want to know.
+Run [solve-lowering](hrw://lab/solve-lowering) first; this is the last lab in the chain. Every
+count below is read from a generated trace, so if one disagrees with your screen, the lab is wrong
+and I want to know. The counts are in the tree's `summary`, under Rumoca's own names.
 
 ---
 
@@ -31,106 +32,101 @@ trace, so if one disagrees with your screen, the lab is wrong and I want to know
 
 [Look — BouncingBall → Events](hrw://load/BouncingBall/Events)
 
-**Expected:** the summary reads `condition_equations: 1`, `relations: 1`,
-`discrete_real_updates: 1`, and `synthetic_root_conditions: 0`.
+**Expected:** `summary` reads `conditions: 1`, `relations: 1`, `roots: 1` and
+`event_actions: 1`. The one relation is `h <= 0`, and the one event action has kind
+`reinitialize` and detail `v := -(e*pre(v))`.
 
-Falsified if: the discrete update count is 0, or no relation is reported.
+Falsified if: `event_actions` is 0, or no relation `h <= 0` is listed.
 
-*What just happened.* The `when` clause was taken apart into three separate things, and the
-split is the phase's whole output:
+*What just happened.* The `when` clause was taken apart into separate things, and the split is
+the record's whole content:
 
 - a relation — the comparison that decides, `h <= 0`;
-- a condition equation — that relation given a name the solver can evaluate every step;
-- a discrete update — what changes when it fires, here the reversal of `v`.
+- a root — that relation, watched for the instant it crosses, so the solver can find the time;
+- an event action — what happens when it fires, here `reinit` reversing `v`.
 
-The condition is not the action. The solver needs to evaluate the condition continuously, to
-find *when* it flips; it needs the action only once, at that instant. Keeping them apart is what
+The condition is not the action. The solver needs to watch the root continuously, to find *when*
+the relation flips; it needs the action only once, at that instant. Keeping them apart is what
 lets the integrator search for the crossing time without applying anything.
 
 ---
 
-## Station 2 — A model with none, and what the pane says
+## Station 2 — A model with no `when`, and what the pane says
 
 `RcCircuit` has no `when` clauses at all.
 
-> **Predict.** What will the Events stage show for a purely continuous model?
+> **Predict.** What will the Events tab show for a model with no `when`?
 
 [Look — RcCircuit → Events](hrw://load/RcCircuit/Events)
 
-**Expected:** `condition_equations: 0`, `relations: 0`, and both update counts 0. The note
-reads *"no events — this model is a smooth (continuous) system."*
+**Expected:** not an empty record. `summary` reads `relations: 1`, `roots: 1` and
+`event_actions: 1`. The relation is `1 + R.alpha*(R.T_heatPort - R.T_ref) >= …` (a tiny
+positive number), and the event action has kind `assert` with detail
+`"Temperature outside scope of model!"`.
 
-Falsified if: the pane is blank, or reports a condition equation.
+Falsified if: `relations` is 0, or no `assert` action is listed.
 
-*What just happened.* Absence is stated, not left blank — the pane says the model is smooth
-rather than showing an empty list you would have to interpret. That distinction has been earned:
-an empty pane and a broken pane look identical.
+*What just happened.* You wrote no event, and the model still has one to watch. It comes from the
+MSL `Resistor`, whose temperature-dependent resistance carries an `assert` that the temperature
+stays in range. An assertion is a condition that can become false mid-run, so Rumoca records it,
+watches its relation as a root, and keeps the assert as the action to take if it fires. The
+relation is over `R.T_heatPort`, the Resistor's heat port, which nothing in your model mentions.
 
-One number here looks wrong and is not. `synthetic_root_conditions` reads 1 for this model,
-which has no `when` clause anywhere.
-
-It counts roots Rumoca had to *synthesise* because no relation already supplied one. Every
-specimen containing an MSL `Resistor` reports exactly 1, and no specimen without one reports
-any — and in `RcCircuit` the synthesised root is a subtraction over `R.T_heatPort`, the
-Resistor's heat port, which nothing in your model mentions. That is why `equations_f_c` and
-`relations` are empty here and the count is still 1: the two collections hold different things,
-and both feed root-finding.
-
-*(Until 2026-09-02 this lab said the number "does not fit" and pointed at an upstream issue.
-Both were wrong, and the fault was HRW's: the pane published Rumoca's `synthetic_root_conditions`
-under the name `zero_crossing_conditions`, which reads as a claim about all zero crossings.
-`BouncingBall` then showed 0 — a bouncing ball apparently detecting no contact. It detects it,
-through `relations`. The upstream entry is retracted; a renamed field is a claim, and this one
-was ours.)*
+*(Until 2026-09-02 this lab said a number here "does not fit" and pointed at an upstream issue.
+The fault was HRW's: the pane published a Rumoca count under a name of its own,
+`zero_crossing_conditions`, which read as a claim about all zero crossings. The summary now
+publishes Rumoca's own names, and the relation is listed, so there is nothing to explain away.)*
 
 ---
 
 ## Station 3 — A model with several
 
-`GearWithBrake` is a drivetrain whose brake engages and releases.
+`GearWithBrake` is a drivetrain whose brake engages and releases:
 
-> **Predict.** More conditions than `BouncingBall`, or the same shape scaled up?
+```modelica
+when load.w > maxSpeed then braking = true;
+elsewhen load.w < maxSpeed * 0.5 then braking = false;
+end when;
+brakeTorque.tau = if braking then (if load.w > 0 then -brakeForce else brakeForce) else 0;
+```
+
+> **Predict.** How many relations, and is what changes a *number* or a *mode*?
 
 [Look — GearWithBrake → Events](hrw://load/GearWithBrake/Events)
 
-**Expected:** `condition_equations: 4`, `relations: 4`, `discrete_valued_updates: 1`, and
-`discrete_real_updates: 0`.
+**Expected:** `summary` reads `conditions: 3`, `relations: 3`, `roots: 3`,
+`discrete_value_definitions: 1` and `discrete_real_equations: 0`. The relations are
+`load.w > 0`, `load.w > maxSpeed` and `load.w < maxSpeed*0.5`.
 
-Falsified if: the counts match `BouncingBall`'s, or no discrete-valued update appears.
+Falsified if: the counts match `BouncingBall`'s, or `discrete_value_definitions` is 0.
 
-*What just happened.* Four conditions for one brake, which is the interesting part. A brake is
-not one comparison: it is stuck or sliding, and sliding in one direction or the other, so the model
-needs several relations to say which regime it is in.
+*What just happened.* Three relations for one brake. One threshold engages it, a lower one
+releases it — two thresholds, so the brake does not chatter on and off at a single speed
+(hysteresis) — and the third decides which way the torque opposes the motion.
 
-And the update is discrete-valued, not discrete-real — a mode flag rather than a number. That
-is the same distinction as Station 1's split, one level up: `BouncingBall` changes a *value* when it
-fires, `GearWithBrake` changes which *equations apply*.
+And what changes is discrete-valued, not discrete-real: the Boolean `braking`, a mode flag rather
+than a number. That is the same distinction as Station 1's split, one level up: `BouncingBall`
+changes a *value* when it fires, `GearWithBrake` changes which *equations apply*.
 
-Four conditions means four things to watch on every step, and each is a potential event time
-the integrator has to locate. This is why event handling dominates the run time of models with
-friction, and why a model that looks small can simulate slowly.
+Three roots means three things to watch on every step, and each is a potential event time the
+integrator has to locate. This is why event handling dominates the run time of models with many
+switches, and why a model that looks small can simulate slowly.
 
 ---
 
 ## What this lab cannot check
 
-Whether Station 2's anomaly is the right thing to include. A lab that names an unexplained number
-risks reading as *"the tool is unreliable"* rather than *"this is a real open question."* It is
-here because you can see the number, and a lab that omitted it would be the less honest choice.
-
-Whether the event counts mean anything without the equations behind them. The pane reports how
-many relations and updates exist, not what they say. `BouncingBall`'s single relation is guessable;
-`GearWithBrake`'s four are not, and this lab does not show them.
+Whether Station 2 reads as a discovery or as noise. An event you did not write is surprising, and
+the lab bets that tracing it to the Resistor's `assert` is worth the surprise.
 
 Whether "the integrator locates the crossing" is believable as described. The mechanism —
-bisection or interpolation on the condition, back up, restart — is asserted in prose and
-demonstrated nowhere, because nothing in HRW shows the solver's step-by-step search.
+bisection or interpolation on the root, back up, restart — is asserted in prose and demonstrated
+nowhere, because nothing in HRW shows the solver's step-by-step search.
 
 ---
 
-## What comes next in the chain
+## Where the chain ends
 
-The compiler now knows everything: states, order, tears, initial values, and what can change
-mid-run. All of it is still expressed in *your names*.
-
-Turning those into memory addresses is [solve-lowering](hrw://lab/solve-lowering).
+The compiler now knows everything: states, order, tears, initial values, memory layout, and what
+can change mid-run. [The pipeline](hrw://lab/the-pipeline) visits every one of those tabs again on
+one model, end to end.

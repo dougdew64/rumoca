@@ -6,9 +6,9 @@ Ten lines of valid Modelica with the final `end UnclosedModel;` removed.
 
 ## What it demonstrates
 
-**Parse is the one phase that genuinely stops.** Everything downstream of a failed parse is
-unreachable, so this specimen shows a stage bundle at its emptiest: **nine of the eleven stages
-have nothing at all**, and each says so rather than rendering blank.
+**Parse is the earliest stop.** Everything downstream of a failed parse is unreachable, so this
+specimen shows a stage bundle at its emptiest: **all eleven compilation stages after Parse have
+nothing at all**, and each says so rather than rendering blank.
 
 That makes it the reference case for *"absence is stated, never filled"* — the rule that came
 out of the 2026-08-04 accuracy work. If a pane ever shows content for this model, the content
@@ -24,9 +24,12 @@ whole idea:
 > diagnostics, structural singularity and over-determined initialization are all **flagged** —
 > recorded, with the artifact still produced and downstream phases still running.
 
-`DimensionMismatch` does not stop at Typecheck; it is flagged there. `UndefinedRef` does not stop
-at Resolve; it is flagged there and stops later, at Flatten. **Parse is the exception**, and this
-specimen is what makes the exception visible.
+**That finding no longer holds, and the correction is the lesson.** It was HRW painting stops as
+flags. On the current build (the corpus outcome matrix, `the_corpus_outcome_matrix_is_unchanged`)
+`UndefinedRef` *fails* at Resolve, `DimensionMismatch`'s flagged Typecheck stops the compile (every
+later tab: *not reached (Typecheck failed earlier)*), and an unbalanced count fails DAE
+construction. What *is* flagged and carried on is a singularity index reduction repairs. Parse is
+simply the earliest stop, and this specimen is what makes it visible.
 
 ## The distinction it anchors
 
@@ -43,5 +46,6 @@ first version of `failure_map` did.
 
 ## Verified
 
-`cargo run -p hrw --example failure_map` — `UnclosedModel` is the only specimen reporting
-`Failed` at Parse, and it reports `Failed` at nine stages in total.
+The corpus outcome matrix row is `X...........`: `UnclosedModel` is the only specimen reporting
+`Failed` at Parse, it reports `Failed` there and nowhere else, and the eleven stages after it are
+not reached.

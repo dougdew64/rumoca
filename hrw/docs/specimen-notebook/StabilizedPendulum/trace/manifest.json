@@ -2,7 +2,7 @@
   "model": "StabilizedPendulum",
   "specimen": "specimens/StabilizedPendulum.mo",
   "specimen_fnv1a": "4fbd1ba1ddce8be0",
-  "rumoca_rev": "75f844c42",
+  "rumoca_rev": "0ad078cef",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

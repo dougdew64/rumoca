@@ -7,7 +7,7 @@
       {
         "source_id": 5617290238699501581,
         "file": "hrw/specimens/IncompatibleConnect.mo",
-        "content_bytes": 1756
+        "content_bytes": 1790
       }
     ]
   },
@@ -29,8 +29,8 @@
         "origin": "source",
         "span": {
           "source": 5617290238699501581,
-          "start": 1557,
-          "end": 1563
+          "start": 1591,
+          "end": 1597
         }
       }
     ],
@@ -44,8 +44,8 @@
           "origin": "source",
           "span": {
             "source": 5617290238699501581,
-            "start": 1557,
-            "end": 1563
+            "start": 1591,
+            "end": 1597
           }
         },
         "attributes": {
@@ -53,16 +53,16 @@
             "local": false,
             "span": {
               "source": 5617290238699501581,
-              "start": 1557,
-              "end": 1563
+              "start": 1591,
+              "end": 1597
             },
             "parts": [
               {
                 "ident": "a",
                 "span": {
                   "source": 5617290238699501581,
-                  "start": 1557,
-                  "end": 1563
+                  "start": 1591,
+                  "end": 1597
                 },
                 "subs": [],
                 "def_id": 99
@@ -71,8 +71,8 @@
                 "ident": "v",
                 "span": {
                   "source": 5617290238699501581,
-                  "start": 1557,
-                  "end": 1563
+                  "start": 1591,
+                  "end": 1597
                 },
                 "subs": [],
                 "def_id": 103
@@ -106,8 +106,8 @@
           "origin": "source",
           "span": {
             "source": 5617290238699501581,
-            "start": 1574,
-            "end": 1580
+            "start": 1608,
+            "end": 1614
           }
         },
         "attributes": {
@@ -115,16 +115,16 @@
             "local": false,
             "span": {
               "source": 5617290238699501581,
-              "start": 1574,
-              "end": 1580
+              "start": 1608,
+              "end": 1614
             },
             "parts": [
               {
                 "ident": "a",
                 "span": {
                   "source": 5617290238699501581,
-                  "start": 1574,
-                  "end": 1580
+                  "start": 1608,
+                  "end": 1614
                 },
                 "subs": [],
                 "def_id": 99
@@ -133,8 +133,8 @@
                 "ident": "i",
                 "span": {
                   "source": 5617290238699501581,
-                  "start": 1574,
-                  "end": 1580
+                  "start": 1608,
+                  "end": 1614
                 },
                 "subs": [],
                 "def_id": 104
@@ -168,8 +168,8 @@
           "origin": "source",
           "span": {
             "source": 5617290238699501581,
-            "start": 1664,
-            "end": 1670
+            "start": 1698,
+            "end": 1704
           }
         },
         "attributes": {
@@ -177,16 +177,16 @@
             "local": false,
             "span": {
               "source": 5617290238699501581,
-              "start": 1664,
-              "end": 1670
+              "start": 1698,
+              "end": 1704
             },
             "parts": [
               {
                 "ident": "b",
                 "span": {
                   "source": 5617290238699501581,
-                  "start": 1664,
-                  "end": 1670
+                  "start": 1698,
+                  "end": 1704
                 },
                 "subs": [],
                 "def_id": 100
@@ -195,8 +195,8 @@
                 "ident": "v",
                 "span": {
                   "source": 5617290238699501581,
-                  "start": 1664,
-                  "end": 1670
+                  "start": 1698,
+                  "end": 1704
                 },
                 "subs": [],
                 "def_id": 105
@@ -285,40 +285,40 @@
           "origin": "source",
           "span": {
             "source": 5617290238699501581,
-            "start": 1557,
-            "end": 1563
+            "start": 1591,
+            "end": 1597
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 5617290238699501581,
-            "start": 1574,
-            "end": 1580
+            "start": 1608,
+            "end": 1614
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 5617290238699501581,
-            "start": 1664,
-            "end": 1670
+            "start": 1698,
+            "end": 1704
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 5617290238699501581,
-            "start": 1557,
-            "end": 1563
+            "start": 1591,
+            "end": 1597
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 5617290238699501581,
-            "start": 1557,
-            "end": 1563
+            "start": 1591,
+            "end": 1597
           }
         },
         {
@@ -327,8 +327,8 @@
           },
           "span": {
             "source": 5617290238699501581,
-            "start": 1557,
-            "end": 1563
+            "start": 1591,
+            "end": 1597
           }
         },
         {
@@ -337,8 +337,8 @@
           },
           "span": {
             "source": 5617290238699501581,
-            "start": 1574,
-            "end": 1580
+            "start": 1608,
+            "end": 1614
           }
         },
         {
@@ -347,8 +347,8 @@
           },
           "span": {
             "source": 5617290238699501581,
-            "start": 1574,
-            "end": 1580
+            "start": 1608,
+            "end": 1614
           }
         }
       ],
@@ -365,8 +365,8 @@
             },
             "span": {
               "source": 5617290238699501581,
-              "start": 1557,
-              "end": 1563
+              "start": 1591,
+              "end": 1597
             }
           }
         }
@@ -380,8 +380,8 @@
             },
             "span": {
               "source": 5617290238699501581,
-              "start": 1574,
-              "end": 1580
+              "start": 1608,
+              "end": 1614
             }
           }
         }
@@ -395,8 +395,8 @@
             },
             "span": {
               "source": 5617290238699501581,
-              "start": 1574,
-              "end": 1580
+              "start": 1608,
+              "end": 1614
             }
           }
         }

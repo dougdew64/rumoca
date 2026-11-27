@@ -15,9 +15,10 @@ reproduces it more accurately from the IR than from a stored copy nothing checks
 Authored for the **flatten** failure path, since MLS §9.3 makes connecting type-incompatible
 connectors an error.
 
-**It does not land there, and that is now the point.** Rumoca accepts the `connect` and the model
-fails later at structural analysis as singular — a misleading diagnosis for what is a wiring
-error. System Modeler 15.0 **rejects** the same source (*"Incompatible types"*), so the specimen
+**It does not land there, and that is now the point.** Rumoca accepts the `connect`; Structural
+flags the system singular, and the compile fails at Solve lowering on that structural proof
+(*structurally singular system: 2 matched out of 3 equations and 3 unknowns*) — a misleading
+diagnosis for what is a wiring error. System Modeler 15.0 **rejects** the same source (*"Incompatible types"*), so the specimen
 is right and Rumoca has a bug: [`docs/upstream-issues.md`](../../upstream-issues.md) #2.
 
 **Keep it exactly as it is.** When Rumoca is fixed it should start failing at flatten, and that

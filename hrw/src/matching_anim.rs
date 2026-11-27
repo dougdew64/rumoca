@@ -196,8 +196,9 @@ impl MatchingAnimation {
     // independent implementation to be had — `maximum_matching` is private and
     // the `*_with_trace` entry points do not exist — and more to the point
     // there is nothing left to cross-check: the animation reads the compile's
-    // own steps through `inspect_structural_report`, so there is one matching
-    // rather than two that might disagree.
+    // own steps, captured inside solve lowering's real preparation
+    // (`worker::preparation`), so there is one matching rather than two that
+    // might disagree.
     //
     // The test's other stated purpose, that the report's JSON round trip
     // preserves row and column order, is covered by `fidelity::check_f2`,
@@ -1149,9 +1150,9 @@ mod tests {
     fn the_frame_sequence_labs_cite_is_pinned() {
         // **The real compile's steps, not a re-derivation over a stored
         // matrix.** This read the committed trace's incidence and re-ran
-        // matching over it; the labs cite what HRW *shows*, which since the
-        // v0.10.0 rebase is `inspect_structural_report`'s own sequence. Pinning
-        // the re-run pinned something no reader ever saw.
+        // matching over it; the labs cite what HRW *shows*, which since
+        // 2026-11-26 is the sequence captured inside solve lowering's real
+        // preparation. Pinning the re-run pinned something no reader ever saw.
         //
         // `SingleInertia` is MSL-free, so no library roots are loaded and this
         // stays out of the slow lane.

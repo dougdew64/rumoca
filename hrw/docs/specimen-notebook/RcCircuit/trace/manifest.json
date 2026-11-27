@@ -1,8 +1,8 @@
 {
   "model": "RcCircuit",
   "specimen": "specimens/RcCircuit.mo",
-  "specimen_fnv1a": "52bcfa3f007682c3",
-  "rumoca_rev": "75f844c42",
+  "specimen_fnv1a": "efe5d20b6c02cf67",
+  "rumoca_rev": "0ad078cef",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

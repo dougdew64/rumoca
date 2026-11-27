@@ -74,8 +74,8 @@ frame would look deliberate and hide it.
 [Index Reduction → Reduction replay, frame 3](hrw://stage/IndexReduction/Animate/frame/3)
 
 **Expected:** the stage switches, the reduction replay opens on the first click, and
-it sits on frame 3 of its own trace. All eight animated views share one `Playback::seek`, so this exercises
-that they are genuinely the same mechanism rather than eight lookalikes.
+it sits on frame 3 of its own trace. All six animated views share one `Playback::seek`, so this
+exercises that they are genuinely the same mechanism rather than six lookalikes.
 
 ## Station 6 — Seek a view that has no animation
 

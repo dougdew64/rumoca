@@ -1,12 +1,13 @@
-# Failure lab — Parse, the only phase that truly stops
+# Failure lab — Parse, the earliest halt
 
 <!-- kind: failure -->
 
 **Specimen:** `UnclosedModel` — ten lines of valid Modelica with its `end` clause removed.
 
-What this lab is for. Every other failure lab in this set shows a phase *reporting* a
-problem and carrying on. This one shows the exception: a phase that stops, leaving nine
-stages with nothing at all. Run it first — the others only make sense against it.
+What this lab is for. The failure labs in this set show where a compile halts and how each
+tab says so. This one is the earliest halt: a phase that fails, leaving the eleven stages
+after it with nothing at all, and no simulation. Run it first — the others only make sense
+against it.
 
 The question to hold: when a pane has nothing to show, how do you tell *"the compiler
 produced nothing"* from *"HRW failed to display something"*? That distinction is the whole
@@ -56,7 +57,9 @@ Not an empty `Resolve` bracket — no bracket at all.
 A phase that did not run does not get a line saying it took 0.0ms. That was a real defect class
 here: until 2026-08-04 the log carried a bracket named *"DAE pipeline"* that no phase
 corresponded to. Brackets are now checked against `StageKind` at every emit, so an invented one
-cannot be printed.
+cannot be printed. *(And until 2026-11-27 this very specimen opened a `Resolve` bracket that
+never closed — Resolve announced, never run. `a_parse_failure_logs_only_the_parse_bracket` now
+holds this station's expectation.)*
 
 ---
 
@@ -69,8 +72,9 @@ Now open a working model and compare.
 **Expected:** the Structural tab is flagged — it says `singular` — and yet Index reduction,
 Initialization and Solve lowering below it all have content.
 
-`Drivetrain` is not broken. It is a healthy specimen whose raw system is singular until index
-reduction demotes a state. The flag is the compiler *narrating*, not refusing.
+`Drivetrain` is not broken. It is a healthy specimen whose simplified system is singular until
+index reduction — six rounds of it — reduces it to three integrated state coordinates. The flag
+is the compiler *narrating*, not refusing.
 
 Hold that against `UnclosedModel`, where the tabs are empty because nothing ran:
 
@@ -80,9 +84,12 @@ Hold that against `UnclosedModel`, where the tabs are empty because nothing ran:
 | Structural | not reached | Flagged `singular` |
 | Solve lowering | not reached | Ok |
 
-Rumoca is a recovering compiler. Almost every problem it finds is recorded while the work
-continues — resolve errors, typecheck diagnostics, singularity, over-determined initialization.
-Parse is the one phase with nothing to recover *to*.
+So a flag and a halt are different things, and the tab colour says which: amber is Rumoca
+reporting something while the work continues, red is where it stopped. A singularity that index
+reduction repairs is carried on. A parse error, a resolve error, a typecheck diagnostic and an
+unbalanced equation count all stop the compile — each failure lab here is one of those — and an
+initial condition the model cannot satisfy stops the *run*, at its first instant. Parse is
+simply the earliest stop, with nothing before it to show.
 
 Measured with `cargo run -p hrw --example failure_map`, which lists where each specimen stops.
 Its first version conflated these two and duly reported four healthy specimens as broken.

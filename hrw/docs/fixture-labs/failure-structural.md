@@ -36,9 +36,10 @@ Two equations, two unknowns. Arithmetic says fine.
 **Expected:** flagged `singular`. The incidence matrix above the blocks shows
 `1/2 matched (rank deficiency 1)`.
 
-Look at the matrix itself. `b`'s column is empty — no equation mentions it. Both equations
-mention only `a`, so maximum matching can pair at most one of them, and `b` is reachable from
-nothing.
+Look at the matrix itself. `b`'s column is empty — no equation mentions it. And the second row
+mentions nothing at all: the Structural tab analyses the system *after* the Simplify tab's
+transforms, and constant folding put `a = 1` into `a = time`, so that row reads
+`0 = 1 - time`. Only `f_x[0]` can be matched, and `b` is reachable from nothing.
 
 Structural rank 1 < 2. This is the cheapest possible demonstration of what matching is
 searching for, and of why a count cannot answer it: the count is blind to *which* unknowns the
@@ -53,17 +54,27 @@ equations touch.
 **Expected:** flagged `singular` here too — the same word — and again no BLT blocks.
 
 But the incidence matrix looks nothing like `TwiceDefined`'s. No column is empty. Every
-unknown is mentioned; the equations are genuinely coupled, and the coupling is the physics of two
-capacitors in a loop.
+unknown is mentioned; the equations are genuinely coupled, and the coupling is the physics of a
+capacitor directly across an ideal voltage source — the source fixes the voltage the capacitor's
+state would otherwise integrate.
+
+[Index reduction](hrw://load/CapacitorLoop/IndexReduction)
+
+**Expected:** Index reduction is not red, and its note reads
+`reducer sorted after 1 round(s); … integrates 0 state coordinate(s)`. Then open
+[TwiceDefined's](hrw://load/TwiceDefined/IndexReduction): flagged, and its note begins
+`preparation failed: DAE structural proof failed`.
 
 | | `TwiceDefined` | `CapacitorLoop` |
 |---|---|---|
 | Cause | an authoring mistake | a modelling structure |
 | Matrix | an empty column | fully populated |
-| Fix | change the equations | index reduction, or accept the loop |
+| Next | the compile fails at Solve lowering | one reduction round repairs it |
 
-Same pane, same word, two different things to do. The matrix is where they separate, and it
-separates them at a glance.
+The repair is the lesson of `index-reduction.md`: a single demotion turns the capacitor's
+voltage from a state into an algebraic unknown, after which nothing is integrated and the model
+simulates. Same pane, same word, two different outcomes. The matrix is where they separate, and
+it separates them at a glance.
 
 ---
 

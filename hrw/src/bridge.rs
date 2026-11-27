@@ -1694,7 +1694,9 @@ impl View<'_> {
 pub(crate) fn phase_source(stage: StageKind) -> Value {
     // (crate directory, the entry point HRW actually calls)
     let (krate, entry) = match stage {
-        StageKind::Parse => ("crates/rumoca-phase-parse", "parse_to_ast"),
+        // The session's own parse of the document — the one the compile reads,
+        // after `expanded_document_source` — not a second parse by HRW.
+        StageKind::Parse => ("crates/rumoca-compile", "Session::update_document"),
         // Resolution is driven through the compile session rather than a free
         // function, so the entry named here is the session method.
         StageKind::Resolve => ("crates/rumoca-compile", "Session::resolved"),
@@ -3105,7 +3107,8 @@ fn slice_source(
     // would be sliced out of a stranger's file and emitted as fact.
     //
     // Nothing observed it: every `Location` HRW emits today carries a full
-    // document URI, because `parse_to_ast` is handed one (`worker.rs`). This is a
+    // document URI, because the session parses each document under its URI
+    // (`worker.rs`, Parse). This is a
     // guard on the *shape of the input*, not a fix for a live bug — which is
     // exactly when it is cheapest to add, and it is the failure mode this project
     // treats as unrecoverable: a **confident wrong answer**, indistinguishable

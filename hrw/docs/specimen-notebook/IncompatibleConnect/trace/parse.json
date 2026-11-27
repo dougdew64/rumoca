@@ -58,10 +58,10 @@
       "location": {
         "start_line": 1,
         "start_column": 7,
-        "end_line": 39,
+        "end_line": 40,
         "end_column": 24,
         "start": 6,
-        "end": 1754,
+        "end": 1788,
         "source": 5617290238699501581
       },
       "extends": [],
@@ -73,30 +73,30 @@
           "name": {
             "text": "PinA",
             "location": {
-              "start_line": 26,
+              "start_line": 27,
               "start_column": 13,
-              "end_line": 26,
+              "end_line": 27,
               "end_column": 17,
-              "start": 1534,
-              "end": 1538,
+              "start": 1568,
+              "end": 1572,
               "source": 5617290238699501581
             },
-            "token_number": 28,
+            "token_number": 29,
             "token_type": 64
           },
           "class_type": "Connector",
           "class_type_token": {
             "text": "connector",
             "location": {
-              "start_line": 26,
+              "start_line": 27,
               "start_column": 3,
-              "end_line": 26,
+              "end_line": 27,
               "end_column": 12,
-              "start": 1524,
-              "end": 1533,
+              "start": 1558,
+              "end": 1567,
               "source": 5617290238699501581
             },
-            "token_number": 27,
+            "token_number": 28,
             "token_type": 12
           },
           "encapsulated": false,
@@ -110,25 +110,25 @@
             {
               "text": "Two members",
               "location": {
-                "start_line": 26,
+                "start_line": 27,
                 "start_column": 18,
-                "end_line": 26,
+                "end_line": 27,
                 "end_column": 31,
-                "start": 1539,
-                "end": 1552,
+                "start": 1573,
+                "end": 1586,
                 "source": 5617290238699501581
               },
-              "token_number": 29,
+              "token_number": 30,
               "token_type": 66
             }
           ],
           "location": {
-            "start_line": 26,
+            "start_line": 27,
             "start_column": 13,
-            "end_line": 29,
+            "end_line": 30,
             "end_column": 11,
-            "start": 1534,
-            "end": 1592,
+            "start": 1568,
+            "end": 1626,
             "source": 5617290238699501581
           },
           "extends": [],
@@ -143,15 +143,15 @@
               "name_token": {
                 "text": "v",
                 "location": {
-                  "start_line": 27,
+                  "start_line": 28,
                   "start_column": 10,
-                  "end_line": 27,
+                  "end_line": 28,
                   "end_column": 11,
-                  "start": 1562,
-                  "end": 1563,
+                  "start": 1596,
+                  "end": 1597,
                   "source": 5617290238699501581
                 },
-                "token_number": 31,
+                "token_number": 32,
                 "token_type": 64
               },
               "type_name": {
@@ -159,15 +159,15 @@
                   {
                     "text": "Real",
                     "location": {
-                      "start_line": 27,
+                      "start_line": 28,
                       "start_column": 5,
-                      "end_line": 27,
+                      "end_line": 28,
                       "end_column": 9,
-                      "start": 1557,
-                      "end": 1561,
+                      "start": 1591,
+                      "end": 1595,
                       "source": 5617290238699501581
                     },
-                    "token_number": 30,
+                    "token_number": 31,
                     "token_type": 64
                   }
                 ]
@@ -195,8 +195,8 @@
                   },
                   "span": {
                     "source": 5617290238699501581,
-                    "start": 1557,
-                    "end": 1563
+                    "start": 1591,
+                    "end": 1597
                   }
                 }
               },
@@ -214,12 +214,12 @@
               "source_modification_redeclare_flags": [],
               "modifications": {},
               "location": {
-                "start_line": 27,
+                "start_line": 28,
                 "start_column": 5,
-                "end_line": 27,
+                "end_line": 28,
                 "end_column": 11,
-                "start": 1557,
-                "end": 1563,
+                "start": 1591,
+                "end": 1597,
                 "source": 5617290238699501581
               },
               "condition": null,
@@ -244,15 +244,15 @@
               "name_token": {
                 "text": "i",
                 "location": {
-                  "start_line": 28,
+                  "start_line": 29,
                   "start_column": 15,
-                  "end_line": 28,
+                  "end_line": 29,
                   "end_column": 16,
-                  "start": 1579,
-                  "end": 1580,
+                  "start": 1613,
+                  "end": 1614,
                   "source": 5617290238699501581
                 },
-                "token_number": 35,
+                "token_number": 36,
                 "token_type": 64
               },
               "type_name": {
@@ -260,15 +260,15 @@
                   {
                     "text": "Real",
                     "location": {
-                      "start_line": 28,
+                      "start_line": 29,
                       "start_column": 10,
-                      "end_line": 28,
+                      "end_line": 29,
                       "end_column": 14,
-                      "start": 1574,
-                      "end": 1578,
+                      "start": 1608,
+                      "end": 1612,
                       "source": 5617290238699501581
                     },
-                    "token_number": 34,
+                    "token_number": 35,
                     "token_type": 64
                   }
                 ]
@@ -279,15 +279,15 @@
                 "Flow": {
                   "text": "flow",
                   "location": {
-                    "start_line": 28,
+                    "start_line": 29,
                     "start_column": 5,
-                    "end_line": 28,
+                    "end_line": 29,
                     "end_column": 9,
-                    "start": 1569,
-                    "end": 1573,
+                    "start": 1603,
+                    "end": 1607,
                     "source": 5617290238699501581
                   },
-                  "token_number": 33,
+                  "token_number": 34,
                   "token_type": 30
                 }
               },
@@ -311,8 +311,8 @@
                   },
                   "span": {
                     "source": 5617290238699501581,
-                    "start": 1574,
-                    "end": 1580
+                    "start": 1608,
+                    "end": 1614
                   }
                 }
               },
@@ -330,12 +330,12 @@
               "source_modification_redeclare_flags": [],
               "modifications": {},
               "location": {
-                "start_line": 28,
+                "start_line": 29,
                 "start_column": 10,
-                "end_line": 28,
+                "end_line": 29,
                 "end_column": 16,
-                "start": 1574,
-                "end": 1580,
+                "start": 1608,
+                "end": 1614,
                 "source": 5617290238699501581
               },
               "condition": null,
@@ -364,15 +364,15 @@
           "end_name_token": {
             "text": "PinA",
             "location": {
-              "start_line": 29,
+              "start_line": 30,
               "start_column": 7,
-              "end_line": 29,
+              "end_line": 30,
               "end_column": 11,
-              "start": 1588,
-              "end": 1592,
+              "start": 1622,
+              "end": 1626,
               "source": 5617290238699501581
             },
-            "token_number": 38,
+            "token_number": 39,
             "token_type": 64
           },
           "enum_literals": [],
@@ -396,30 +396,30 @@
           "name": {
             "text": "PinB",
             "location": {
-              "start_line": 31,
+              "start_line": 32,
               "start_column": 13,
-              "end_line": 31,
+              "end_line": 32,
               "end_column": 17,
-              "start": 1607,
-              "end": 1611,
+              "start": 1641,
+              "end": 1645,
               "source": 5617290238699501581
             },
-            "token_number": 41,
+            "token_number": 42,
             "token_type": 64
           },
           "class_type": "Connector",
           "class_type_token": {
             "text": "connector",
             "location": {
-              "start_line": 31,
+              "start_line": 32,
               "start_column": 3,
-              "end_line": 31,
+              "end_line": 32,
               "end_column": 12,
-              "start": 1597,
-              "end": 1606,
+              "start": 1631,
+              "end": 1640,
               "source": 5617290238699501581
             },
-            "token_number": 40,
+            "token_number": 41,
             "token_type": 12
           },
           "encapsulated": false,
@@ -433,25 +433,25 @@
             {
               "text": "One member — deliberately not matching PinA",
               "location": {
-                "start_line": 31,
+                "start_line": 32,
                 "start_column": 18,
-                "end_line": 31,
+                "end_line": 32,
                 "end_column": 63,
-                "start": 1612,
-                "end": 1659,
+                "start": 1646,
+                "end": 1693,
                 "source": 5617290238699501581
               },
-              "token_number": 42,
+              "token_number": 43,
               "token_type": 66
             }
           ],
           "location": {
-            "start_line": 31,
+            "start_line": 32,
             "start_column": 13,
-            "end_line": 33,
+            "end_line": 34,
             "end_column": 11,
-            "start": 1607,
-            "end": 1682,
+            "start": 1641,
+            "end": 1716,
             "source": 5617290238699501581
           },
           "extends": [],
@@ -466,15 +466,15 @@
               "name_token": {
                 "text": "v",
                 "location": {
-                  "start_line": 32,
+                  "start_line": 33,
                   "start_column": 10,
-                  "end_line": 32,
+                  "end_line": 33,
                   "end_column": 11,
-                  "start": 1669,
-                  "end": 1670,
+                  "start": 1703,
+                  "end": 1704,
                   "source": 5617290238699501581
                 },
-                "token_number": 44,
+                "token_number": 45,
                 "token_type": 64
               },
               "type_name": {
@@ -482,15 +482,15 @@
                   {
                     "text": "Real",
                     "location": {
-                      "start_line": 32,
+                      "start_line": 33,
                       "start_column": 5,
-                      "end_line": 32,
+                      "end_line": 33,
                       "end_column": 9,
-                      "start": 1664,
-                      "end": 1668,
+                      "start": 1698,
+                      "end": 1702,
                       "source": 5617290238699501581
                     },
-                    "token_number": 43,
+                    "token_number": 44,
                     "token_type": 64
                   }
                 ]
@@ -518,8 +518,8 @@
                   },
                   "span": {
                     "source": 5617290238699501581,
-                    "start": 1664,
-                    "end": 1670
+                    "start": 1698,
+                    "end": 1704
                   }
                 }
               },
@@ -537,12 +537,12 @@
               "source_modification_redeclare_flags": [],
               "modifications": {},
               "location": {
-                "start_line": 32,
+                "start_line": 33,
                 "start_column": 5,
-                "end_line": 32,
+                "end_line": 33,
                 "end_column": 11,
-                "start": 1664,
-                "end": 1670,
+                "start": 1698,
+                "end": 1704,
                 "source": 5617290238699501581
               },
               "condition": null,
@@ -571,15 +571,15 @@
           "end_name_token": {
             "text": "PinB",
             "location": {
-              "start_line": 33,
+              "start_line": 34,
               "start_column": 7,
-              "end_line": 33,
+              "end_line": 34,
               "end_column": 11,
-              "start": 1678,
-              "end": 1682,
+              "start": 1712,
+              "end": 1716,
               "source": 5617290238699501581
             },
-            "token_number": 47,
+            "token_number": 48,
             "token_type": 64
           },
           "enum_literals": [],
@@ -607,15 +607,15 @@
           "name_token": {
             "text": "a",
             "location": {
-              "start_line": 35,
+              "start_line": 36,
               "start_column": 8,
-              "end_line": 35,
+              "end_line": 36,
               "end_column": 9,
-              "start": 1692,
-              "end": 1693,
+              "start": 1726,
+              "end": 1727,
               "source": 5617290238699501581
             },
-            "token_number": 50,
+            "token_number": 51,
             "token_type": 64
           },
           "type_name": {
@@ -623,15 +623,15 @@
               {
                 "text": "PinA",
                 "location": {
-                  "start_line": 35,
+                  "start_line": 36,
                   "start_column": 3,
-                  "end_line": 35,
+                  "end_line": 36,
                   "end_column": 7,
-                  "start": 1687,
-                  "end": 1691,
+                  "start": 1721,
+                  "end": 1725,
                   "source": 5617290238699501581
                 },
-                "token_number": 49,
+                "token_number": 50,
                 "token_type": 64
               }
             ]
@@ -644,8 +644,8 @@
             "Empty": {
               "span": {
                 "source": 5617290238699501581,
-                "start": 1687,
-                "end": 1693
+                "start": 1721,
+                "end": 1727
               }
             }
           },
@@ -663,12 +663,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 35,
+            "start_line": 36,
             "start_column": 3,
-            "end_line": 35,
+            "end_line": 36,
             "end_column": 9,
-            "start": 1687,
-            "end": 1693,
+            "start": 1721,
+            "end": 1727,
             "source": 5617290238699501581
           },
           "condition": null,
@@ -693,15 +693,15 @@
           "name_token": {
             "text": "b",
             "location": {
-              "start_line": 36,
+              "start_line": 37,
               "start_column": 8,
-              "end_line": 36,
+              "end_line": 37,
               "end_column": 9,
-              "start": 1702,
-              "end": 1703,
+              "start": 1736,
+              "end": 1737,
               "source": 5617290238699501581
             },
-            "token_number": 53,
+            "token_number": 54,
             "token_type": 64
           },
           "type_name": {
@@ -709,15 +709,15 @@
               {
                 "text": "PinB",
                 "location": {
-                  "start_line": 36,
+                  "start_line": 37,
                   "start_column": 3,
-                  "end_line": 36,
+                  "end_line": 37,
                   "end_column": 7,
-                  "start": 1697,
-                  "end": 1701,
+                  "start": 1731,
+                  "end": 1735,
                   "source": 5617290238699501581
                 },
-                "token_number": 52,
+                "token_number": 53,
                 "token_type": 64
               }
             ]
@@ -730,8 +730,8 @@
             "Empty": {
               "span": {
                 "source": 5617290238699501581,
-                "start": 1697,
-                "end": 1703
+                "start": 1731,
+                "end": 1737
               }
             }
           },
@@ -749,12 +749,12 @@
           "source_modification_redeclare_flags": [],
           "modifications": {},
           "location": {
-            "start_line": 36,
+            "start_line": 37,
             "start_column": 3,
-            "end_line": 36,
+            "end_line": 37,
             "end_column": 9,
-            "start": 1697,
-            "end": 1703,
+            "start": 1731,
+            "end": 1737,
             "source": 5617290238699501581
           },
           "condition": null,
@@ -782,15 +782,15 @@
                   "ident": {
                     "text": "a",
                     "location": {
-                      "start_line": 38,
+                      "start_line": 39,
                       "start_column": 11,
-                      "end_line": 38,
+                      "end_line": 39,
                       "end_column": 12,
-                      "start": 1724,
-                      "end": 1725,
+                      "start": 1758,
+                      "end": 1759,
                       "source": 5617290238699501581
                     },
-                    "token_number": 58,
+                    "token_number": 59,
                     "token_type": 64
                   },
                   "subs": null
@@ -798,8 +798,8 @@
               ],
               "span": {
                 "source": 5617290238699501581,
-                "start": 1724,
-                "end": 1725
+                "start": 1758,
+                "end": 1759
               }
             },
             "rhs": {
@@ -809,15 +809,15 @@
                   "ident": {
                     "text": "b",
                     "location": {
-                      "start_line": 38,
+                      "start_line": 39,
                       "start_column": 14,
-                      "end_line": 38,
+                      "end_line": 39,
                       "end_column": 15,
-                      "start": 1727,
-                      "end": 1728,
+                      "start": 1761,
+                      "end": 1762,
                       "source": 5617290238699501581
                     },
-                    "token_number": 60,
+                    "token_number": 61,
                     "token_type": 64
                   },
                   "subs": null
@@ -825,8 +825,8 @@
               ],
               "span": {
                 "source": 5617290238699501581,
-                "start": 1727,
-                "end": 1728
+                "start": 1761,
+                "end": 1762
               }
             }
           }
@@ -838,15 +838,15 @@
       "equation_keyword": {
         "text": "equation",
         "location": {
-          "start_line": 37,
+          "start_line": 38,
           "start_column": 1,
-          "end_line": 37,
+          "end_line": 38,
           "end_column": 9,
-          "start": 1705,
-          "end": 1713,
+          "start": 1739,
+          "end": 1747,
           "source": 5617290238699501581
         },
-        "token_number": 55,
+        "token_number": 56,
         "token_type": 24
       },
       "initial_equation_keyword": null,
@@ -855,15 +855,15 @@
       "end_name_token": {
         "text": "IncompatibleConnect",
         "location": {
-          "start_line": 39,
+          "start_line": 40,
           "start_column": 5,
-          "end_line": 39,
+          "end_line": 40,
           "end_column": 24,
-          "start": 1735,
-          "end": 1754,
+          "start": 1769,
+          "end": 1788,
           "source": 5617290238699501581
         },
-        "token_number": 64,
+        "token_number": 65,
         "token_type": 64
       },
       "enum_literals": [],

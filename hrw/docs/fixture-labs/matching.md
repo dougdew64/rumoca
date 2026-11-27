@@ -98,14 +98,12 @@ that can be solved step by step and one that cannot. Which is the next lab.
 
 [Look — CapacitorLoop → Structural](hrw://load/CapacitorLoop/Structural)
 
-**Expected:** no. The stage reports a failure:
+**Expected:** no. The stage is flagged `singular`, and its error reads
+`structurally singular system: 13 matched out of 14 equations and 14 unknowns`. In the tree,
+`error.unmatched_equation_ids` is `["f_x[6]"]`, `error.unmatched_unknowns` is `["gnd.p.i"]`,
+and `error.rank_deficiency` is `1`.
 
-```
-structurally singular system: 13 matched out of 14 equations and 14 unknowns;
-unmatched equations: f_x[13]; unmatched unknowns: gnd.p.i
-```
-
-with `rank_deficiency: 1`.
+[Point at the error](hrw://stage/Structural/Tree/node/error)
 
 Falsified if: 14 of 14 are matched, or the deficiency is other than 1.
 
@@ -115,13 +113,20 @@ equations without leaving one on the table.
 
 Read the two leftovers together, because the pairing is the diagnosis:
 
-- the unmatched equation is `f_x[13]`, `0 = C.n.v - gnd.p.v` — a *potential* equation from a
-  connection;
+- the unmatched equation is `f_x[6]`, `0 = C.v - (src.p.v - 0)` — the capacitor's own
+  `v = p.v - n.v`. `C.v` is a state, so it is not an unknown here; the only unknown this row
+  mentions is `src.p.v`;
 - the unmatched unknown is `gnd.p.i` — a *flow*.
 
-The model over-determines the voltages and under-determines one current: connecting the capacitor
-in a loop made two potential equations say the same thing, and no equation is left to determine
-the ground pin's current. A rank deficiency of 1 means exactly one such pair.
+The model over-determines the voltages and under-determines one current.
+`error.over_determined_block` names it: three equations — the source's `v = p.v - n.v` (`f_x[2]`), its `v = V` (`f_x[3]`) and
+the capacitor's `f_x[6]` — all fix `src.v` and `src.p.v`, two unknowns between them, so one is
+surplus. On the current side one unknown, `gnd.p.i`, is left with no equation of its own. A rank
+deficiency of 1 means exactly one such pair.
+
+*(The equation numbers are the Structural tab's, not the DAE tab's: Structural analyses the
+system after Simplify, whose alias quotient eliminated eight variables here — `C.p.v` onto
+`src.p.v`, for one — so the DAE tab's `f_x[13]` is a different row.)*
 
 And note *where* this was found: at matching, before anything was solved. Nothing numeric ran.
 
@@ -129,7 +134,8 @@ And note *where* this was found: at matching, before anything was solved. Nothin
 `CapacitorLoop` is not a broken model. A capacitor straight across a voltage source is ordinary
 physics, and the leftover pair is the sign of a constraint the solver cannot use as written:
 the capacitor's voltage is a state, and the source already fixes it. Index reduction repairs that
-([index-reduction, Station 5](hrw://lab/index-reduction)), and the model then simulates.
+— one Direct-lane demotion, after which the model integrates no state at all
+([index-reduction](hrw://lab/index-reduction)) — and the model then simulates.
 Compare `TwiceDefined`, which really is broken:
 
 ```modelica
@@ -137,9 +143,11 @@ a = 1.0;
 a = time;
 ```
 
-Both equations define `a`, nothing defines `b`, and no later stage can fix that. Matching
-reports the two models the same way. **You find out which kind you have at index reduction**,
-which either repairs the system or reports *still singular after reduction*.
+Both equations define `a`, nothing defines `b`, and no later stage can fix that. By the time
+Structural sees it, Simplify has folded `a = 1` into the second equation, which reads
+`0 = 1 - time` — an equation with no unknown in it at all. Matching reports the two models the
+same way. **You find out which kind you have at index reduction**, which either repairs the
+system or reports *still singular after reduction*.
 
 ---
 
@@ -171,8 +179,8 @@ which is a different failure and a different lab
 
 The algorithm is augmenting paths — take an unmatched equation, run alternately along
 unmatched and matched edges, and if you reach an unmatched unknown, flip the path to gain one
-pair. [matching-live](hrw://lab/matching-live) steps that search in the debugger, where the call
-stack *is* the path.
+pair. [matching-live](hrw://lab/matching-live) steps that search in the debugger, where the
+search's `stack` local *is* the path.
 
 ---
 

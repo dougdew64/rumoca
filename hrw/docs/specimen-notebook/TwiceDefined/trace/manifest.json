@@ -1,8 +1,8 @@
 {
   "model": "TwiceDefined",
   "specimen": "specimens/TwiceDefined.mo",
-  "specimen_fnv1a": "07b2a5eb824040ee",
-  "rumoca_rev": "75f844c42",
+  "specimen_fnv1a": "f8d8601cb79843b7",
+  "rumoca_rev": "0ad078cef",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

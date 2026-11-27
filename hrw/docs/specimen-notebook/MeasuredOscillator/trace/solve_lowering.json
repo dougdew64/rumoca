@@ -218,8 +218,8 @@
             "program_spans": [
               {
                 "source": 7901817617377633324,
-                "start": 1705,
-                "end": 1715
+                "start": 1559,
+                "end": 1569
               }
             ],
             "output_placements": {
@@ -288,8 +288,8 @@
             "program_spans": [
               {
                 "source": 7901817617377633324,
-                "start": 1705,
-                "end": 1715
+                "start": 1559,
+                "end": 1569
               }
             ],
             "output_placements": {
@@ -523,18 +523,18 @@
             "program_spans": [
               {
                 "source": 7901817617377633324,
-                "start": 1668,
-                "end": 1678
+                "start": 1522,
+                "end": 1532
               },
               {
                 "source": 7901817617377633324,
-                "start": 1682,
-                "end": 1701
+                "start": 1536,
+                "end": 1555
               },
               {
                 "source": 7901817617377633324,
-                "start": 1719,
-                "end": 1752
+                "start": 1573,
+                "end": 1606
               }
             ],
             "output_placements": {
@@ -762,8 +762,8 @@
             "program_spans": [
               {
                 "source": 7901817617377633324,
-                "start": 1480,
-                "end": 1491
+                "start": 1334,
+                "end": 1345
               }
             ],
             "output_placements": {

@@ -58,7 +58,7 @@ and size fit. Here everything is a scalar `Real`, so there is nothing to report.
 (`omega`, `x`, `v`) and two equations. In a model built from components, this is where every
 `connect` becomes equations — [connect-expansion](hrw://lab/connect-expansion).
 
-**6 · [Dae](hrw://load/HarmonicOscillator/Dae)** sorts the variables by role. `x` and `v` appear
+**6 · [DAE](hrw://load/HarmonicOscillator/Dae)** sorts the variables by role. `x` and `v` appear
 inside `der()`, so they are *states*; `omega` is a parameter; there are no other unknowns.
 Result: 2 states, 0 algebraic variables, 2 equations —
 [dae-construction](hrw://lab/dae-construction).
@@ -82,7 +82,7 @@ size 1, and none need solving together. A model where equations *do* need each o
 is [matching-live](hrw://lab/matching-live): the only lab that needs a debugger and the bridge
 extension, where every other lab runs from HRW alone.
 
-**9 · [IndexReduction](hrw://load/HarmonicOscillator/IndexReduction)** has nothing to reduce:
+**9 · [Index reduction](hrw://load/HarmonicOscillator/IndexReduction)** has nothing to reduce:
 the reducer's outcome is *borrowed* — already index-1, both derivatives computed directly — and
 state selection keeps `x` and `v` as the two states to integrate. A model where the derivatives
 cannot be computed directly is the pendulum, whose rod forces the bob to stay on a circle —
@@ -99,7 +99,7 @@ switches behaviour. It is not a step of its own: it shows the event data DAE con
 recorded, and what solve lowering made of it. Every count is zero: there is no `if` or `when`
 here. `BouncingBall` has one — [events](hrw://lab/events).
 
-**12 · [SolveLowering](hrw://load/HarmonicOscillator/SolveLowering)** turns the equations into
+**12 · [Solve lowering](hrw://load/HarmonicOscillator/SolveLowering)** turns the equations into
 small programs over numbered slots: `omega` is `P[0]`, `x` is `Y[0]`, `v` is `Y[1]`. The
 program for `der(x)` is *load `Y[1]`*. The one for `der(v)` loads `P[0]`, multiplies it by
 itself, multiplies by `Y[0]` and negates — `omega ^ 2` has become `omega * omega` —
@@ -121,11 +121,13 @@ continuous argument, and the densest linear algebra in the set.
 
 ## A question you may hit
 
-*(Resolved 2026-09-02, and it was never a Rumoca question.* `RcCircuit` reports one
-`synthetic_root_conditions` while having no `when` clause because the field counts roots
-Rumoca had to *synthesise* — here, one over the MSL Resistor's `R.T_heatPort`. HRW had
-published that field as `zero_crossing_conditions`, which reads as a claim about all zero
-crossings and is not one.*)*
+`RcCircuit` has no `if` and no `when`, yet its Events tab shows `relations: 1` and `roots: 1`.
+The relation is `1 + R.alpha*(R.T_heatPort - R.T_ref) >= …` (a tiny positive number): the MSL
+Resistor asserts its temperature stays in range, and Rumoca watches that condition for a
+crossing — `event_actions: 1` is the assert. A model with no events of its own can still have a
+root, brought in by a library component. *(Before 0.10.0 HRW showed this as a
+`synthetic_root_conditions` count, which it had renamed `zero_crossing_conditions`; that field
+no longer exists.)*
 
 ---
 
@@ -151,9 +153,10 @@ lowering confirms zero states — a model with no dynamics at all.
 reducer then runs 6 rounds, and state selection reduces to a basis of 3 — `mount.s_rel`, `L.i`
 and `mount.v_rel` — which is exactly what Solve lowering and the simulation integrate.
 
-`OverInitRc` = 1 state, 2 initial equations, 1 too many. It differs from `RcCircuit` by those
-two lines. The Initialization tab shows Rumoca's plan: `C.v = 0` is *Solved* for `C.v`, and
-`der(C.v) = 0` is a *surplus check* the model must satisfy. It does not: with the capacitor
+`OverInitRc` = 1 state, 2 initial equations, 1 too many. It is `RcCircuit` plus an
+`initial equation` section of two lines. The Initialization tab shows Rumoca's plan: `C.v = 0`
+is *Solved* for `C.v`, and `der(C.v) = 0` is a `SurplusAlgebraicCheck` — a surplus check the
+model must satisfy. It does not: with the capacitor
 empty, current flows, and the run fails at initialization with the check's residual at 50.
 
 ---

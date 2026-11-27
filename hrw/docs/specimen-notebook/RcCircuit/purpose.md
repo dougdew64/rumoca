@@ -11,8 +11,12 @@ code never says what it is *for*.
 
 A constant voltage source driving a resistor into a capacitor, returned to ground.
 
-Authored as the **initialization / IC planning** specimen — how Rumoca plans a consistent initial
-state at t = 0 (`build_ic_plan`). Also the well-posed counterpart to
+Authored as the **initialization** specimen — how Rumoca plans a consistent initial state at
+t = 0 (then `build_ic_plan`, which no longer exists). On the current run its lowered
+initialization plan is **empty** — 0 rows, the note *0 initialization row(s), 0 surplus check(s)*:
+the one state `C.v` states only a bare `start`, so there is no condition to solve. A plan with
+rows is [`MeasuredOscillator`](../MeasuredOscillator/purpose.md)'s and
+[`OverInitRc`](../OverInitRc/purpose.md)'s. Also the well-posed counterpart to
 [`CapacitorLoop`](../CapacitorLoop/purpose.md): the same topology, one resistor away from
 compiling.
 

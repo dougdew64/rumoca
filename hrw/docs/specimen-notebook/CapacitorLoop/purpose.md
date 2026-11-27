@@ -11,8 +11,12 @@ code never says what it is *for*.
 
 A capacitor wired **directly across an ideal voltage source**, with no resistor.
 
-Authored as the **blow-up** case — ill-posed, and *stays* ill-posed: it has one state, and index
-reduction cannot rescue a single pinned state. Its deliberate pair is
+Authored as the **blow-up** case — the capacitor's one state is pinned by the source, so the
+system is structurally singular as written. It was expected to *stay* ill-posed, on the belief that
+index reduction cannot rescue a single pinned state. **That belief is false on the real run**
+(2026-11-26): one Direct-lane demotion on `v = p.v - n.v` (`TwoPin.mo:10`) turns the pinned state
+into an algebraic, so the model integrates **0** states and simulates — the Structural tab is still
+flagged singular, and Index reduction then repairs it. Its deliberate pair is
 [`RcCircuit`](../RcCircuit/purpose.md), the same topology with a resistor added, which compiles
 cleanly. Loading the two back to back is the point.
 

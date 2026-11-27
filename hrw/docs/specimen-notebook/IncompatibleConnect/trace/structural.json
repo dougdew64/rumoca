@@ -89,12 +89,12 @@
         "unknown": "b.v",
         "location": {
           "file": "hrw/specimens/IncompatibleConnect.mo",
-          "line": 32,
+          "line": 33,
           "column": 5,
           "excerpt": "Real v",
           "line_text": "    Real v;",
-          "byte_start": 1664,
-          "byte_end": 1670
+          "byte_start": 1698,
+          "byte_end": 1704
         }
       }
     ],

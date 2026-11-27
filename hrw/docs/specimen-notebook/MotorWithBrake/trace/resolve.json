@@ -56,10 +56,10 @@
   "location": {
     "start_line": 1,
     "start_column": 7,
-    "end_line": 62,
+    "end_line": 63,
     "end_column": 19,
     "start": 6,
-    "end": 3114,
+    "end": 3198,
     "source": 13584111925557694778
   },
   "extends": [],
@@ -74,15 +74,15 @@
       "name_token": {
         "text": "src",
         "location": {
-          "start_line": 30,
+          "start_line": 31,
           "start_column": 54,
-          "end_line": 30,
+          "end_line": 31,
           "end_column": 57,
-          "start": 1984,
-          "end": 1987,
+          "start": 2068,
+          "end": 2071,
           "source": 13584111925557694778
         },
-        "token_number": 39,
+        "token_number": 40,
         "token_type": 64
       },
       "type_name": {
@@ -90,71 +90,71 @@
           {
             "text": "Modelica",
             "location": {
-              "start_line": 30,
+              "start_line": 31,
               "start_column": 3,
-              "end_line": 30,
+              "end_line": 31,
               "end_column": 11,
-              "start": 1933,
-              "end": 1941,
+              "start": 2017,
+              "end": 2025,
               "source": 13584111925557694778
             },
-            "token_number": 30,
+            "token_number": 31,
             "token_type": 64
           },
           {
             "text": "Electrical",
             "location": {
-              "start_line": 30,
+              "start_line": 31,
               "start_column": 12,
-              "end_line": 30,
+              "end_line": 31,
               "end_column": 22,
-              "start": 1942,
-              "end": 1952,
+              "start": 2026,
+              "end": 2036,
               "source": 13584111925557694778
             },
-            "token_number": 32,
+            "token_number": 33,
             "token_type": 64
           },
           {
             "text": "Analog",
             "location": {
-              "start_line": 30,
+              "start_line": 31,
               "start_column": 23,
-              "end_line": 30,
+              "end_line": 31,
               "end_column": 29,
-              "start": 1953,
-              "end": 1959,
+              "start": 2037,
+              "end": 2043,
               "source": 13584111925557694778
             },
-            "token_number": 34,
+            "token_number": 35,
             "token_type": 64
           },
           {
             "text": "Sources",
             "location": {
-              "start_line": 30,
+              "start_line": 31,
               "start_column": 30,
-              "end_line": 30,
+              "end_line": 31,
               "end_column": 37,
-              "start": 1960,
-              "end": 1967,
+              "start": 2044,
+              "end": 2051,
               "source": 13584111925557694778
             },
-            "token_number": 36,
+            "token_number": 37,
             "token_type": 64
           },
           {
             "text": "ConstantVoltage",
             "location": {
-              "start_line": 30,
+              "start_line": 31,
               "start_column": 38,
-              "end_line": 30,
+              "end_line": 31,
               "end_column": 53,
-              "start": 1968,
-              "end": 1983,
+              "start": 2052,
+              "end": 2067,
               "source": 13584111925557694778
             },
-            "token_number": 38,
+            "token_number": 39,
             "token_type": 64
           }
         ]
@@ -167,8 +167,8 @@
         "Empty": {
           "span": {
             "source": 13584111925557694778,
-            "start": 1933,
-            "end": 1987
+            "start": 2017,
+            "end": 2071
           }
         }
       },
@@ -190,15 +190,15 @@
                   "ident": {
                     "text": "V",
                     "location": {
-                      "start_line": 30,
+                      "start_line": 31,
                       "start_column": 58,
-                      "end_line": 30,
+                      "end_line": 31,
                       "end_column": 59,
-                      "start": 1988,
-                      "end": 1989,
+                      "start": 2072,
+                      "end": 2073,
                       "source": 13584111925557694778
                     },
-                    "token_number": 41,
+                    "token_number": 42,
                     "token_type": 64
                   },
                   "subs": null
@@ -206,8 +206,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 1988,
-                "end": 1989
+                "start": 2072,
+                "end": 2073
               }
             },
             "value": {
@@ -216,28 +216,28 @@
                 "token": {
                   "text": "12",
                   "location": {
-                    "start_line": 30,
+                    "start_line": 31,
                     "start_column": 62,
-                    "end_line": 30,
+                    "end_line": 31,
                     "end_column": 64,
-                    "start": 1992,
-                    "end": 1994,
+                    "start": 2076,
+                    "end": 2078,
                     "source": 13584111925557694778
                   },
-                  "token_number": 43,
+                  "token_number": 44,
                   "token_type": 67
                 },
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 1992,
-                  "end": 1994
+                  "start": 2076,
+                  "end": 2078
                 }
               }
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 1988,
-              "end": 1994
+              "start": 2072,
+              "end": 2078
             }
           }
         }
@@ -258,32 +258,32 @@
             "token": {
               "text": "12",
               "location": {
-                "start_line": 30,
+                "start_line": 31,
                 "start_column": 62,
-                "end_line": 30,
+                "end_line": 31,
                 "end_column": 64,
-                "start": 1992,
-                "end": 1994,
+                "start": 2076,
+                "end": 2078,
                 "source": 13584111925557694778
               },
-              "token_number": 43,
+              "token_number": 44,
               "token_type": 67
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 1992,
-              "end": 1994
+              "start": 2076,
+              "end": 2078
             }
           }
         }
       },
       "location": {
-        "start_line": 30,
+        "start_line": 31,
         "start_column": 3,
-        "end_line": 30,
+        "end_line": 31,
         "end_column": 57,
-        "start": 1933,
-        "end": 1987,
+        "start": 2017,
+        "end": 2071,
         "source": 13584111925557694778
       },
       "condition": null,
@@ -308,15 +308,15 @@
       "name_token": {
         "text": "R",
         "location": {
-          "start_line": 31,
+          "start_line": 32,
           "start_column": 45,
-          "end_line": 31,
+          "end_line": 32,
           "end_column": 46,
-          "start": 2041,
-          "end": 2042,
+          "start": 2125,
+          "end": 2126,
           "source": 13584111925557694778
         },
-        "token_number": 55,
+        "token_number": 56,
         "token_type": 64
       },
       "type_name": {
@@ -324,71 +324,71 @@
           {
             "text": "Modelica",
             "location": {
-              "start_line": 31,
+              "start_line": 32,
               "start_column": 3,
-              "end_line": 31,
+              "end_line": 32,
               "end_column": 11,
-              "start": 1999,
-              "end": 2007,
+              "start": 2083,
+              "end": 2091,
               "source": 13584111925557694778
             },
-            "token_number": 46,
+            "token_number": 47,
             "token_type": 64
           },
           {
             "text": "Electrical",
             "location": {
-              "start_line": 31,
+              "start_line": 32,
               "start_column": 12,
-              "end_line": 31,
+              "end_line": 32,
               "end_column": 22,
-              "start": 2008,
-              "end": 2018,
+              "start": 2092,
+              "end": 2102,
               "source": 13584111925557694778
             },
-            "token_number": 48,
+            "token_number": 49,
             "token_type": 64
           },
           {
             "text": "Analog",
             "location": {
-              "start_line": 31,
+              "start_line": 32,
               "start_column": 23,
-              "end_line": 31,
+              "end_line": 32,
               "end_column": 29,
-              "start": 2019,
-              "end": 2025,
+              "start": 2103,
+              "end": 2109,
               "source": 13584111925557694778
             },
-            "token_number": 50,
+            "token_number": 51,
             "token_type": 64
           },
           {
             "text": "Basic",
             "location": {
-              "start_line": 31,
+              "start_line": 32,
               "start_column": 30,
-              "end_line": 31,
+              "end_line": 32,
               "end_column": 35,
-              "start": 2026,
-              "end": 2031,
+              "start": 2110,
+              "end": 2115,
               "source": 13584111925557694778
             },
-            "token_number": 52,
+            "token_number": 53,
             "token_type": 64
           },
           {
             "text": "Resistor",
             "location": {
-              "start_line": 31,
+              "start_line": 32,
               "start_column": 36,
-              "end_line": 31,
+              "end_line": 32,
               "end_column": 44,
-              "start": 2032,
-              "end": 2040,
+              "start": 2116,
+              "end": 2124,
               "source": 13584111925557694778
             },
-            "token_number": 54,
+            "token_number": 55,
             "token_type": 64
           }
         ]
@@ -401,8 +401,8 @@
         "Empty": {
           "span": {
             "source": 13584111925557694778,
-            "start": 1999,
-            "end": 2042
+            "start": 2083,
+            "end": 2126
           }
         }
       },
@@ -424,15 +424,15 @@
                   "ident": {
                     "text": "R",
                     "location": {
-                      "start_line": 31,
+                      "start_line": 32,
                       "start_column": 47,
-                      "end_line": 31,
+                      "end_line": 32,
                       "end_column": 48,
-                      "start": 2043,
-                      "end": 2044,
+                      "start": 2127,
+                      "end": 2128,
                       "source": 13584111925557694778
                     },
-                    "token_number": 57,
+                    "token_number": 58,
                     "token_type": 64
                   },
                   "subs": null
@@ -440,8 +440,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2043,
-                "end": 2044
+                "start": 2127,
+                "end": 2128
               }
             },
             "value": {
@@ -450,28 +450,28 @@
                 "token": {
                   "text": "1.0",
                   "location": {
-                    "start_line": 31,
+                    "start_line": 32,
                     "start_column": 51,
-                    "end_line": 31,
+                    "end_line": 32,
                     "end_column": 54,
-                    "start": 2047,
-                    "end": 2050,
+                    "start": 2131,
+                    "end": 2134,
                     "source": 13584111925557694778
                   },
-                  "token_number": 59,
+                  "token_number": 60,
                   "token_type": 68
                 },
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 2047,
-                  "end": 2050
+                  "start": 2131,
+                  "end": 2134
                 }
               }
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2043,
-              "end": 2050
+              "start": 2127,
+              "end": 2134
             }
           }
         }
@@ -492,32 +492,32 @@
             "token": {
               "text": "1.0",
               "location": {
-                "start_line": 31,
+                "start_line": 32,
                 "start_column": 51,
-                "end_line": 31,
+                "end_line": 32,
                 "end_column": 54,
-                "start": 2047,
-                "end": 2050,
+                "start": 2131,
+                "end": 2134,
                 "source": 13584111925557694778
               },
-              "token_number": 59,
+              "token_number": 60,
               "token_type": 68
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2047,
-              "end": 2050
+              "start": 2131,
+              "end": 2134
             }
           }
         }
       },
       "location": {
-        "start_line": 31,
+        "start_line": 32,
         "start_column": 3,
-        "end_line": 31,
+        "end_line": 32,
         "end_column": 46,
-        "start": 1999,
-        "end": 2042,
+        "start": 2083,
+        "end": 2126,
         "source": 13584111925557694778
       },
       "condition": null,
@@ -542,15 +542,15 @@
       "name_token": {
         "text": "L",
         "location": {
-          "start_line": 32,
+          "start_line": 33,
           "start_column": 45,
-          "end_line": 32,
+          "end_line": 33,
           "end_column": 46,
-          "start": 2097,
-          "end": 2098,
+          "start": 2181,
+          "end": 2182,
           "source": 13584111925557694778
         },
-        "token_number": 71,
+        "token_number": 72,
         "token_type": 64
       },
       "type_name": {
@@ -558,71 +558,71 @@
           {
             "text": "Modelica",
             "location": {
-              "start_line": 32,
+              "start_line": 33,
               "start_column": 3,
-              "end_line": 32,
+              "end_line": 33,
               "end_column": 11,
-              "start": 2055,
-              "end": 2063,
+              "start": 2139,
+              "end": 2147,
               "source": 13584111925557694778
             },
-            "token_number": 62,
+            "token_number": 63,
             "token_type": 64
           },
           {
             "text": "Electrical",
             "location": {
-              "start_line": 32,
+              "start_line": 33,
               "start_column": 12,
-              "end_line": 32,
+              "end_line": 33,
               "end_column": 22,
-              "start": 2064,
-              "end": 2074,
+              "start": 2148,
+              "end": 2158,
               "source": 13584111925557694778
             },
-            "token_number": 64,
+            "token_number": 65,
             "token_type": 64
           },
           {
             "text": "Analog",
             "location": {
-              "start_line": 32,
+              "start_line": 33,
               "start_column": 23,
-              "end_line": 32,
+              "end_line": 33,
               "end_column": 29,
-              "start": 2075,
-              "end": 2081,
+              "start": 2159,
+              "end": 2165,
               "source": 13584111925557694778
             },
-            "token_number": 66,
+            "token_number": 67,
             "token_type": 64
           },
           {
             "text": "Basic",
             "location": {
-              "start_line": 32,
+              "start_line": 33,
               "start_column": 30,
-              "end_line": 32,
+              "end_line": 33,
               "end_column": 35,
-              "start": 2082,
-              "end": 2087,
+              "start": 2166,
+              "end": 2171,
               "source": 13584111925557694778
             },
-            "token_number": 68,
+            "token_number": 69,
             "token_type": 64
           },
           {
             "text": "Inductor",
             "location": {
-              "start_line": 32,
+              "start_line": 33,
               "start_column": 36,
-              "end_line": 32,
+              "end_line": 33,
               "end_column": 44,
-              "start": 2088,
-              "end": 2096,
+              "start": 2172,
+              "end": 2180,
               "source": 13584111925557694778
             },
-            "token_number": 70,
+            "token_number": 71,
             "token_type": 64
           }
         ]
@@ -634,15 +634,15 @@
         {
           "text": "small L -> fast electrical time constant",
           "location": {
-            "start_line": 32,
+            "start_line": 33,
             "start_column": 71,
-            "end_line": 32,
+            "end_line": 33,
             "end_column": 113,
-            "start": 2123,
-            "end": 2165,
+            "start": 2207,
+            "end": 2249,
             "source": 13584111925557694778
           },
-          "token_number": 84,
+          "token_number": 85,
           "token_type": 66
         }
       ],
@@ -650,8 +650,8 @@
         "Empty": {
           "span": {
             "source": 13584111925557694778,
-            "start": 2055,
-            "end": 2098
+            "start": 2139,
+            "end": 2182
           }
         }
       },
@@ -673,15 +673,15 @@
                   "ident": {
                     "text": "L",
                     "location": {
-                      "start_line": 32,
+                      "start_line": 33,
                       "start_column": 47,
-                      "end_line": 32,
+                      "end_line": 33,
                       "end_column": 48,
-                      "start": 2099,
-                      "end": 2100,
+                      "start": 2183,
+                      "end": 2184,
                       "source": 13584111925557694778
                     },
-                    "token_number": 73,
+                    "token_number": 74,
                     "token_type": 64
                   },
                   "subs": null
@@ -689,8 +689,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2099,
-                "end": 2100
+                "start": 2183,
+                "end": 2184
               }
             },
             "value": {
@@ -699,28 +699,28 @@
                 "token": {
                   "text": "1e-4",
                   "location": {
-                    "start_line": 32,
+                    "start_line": 33,
                     "start_column": 51,
-                    "end_line": 32,
+                    "end_line": 33,
                     "end_column": 55,
-                    "start": 2103,
-                    "end": 2107,
+                    "start": 2187,
+                    "end": 2191,
                     "source": 13584111925557694778
                   },
-                  "token_number": 75,
+                  "token_number": 76,
                   "token_type": 71
                 },
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 2103,
-                  "end": 2107
+                  "start": 2187,
+                  "end": 2191
                 }
               }
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2099,
-              "end": 2107
+              "start": 2183,
+              "end": 2191
             }
           }
         },
@@ -733,15 +733,15 @@
                   "ident": {
                     "text": "i",
                     "location": {
-                      "start_line": 32,
+                      "start_line": 33,
                       "start_column": 57,
-                      "end_line": 32,
+                      "end_line": 33,
                       "end_column": 58,
-                      "start": 2109,
-                      "end": 2110,
+                      "start": 2193,
+                      "end": 2194,
                       "source": 13584111925557694778
                     },
-                    "token_number": 77,
+                    "token_number": 78,
                     "token_type": 64
                   },
                   "subs": null
@@ -749,8 +749,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2109,
-                "end": 2110
+                "start": 2193,
+                "end": 2194
               }
             },
             "modifications": [
@@ -763,15 +763,15 @@
                         "ident": {
                           "text": "start",
                           "location": {
-                            "start_line": 32,
+                            "start_line": 33,
                             "start_column": 59,
-                            "end_line": 32,
+                            "end_line": 33,
                             "end_column": 64,
-                            "start": 2111,
-                            "end": 2116,
+                            "start": 2195,
+                            "end": 2200,
                             "source": 13584111925557694778
                           },
-                          "token_number": 79,
+                          "token_number": 80,
                           "token_type": 64
                         },
                         "subs": null
@@ -779,8 +779,8 @@
                     ],
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2111,
-                      "end": 2116
+                      "start": 2195,
+                      "end": 2200
                     }
                   },
                   "value": {
@@ -789,28 +789,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 32,
+                          "start_line": 33,
                           "start_column": 67,
-                          "end_line": 32,
+                          "end_line": 33,
                           "end_column": 68,
-                          "start": 2119,
-                          "end": 2120,
+                          "start": 2203,
+                          "end": 2204,
                           "source": 13584111925557694778
                         },
-                        "token_number": 81,
+                        "token_number": 82,
                         "token_type": 67
                       },
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2119,
-                        "end": 2120
+                        "start": 2203,
+                        "end": 2204
                       }
                     }
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2111,
-                    "end": 2120
+                    "start": 2195,
+                    "end": 2204
                   }
                 }
               }
@@ -826,8 +826,8 @@
             ],
             "span": {
               "source": 13584111925557694778,
-              "start": 2109,
-              "end": 2120
+              "start": 2193,
+              "end": 2204
             }
           }
         }
@@ -851,21 +851,21 @@
             "token": {
               "text": "1e-4",
               "location": {
-                "start_line": 32,
+                "start_line": 33,
                 "start_column": 51,
-                "end_line": 32,
+                "end_line": 33,
                 "end_column": 55,
-                "start": 2103,
-                "end": 2107,
+                "start": 2187,
+                "end": 2191,
                 "source": 13584111925557694778
               },
-              "token_number": 75,
+              "token_number": 76,
               "token_type": 71
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2103,
-              "end": 2107
+              "start": 2187,
+              "end": 2191
             }
           }
         },
@@ -878,15 +878,15 @@
                   "ident": {
                     "text": "i",
                     "location": {
-                      "start_line": 32,
+                      "start_line": 33,
                       "start_column": 57,
-                      "end_line": 32,
+                      "end_line": 33,
                       "end_column": 58,
-                      "start": 2109,
-                      "end": 2110,
+                      "start": 2193,
+                      "end": 2194,
                       "source": 13584111925557694778
                     },
-                    "token_number": 77,
+                    "token_number": 78,
                     "token_type": 64
                   },
                   "subs": null
@@ -894,8 +894,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2109,
-                "end": 2110
+                "start": 2193,
+                "end": 2194
               }
             },
             "modifications": [
@@ -908,15 +908,15 @@
                         "ident": {
                           "text": "start",
                           "location": {
-                            "start_line": 32,
+                            "start_line": 33,
                             "start_column": 59,
-                            "end_line": 32,
+                            "end_line": 33,
                             "end_column": 64,
-                            "start": 2111,
-                            "end": 2116,
+                            "start": 2195,
+                            "end": 2200,
                             "source": 13584111925557694778
                           },
-                          "token_number": 79,
+                          "token_number": 80,
                           "token_type": 64
                         },
                         "subs": null
@@ -924,8 +924,8 @@
                     ],
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2111,
-                      "end": 2116
+                      "start": 2195,
+                      "end": 2200
                     }
                   },
                   "value": {
@@ -934,28 +934,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 32,
+                          "start_line": 33,
                           "start_column": 67,
-                          "end_line": 32,
+                          "end_line": 33,
                           "end_column": 68,
-                          "start": 2119,
-                          "end": 2120,
+                          "start": 2203,
+                          "end": 2204,
                           "source": 13584111925557694778
                         },
-                        "token_number": 81,
+                        "token_number": 82,
                         "token_type": 67
                       },
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2119,
-                        "end": 2120
+                        "start": 2203,
+                        "end": 2204
                       }
                     }
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2111,
-                    "end": 2120
+                    "start": 2195,
+                    "end": 2204
                   }
                 }
               }
@@ -971,19 +971,19 @@
             ],
             "span": {
               "source": 13584111925557694778,
-              "start": 2109,
-              "end": 2120
+              "start": 2193,
+              "end": 2204
             }
           }
         }
       },
       "location": {
-        "start_line": 32,
+        "start_line": 33,
         "start_column": 3,
-        "end_line": 32,
+        "end_line": 33,
         "end_column": 46,
-        "start": 2055,
-        "end": 2098,
+        "start": 2139,
+        "end": 2182,
         "source": 13584111925557694778
       },
       "condition": null,
@@ -1008,15 +1008,15 @@
       "name_token": {
         "text": "emf",
         "location": {
-          "start_line": 33,
+          "start_line": 34,
           "start_column": 50,
-          "end_line": 33,
+          "end_line": 34,
           "end_column": 53,
-          "start": 2216,
-          "end": 2219,
+          "start": 2300,
+          "end": 2303,
           "source": 13584111925557694778
         },
-        "token_number": 95,
+        "token_number": 96,
         "token_type": 64
       },
       "type_name": {
@@ -1024,71 +1024,71 @@
           {
             "text": "Modelica",
             "location": {
-              "start_line": 33,
+              "start_line": 34,
               "start_column": 3,
-              "end_line": 33,
+              "end_line": 34,
               "end_column": 11,
-              "start": 2169,
-              "end": 2177,
+              "start": 2253,
+              "end": 2261,
               "source": 13584111925557694778
             },
-            "token_number": 86,
+            "token_number": 87,
             "token_type": 64
           },
           {
             "text": "Electrical",
             "location": {
-              "start_line": 33,
+              "start_line": 34,
               "start_column": 12,
-              "end_line": 33,
+              "end_line": 34,
               "end_column": 22,
-              "start": 2178,
-              "end": 2188,
+              "start": 2262,
+              "end": 2272,
               "source": 13584111925557694778
             },
-            "token_number": 88,
+            "token_number": 89,
             "token_type": 64
           },
           {
             "text": "Analog",
             "location": {
-              "start_line": 33,
+              "start_line": 34,
               "start_column": 23,
-              "end_line": 33,
+              "end_line": 34,
               "end_column": 29,
-              "start": 2189,
-              "end": 2195,
+              "start": 2273,
+              "end": 2279,
               "source": 13584111925557694778
             },
-            "token_number": 90,
+            "token_number": 91,
             "token_type": 64
           },
           {
             "text": "Basic",
             "location": {
-              "start_line": 33,
+              "start_line": 34,
               "start_column": 30,
-              "end_line": 33,
+              "end_line": 34,
               "end_column": 35,
-              "start": 2196,
-              "end": 2201,
+              "start": 2280,
+              "end": 2285,
               "source": 13584111925557694778
             },
-            "token_number": 92,
+            "token_number": 93,
             "token_type": 64
           },
           {
             "text": "RotationalEMF",
             "location": {
-              "start_line": 33,
+              "start_line": 34,
               "start_column": 36,
-              "end_line": 33,
+              "end_line": 34,
               "end_column": 49,
-              "start": 2202,
-              "end": 2215,
+              "start": 2286,
+              "end": 2299,
               "source": 13584111925557694778
             },
-            "token_number": 94,
+            "token_number": 95,
             "token_type": 64
           }
         ]
@@ -1101,8 +1101,8 @@
         "Empty": {
           "span": {
             "source": 13584111925557694778,
-            "start": 2169,
-            "end": 2219
+            "start": 2253,
+            "end": 2303
           }
         }
       },
@@ -1124,15 +1124,15 @@
                   "ident": {
                     "text": "k",
                     "location": {
-                      "start_line": 33,
+                      "start_line": 34,
                       "start_column": 54,
-                      "end_line": 33,
+                      "end_line": 34,
                       "end_column": 55,
-                      "start": 2220,
-                      "end": 2221,
+                      "start": 2304,
+                      "end": 2305,
                       "source": 13584111925557694778
                     },
-                    "token_number": 97,
+                    "token_number": 98,
                     "token_type": 64
                   },
                   "subs": null
@@ -1140,8 +1140,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2220,
-                "end": 2221
+                "start": 2304,
+                "end": 2305
               }
             },
             "value": {
@@ -1150,28 +1150,28 @@
                 "token": {
                   "text": "0.1",
                   "location": {
-                    "start_line": 33,
+                    "start_line": 34,
                     "start_column": 58,
-                    "end_line": 33,
+                    "end_line": 34,
                     "end_column": 61,
-                    "start": 2224,
-                    "end": 2227,
+                    "start": 2308,
+                    "end": 2311,
                     "source": 13584111925557694778
                   },
-                  "token_number": 99,
+                  "token_number": 100,
                   "token_type": 68
                 },
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 2224,
-                  "end": 2227
+                  "start": 2308,
+                  "end": 2311
                 }
               }
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2220,
-              "end": 2227
+              "start": 2304,
+              "end": 2311
             }
           }
         }
@@ -1192,32 +1192,32 @@
             "token": {
               "text": "0.1",
               "location": {
-                "start_line": 33,
+                "start_line": 34,
                 "start_column": 58,
-                "end_line": 33,
+                "end_line": 34,
                 "end_column": 61,
-                "start": 2224,
-                "end": 2227,
+                "start": 2308,
+                "end": 2311,
                 "source": 13584111925557694778
               },
-              "token_number": 99,
+              "token_number": 100,
               "token_type": 68
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2224,
-              "end": 2227
+              "start": 2308,
+              "end": 2311
             }
           }
         }
       },
       "location": {
-        "start_line": 33,
+        "start_line": 34,
         "start_column": 3,
-        "end_line": 33,
+        "end_line": 34,
         "end_column": 53,
-        "start": 2169,
-        "end": 2219,
+        "start": 2253,
+        "end": 2303,
         "source": 13584111925557694778
       },
       "condition": null,
@@ -1242,15 +1242,15 @@
       "name_token": {
         "text": "gnd",
         "location": {
-          "start_line": 34,
+          "start_line": 35,
           "start_column": 43,
-          "end_line": 34,
+          "end_line": 35,
           "end_column": 46,
-          "start": 2272,
-          "end": 2275,
+          "start": 2356,
+          "end": 2359,
           "source": 13584111925557694778
         },
-        "token_number": 111,
+        "token_number": 112,
         "token_type": 64
       },
       "type_name": {
@@ -1258,71 +1258,71 @@
           {
             "text": "Modelica",
             "location": {
-              "start_line": 34,
+              "start_line": 35,
               "start_column": 3,
-              "end_line": 34,
+              "end_line": 35,
               "end_column": 11,
-              "start": 2232,
-              "end": 2240,
+              "start": 2316,
+              "end": 2324,
               "source": 13584111925557694778
             },
-            "token_number": 102,
+            "token_number": 103,
             "token_type": 64
           },
           {
             "text": "Electrical",
             "location": {
-              "start_line": 34,
+              "start_line": 35,
               "start_column": 12,
-              "end_line": 34,
+              "end_line": 35,
               "end_column": 22,
-              "start": 2241,
-              "end": 2251,
+              "start": 2325,
+              "end": 2335,
               "source": 13584111925557694778
             },
-            "token_number": 104,
+            "token_number": 105,
             "token_type": 64
           },
           {
             "text": "Analog",
             "location": {
-              "start_line": 34,
+              "start_line": 35,
               "start_column": 23,
-              "end_line": 34,
+              "end_line": 35,
               "end_column": 29,
-              "start": 2252,
-              "end": 2258,
+              "start": 2336,
+              "end": 2342,
               "source": 13584111925557694778
             },
-            "token_number": 106,
+            "token_number": 107,
             "token_type": 64
           },
           {
             "text": "Basic",
             "location": {
-              "start_line": 34,
+              "start_line": 35,
               "start_column": 30,
-              "end_line": 34,
+              "end_line": 35,
               "end_column": 35,
-              "start": 2259,
-              "end": 2264,
+              "start": 2343,
+              "end": 2348,
               "source": 13584111925557694778
             },
-            "token_number": 108,
+            "token_number": 109,
             "token_type": 64
           },
           {
             "text": "Ground",
             "location": {
-              "start_line": 34,
+              "start_line": 35,
               "start_column": 36,
-              "end_line": 34,
+              "end_line": 35,
               "end_column": 42,
-              "start": 2265,
-              "end": 2271,
+              "start": 2349,
+              "end": 2355,
               "source": 13584111925557694778
             },
-            "token_number": 110,
+            "token_number": 111,
             "token_type": 64
           }
         ]
@@ -1335,8 +1335,8 @@
         "Empty": {
           "span": {
             "source": 13584111925557694778,
-            "start": 2232,
-            "end": 2275
+            "start": 2316,
+            "end": 2359
           }
         }
       },
@@ -1354,12 +1354,12 @@
       "source_modification_redeclare_flags": [],
       "modifications": {},
       "location": {
-        "start_line": 34,
+        "start_line": 35,
         "start_column": 3,
-        "end_line": 34,
+        "end_line": 35,
         "end_column": 46,
-        "start": 2232,
-        "end": 2275,
+        "start": 2316,
+        "end": 2359,
         "source": 13584111925557694778
       },
       "condition": null,
@@ -1384,15 +1384,15 @@
       "name_token": {
         "text": "load",
         "location": {
-          "start_line": 37,
+          "start_line": 38,
           "start_column": 52,
-          "end_line": 37,
+          "end_line": 38,
           "end_column": 56,
-          "start": 2360,
-          "end": 2364,
+          "start": 2444,
+          "end": 2448,
           "source": 13584111925557694778
         },
-        "token_number": 123,
+        "token_number": 124,
         "token_type": 64
       },
       "type_name": {
@@ -1400,71 +1400,71 @@
           {
             "text": "Modelica",
             "location": {
-              "start_line": 37,
+              "start_line": 38,
               "start_column": 3,
-              "end_line": 37,
+              "end_line": 38,
               "end_column": 11,
-              "start": 2311,
-              "end": 2319,
+              "start": 2395,
+              "end": 2403,
               "source": 13584111925557694778
             },
-            "token_number": 114,
+            "token_number": 115,
             "token_type": 64
           },
           {
             "text": "Mechanics",
             "location": {
-              "start_line": 37,
+              "start_line": 38,
               "start_column": 12,
-              "end_line": 37,
+              "end_line": 38,
               "end_column": 21,
-              "start": 2320,
-              "end": 2329,
+              "start": 2404,
+              "end": 2413,
               "source": 13584111925557694778
             },
-            "token_number": 116,
+            "token_number": 117,
             "token_type": 64
           },
           {
             "text": "Rotational",
             "location": {
-              "start_line": 37,
+              "start_line": 38,
               "start_column": 22,
-              "end_line": 37,
+              "end_line": 38,
               "end_column": 32,
-              "start": 2330,
-              "end": 2340,
+              "start": 2414,
+              "end": 2424,
               "source": 13584111925557694778
             },
-            "token_number": 118,
+            "token_number": 119,
             "token_type": 64
           },
           {
             "text": "Components",
             "location": {
-              "start_line": 37,
+              "start_line": 38,
               "start_column": 33,
-              "end_line": 37,
+              "end_line": 38,
               "end_column": 43,
-              "start": 2341,
-              "end": 2351,
+              "start": 2425,
+              "end": 2435,
               "source": 13584111925557694778
             },
-            "token_number": 120,
+            "token_number": 121,
             "token_type": 64
           },
           {
             "text": "Inertia",
             "location": {
-              "start_line": 37,
+              "start_line": 38,
               "start_column": 44,
-              "end_line": 37,
+              "end_line": 38,
               "end_column": 51,
-              "start": 2352,
-              "end": 2359,
+              "start": 2436,
+              "end": 2443,
               "source": 13584111925557694778
             },
-            "token_number": 122,
+            "token_number": 123,
             "token_type": 64
           }
         ]
@@ -1477,8 +1477,8 @@
         "Empty": {
           "span": {
             "source": 13584111925557694778,
-            "start": 2311,
-            "end": 2364
+            "start": 2395,
+            "end": 2448
           }
         }
       },
@@ -1500,15 +1500,15 @@
                   "ident": {
                     "text": "J",
                     "location": {
-                      "start_line": 37,
+                      "start_line": 38,
                       "start_column": 57,
-                      "end_line": 37,
+                      "end_line": 38,
                       "end_column": 58,
-                      "start": 2365,
-                      "end": 2366,
+                      "start": 2449,
+                      "end": 2450,
                       "source": 13584111925557694778
                     },
-                    "token_number": 125,
+                    "token_number": 126,
                     "token_type": 64
                   },
                   "subs": null
@@ -1516,8 +1516,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2365,
-                "end": 2366
+                "start": 2449,
+                "end": 2450
               }
             },
             "value": {
@@ -1526,28 +1526,28 @@
                 "token": {
                   "text": "0.05",
                   "location": {
-                    "start_line": 37,
+                    "start_line": 38,
                     "start_column": 61,
-                    "end_line": 37,
+                    "end_line": 38,
                     "end_column": 65,
-                    "start": 2369,
-                    "end": 2373,
+                    "start": 2453,
+                    "end": 2457,
                     "source": 13584111925557694778
                   },
-                  "token_number": 127,
+                  "token_number": 128,
                   "token_type": 68
                 },
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 2369,
-                  "end": 2373
+                  "start": 2453,
+                  "end": 2457
                 }
               }
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2365,
-              "end": 2373
+              "start": 2449,
+              "end": 2457
             }
           }
         },
@@ -1560,15 +1560,15 @@
                   "ident": {
                     "text": "phi",
                     "location": {
-                      "start_line": 37,
+                      "start_line": 38,
                       "start_column": 67,
-                      "end_line": 37,
+                      "end_line": 38,
                       "end_column": 70,
-                      "start": 2375,
-                      "end": 2378,
+                      "start": 2459,
+                      "end": 2462,
                       "source": 13584111925557694778
                     },
-                    "token_number": 129,
+                    "token_number": 130,
                     "token_type": 64
                   },
                   "subs": null
@@ -1576,8 +1576,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2375,
-                "end": 2378
+                "start": 2459,
+                "end": 2462
               }
             },
             "modifications": [
@@ -1590,15 +1590,15 @@
                         "ident": {
                           "text": "start",
                           "location": {
-                            "start_line": 37,
+                            "start_line": 38,
                             "start_column": 71,
-                            "end_line": 37,
+                            "end_line": 38,
                             "end_column": 76,
-                            "start": 2379,
-                            "end": 2384,
+                            "start": 2463,
+                            "end": 2468,
                             "source": 13584111925557694778
                           },
-                          "token_number": 131,
+                          "token_number": 132,
                           "token_type": 64
                         },
                         "subs": null
@@ -1606,8 +1606,8 @@
                     ],
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2379,
-                      "end": 2384
+                      "start": 2463,
+                      "end": 2468
                     }
                   },
                   "value": {
@@ -1616,28 +1616,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 37,
+                          "start_line": 38,
                           "start_column": 79,
-                          "end_line": 37,
+                          "end_line": 38,
                           "end_column": 80,
-                          "start": 2387,
-                          "end": 2388,
+                          "start": 2471,
+                          "end": 2472,
                           "source": 13584111925557694778
                         },
-                        "token_number": 133,
+                        "token_number": 134,
                         "token_type": 67
                       },
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2387,
-                        "end": 2388
+                        "start": 2471,
+                        "end": 2472
                       }
                     }
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2379,
-                    "end": 2388
+                    "start": 2463,
+                    "end": 2472
                   }
                 }
               }
@@ -1653,8 +1653,8 @@
             ],
             "span": {
               "source": 13584111925557694778,
-              "start": 2375,
-              "end": 2388
+              "start": 2459,
+              "end": 2472
             }
           }
         },
@@ -1667,15 +1667,15 @@
                   "ident": {
                     "text": "w",
                     "location": {
-                      "start_line": 37,
+                      "start_line": 38,
                       "start_column": 83,
-                      "end_line": 37,
+                      "end_line": 38,
                       "end_column": 84,
-                      "start": 2391,
-                      "end": 2392,
+                      "start": 2475,
+                      "end": 2476,
                       "source": 13584111925557694778
                     },
-                    "token_number": 136,
+                    "token_number": 137,
                     "token_type": 64
                   },
                   "subs": null
@@ -1683,8 +1683,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2391,
-                "end": 2392
+                "start": 2475,
+                "end": 2476
               }
             },
             "modifications": [
@@ -1697,15 +1697,15 @@
                         "ident": {
                           "text": "start",
                           "location": {
-                            "start_line": 37,
+                            "start_line": 38,
                             "start_column": 85,
-                            "end_line": 37,
+                            "end_line": 38,
                             "end_column": 90,
-                            "start": 2393,
-                            "end": 2398,
+                            "start": 2477,
+                            "end": 2482,
                             "source": 13584111925557694778
                           },
-                          "token_number": 138,
+                          "token_number": 139,
                           "token_type": 64
                         },
                         "subs": null
@@ -1713,8 +1713,8 @@
                     ],
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2393,
-                      "end": 2398
+                      "start": 2477,
+                      "end": 2482
                     }
                   },
                   "value": {
@@ -1723,28 +1723,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 37,
+                          "start_line": 38,
                           "start_column": 93,
-                          "end_line": 37,
+                          "end_line": 38,
                           "end_column": 94,
-                          "start": 2401,
-                          "end": 2402,
+                          "start": 2485,
+                          "end": 2486,
                           "source": 13584111925557694778
                         },
-                        "token_number": 140,
+                        "token_number": 141,
                         "token_type": 67
                       },
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2401,
-                        "end": 2402
+                        "start": 2485,
+                        "end": 2486
                       }
                     }
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2393,
-                    "end": 2402
+                    "start": 2477,
+                    "end": 2486
                   }
                 }
               }
@@ -1760,8 +1760,8 @@
             ],
             "span": {
               "source": 13584111925557694778,
-              "start": 2391,
-              "end": 2402
+              "start": 2475,
+              "end": 2486
             }
           }
         }
@@ -1788,21 +1788,21 @@
             "token": {
               "text": "0.05",
               "location": {
-                "start_line": 37,
+                "start_line": 38,
                 "start_column": 61,
-                "end_line": 37,
+                "end_line": 38,
                 "end_column": 65,
-                "start": 2369,
-                "end": 2373,
+                "start": 2453,
+                "end": 2457,
                 "source": 13584111925557694778
               },
-              "token_number": 127,
+              "token_number": 128,
               "token_type": 68
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2369,
-              "end": 2373
+              "start": 2453,
+              "end": 2457
             }
           }
         },
@@ -1815,15 +1815,15 @@
                   "ident": {
                     "text": "phi",
                     "location": {
-                      "start_line": 37,
+                      "start_line": 38,
                       "start_column": 67,
-                      "end_line": 37,
+                      "end_line": 38,
                       "end_column": 70,
-                      "start": 2375,
-                      "end": 2378,
+                      "start": 2459,
+                      "end": 2462,
                       "source": 13584111925557694778
                     },
-                    "token_number": 129,
+                    "token_number": 130,
                     "token_type": 64
                   },
                   "subs": null
@@ -1831,8 +1831,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2375,
-                "end": 2378
+                "start": 2459,
+                "end": 2462
               }
             },
             "modifications": [
@@ -1845,15 +1845,15 @@
                         "ident": {
                           "text": "start",
                           "location": {
-                            "start_line": 37,
+                            "start_line": 38,
                             "start_column": 71,
-                            "end_line": 37,
+                            "end_line": 38,
                             "end_column": 76,
-                            "start": 2379,
-                            "end": 2384,
+                            "start": 2463,
+                            "end": 2468,
                             "source": 13584111925557694778
                           },
-                          "token_number": 131,
+                          "token_number": 132,
                           "token_type": 64
                         },
                         "subs": null
@@ -1861,8 +1861,8 @@
                     ],
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2379,
-                      "end": 2384
+                      "start": 2463,
+                      "end": 2468
                     }
                   },
                   "value": {
@@ -1871,28 +1871,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 37,
+                          "start_line": 38,
                           "start_column": 79,
-                          "end_line": 37,
+                          "end_line": 38,
                           "end_column": 80,
-                          "start": 2387,
-                          "end": 2388,
+                          "start": 2471,
+                          "end": 2472,
                           "source": 13584111925557694778
                         },
-                        "token_number": 133,
+                        "token_number": 134,
                         "token_type": 67
                       },
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2387,
-                        "end": 2388
+                        "start": 2471,
+                        "end": 2472
                       }
                     }
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2379,
-                    "end": 2388
+                    "start": 2463,
+                    "end": 2472
                   }
                 }
               }
@@ -1908,8 +1908,8 @@
             ],
             "span": {
               "source": 13584111925557694778,
-              "start": 2375,
-              "end": 2388
+              "start": 2459,
+              "end": 2472
             }
           }
         },
@@ -1922,15 +1922,15 @@
                   "ident": {
                     "text": "w",
                     "location": {
-                      "start_line": 37,
+                      "start_line": 38,
                       "start_column": 83,
-                      "end_line": 37,
+                      "end_line": 38,
                       "end_column": 84,
-                      "start": 2391,
-                      "end": 2392,
+                      "start": 2475,
+                      "end": 2476,
                       "source": 13584111925557694778
                     },
-                    "token_number": 136,
+                    "token_number": 137,
                     "token_type": 64
                   },
                   "subs": null
@@ -1938,8 +1938,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2391,
-                "end": 2392
+                "start": 2475,
+                "end": 2476
               }
             },
             "modifications": [
@@ -1952,15 +1952,15 @@
                         "ident": {
                           "text": "start",
                           "location": {
-                            "start_line": 37,
+                            "start_line": 38,
                             "start_column": 85,
-                            "end_line": 37,
+                            "end_line": 38,
                             "end_column": 90,
-                            "start": 2393,
-                            "end": 2398,
+                            "start": 2477,
+                            "end": 2482,
                             "source": 13584111925557694778
                           },
-                          "token_number": 138,
+                          "token_number": 139,
                           "token_type": 64
                         },
                         "subs": null
@@ -1968,8 +1968,8 @@
                     ],
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2393,
-                      "end": 2398
+                      "start": 2477,
+                      "end": 2482
                     }
                   },
                   "value": {
@@ -1978,28 +1978,28 @@
                       "token": {
                         "text": "0",
                         "location": {
-                          "start_line": 37,
+                          "start_line": 38,
                           "start_column": 93,
-                          "end_line": 37,
+                          "end_line": 38,
                           "end_column": 94,
-                          "start": 2401,
-                          "end": 2402,
+                          "start": 2485,
+                          "end": 2486,
                           "source": 13584111925557694778
                         },
-                        "token_number": 140,
+                        "token_number": 141,
                         "token_type": 67
                       },
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2401,
-                        "end": 2402
+                        "start": 2485,
+                        "end": 2486
                       }
                     }
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2393,
-                    "end": 2402
+                    "start": 2477,
+                    "end": 2486
                   }
                 }
               }
@@ -2015,19 +2015,19 @@
             ],
             "span": {
               "source": 13584111925557694778,
-              "start": 2391,
-              "end": 2402
+              "start": 2475,
+              "end": 2486
             }
           }
         }
       },
       "location": {
-        "start_line": 37,
+        "start_line": 38,
         "start_column": 3,
-        "end_line": 37,
+        "end_line": 38,
         "end_column": 56,
-        "start": 2311,
-        "end": 2364,
+        "start": 2395,
+        "end": 2448,
         "source": 13584111925557694778
       },
       "condition": null,
@@ -2052,15 +2052,15 @@
       "name_token": {
         "text": "maxSpeed",
         "location": {
-          "start_line": 40,
+          "start_line": 41,
           "start_column": 18,
-          "end_line": 40,
+          "end_line": 41,
           "end_column": 26,
-          "start": 2461,
-          "end": 2469,
+          "start": 2545,
+          "end": 2553,
           "source": 13584111925557694778
         },
-        "token_number": 147,
+        "token_number": 148,
         "token_type": 64
       },
       "type_name": {
@@ -2068,15 +2068,15 @@
           {
             "text": "Real",
             "location": {
-              "start_line": 40,
+              "start_line": 41,
               "start_column": 13,
-              "end_line": 40,
+              "end_line": 41,
               "end_column": 17,
-              "start": 2456,
-              "end": 2460,
+              "start": 2540,
+              "end": 2544,
               "source": 13584111925557694778
             },
-            "token_number": 146,
+            "token_number": 147,
             "token_type": 64
           }
         ]
@@ -2085,15 +2085,15 @@
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 40,
+            "start_line": 41,
             "start_column": 3,
-            "end_line": 40,
+            "end_line": 41,
             "end_column": 12,
-            "start": 2446,
-            "end": 2455,
+            "start": 2530,
+            "end": 2539,
             "source": 13584111925557694778
           },
-          "token_number": 145,
+          "token_number": 146,
           "token_type": 48
         }
       },
@@ -2103,15 +2103,15 @@
         {
           "text": "Speed threshold [rad/s]",
           "location": {
-            "start_line": 40,
+            "start_line": 41,
             "start_column": 34,
-            "end_line": 40,
+            "end_line": 41,
             "end_column": 59,
-            "start": 2477,
-            "end": 2502,
+            "start": 2561,
+            "end": 2586,
             "source": 13584111925557694778
           },
-          "token_number": 150,
+          "token_number": 151,
           "token_type": 66
         }
       ],
@@ -2134,8 +2134,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2456,
-            "end": 2469
+            "start": 2540,
+            "end": 2553
           }
         }
       },
@@ -2148,21 +2148,21 @@
           "token": {
             "text": "30.0",
             "location": {
-              "start_line": 40,
+              "start_line": 41,
               "start_column": 29,
-              "end_line": 40,
+              "end_line": 41,
               "end_column": 33,
-              "start": 2472,
-              "end": 2476,
+              "start": 2556,
+              "end": 2560,
               "source": 13584111925557694778
             },
-            "token_number": 149,
+            "token_number": 150,
             "token_type": 68
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2472,
-            "end": 2476
+            "start": 2556,
+            "end": 2560
           }
         }
       },
@@ -2176,12 +2176,12 @@
       "source_modification_redeclare_flags": [],
       "modifications": {},
       "location": {
-        "start_line": 40,
+        "start_line": 41,
         "start_column": 13,
-        "end_line": 40,
+        "end_line": 41,
         "end_column": 26,
-        "start": 2456,
-        "end": 2469,
+        "start": 2540,
+        "end": 2553,
         "source": 13584111925557694778
       },
       "condition": null,
@@ -2206,15 +2206,15 @@
       "name_token": {
         "text": "overSpeed",
         "location": {
-          "start_line": 41,
+          "start_line": 42,
           "start_column": 11,
-          "end_line": 41,
+          "end_line": 42,
           "end_column": 20,
-          "start": 2514,
-          "end": 2523,
+          "start": 2598,
+          "end": 2607,
           "source": 13584111925557694778
         },
-        "token_number": 153,
+        "token_number": 154,
         "token_type": 64
       },
       "type_name": {
@@ -2222,15 +2222,15 @@
           {
             "text": "Boolean",
             "location": {
-              "start_line": 41,
+              "start_line": 42,
               "start_column": 3,
-              "end_line": 41,
+              "end_line": 42,
               "end_column": 10,
-              "start": 2506,
-              "end": 2513,
+              "start": 2590,
+              "end": 2597,
               "source": 13584111925557694778
             },
-            "token_number": 152,
+            "token_number": 153,
             "token_type": 64
           }
         ]
@@ -2242,15 +2242,15 @@
         {
           "text": "True when load exceeds threshold",
           "location": {
-            "start_line": 41,
+            "start_line": 42,
             "start_column": 36,
-            "end_line": 41,
+            "end_line": 42,
             "end_column": 70,
-            "start": 2539,
-            "end": 2573,
+            "start": 2623,
+            "end": 2657,
             "source": 13584111925557694778
           },
-          "token_number": 159,
+          "token_number": 160,
           "token_type": 66
         }
       ],
@@ -2260,21 +2260,21 @@
           "token": {
             "text": "false",
             "location": {
-              "start_line": 41,
+              "start_line": 42,
               "start_column": 29,
-              "end_line": 41,
+              "end_line": 42,
               "end_column": 34,
-              "start": 2532,
-              "end": 2537,
+              "start": 2616,
+              "end": 2621,
               "source": 13584111925557694778
             },
-            "token_number": 157,
+            "token_number": 158,
             "token_type": 28
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2532,
-            "end": 2537
+            "start": 2616,
+            "end": 2621
           }
         }
       },
@@ -2296,15 +2296,15 @@
                   "ident": {
                     "text": "start",
                     "location": {
-                      "start_line": 41,
+                      "start_line": 42,
                       "start_column": 21,
-                      "end_line": 41,
+                      "end_line": 42,
                       "end_column": 26,
-                      "start": 2524,
-                      "end": 2529,
+                      "start": 2608,
+                      "end": 2613,
                       "source": 13584111925557694778
                     },
-                    "token_number": 155,
+                    "token_number": 156,
                     "token_type": 64
                   },
                   "subs": null
@@ -2312,8 +2312,8 @@
               ],
               "span": {
                 "source": 13584111925557694778,
-                "start": 2524,
-                "end": 2529
+                "start": 2608,
+                "end": 2613
               }
             },
             "value": {
@@ -2322,28 +2322,28 @@
                 "token": {
                   "text": "false",
                   "location": {
-                    "start_line": 41,
+                    "start_line": 42,
                     "start_column": 29,
-                    "end_line": 41,
+                    "end_line": 42,
                     "end_column": 34,
-                    "start": 2532,
-                    "end": 2537,
+                    "start": 2616,
+                    "end": 2621,
                     "source": 13584111925557694778
                   },
-                  "token_number": 157,
+                  "token_number": 158,
                   "token_type": 28
                 },
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 2532,
-                  "end": 2537
+                  "start": 2616,
+                  "end": 2621
                 }
               }
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2524,
-              "end": 2537
+              "start": 2608,
+              "end": 2621
             }
           }
         }
@@ -2359,12 +2359,12 @@
       ],
       "modifications": {},
       "location": {
-        "start_line": 41,
+        "start_line": 42,
         "start_column": 3,
-        "end_line": 41,
+        "end_line": 42,
         "end_column": 20,
-        "start": 2506,
-        "end": 2523,
+        "start": 2590,
+        "end": 2607,
         "source": 13584111925557694778
       },
       "condition": null,
@@ -2392,15 +2392,15 @@
               "ident": {
                 "text": "src",
                 "location": {
-                  "start_line": 45,
+                  "start_line": 46,
                   "start_column": 11,
-                  "end_line": 45,
+                  "end_line": 46,
                   "end_column": 14,
-                  "start": 2655,
-                  "end": 2658,
+                  "start": 2739,
+                  "end": 2742,
                   "source": 13584111925557694778
                 },
-                "token_number": 165,
+                "token_number": 166,
                 "token_type": 64
               },
               "subs": null
@@ -2409,15 +2409,15 @@
               "ident": {
                 "text": "p",
                 "location": {
-                  "start_line": 45,
+                  "start_line": 46,
                   "start_column": 15,
-                  "end_line": 45,
+                  "end_line": 46,
                   "end_column": 16,
-                  "start": 2659,
-                  "end": 2660,
+                  "start": 2743,
+                  "end": 2744,
                   "source": 13584111925557694778
                 },
-                "token_number": 167,
+                "token_number": 168,
                 "token_type": 64
               },
               "subs": null
@@ -2425,8 +2425,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2655,
-            "end": 2660
+            "start": 2739,
+            "end": 2744
           }
         },
         "rhs": {
@@ -2436,15 +2436,15 @@
               "ident": {
                 "text": "R",
                 "location": {
-                  "start_line": 45,
+                  "start_line": 46,
                   "start_column": 18,
-                  "end_line": 45,
+                  "end_line": 46,
                   "end_column": 19,
-                  "start": 2662,
-                  "end": 2663,
+                  "start": 2746,
+                  "end": 2747,
                   "source": 13584111925557694778
                 },
-                "token_number": 169,
+                "token_number": 170,
                 "token_type": 64
               },
               "subs": null
@@ -2453,15 +2453,15 @@
               "ident": {
                 "text": "p",
                 "location": {
-                  "start_line": 45,
+                  "start_line": 46,
                   "start_column": 20,
-                  "end_line": 45,
+                  "end_line": 46,
                   "end_column": 21,
-                  "start": 2664,
-                  "end": 2665,
+                  "start": 2748,
+                  "end": 2749,
                   "source": 13584111925557694778
                 },
-                "token_number": 171,
+                "token_number": 172,
                 "token_type": 64
               },
               "subs": null
@@ -2469,8 +2469,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2662,
-            "end": 2665
+            "start": 2746,
+            "end": 2749
           }
         }
       }
@@ -2484,15 +2484,15 @@
               "ident": {
                 "text": "R",
                 "location": {
-                  "start_line": 46,
+                  "start_line": 47,
                   "start_column": 11,
-                  "end_line": 46,
+                  "end_line": 47,
                   "end_column": 12,
-                  "start": 2678,
-                  "end": 2679,
+                  "start": 2762,
+                  "end": 2763,
                   "source": 13584111925557694778
                 },
-                "token_number": 176,
+                "token_number": 177,
                 "token_type": 64
               },
               "subs": null
@@ -2501,15 +2501,15 @@
               "ident": {
                 "text": "n",
                 "location": {
-                  "start_line": 46,
+                  "start_line": 47,
                   "start_column": 13,
-                  "end_line": 46,
+                  "end_line": 47,
                   "end_column": 14,
-                  "start": 2680,
-                  "end": 2681,
+                  "start": 2764,
+                  "end": 2765,
                   "source": 13584111925557694778
                 },
-                "token_number": 178,
+                "token_number": 179,
                 "token_type": 64
               },
               "subs": null
@@ -2517,8 +2517,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2678,
-            "end": 2681
+            "start": 2762,
+            "end": 2765
           }
         },
         "rhs": {
@@ -2528,15 +2528,15 @@
               "ident": {
                 "text": "L",
                 "location": {
-                  "start_line": 46,
+                  "start_line": 47,
                   "start_column": 16,
-                  "end_line": 46,
+                  "end_line": 47,
                   "end_column": 17,
-                  "start": 2683,
-                  "end": 2684,
+                  "start": 2767,
+                  "end": 2768,
                   "source": 13584111925557694778
                 },
-                "token_number": 180,
+                "token_number": 181,
                 "token_type": 64
               },
               "subs": null
@@ -2545,15 +2545,15 @@
               "ident": {
                 "text": "p",
                 "location": {
-                  "start_line": 46,
+                  "start_line": 47,
                   "start_column": 18,
-                  "end_line": 46,
+                  "end_line": 47,
                   "end_column": 19,
-                  "start": 2685,
-                  "end": 2686,
+                  "start": 2769,
+                  "end": 2770,
                   "source": 13584111925557694778
                 },
-                "token_number": 182,
+                "token_number": 183,
                 "token_type": 64
               },
               "subs": null
@@ -2561,8 +2561,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2683,
-            "end": 2686
+            "start": 2767,
+            "end": 2770
           }
         }
       }
@@ -2576,15 +2576,15 @@
               "ident": {
                 "text": "L",
                 "location": {
-                  "start_line": 47,
+                  "start_line": 48,
                   "start_column": 11,
-                  "end_line": 47,
+                  "end_line": 48,
                   "end_column": 12,
-                  "start": 2699,
-                  "end": 2700,
+                  "start": 2783,
+                  "end": 2784,
                   "source": 13584111925557694778
                 },
-                "token_number": 187,
+                "token_number": 188,
                 "token_type": 64
               },
               "subs": null
@@ -2593,15 +2593,15 @@
               "ident": {
                 "text": "n",
                 "location": {
-                  "start_line": 47,
+                  "start_line": 48,
                   "start_column": 13,
-                  "end_line": 47,
+                  "end_line": 48,
                   "end_column": 14,
-                  "start": 2701,
-                  "end": 2702,
+                  "start": 2785,
+                  "end": 2786,
                   "source": 13584111925557694778
                 },
-                "token_number": 189,
+                "token_number": 190,
                 "token_type": 64
               },
               "subs": null
@@ -2609,8 +2609,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2699,
-            "end": 2702
+            "start": 2783,
+            "end": 2786
           }
         },
         "rhs": {
@@ -2620,15 +2620,15 @@
               "ident": {
                 "text": "emf",
                 "location": {
-                  "start_line": 47,
+                  "start_line": 48,
                   "start_column": 16,
-                  "end_line": 47,
+                  "end_line": 48,
                   "end_column": 19,
-                  "start": 2704,
-                  "end": 2707,
+                  "start": 2788,
+                  "end": 2791,
                   "source": 13584111925557694778
                 },
-                "token_number": 191,
+                "token_number": 192,
                 "token_type": 64
               },
               "subs": null
@@ -2637,15 +2637,15 @@
               "ident": {
                 "text": "p",
                 "location": {
-                  "start_line": 47,
+                  "start_line": 48,
                   "start_column": 20,
-                  "end_line": 47,
+                  "end_line": 48,
                   "end_column": 21,
-                  "start": 2708,
-                  "end": 2709,
+                  "start": 2792,
+                  "end": 2793,
                   "source": 13584111925557694778
                 },
-                "token_number": 193,
+                "token_number": 194,
                 "token_type": 64
               },
               "subs": null
@@ -2653,8 +2653,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2704,
-            "end": 2709
+            "start": 2788,
+            "end": 2793
           }
         }
       }
@@ -2668,15 +2668,15 @@
               "ident": {
                 "text": "emf",
                 "location": {
-                  "start_line": 48,
+                  "start_line": 49,
                   "start_column": 11,
-                  "end_line": 48,
+                  "end_line": 49,
                   "end_column": 14,
-                  "start": 2722,
-                  "end": 2725,
+                  "start": 2806,
+                  "end": 2809,
                   "source": 13584111925557694778
                 },
-                "token_number": 198,
+                "token_number": 199,
                 "token_type": 64
               },
               "subs": null
@@ -2685,15 +2685,15 @@
               "ident": {
                 "text": "n",
                 "location": {
-                  "start_line": 48,
+                  "start_line": 49,
                   "start_column": 15,
-                  "end_line": 48,
+                  "end_line": 49,
                   "end_column": 16,
-                  "start": 2726,
-                  "end": 2727,
+                  "start": 2810,
+                  "end": 2811,
                   "source": 13584111925557694778
                 },
-                "token_number": 200,
+                "token_number": 201,
                 "token_type": 64
               },
               "subs": null
@@ -2701,8 +2701,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2722,
-            "end": 2727
+            "start": 2806,
+            "end": 2811
           }
         },
         "rhs": {
@@ -2712,15 +2712,15 @@
               "ident": {
                 "text": "src",
                 "location": {
-                  "start_line": 48,
+                  "start_line": 49,
                   "start_column": 18,
-                  "end_line": 48,
+                  "end_line": 49,
                   "end_column": 21,
-                  "start": 2729,
-                  "end": 2732,
+                  "start": 2813,
+                  "end": 2816,
                   "source": 13584111925557694778
                 },
-                "token_number": 202,
+                "token_number": 203,
                 "token_type": 64
               },
               "subs": null
@@ -2729,15 +2729,15 @@
               "ident": {
                 "text": "n",
                 "location": {
-                  "start_line": 48,
+                  "start_line": 49,
                   "start_column": 22,
-                  "end_line": 48,
+                  "end_line": 49,
                   "end_column": 23,
-                  "start": 2733,
-                  "end": 2734,
+                  "start": 2817,
+                  "end": 2818,
                   "source": 13584111925557694778
                 },
-                "token_number": 204,
+                "token_number": 205,
                 "token_type": 64
               },
               "subs": null
@@ -2745,8 +2745,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2729,
-            "end": 2734
+            "start": 2813,
+            "end": 2818
           }
         }
       }
@@ -2760,15 +2760,15 @@
               "ident": {
                 "text": "src",
                 "location": {
-                  "start_line": 49,
+                  "start_line": 50,
                   "start_column": 11,
-                  "end_line": 49,
+                  "end_line": 50,
                   "end_column": 14,
-                  "start": 2747,
-                  "end": 2750,
+                  "start": 2831,
+                  "end": 2834,
                   "source": 13584111925557694778
                 },
-                "token_number": 209,
+                "token_number": 210,
                 "token_type": 64
               },
               "subs": null
@@ -2777,15 +2777,15 @@
               "ident": {
                 "text": "n",
                 "location": {
-                  "start_line": 49,
+                  "start_line": 50,
                   "start_column": 15,
-                  "end_line": 49,
+                  "end_line": 50,
                   "end_column": 16,
-                  "start": 2751,
-                  "end": 2752,
+                  "start": 2835,
+                  "end": 2836,
                   "source": 13584111925557694778
                 },
-                "token_number": 211,
+                "token_number": 212,
                 "token_type": 64
               },
               "subs": null
@@ -2793,8 +2793,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2747,
-            "end": 2752
+            "start": 2831,
+            "end": 2836
           }
         },
         "rhs": {
@@ -2804,15 +2804,15 @@
               "ident": {
                 "text": "gnd",
                 "location": {
-                  "start_line": 49,
+                  "start_line": 50,
                   "start_column": 18,
-                  "end_line": 49,
+                  "end_line": 50,
                   "end_column": 21,
-                  "start": 2754,
-                  "end": 2757,
+                  "start": 2838,
+                  "end": 2841,
                   "source": 13584111925557694778
                 },
-                "token_number": 213,
+                "token_number": 214,
                 "token_type": 64
               },
               "subs": null
@@ -2821,15 +2821,15 @@
               "ident": {
                 "text": "p",
                 "location": {
-                  "start_line": 49,
+                  "start_line": 50,
                   "start_column": 22,
-                  "end_line": 49,
+                  "end_line": 50,
                   "end_column": 23,
-                  "start": 2758,
-                  "end": 2759,
+                  "start": 2842,
+                  "end": 2843,
                   "source": 13584111925557694778
                 },
-                "token_number": 215,
+                "token_number": 216,
                 "token_type": 64
               },
               "subs": null
@@ -2837,8 +2837,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2754,
-            "end": 2759
+            "start": 2838,
+            "end": 2843
           }
         }
       }
@@ -2852,15 +2852,15 @@
               "ident": {
                 "text": "emf",
                 "location": {
-                  "start_line": 52,
+                  "start_line": 53,
                   "start_column": 11,
-                  "end_line": 52,
+                  "end_line": 53,
                   "end_column": 14,
-                  "start": 2799,
-                  "end": 2802,
+                  "start": 2883,
+                  "end": 2886,
                   "source": 13584111925557694778
                 },
-                "token_number": 221,
+                "token_number": 222,
                 "token_type": 64
               },
               "subs": null
@@ -2869,15 +2869,15 @@
               "ident": {
                 "text": "flange",
                 "location": {
-                  "start_line": 52,
+                  "start_line": 53,
                   "start_column": 15,
-                  "end_line": 52,
+                  "end_line": 53,
                   "end_column": 21,
-                  "start": 2803,
-                  "end": 2809,
+                  "start": 2887,
+                  "end": 2893,
                   "source": 13584111925557694778
                 },
-                "token_number": 223,
+                "token_number": 224,
                 "token_type": 64
               },
               "subs": null
@@ -2885,8 +2885,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2799,
-            "end": 2809
+            "start": 2883,
+            "end": 2893
           }
         },
         "rhs": {
@@ -2896,15 +2896,15 @@
               "ident": {
                 "text": "load",
                 "location": {
-                  "start_line": 52,
+                  "start_line": 53,
                   "start_column": 23,
-                  "end_line": 52,
+                  "end_line": 53,
                   "end_column": 27,
-                  "start": 2811,
-                  "end": 2815,
+                  "start": 2895,
+                  "end": 2899,
                   "source": 13584111925557694778
                 },
-                "token_number": 225,
+                "token_number": 226,
                 "token_type": 64
               },
               "subs": null
@@ -2913,15 +2913,15 @@
               "ident": {
                 "text": "flange_a",
                 "location": {
-                  "start_line": 52,
+                  "start_line": 53,
                   "start_column": 28,
-                  "end_line": 52,
+                  "end_line": 53,
                   "end_column": 36,
-                  "start": 2816,
-                  "end": 2824,
+                  "start": 2900,
+                  "end": 2908,
                   "source": 13584111925557694778
                 },
-                "token_number": 227,
+                "token_number": 228,
                 "token_type": 64
               },
               "subs": null
@@ -2929,8 +2929,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2811,
-            "end": 2824
+            "start": 2895,
+            "end": 2908
           }
         }
       }
@@ -2949,15 +2949,15 @@
                       "ident": {
                         "text": "load",
                         "location": {
-                          "start_line": 55,
+                          "start_line": 56,
                           "start_column": 8,
-                          "end_line": 55,
+                          "end_line": 56,
                           "end_column": 12,
-                          "start": 2881,
-                          "end": 2885,
+                          "start": 2965,
+                          "end": 2969,
                           "source": 13584111925557694778
                         },
-                        "token_number": 232,
+                        "token_number": 233,
                         "token_type": 64
                       },
                       "subs": null
@@ -2966,15 +2966,15 @@
                       "ident": {
                         "text": "w",
                         "location": {
-                          "start_line": 55,
+                          "start_line": 56,
                           "start_column": 13,
-                          "end_line": 55,
+                          "end_line": 56,
                           "end_column": 14,
-                          "start": 2886,
-                          "end": 2887,
+                          "start": 2970,
+                          "end": 2971,
                           "source": 13584111925557694778
                         },
-                        "token_number": 234,
+                        "token_number": 235,
                         "token_type": 64
                       },
                       "subs": null
@@ -2982,8 +2982,8 @@
                   ],
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2881,
-                    "end": 2887
+                    "start": 2965,
+                    "end": 2971
                   }
                 }
               },
@@ -2995,15 +2995,15 @@
                       "ident": {
                         "text": "maxSpeed",
                         "location": {
-                          "start_line": 55,
+                          "start_line": 56,
                           "start_column": 17,
-                          "end_line": 55,
+                          "end_line": 56,
                           "end_column": 25,
-                          "start": 2890,
-                          "end": 2898,
+                          "start": 2974,
+                          "end": 2982,
                           "source": 13584111925557694778
                         },
-                        "token_number": 236,
+                        "token_number": 237,
                         "token_type": 64
                       },
                       "subs": null
@@ -3011,15 +3011,15 @@
                   ],
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2890,
-                    "end": 2898
+                    "start": 2974,
+                    "end": 2982
                   }
                 }
               },
               "span": {
                 "source": 13584111925557694778,
-                "start": 2881,
-                "end": 2898
+                "start": 2965,
+                "end": 2982
               }
             }
           },
@@ -3034,15 +3034,15 @@
                         "ident": {
                           "text": "overSpeed",
                           "location": {
-                            "start_line": 56,
+                            "start_line": 57,
                             "start_column": 5,
-                            "end_line": 56,
+                            "end_line": 57,
                             "end_column": 14,
-                            "start": 2908,
-                            "end": 2917,
+                            "start": 2992,
+                            "end": 3001,
                             "source": 13584111925557694778
                           },
-                          "token_number": 238,
+                          "token_number": 239,
                           "token_type": 64
                         },
                         "subs": null
@@ -3050,8 +3050,8 @@
                     ],
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2908,
-                      "end": 2917
+                      "start": 2992,
+                      "end": 3001
                     }
                   }
                 },
@@ -3061,21 +3061,21 @@
                     "token": {
                       "text": "true",
                       "location": {
-                        "start_line": 56,
+                        "start_line": 57,
                         "start_column": 17,
-                        "end_line": 56,
+                        "end_line": 57,
                         "end_column": 21,
-                        "start": 2920,
-                        "end": 2924,
+                        "start": 3004,
+                        "end": 3008,
                         "source": 13584111925557694778
                       },
-                      "token_number": 240,
+                      "token_number": 241,
                       "token_type": 59
                     },
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2920,
-                      "end": 2924
+                      "start": 3004,
+                      "end": 3008
                     }
                   }
                 }
@@ -3095,15 +3095,15 @@
                       "ident": {
                         "text": "load",
                         "location": {
-                          "start_line": 57,
+                          "start_line": 58,
                           "start_column": 12,
-                          "end_line": 57,
+                          "end_line": 58,
                           "end_column": 16,
-                          "start": 2937,
-                          "end": 2941,
+                          "start": 3021,
+                          "end": 3025,
                           "source": 13584111925557694778
                         },
-                        "token_number": 243,
+                        "token_number": 244,
                         "token_type": 64
                       },
                       "subs": null
@@ -3112,15 +3112,15 @@
                       "ident": {
                         "text": "w",
                         "location": {
-                          "start_line": 57,
+                          "start_line": 58,
                           "start_column": 17,
-                          "end_line": 57,
+                          "end_line": 58,
                           "end_column": 18,
-                          "start": 2942,
-                          "end": 2943,
+                          "start": 3026,
+                          "end": 3027,
                           "source": 13584111925557694778
                         },
-                        "token_number": 245,
+                        "token_number": 246,
                         "token_type": 64
                       },
                       "subs": null
@@ -3128,8 +3128,8 @@
                   ],
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2937,
-                    "end": 2943
+                    "start": 3021,
+                    "end": 3027
                   }
                 }
               },
@@ -3144,15 +3144,15 @@
                           "ident": {
                             "text": "maxSpeed",
                             "location": {
-                              "start_line": 57,
+                              "start_line": 58,
                               "start_column": 21,
-                              "end_line": 57,
+                              "end_line": 58,
                               "end_column": 29,
-                              "start": 2946,
-                              "end": 2954,
+                              "start": 3030,
+                              "end": 3038,
                               "source": 13584111925557694778
                             },
-                            "token_number": 247,
+                            "token_number": 248,
                             "token_type": 64
                           },
                           "subs": null
@@ -3160,8 +3160,8 @@
                       ],
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2946,
-                        "end": 2954
+                        "start": 3030,
+                        "end": 3038
                       }
                     }
                   },
@@ -3171,35 +3171,35 @@
                       "token": {
                         "text": "0.5",
                         "location": {
-                          "start_line": 57,
+                          "start_line": 58,
                           "start_column": 32,
-                          "end_line": 57,
+                          "end_line": 58,
                           "end_column": 35,
-                          "start": 2957,
-                          "end": 2960,
+                          "start": 3041,
+                          "end": 3044,
                           "source": 13584111925557694778
                         },
-                        "token_number": 249,
+                        "token_number": 250,
                         "token_type": 68
                       },
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2957,
-                        "end": 2960
+                        "start": 3041,
+                        "end": 3044
                       }
                     }
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2946,
-                    "end": 2960
+                    "start": 3030,
+                    "end": 3044
                   }
                 }
               },
               "span": {
                 "source": 13584111925557694778,
-                "start": 2937,
-                "end": 2960
+                "start": 3021,
+                "end": 3044
               }
             }
           },
@@ -3214,15 +3214,15 @@
                         "ident": {
                           "text": "overSpeed",
                           "location": {
-                            "start_line": 58,
+                            "start_line": 59,
                             "start_column": 5,
-                            "end_line": 58,
+                            "end_line": 59,
                             "end_column": 14,
-                            "start": 2970,
-                            "end": 2979,
+                            "start": 3054,
+                            "end": 3063,
                             "source": 13584111925557694778
                           },
-                          "token_number": 251,
+                          "token_number": 252,
                           "token_type": 64
                         },
                         "subs": null
@@ -3230,8 +3230,8 @@
                     ],
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2970,
-                      "end": 2979
+                      "start": 3054,
+                      "end": 3063
                     }
                   }
                 },
@@ -3241,21 +3241,21 @@
                     "token": {
                       "text": "false",
                       "location": {
-                        "start_line": 58,
+                        "start_line": 59,
                         "start_column": 17,
-                        "end_line": 58,
+                        "end_line": 59,
                         "end_column": 22,
-                        "start": 2982,
-                        "end": 2987,
+                        "start": 3066,
+                        "end": 3071,
                         "source": 13584111925557694778
                       },
-                      "token_number": 253,
+                      "token_number": 254,
                       "token_type": 28
                     },
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2982,
-                      "end": 2987
+                      "start": 3066,
+                      "end": 3071
                     }
                   }
                 }
@@ -3272,15 +3272,15 @@
   "equation_keyword": {
     "text": "equation",
     "location": {
-      "start_line": 43,
+      "start_line": 44,
       "start_column": 1,
-      "end_line": 43,
+      "end_line": 44,
       "end_column": 9,
-      "start": 2576,
-      "end": 2584,
+      "start": 2660,
+      "end": 2668,
       "source": 13584111925557694778
     },
-    "token_number": 161,
+    "token_number": 162,
     "token_type": 24
   },
   "initial_equation_keyword": null,
@@ -3289,15 +3289,15 @@
   "end_name_token": {
     "text": "MotorWithBrake",
     "location": {
-      "start_line": 62,
+      "start_line": 63,
       "start_column": 5,
-      "end_line": 62,
+      "end_line": 63,
       "end_column": 19,
-      "start": 3100,
-      "end": 3114,
+      "start": 3184,
+      "end": 3198,
       "source": 13584111925557694778
     },
-    "token_number": 281,
+    "token_number": 282,
     "token_type": 64
   },
   "enum_literals": [],
@@ -3311,15 +3311,15 @@
               "ident": {
                 "text": "experiment",
                 "location": {
-                  "start_line": 61,
+                  "start_line": 62,
                   "start_column": 14,
-                  "end_line": 61,
+                  "end_line": 62,
                   "end_column": 24,
-                  "start": 3015,
-                  "end": 3025,
+                  "start": 3099,
+                  "end": 3109,
                   "source": 13584111925557694778
                 },
-                "token_number": 260,
+                "token_number": 261,
                 "token_type": 64
               },
               "subs": null
@@ -3327,8 +3327,8 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 3015,
-            "end": 3025
+            "start": 3099,
+            "end": 3109
           }
         },
         "modifications": [
@@ -3341,15 +3341,15 @@
                     "ident": {
                       "text": "StartTime",
                       "location": {
-                        "start_line": 61,
+                        "start_line": 62,
                         "start_column": 25,
-                        "end_line": 61,
+                        "end_line": 62,
                         "end_column": 34,
-                        "start": 3026,
-                        "end": 3035,
+                        "start": 3110,
+                        "end": 3119,
                         "source": 13584111925557694778
                       },
-                      "token_number": 262,
+                      "token_number": 263,
                       "token_type": 64
                     },
                     "subs": null
@@ -3357,8 +3357,8 @@
                 ],
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 3026,
-                  "end": 3035
+                  "start": 3110,
+                  "end": 3119
                 }
               },
               "value": {
@@ -3367,28 +3367,28 @@
                   "token": {
                     "text": "0",
                     "location": {
-                      "start_line": 61,
+                      "start_line": 62,
                       "start_column": 37,
-                      "end_line": 61,
+                      "end_line": 62,
                       "end_column": 38,
-                      "start": 3038,
-                      "end": 3039,
+                      "start": 3122,
+                      "end": 3123,
                       "source": 13584111925557694778
                     },
-                    "token_number": 264,
+                    "token_number": 265,
                     "token_type": 67
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 3038,
-                    "end": 3039
+                    "start": 3122,
+                    "end": 3123
                   }
                 }
               },
               "span": {
                 "source": 13584111925557694778,
-                "start": 3026,
-                "end": 3039
+                "start": 3110,
+                "end": 3123
               }
             }
           },
@@ -3401,15 +3401,15 @@
                     "ident": {
                       "text": "StopTime",
                       "location": {
-                        "start_line": 61,
+                        "start_line": 62,
                         "start_column": 40,
-                        "end_line": 61,
+                        "end_line": 62,
                         "end_column": 48,
-                        "start": 3041,
-                        "end": 3049,
+                        "start": 3125,
+                        "end": 3133,
                         "source": 13584111925557694778
                       },
-                      "token_number": 266,
+                      "token_number": 267,
                       "token_type": 64
                     },
                     "subs": null
@@ -3417,8 +3417,8 @@
                 ],
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 3041,
-                  "end": 3049
+                  "start": 3125,
+                  "end": 3133
                 }
               },
               "value": {
@@ -3427,28 +3427,28 @@
                   "token": {
                     "text": "0.5",
                     "location": {
-                      "start_line": 61,
+                      "start_line": 62,
                       "start_column": 51,
-                      "end_line": 61,
+                      "end_line": 62,
                       "end_column": 54,
-                      "start": 3052,
-                      "end": 3055,
+                      "start": 3136,
+                      "end": 3139,
                       "source": 13584111925557694778
                     },
-                    "token_number": 268,
+                    "token_number": 269,
                     "token_type": 68
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 3052,
-                    "end": 3055
+                    "start": 3136,
+                    "end": 3139
                   }
                 }
               },
               "span": {
                 "source": 13584111925557694778,
-                "start": 3041,
-                "end": 3055
+                "start": 3125,
+                "end": 3139
               }
             }
           },
@@ -3461,15 +3461,15 @@
                     "ident": {
                       "text": "Interval",
                       "location": {
-                        "start_line": 61,
+                        "start_line": 62,
                         "start_column": 56,
-                        "end_line": 61,
+                        "end_line": 62,
                         "end_column": 64,
-                        "start": 3057,
-                        "end": 3065,
+                        "start": 3141,
+                        "end": 3149,
                         "source": 13584111925557694778
                       },
-                      "token_number": 270,
+                      "token_number": 271,
                       "token_type": 64
                     },
                     "subs": null
@@ -3477,8 +3477,8 @@
                 ],
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 3057,
-                  "end": 3065
+                  "start": 3141,
+                  "end": 3149
                 }
               },
               "value": {
@@ -3487,28 +3487,28 @@
                   "token": {
                     "text": "0.0005",
                     "location": {
-                      "start_line": 61,
+                      "start_line": 62,
                       "start_column": 67,
-                      "end_line": 61,
+                      "end_line": 62,
                       "end_column": 73,
-                      "start": 3068,
-                      "end": 3074,
+                      "start": 3152,
+                      "end": 3158,
                       "source": 13584111925557694778
                     },
-                    "token_number": 272,
+                    "token_number": 273,
                     "token_type": 68
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 3068,
-                    "end": 3074
+                    "start": 3152,
+                    "end": 3158
                   }
                 }
               },
               "span": {
                 "source": 13584111925557694778,
-                "start": 3057,
-                "end": 3074
+                "start": 3141,
+                "end": 3158
               }
             }
           },
@@ -3521,15 +3521,15 @@
                     "ident": {
                       "text": "Tolerance",
                       "location": {
-                        "start_line": 61,
+                        "start_line": 62,
                         "start_column": 75,
-                        "end_line": 61,
+                        "end_line": 62,
                         "end_column": 84,
-                        "start": 3076,
-                        "end": 3085,
+                        "start": 3160,
+                        "end": 3169,
                         "source": 13584111925557694778
                       },
-                      "token_number": 274,
+                      "token_number": 275,
                       "token_type": 64
                     },
                     "subs": null
@@ -3537,8 +3537,8 @@
                 ],
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 3076,
-                  "end": 3085
+                  "start": 3160,
+                  "end": 3169
                 }
               },
               "value": {
@@ -3547,28 +3547,28 @@
                   "token": {
                     "text": "1e-6",
                     "location": {
-                      "start_line": 61,
+                      "start_line": 62,
                       "start_column": 87,
-                      "end_line": 61,
+                      "end_line": 62,
                       "end_column": 91,
-                      "start": 3088,
-                      "end": 3092,
+                      "start": 3172,
+                      "end": 3176,
                       "source": 13584111925557694778
                     },
-                    "token_number": 276,
+                    "token_number": 277,
                     "token_type": 71
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 3088,
-                    "end": 3092
+                    "start": 3172,
+                    "end": 3176
                   }
                 }
               },
               "span": {
                 "source": 13584111925557694778,
-                "start": 3076,
-                "end": 3092
+                "start": 3160,
+                "end": 3176
               }
             }
           }
@@ -3593,8 +3593,8 @@
         ],
         "span": {
           "source": 13584111925557694778,
-          "start": 3015,
-          "end": 3092
+          "start": 3099,
+          "end": 3176
         }
       }
     }

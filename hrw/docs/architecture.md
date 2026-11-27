@@ -113,41 +113,41 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**76 modules, 96,086 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**76 modules, 96,742 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `worker/tests.rs` | 9,696 |
-| `app.rs` | 8,750 |
+| `worker/tests.rs` | 10,128 |
+| `app.rs` | 8,751 |
 | `app/tests.rs` | 8,285 |
-| `worker.rs` | 7,219 |
+| `worker.rs` | 7,238 |
 | `doc_citations.rs` | 6,390 |
-| `bridge.rs` | 5,680 |
+| `bridge.rs` | 5,683 |
 | `fidelity.rs` | 3,313 |
 | `ui_tests.rs` | 2,981 |
 | `equation_sheet.rs` | 1,565 |
 | `diagnostics.rs` | 1,502 |
 | `lib.rs` | 1,498 |
 | `tree.rs` | 1,426 |
-| `report_sub_view.rs` | 1,336 |
-| `matching_anim.rs` | 1,310 |
-| `incidence_view.rs` | 1,219 |
+| `report_sub_view.rs` | 1,361 |
+| `matching_anim.rs` | 1,311 |
+| `incidence_view.rs` | 1,220 |
 | `question_bar.rs` | 1,203 |
 | `playback.rs` | 1,135 |
 | `connection_anim.rs` | 1,106 |
 | `context_hook.rs` | 1,088 |
-| `reduction_view.rs` | 1,048 |
+| `reduction_view.rs` | 1,056 |
 | `tarjan_anim.rs` | 1,001 |
-| `matching_ledger.rs` | 942 |
+| `matching_ledger.rs` | 954 |
 | `stage_tabs.rs` | 922 |
 | `lab_panel.rs` | 908 |
 | `dae_expr_format.rs` | 898 |
-| `tearing_anim.rs` | 879 |
+| `tearing_anim.rs` | 880 |
 | `model_list.rs` | 849 |
 | `lab.rs` | 837 |
 | `survey.rs` | 834 |
 | `screenshot.rs` | 832 |
-| `reduction_anim.rs` | 810 |
+| `reduction_anim.rs` | 815 |
 | `canvas.rs` | 793 |
 | `capture_suite.rs` | 779 |
 | `arch_doc.rs` | 758 |
@@ -156,6 +156,7 @@ showing 48 equations. They are derived now, and
 | `identifier_index.rs` | 688 |
 | `sub_view_rows.rs` | 659 |
 | `worker/preparation.rs` | 655 |
+| `live_trace.rs` | 646 |
 | `expr_format.rs` | 645 |
 | `plot_labels.rs` | 600 |
 | `modelica_lex.rs` | 595 |
@@ -165,7 +166,6 @@ showing 48 equations. They are derived now, and
 | `matrix_panes.rs` | 528 |
 | `artifact_pane.rs` | 514 |
 | `node_link_check.rs` | 512 |
-| `live_trace.rs` | 499 |
 | `nav_view.rs` | 491 |
 | `equation_sheet_view.rs` | 446 |
 | `promote.rs` | 444 |
@@ -176,7 +176,7 @@ showing 48 equations. They are derived now, and
 | `dae_counts.rs` | 367 |
 | `specimen_purpose.rs` | 315 |
 | `machine_policy.rs` | 311 |
-| `equation_text.rs` | 281 |
+| `equation_text.rs` | 282 |
 | `source_map.rs` | 281 |
 | `colors.rs` | 271 |
 | `report.rs` | 265 |
@@ -193,7 +193,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 100 |
 | `doc_sizes.rs` | 78 |
 | `bin/hrw-context.rs` | 48 |
-| **total** | **96,086** |
+| **total** | **96,742** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -309,15 +309,22 @@ not fire).
 
 ### The compilation pipeline
 
-`WorkerState::compile()` drives the compilation stages in order:
+`WorkerState::compile()` drives the compilation stages in order. **HRW runs no phase
+itself**: every tab reads one of two Rumoca calls, and the simulation integrates what
+the second returns (`worker::tests::no_tab_is_built_from_a_phase_hrw_runs_itself`).
+Stages 1–6 read the session and its compile,
+`session.compile_model_strict_reachable_uncached_with_recovery()`:
 
-1. **Parse** — `rumoca_phase_parse::parse()` → AST
-2. **Resolve** — `session.resolve()` → resolved tree (names bound to definitions)
-3. **Instantiate** — `rumoca_phase_instantiate::instantiate_model()` → `InstanceOverlay`
-4. **Typecheck** — `rumoca_phase_typecheck::typecheck_instanced()` → types assigned
-5. **Flatten** — `session.compile_model_strict_reachable_with_recovery()` → flat model
-   (this is an opaque Rumoca entry point that runs several phases internally,
-   DAE construction among them)
+1. **Parse** — the session's own parse of the document (`update_document`, then
+   `get_document(uri).parsed()`) → AST. Not a second parse by HRW (2026-11-27): the
+   session expands extension constructs before parsing, so a second parse can differ.
+2. **Resolve** — `session.strict_compile_resolved()` → the resolved tree the compile
+   then uses (`the_resolve_tab_reads_the_tree_the_compile_uses`)
+3. **Instantiate** — the compile's own instance overlay, captured through
+   `rumoca_compile::observe`
+4. **Typecheck** — the compile's own typed overlay, through the same capture
+5. **Flatten** — the flat model in the compile's result (an opaque entry point that
+   runs several phases internally, DAE construction among them)
 6. **DAE construction** — the `Dae` already carried on the `CompilationResult`, serialized
    directly. **There is no separate call**: `rumoca-ir-dae` is a boundary IR like
    `rumoca-ir-flat` and `Dae` implements `Serialize`, so this stage was never work to

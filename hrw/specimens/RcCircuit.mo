@@ -1,5 +1,5 @@
 model RcCircuit "A resistor–capacitor circuit — consistent initialization of the capacitor voltage"
-  // purpose: Initialization / IC planning — a well-posed RC whose capacitor voltage is the initial unknown.
+  // purpose: Initialization — a well-posed RC whose one state, the capacitor voltage, has only a bare start, so its lowered initialization plan is empty.
   Modelica.Electrical.Analog.Sources.ConstantVoltage src(V = 5);
   Modelica.Electrical.Analog.Basic.Resistor R(R = 100);
   Modelica.Electrical.Analog.Basic.Capacitor C(C = 1e-3);
