@@ -176,3 +176,100 @@ fn the_observer_sees_the_lowered_model_once_and_before_integration() {
         crate::simulate_prepared_runtime_with_optional_step_records(runtime, &opts).unwrap();
     assert_eq!(result.n_states, 2);
 }
+
+/// Two masses tied by `x1 = x2`: a high-index system, so preparation runs
+/// several analyses and the reducer records its search.
+const TIED_MASSES: &str = r#"
+model TiedMasses
+  Real x1(start = 1.0);
+  Real x2;
+  Real v1;
+  Real v2;
+  Real f;
+equation
+  der(x1) = v1;
+  der(x2) = v2;
+  der(v1) = -x1 + f;
+  der(v2) = -f;
+  x1 = x2;
+end TiedMasses;
+"#;
+
+/// **A live listener watches exactly the run the capture records.** Every
+/// analysis it hears begin carries the same steps, in the same order, as the
+/// captured analysis at the same position, and its reduction records are the
+/// captured ones — so a tool stepping through preparation live and one replaying
+/// the capture afterwards cannot disagree about what happened.
+#[test]
+fn the_live_listener_hears_exactly_the_captured_preparation() {
+    use rumoca_phase_structural::preparation_trace::{
+        self as structural_trace, AnalysisContext, LiveStep, PreparationEvent,
+    };
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    #[derive(Default)]
+    struct Heard {
+        analyses: Vec<(AnalysisContext, Vec<String>)>,
+        reductions: Vec<String>,
+    }
+    let heard = Rc::new(RefCell::new(Heard::default()));
+    let sink = Rc::clone(&heard);
+
+    let model = compile(TIED_MASSES, "TiedMasses");
+    structural_trace::start_capture();
+    structural_trace::set_live_listener(Some(Box::new(move |step| {
+        let mut heard = sink.borrow_mut();
+        match step {
+            LiveStep::AnalysisBegin(context) => heard.analyses.push((context, Vec::new())),
+            LiveStep::Analysis { record, .. } => {
+                if let Some((_, steps)) = heard.analyses.last_mut() {
+                    steps.push(format!("{record:?}"));
+                }
+            }
+            LiveStep::Reduction(record) => heard.reductions.push(format!("{record:?}")),
+        }
+    })));
+    let _ = crate::prepare_runtime_observed(&model, &auto_options(), |_| {});
+    structural_trace::set_live_listener(None);
+    let captured = structural_trace::take_capture();
+
+    let mut captured_analyses = Vec::new();
+    let mut captured_reductions = Vec::new();
+    for event in &captured {
+        match event {
+            PreparationEvent::StructuralAnalysis {
+                context,
+                incidence: Some(_),
+                trace,
+                ..
+            } => captured_analyses.push((
+                *context,
+                trace
+                    .records
+                    .iter()
+                    .map(|record| format!("{record:?}"))
+                    .collect::<Vec<_>>(),
+            )),
+            PreparationEvent::Reduction(record) => captured_reductions.push(format!("{record:?}")),
+            _ => {}
+        }
+    }
+
+    let heard = heard.borrow();
+    assert!(
+        captured_analyses.len() >= 2 && !captured_reductions.is_empty(),
+        "a high-index model must run several analyses and a reduction search, or this \
+         compares nothing: {} analyses, {} reduction records",
+        captured_analyses.len(),
+        captured_reductions.len(),
+    );
+    assert_eq!(
+        heard.analyses, captured_analyses,
+        "the live steps differ from the captured analyses"
+    );
+    assert_eq!(
+        heard.reductions, captured_reductions,
+        "the live reduction records differ from the captured ones"
+    );
+}
