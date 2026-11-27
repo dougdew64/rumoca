@@ -170,7 +170,8 @@ fn reduction_rounds(stages: &StageBundle) -> u64 {
 ///
 /// # A refusal from the reducer is not the compiler's verdict, since v0.10.4
 ///
-/// `inspect_prepare_for_solve`'s search declines the canonical index-3 pendulum —
+/// The reducer's search (`prepare_for_solve_from_source`, inside solve lowering's
+/// real preparation) declines the canonical index-3 pendulum —
 /// residue 2, *"no candidate in either lane"* — while the compiler goes on to lower and
 /// simulate it on two states, because v0.10.4 added `rumoca-phase-solve`'s state
 /// selection, which picks independent coordinates on the constraint manifold. The
@@ -181,10 +182,17 @@ fn reduction_rounds(stages: &StageBundle) -> u64 {
 /// Solve Lowering payload one stage over. `rumoca_phase_solve::integrated_state_names`
 /// answers the same question by running state selection a second time, which would be a
 /// re-execution presented as the compile — the fiction this repository has removed twice.
+///
+/// `route` is state selection's own name for the path it took in the same run (the
+/// Index reduction payload's last `route` entry), quoted rather than paraphrased: until
+/// 2026-11-27 this banner described the recovery as *"selected N independent
+/// coordinate(s) on the constraint manifold"* while the run's own route read *"singular
+/// system recovered via formal derivatives"* — a mechanism HRW had written, not read.
 fn reduction_banner(
     outcome: Option<&str>,
     rounds: u64,
     lowered_state_scalars: Option<u64>,
+    route: Option<&str>,
 ) -> (&'static str, egui::Color32, String) {
     match outcome {
         Some("borrowed") => (
@@ -203,7 +211,8 @@ fn reduction_banner(
         Some("sorted") => (
             "Reduced",
             crate::colors::ANIM_PATH_FOUND,
-            "\u{2014} the raw DAE was structurally singular; reduction ran until it sorted"
+            "\u{2014} the simplified system was structurally singular; reduction ran until it \
+             sorted"
                 .to_owned(),
         ),
         // **The reducer declined and solve lowering carried the model anyway.** Named for
@@ -215,10 +224,12 @@ fn reduction_banner(
                 "Reduced by state selection",
                 crate::colors::ANIM_PATH_FOUND,
                 format!(
-                    "\u{2014} this reducer's search admitted nothing, but solve lowering \
-                     selected {states} independent coordinate(s) on the constraint manifold \
-                     and lowered the model. The rounds below are that search, not the \
-                     selection \u{2014} see the Solve Lowering tab for what runs."
+                    "\u{2014} this reducer's search admitted nothing, but in the same run \
+                     state selection took the route \u{201c}{}\u{201d} and lowered the model \
+                     on {states} state coordinate(s). The rounds below are the reducer's \
+                     search, not the selection \u{2014} see the Solve Lowering tab for what \
+                     runs.",
+                    route.unwrap_or("unreported"),
                 ),
             )
         }
@@ -372,13 +383,14 @@ pub(crate) fn report_sub_view_row_ui(
         // cannot: `borrowed` (nothing to do), `sorted` (reduction ran, or normalization
         // did), and a refusal.
         // **A refusal here is one entry point's verdict, not the compiler's — since
-        // v0.10.4.** `inspect_prepare_for_solve`'s search still declines
+        // v0.10.4.** The reducer's search still declines
         // `CartesianPendulum`, the canonical index-3 DAE: *"no candidate in either lane
         // could reduce the residue"*, residue 2. The compiler nevertheless lowers and
         // simulates it, on two states, with the rod constraint holding to 4.6e-12 —
-        // because v0.10.4 added `rumoca-phase-solve`'s state selection, which picks
-        // independent coordinates on the constraint manifold and leaves
-        // `$formal_derivative.2.*` in the lowered layout.
+        // because v0.10.4 added `rumoca-phase-solve`'s state selection, which on the
+        // reducer's refusal recovers the system via formal derivatives and leaves
+        // `$formal_derivative.2.*` in the lowered layout. Its own name for that route is
+        // in the payload, and the banner quotes it.
         //
         // So this banner said **Singular**, in red, about a model that reduces
         // correctly. That is the worst failure this project has: a specific, confident,
@@ -395,10 +407,18 @@ pub(crate) fn report_sub_view_row_ui(
             .value
             .as_ref()
             .and_then(|v| v["solve_layout"]["state_scalar_count"].as_u64());
+        let route = stages
+            .get(StageKind::IndexReduction)
+            .value
+            .as_ref()
+            .and_then(|v| v["route"].as_array())
+            .and_then(|routes| routes.last())
+            .and_then(serde_json::Value::as_str);
         let (label, colour, gloss) = reduction_banner(
             reduction_outcome(stages),
             reduction_rounds(stages),
             lowered_state_scalars,
+            route,
         );
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new(label).color(colour).strong());
@@ -1270,9 +1290,9 @@ mod tests {
 
     /// **A reducer that declined is not a compiler that failed.**
     ///
-    /// `CartesianPendulum` on v0.10.4: `inspect_prepare_for_solve`'s search admits
+    /// `CartesianPendulum` on v0.10.4: the reducer's search admits
     /// nothing — residue 2, outcome `singular` — and solve lowering nevertheless lowers
-    /// the model on two independent coordinates. The banner said **Singular** in red,
+    /// the model on two state coordinates. The banner said **Singular** in red,
     /// which is a specific, confident, false claim on the tab for the very phase it is
     /// about, with nothing on screen to contradict it.
     ///
@@ -1281,7 +1301,12 @@ mod tests {
     /// `Singular` is as wrong as one that always does.
     #[test]
     fn a_declined_reduction_that_still_lowered_is_not_reported_as_failure() {
-        let (label, colour, gloss) = reduction_banner(Some("singular"), 1, Some(2));
+        const ROUTE: &str = "singular system recovered via formal derivatives";
+        let (label, colour, gloss) = reduction_banner(Some("singular"), 1, Some(2), Some(ROUTE));
+        assert!(
+            gloss.contains(ROUTE),
+            "the banner must quote state selection's own route, not describe one: {gloss}"
+        );
         assert_ne!(
             label, "Singular",
             "the reducer declined but solve lowering produced a 2-state problem, so the \
@@ -1299,7 +1324,7 @@ mod tests {
         );
 
         // Non-vacuity: with no lowered problem the refusal IS terminal and must say so.
-        let (label, colour, _) = reduction_banner(Some("singular"), 1, None);
+        let (label, colour, _) = reduction_banner(Some("singular"), 1, None, None);
         assert_eq!(
             label, "Singular",
             "a refusal that solve lowering did not rescue must still read as singular"
@@ -1318,12 +1343,12 @@ mod tests {
     #[test]
     fn each_reduction_outcome_gets_its_own_banner() {
         let labels = [
-            reduction_banner(Some("borrowed"), 0, None).0,
-            reduction_banner(Some("sorted"), 0, None).0,
-            reduction_banner(Some("sorted"), 6, None).0,
-            reduction_banner(Some("singular"), 1, None).0,
-            reduction_banner(Some("singular"), 1, Some(2)).0,
-            reduction_banner(None, 0, None).0,
+            reduction_banner(Some("borrowed"), 0, None, None).0,
+            reduction_banner(Some("sorted"), 0, None, None).0,
+            reduction_banner(Some("sorted"), 6, None, None).0,
+            reduction_banner(Some("singular"), 1, None, None).0,
+            reduction_banner(Some("singular"), 1, Some(2), None).0,
+            reduction_banner(None, 0, None, None).0,
         ];
         let unique: std::collections::BTreeSet<&str> = labels.iter().copied().collect();
         assert_eq!(

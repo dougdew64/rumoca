@@ -41,9 +41,12 @@ Falsified if: two or three tear variables are reported, or the residual is `f_x[
 *What just happened.* Follow it by hand, because the mechanism is the lesson:
 
 1. Guess `command`.
-2. `f_x[2]` gives `measurement` directly — it is `plantGain * command`.
-3. `f_x[0]` … is held back. It becomes the residual: with `error` computed from `f_x[1]`, this
-   last equation is the check, and it will not balance unless the guess was right.
+2. `f_x[1]` now has one unknown left, so it gives `error` directly — `command / controllerGain`.
+3. `f_x[2]` gives `measurement` directly — it is `plantGain * command`.
+4. `f_x[0]` … is held back. It becomes the residual: with `error` and `measurement` both
+   computed, this last equation is the check, and it will not balance unless the guess was right.
+
+That is the order Rumoca records, in the block's `tearing.causal_sequence`.
 
 So the run-time problem is *"find the one number `command` that makes `f_x[0]` come out zero"* —
 one unknown, not three. The block is still coupled; it is just cheaper.
@@ -58,14 +61,25 @@ The tear variable was not arbitrary. Step the animation rather than reading its 
 
 [Look — ProportionalLoop → Structural → Tearing](hrw://load/ProportionalLoop/Structural/TearingAnim)
 
-**Expected:** the frames carry, per candidate, how many equations it appears in and which
-other variables it competes with — and `command` is chosen on those numbers.
+**Expected:** a 🎲 frame *"Planning the 3-equation loop by cutting whichever unknown frees the
+most equations to be solved directly"*, then ✂ *"Tore `command` — it appears in 2 of the 3
+unsolved equations"*, then the causal steps (`error` from `f_x[1]`, then `measurement` from
+`f_x[2]`), and a 🏁 frame *"Adopted the plan from the free-the-most pass: 1 tear and 1 residual
+equation"*.
 
-Falsified if: the frames show a result and no candidates.
+Falsified if: the tear frame names anything but `command`, or the plan adopted has two tears.
 
-*What just happened.* A variable that appears in many equations unlocks many substitutions, so
-guessing it collapses more of the block. That is the heuristic, and the frames show it being
-applied rather than asserting it.
+*What just happened.* The rule is: cut whichever unknown frees the most other equations to be
+solved directly, and break a tie on how many unsolved equations it appears in. Guessing a
+well-connected variable collapses more of the block. A second pass, cutting on appearances
+first, runs only if the first needs more than one tear — here it does not, which is what the
+*"free-the-most pass"* in the last frame tells you.
+
+And notice what decided *this* choice: nothing. `ProportionalLoop` is a symmetric three-cycle,
+so every unknown frees the same number of equations and appears in two of the three. On a full
+tie Rumoca takes the unknown with the lowest index in the block, which is `command`. The frames
+show the winner's numbers, not a table of every candidate's — so a tie like this one is visible
+only by working the other two out yourself.
 
 It is a *heuristic*, and that word is doing real work: choosing the tear set that minimises
 iteration is NP-hard in general, so every Modelica compiler uses a greedy rule and none claims
@@ -117,9 +131,10 @@ Falsified if: the coupled block is a different size, or there are not exactly th
 a knot in the middle, a little more straight-line work. `f_x[0]` computes `setpoint` from the
 reference; the loop is solved; `f_x[4]` computes `result` from `measurement`.
 
-The knot is the only expensive part, and it is one third of the model. That ratio is the
-argument for the whole phase: on a large model the coupled blocks are usually a small minority of
-the equations, and tearing shrinks them further.
+The knot is the only expensive part: one of the three blocks, holding three of the five
+equations. On a model this small the knot is most of it, and that ratio inverts with size — which
+is the argument for the whole phase: on a large model the coupled blocks are usually a small
+minority of the equations, and tearing shrinks them further.
 
 ---
 
@@ -155,8 +170,9 @@ reassuring.
 
 ## What this lab cannot check
 
-Whether the tearing animation shows the choice as a choice. The frames carry `appearances` and
-`competitors` precisely so Station 2 can ask *"why that variable?"* — but whether those numbers are
+Whether the tearing animation shows the choice as a choice. The tear frame carries the winner's
+`appearances`, and each causal frame its `competitors` (how many equations could have solved
+that variable), so Station 2 can ask *"why that variable?"* — but whether those numbers are
 visible and legible on screen is the half no test reaches.
 
 Whether Station 4 is the right ending or the right beginning. `MixedLoop` is the most realistic

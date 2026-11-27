@@ -6,8 +6,9 @@ model IncompatibleConnect "Connects two structurally different connectors — DE
   // SHOULD break at: FLATTEN. `PinA` has `v` and a flow `i`; `PinB` has only `v`, so
   // MLS 9.3 makes the connect a type error.
   //
-  // ACTUALLY breaks at: STRUCTURAL ANALYSIS ("singular"). Rumoca accepts the connect and
-  // the problem only surfaces later, as a misleading structural singularity.
+  // ACTUALLY breaks at: SOLVE LOWERING, after STRUCTURAL ANALYSIS flags it "singular".
+  // Rumoca accepts the connect and the problem only surfaces later, as a misleading
+  // structural singularity.
   //
   // Adjudicated by System Modeler 2026-07-29, which REJECTS it:
   //   "Incompatible types. 'a ... 'b' has type 'PinB'."

@@ -25,8 +25,9 @@
 //!
 //! This view was deferred during pass one because `build_incidence` was
 //! `pub(crate)` in Rumoca — inaccessible from outside the crate. Now that HRW
-//! lives inside the Rumoca workspace, the function was widened to `pub` and the
-//! worker calls it alongside `build_structural_report`.
+//! lives inside the Rumoca workspace, the function was widened to `pub`. Since
+//! 2026-11-26 the Structural tab's incidence is the one solve lowering's real
+//! preparation built, captured there (`worker::preparation`); HRW builds none.
 //!
 //! ## Interaction
 //!

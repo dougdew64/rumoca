@@ -26,7 +26,7 @@ and no equation exists until every merge is done.
 
 **That merging is one part of flatten, not the whole of it.** The phase also crushes the
 component hierarchy into a single namespace of globally unique names, copies in each component's
-own equations, and rewrites every equation into residual form — `0 = R.v - R.R_actual * R.i`
+own equations, and rewrites every equation into residual form — `0 = R.v - R.R_actual*R.i`
 rather than `v = R_actual*i`. Station 4 is where the proportion shows: of `RcCircuit`'s
 twenty-three equations, **seven come from the connections and sixteen are the components' own.**
 This lab is about those seven.
@@ -52,9 +52,9 @@ connect(src.n, gnd.p);
 A `Pin` has two variables, so each statement pairs by name into two merges — one joining `.v` to
 `.v`, one joining `.i` to `.i`. Four statements, eight merges.
 [`expand_connector_connection`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#expand_connector_connection)
-does the pairing; each pair goes to
+does the pairing; each potential pair goes straight to
 [`union(a, b)`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#UnionFind), which joins
-whichever sets currently hold `a` and `b`. The replay you are about to step through is one
+whichever sets currently hold `a` and `b`, and flow pairs wait (Station 6 says why). The replay you are about to step through is one
 [`SetFormed`](hrw://src/crates/rumoca-phase-flatten/src/connections/trace.rs#SetFormed) then one
 [`EquationsGenerated`](hrw://src/crates/rumoca-phase-flatten/src/connections/trace.rs#EquationsGenerated),
 once per set.
@@ -89,9 +89,10 @@ the first of three graphs in the labs, and the other two are different —
 [matching](hrw://lab/matching)'s has two kinds of vertex, and
 [blt-ordering](hrw://lab/blt-ordering)'s has arrows.)*
 
-**No set here has size one, and none can.** A merge always names two variables, and nothing else
-ever puts a variable into the union-find — so **every set starts at two and only grows.** The
-sizes you just read, 2, 2 and 3, are the whole range a four-statement circuit can produce.
+**No set here has size one, and none can.** A merge always names two variables, and
+`build_connection_sets` drops any group smaller than two — so **every set it keeps starts at two
+and only grows.** The sizes you just read, 2, 2 and 3, are this circuit's; four statements could
+make a set as large as five, if all four met at one node.
 
 So: three sets over the `.v` variables, of sizes 2, 2 and 3, and three over the `.i` with exactly the
 same membership. Six.
@@ -128,15 +129,18 @@ mass flow.
 *(Modelica has a third kind, `stream`, for fluid connectors. `Pin` has none.)*
 
 The kind decides twice.
-[`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars)
+[`connect_sub_variable`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_sub_variable)
 reads each paired variable's prefix to choose where the pair goes — `flow` to a plain `Vec` that
 is not merged yet, `stream` to `stream_uf`, anything else to `potential_uf` — and then each
 finished [`ConnectionSet`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#ConnectionSet)
 carries that `kind` to the generator that reads it:
 [`generate_equality_equations`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_equality_equations)
 for potential, [`generate_flow_equation`](hrw://src/crates/rumoca-phase-flatten/src/connections/equation_generation.rs#generate_flow_equation)
-for flow. **Why `flow` waits while the others merge immediately is Station 6's question** — do not
-settle it yet.
+for flow. *(`RcCircuit`'s statements join connectors, so their pairs go through
+`connect_sub_variable`; when both ends of a `connect` are plain variables,
+[`connect_primitive_vars`](hrw://src/crates/rumoca-phase-flatten/src/connections/mod.rs#connect_primitive_vars)
+applies the same rule.)* **Why `flow` waits while potential merges immediately is Station 6's
+question** — do not settle it yet.
 
 You can watch the asymmetry on the two size-3 sets in two frames, each set followed immediately
 by the equations it generated:
@@ -269,7 +273,8 @@ Falsified if the total is not 23, or if any origin names a component.
 > `equation from gnd` ×1 — and the prediction asked how many belonged to the resistor alone,
 > because the pane answered it.
 >
-> **0.10.0 replaced the origin string with a typed provenance** of 24 generation kinds. It
+> **0.10.0 replaced the origin string with a typed provenance** of a couple of dozen generation
+> kinds. It
 > records whether an equation came from the **source** or was **generated**, and for a
 > generated one *what made it* — but **not which component instance a source equation came
 > from.** The sixteen are now one undifferentiated group. *(7 + 4 + 4 + 1 = 16, so nothing was
@@ -409,9 +414,10 @@ are not 8 — which is *n* − 1 over sets of 3, 4 and 4.
 ### What just happened
 
 Three junctions produced three potential sets and seven flow sets. The rule broke, and the
-asymmetry Station 2 asked you to leave open is the reason: **`potential_uf` and `stream_uf` exist,
-empty, before the first statement is read, while flow is the list that becomes a union-find per
-scope afterwards.** Potential merges globally; flow merges once per scope.
+asymmetry Station 2 asked you to leave open is the reason: **`potential_uf` exists, empty, before
+the first statement is read, and every scope shares it; flow pairs are collected per scope and
+become a union-find per scope afterwards, and stream gets a fresh `stream_uf` per scope.**
+Potential merges globally; flow and stream merge once per scope.
 
 That is a rule about equations wearing a data structure's clothes. Potential merging can be
 global because *n* − 1 equalities come out the same whether the sets are split or merged. A flow
@@ -471,7 +477,11 @@ solves which unknown.
   with one pin dangling still balances, because `v = R·i` with `i = 0` fixes the dangling pin's
   voltage from the other pin's. The equation was never the connection's to supply. The case where
   it genuinely *is* missing is a connector with no component behind it, and **this phase does not
-  notice**: the DAE comes out one equation short and matching reports the potential as an unmatched
-  unknown. Every specimen here is fully wired, so none of it is on screen. `DanglingPin` and
-  `OrphanConnector` exist and are oracle-validated — ideas #89b is the station that would show it.
+  notice**: flatten completes, and it is DAE construction's balance check that rejects the model.
+  Measured 2026-11-27 on a model holding only a bare `Pin p`: DAE construction fails with
+  `unbalanced model: 1 equations, 2 unknowns (balance = -1)`, so matching never runs. *(On 0.9.20
+  the same shape reached matching, which reported `p.v` unmatched — the ledger's measurement.)*
+  Every specimen here is fully wired, so none of it is on screen. `DanglingPin` and
+  `OrphanConnector` are scratch specimens to be promoted — ideas #89b is the station that would
+  show it.
 - Stream connectors. Named in Station 2 and exercised by no specimen here.

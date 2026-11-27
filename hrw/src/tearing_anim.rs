@@ -32,11 +32,12 @@
 //! needed four APIs that are all private on 0.10.0 and, worse, meant the loops
 //! a reader watched being torn were torn by a run that produced nothing.
 //!
-//! The steps now come from `inspect_structural_report`, which observes the
+//! The steps now come from the first `Source` analysis captured inside solve
+//! lowering's real preparation (`worker::preparation`), which observes the
 //! tearing the compiler performed, and the block names come from that same
-//! call's report. A live session still re-runs — that is what the Debug button
-//! asks for — but through `observe_sort`, so it re-runs the same code over the
-//! same DAE.
+//! analysis's report. A live session still re-runs — that is what the Debug
+//! button asks for — but the same preparation on the same DAE
+//! (`live_trace::spawn_structural_live`), so it steps the same analysis.
 //!
 //! # The hazard this view exists to avoid, and where it is handled now
 //!
@@ -815,7 +816,7 @@ mod tests {
     /// **Reads the compile rather than re-tearing.** This called
     /// `TearingAnimation::record`, which rebuilt incidence, matching, the
     /// dependency graph and the BLT and then tore every block again; that
-    /// constructor is gone and the steps come from `inspect_structural_report`.
+    /// constructor is gone and the steps come from the compile's real preparation.
     /// `ProportionalLoop` is MSL-free, so no library roots are loaded.
     #[test]
     fn a_real_algebraic_loop_is_traced_end_to_end() {

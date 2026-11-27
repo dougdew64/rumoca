@@ -13,7 +13,7 @@
           "text": "0 = a.v - b.v",
           "origin": "generated DAE object (connection equation)",
           "source_lines": [
-            27
+            28
           ]
         }
       ]
@@ -30,7 +30,7 @@
           "text": "0 = a.i",
           "origin": "generated DAE object (unconnected-flow equation)",
           "source_lines": [
-            28
+            29
           ]
         },
         {
@@ -39,7 +39,7 @@
           "text": "0 = a.i",
           "origin": "generated DAE object (unconnected-flow equation)",
           "source_lines": [
-            28
+            29
           ]
         }
       ]

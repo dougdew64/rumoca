@@ -12,9 +12,10 @@ become arithmetic on those slots.
 
 This phase does the translation, and it is the last chance to get it wrong: after it there are no
 names left to check against, only numbers, which is why the mapping itself is worth looking at.
+The Solve lowering tab is the lowered problem from the same run the simulation integrates.
 
-Run [events](hrw://lab/events) first. Every count below is read from a generated trace, so if one
-disagrees with your screen, the lab is wrong and I want to know.
+Run [initialization](hrw://lab/initialization) first. Every count below is read from a generated
+trace, so if one disagrees with your screen, the lab is wrong and I want to know.
 
 ---
 
@@ -28,13 +29,16 @@ disagrees with your screen, the lab is wrong and I want to know.
 
 [Point at `layout.bindings`](hrw://stage/SolveLowering/node/layout.bindings)
 
-**Expected:** each name binds to a slot in the continuous vector `Y`:
+**Expected:** each name binds to a slot in the continuous vector `Y` or the parameter vector `P`:
 
 | name | binding |
 |---|---|
 | `h` | `Y` index 0, byte offset 0 |
 | `v` | `Y` index 1, byte offset 8 |
-| `time` | `Time` — not a slot at all |
+| `g` | `P` index 0, byte offset 0 |
+| `e` | `P` index 1, byte offset 8 |
+
+and nothing else — four entries.
 
 Falsified if: `h` and `v` bind to `P` slots, or share an index.
 
@@ -44,7 +48,7 @@ trajectory *means*, this mapping is the only thing that says so.
 
 Two details worth noticing. The byte offsets (0 and 8) say these are 64-bit floats laid out
 contiguously — the vector is a real block of memory, not a dictionary. And `time` is not in the
-array: it is a distinguished binding, because the solver supplies it rather than solving for it.
+table at all: the solver supplies it rather than storing it in a slot.
 
 ---
 
@@ -63,68 +67,50 @@ array: it is a distinguished binding, because the solver supplies it rather than
 | field | value | what it means |
 |---|---|---|
 | `parameter_count` | `2` | the parameters *the model declares* — `g` and `e` |
-| `compiled_parameter_len` | `5` | the length of the vector the solver is handed |
+| `compiled_parameter_len` | `6` | the length of the vector the solver is handed |
 
-**Three slots exist that `BouncingBall` never declared**, and v0.10.0 says what two of them
-are for, in the same node:
+**Four slots exist that `BouncingBall` never declared, and the problem names every one:**
 
-- **`pre_param_bindings`** reads `dest_p_index: 2` with source `Y[1]`. So `P[2]` holds the
-  previous value of `Y[1]`, which `layout.bindings` names `v` — this is `pre(v)`.
-- **`relation_memory_parameter_indices`** reads `[4]`. So `P[4]` is where a relation
-  remembers itself: the `h <= 0` crossing.
-
-**`P[3]` is not named by either field, and this lab does not know what it is.** Said plainly
-rather than guessed at: three fields account for four of the five slots, and the fifth is
-an open question worth asking.
+- **`P[2]`** — `pre_param_bindings` reads `dest_p_index: 2` with source `Y[1]`, which
+  `layout.bindings` names `v`. So `P[2]` holds `pre(v)`, the previous value of `v`.
+- **`P[3]`** — under the top-level `events` node, `condition_memory_parameter_indices` reads
+  `[3]`: the slot where the `when` condition remembers whether it was true.
+- **`P[4]`** — `relation_memory_parameter_indices` (in `solve_layout`) reads `[4]`, and
+  `events.root_relation_memory_targets` agrees: where the relation `h <= 0` remembers itself.
+- **`P[5]`** — `initial_event_parameter_index` reads `5`: a flag for the first event, which is
+  special — it fires at *t* = 0, during initialization.
 
 Falsified if `compiled_parameter_len` equals `parameter_count`, or if `pre_param_bindings`
 is empty.
 
-*What just happened.* The event machinery needs storage, and it gets it here. `events.md`
-established that a `when` clause reverses `v` at the bounce; doing that requires knowing what `v`
-*was*, so `pre(v)` needs somewhere to live. It lives in a parameter slot — a value that is constant
-*between* events and updated *at* them, which is exactly what a parameter slot is for.
+*What just happened.* The event machinery needs storage, and it gets it here. `BouncingBall`'s
+`when` clause reverses `v` at the bounce — the [events](hrw://lab/events) lab, next, takes that
+clause apart — and doing that requires knowing what `v` *was*, so `pre(v)` needs somewhere to
+live. It lives in a parameter slot — a value that is constant *between* events and updated *at*
+them, which is exactly what a parameter slot is for. The model gains machinery it never
+declared, which is the honest version of what "lowering" means.
 
-So the phases compose visibly: the discrete update found in `events.md` is the reason `P` is
-longer than the model's parameter list.
-
-> **This station's numbers changed in Rumoca 0.10.0, and so did how it reads them.**
->
-> It pointed at a node called `parameters` and expected **seven** slots, listing each by
-> name — `__pre__.c`, `__pre__.h`, `__pre__.v`, `c`, `__rumoca.initial_event`. There is
-> no `parameters` node now, the total is **five**, and the compiler-introduced slots are
-> no longer given `__pre__`-style names to read off.
->
-> **What replaced the names is better: the layout states the relationships.** The old
-> table was a list of strings a reader had to trust; `pre_param_bindings` says *which
-> slot* holds the previous value of *which variable*, by index, and
-> `relation_memory_parameter_indices` says which slot a relation remembers itself in.
-> Naming a slot `__pre__.v` and *binding* `P[2]` to `Y[1]` are not the same quality of
-> evidence.
->
-> The teaching point is untouched: the parameter vector is longer than the model's
-> parameter list, and the event machinery is why.
-
-And `__rumoca.initial_event` is a compiler-manufactured variable — nothing in the model
-mentions it. The first event is special (it fires at *t* = 0 during initialization), and the
-generated code needs a flag to say so. Names beginning `__` are the phase's own bookkeeping, and
-seeing them is the honest version of what "lowering" means: the model gains machinery it never
-declared.
+> **This station's numbers changed twice.** Before Rumoca 0.10.0 it expected seven slots,
+> listed by names like `__pre__.v` and `__rumoca.initial_event`; until 2026-11-27 it said five,
+> with `P[3]` "an open question". Neither name list nor gap exists now: the layout states the
+> relationships by index — *which slot* holds the previous value of *which variable*, which
+> slot a condition or relation remembers itself in, which slot is the initial-event flag.
+> Naming a slot `__pre__.v` and *binding* `P[2]` to `Y[1]` are not the same quality of evidence.
 
 ---
 
 ## Station 3 — The same mapping at scale
 
-`RcCircuit` is 23 continuous variables and a handful of parameters.
+`RcCircuit` is 23 continuous variables and seven declared parameters.
 
 > **Predict.** How large will `Y` be — 1, for the single state, or something else?
 
 [Look — RcCircuit → Solve lowering](hrw://load/RcCircuit/SolveLowering)
 
-**Expected:** `initial_y` has 23 entries and `parameters` has 8. `visible_names` is also
-23.
+**Expected:** under `layout`, `y_scalars` is 23. Under `solve_layout`, `state_scalar_count` is 1
+and `algebraic_scalar_count` is 22; `parameter_count` is 7 and `compiled_parameter_len` is 12.
 
-Falsified if: `initial_y` has 1 entry.
+Falsified if: `y_scalars` is 1.
 
 *What just happened.* `Y` holds every continuous variable, not only the states. `RcCircuit` has
 one state and twenty-two algebraics, and all twenty-three get slots — because the solver has to
@@ -134,25 +120,24 @@ That is worth holding next to the DAE lab's Station 3. The unknowns the solver s
 derivatives; the vector it carries is every continuous variable. Two different counts, both
 correct, easy to conflate.
 
-Compare the parameter counts: `BouncingBall` needed 7 slots for 2 declared parameters, because it
-has events. `RcCircuit` needs 8 for 7 declared, because it has none — one manufactured slot instead
-of five. The overhead is event machinery, and a smooth model barely pays it.
+Compare the parameter counts: `BouncingBall` needed 6 slots for 2 declared parameters, and
+`RcCircuit` needs 12 for 7 — five manufactured slots, although you wrote no `when` clause. They
+are condition memory (`P[7]`–`P[9]`), relation memory (`P[10]`) and the initial-event flag
+(`P[11]`), and they exist because the MSL `Resistor` carries an `assert` that the temperature
+stays in range: a condition that can become false mid-run, watched like any other. The events
+lab's Station 2 shows that relation.
 
 ---
 
 ## What this lab cannot check
 
 Whether the bindings table is findable. Stations 1 and 2 send you into a generic serde tree to a
-nested path. Whether `problem.layout.bindings` reads as a mapping or as a wall of JSON is your
-report, and it is the one thing this lab depends on being legible.
+nested path. Whether `layout.bindings` reads as a mapping or as a wall of JSON is your report, and
+it is the one thing this lab depends on being legible.
 
-Whether the enum constants are noise or context. The bindings map also contains dozens of
-entries like `StateSelect.never -> Constant(1)` from the MSL. They are real and this lab ignores
-them, which may make the pane look busier than the stations suggest.
-
-What the generated code actually looks like. This phase's output is a layout, and the lab
-stops there. Whether the residual function reads as recognisable arithmetic on `Y[0]` and `Y[1]` is
-not shown anywhere in HRW.
+What the generated code actually looks like. This phase's output is a layout plus a straight-line
+instruction program, and the lab goes no further than the layout. Whether the residual function
+reads as recognisable arithmetic on `Y[0]` and `Y[1]` is left to the tree's `continuous` node.
 
 ---
 
@@ -178,5 +163,6 @@ This lab's stations use `BouncingBall` and `RcCircuit`, which reduce nothing.
 
 ## What comes next in the chain
 
-Nothing — this is the last compiler phase. What follows is Simulation: the solver stepping the
-vector through time, which is the Plot tab rather than a stage.
+This is the last compiler phase. After it come the Simulation tab — the solver stepping the vector
+through time — and the last lab, [events](hrw://lab/events): what can change mid-run, and how the
+slots in Station 2 are used.

@@ -18,8 +18,8 @@ model GearWithBrake "Geared oscillator with automatic speed-limiting brake"
   //   DAE construction — states (phi, w), algebraics (gear constraint forces),
   //                      parameters, residual-form equations
   //   Index reduction  — the ideal gear constraint phi_a = ratio * phi_b is
-  //                      position-level, creating index > 1; Pantelides
-  //                      differentiates it, introducing dummy derivatives
+  //                      position-level, creating index > 1; Rumoca's reducer
+  //                      (not Pantelides) sorts it in 5 rounds, 7 states to 2
   //   Structural       — structurally singular before reduction (expected for
   //                      high-index); nontrivial matching and BLT after
   //   Initialization   — start values must satisfy the gear constraint

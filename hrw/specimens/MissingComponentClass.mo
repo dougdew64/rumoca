@@ -3,12 +3,12 @@ model MissingComponentClass "Declares a component of a class that does not exist
   // a component whose *type* cannot be found, as opposed to a reference to an
   // undeclared *variable*, which is `UndefinedRef` and stops at RESOLVE.
   //
-  // Breaks at: RESOLVE reports it, FLATTEN stops. Verified 2026-08-05 with
-  // `cargo run -p hrw --example failure_map`, which contradicted the first draft
-  // of this comment — it claimed INSTANTIATE, on the theory that a missing *class*
-  // is a different problem from a missing *variable*. It is not, to Rumoca: both
-  // are name resolution, both are recovered at Resolve, and both stop at Flatten
-  // with the same message.
+  // Breaks at: RESOLVE, which fails; every later tab reports not reached or no result.
+  // The first draft of this comment claimed INSTANTIATE, on the theory that a missing
+  // *class* is a different problem from a missing *variable*. It is not, to Rumoca:
+  // both are name resolution, and both fail at Resolve. (2026-08-05 measured "Resolve
+  // reports, Flatten stops"; that was HRW painting Resolve's stop as a flag, and the
+  // corpus outcome matrix now pins Resolve as the one failed stage.)
   //
   // What genuinely differs is the resolve diagnostic, and that is the lesson:
   //   UndefinedRef           -> "unresolved component reference"

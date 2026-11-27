@@ -62,8 +62,9 @@ Falsified if: `tau` reads `state`, or any entry reads `algebraic`.
 > in none. The old form could express both.
 >
 > Appendix B's names have not gone anywhere. They are still what the specification says
-> and still what the solver uses — `solve-lowering.md` watches `phi` and `w` land in a
-> vector called `Y` and `J` and `tau` in one called `P`.
+> and still what the solver uses — on this model's Solve lowering tab, `phi` and `w` land
+> in a vector called `Y` and `J` and `tau` in one called `P`. `solve-lowering.md` traces the
+> same split on `BouncingBall`.
 
 *What just happened.* Two different mechanisms produced that split, and only one of them read
 your declarations.
@@ -91,8 +92,8 @@ differentiates it. The equation sheet's Why column names the equation that did i
 
 | variable | Why | the equation |
 |---|---|---|
-| `phi` | `der in f_x[0]` | `der(phi) - w` |
-| `w` | `der in f_x[1]` | `J * der(w) - tau` |
+| `phi` | `der in f_x[0]` | `0 = der(phi) - w` |
+| `w` | `der in f_x[1]` | `0 = J*der(w) - tau` |
 
 Falsified if: a third variable carries a `der in …`, or `J` or `tau` does.
 
@@ -162,7 +163,8 @@ here, at the end of DAE construction, and that timing is the subject of the last
 
 ## Station 5 — What the compiler says when the claim fails
 
-`UnbalancedShaft` is `SingleInertia` with one extra line:
+`UnbalancedShaft` is `SingleInertia` with `tau` demoted from a parameter to a plain variable
+(and `J = 0.5` rather than `1.0`, which changes nothing here):
 
 ```modelica
 Real tau "drive torque — NO EQUATION DETERMINES THIS, and that is the point";
@@ -171,24 +173,24 @@ Real tau "drive torque — NO EQUATION DETERMINES THIS, and that is the point";
 `tau` is declared and never assigned. It is the most common Modelica authoring error there is:
 declare a variable, forget its equation.
 
-[Show the line](hrw://source/18)
-
 > **Predict.** The DAE tab is about to open on a model that cannot be built. What will it show —
 > a partition with something missing, or something else?
 
-[Look — UnbalancedShaft → DAE](hrw://load/UnbalancedShaft/Dae)
+[Look — UnbalancedShaft → DAE](hrw://load/UnbalancedShaft/Dae) — and then
+[show the `tau` line](hrw://source/18) in the source pane.
 
-**Expected:** no partition at all. The stage holds an error, reading:
+**Expected:** no partition at all. The stage holds an error beginning:
 
 ```
 unbalanced model: 2 equations, 3 unknowns (balance = -1)
 ```
 
-with `n_equations: 2`, `n_unknowns: 3`, `balance: -1`, and the reading *"fewer equations than
-unknowns — some variable has nothing to determine it"*.
+followed by a breakdown of the unknowns and equations by kind, with `n_equations: 2`,
+`n_unknowns: 3`, `balance: -1`, and the reading *"fewer equations than unknowns — some variable
+has nothing to determine it"*.
 
-Falsified if: the DAE tab shows `x`, `y` and `p` for this model, or reports a balance other
-than −1.
+Falsified if: the DAE tab shows a `storage.variables` list for this model, or reports a balance
+other than −1.
 
 *What just happened.* Absence is stated rather than filled in. There is no partial DAE to
 look at, because a partition of an unbalanced system would be a fiction — and the pane says so
@@ -202,7 +204,7 @@ which is this model. Positive would mean *too many* — over-constrained, a diff
 
 ## Station 6 — The other sign
 
-`OverDeterminedShaft` is `SingleInertia` with one extra line:
+`OverDeterminedShaft` is `SingleInertia` with one extra equation:
 
 ```modelica
   w = der(phi);
@@ -216,13 +218,14 @@ anything — the model is merely repetitive.
 
 [Look — OverDeterminedShaft → DAE](hrw://load/OverDeterminedShaft/Dae)
 
-**Expected:** rejected, with the sign flipped:
+**Expected:** rejected, with the sign flipped — an error beginning:
 
 ```
 unbalanced model: 3 equations, 2 unknowns (balance = 1)
 ```
 
-and the reading *"more equations than unknowns — something is determined twice"*.
+then the same breakdown by kind, and the reading *"more equations than unknowns — something is
+determined twice"*.
 
 Falsified if: the model compiles, or `balance` is negative.
 
@@ -253,8 +256,8 @@ as a surplus.
 
 [Look — UnbalancedShaft → Structural](hrw://load/UnbalancedShaft/Structural)
 
-**Expected:** Structural, Index reduction, Initialization, Events and Solve lowering all read
-`not reached (ToDae failed earlier)`.
+**Expected:** Simplify, Structural, Index reduction, Initialization, Events and Solve lowering
+all read `not reached (ToDae failed earlier)`.
 
 Falsified if: Structural reports a singularity, or any later stage produced a result.
 
@@ -287,11 +290,11 @@ Whether Station 3 lands. The `der(phi)`/`der(w)` result is the one genuinely cou
 thing here, and it is asserted in one line. If it reads as a technicality rather than as the
 point, the station is too short rather than wrong.
 
-Whether the DAE tree is legible. Stations 1 and 5 send you to a generic serde tree. Whether `x`,
-`y` and `p` read as a partition — or as three collapsed nodes among thirty — is a rendering
-question no test reaches.
+Whether the DAE tree is legible. Station 1 sends you to a generic serde tree. Whether one `role`
+field per entry of `storage.variables` reads as a partition — or as a list to be read four times
+— is a rendering question no test reaches.
 
-Whether Station 6's contrast with `CapacitorLoop` is worth a station of its own. It is asserted in
+Whether Station 7's contrast with `CapacitorLoop` is worth a station of its own. It is asserted in
 prose here and demonstrated nowhere in this lab. *(It is demonstrated in
 [matching](hrw://lab/matching) Station 3, which runs that model's 13-of-14 matching — so the claim is
 checkable, just not here.)*
@@ -299,7 +302,8 @@ checkable, just not here.)*
 Whether Station 6 needed its own specimen or could have been prose. It could not: until
 `OverDeterminedShaft` was written on 2026-08-17, every unbalanced specimen in the corpus reported
 `-1`, and the positive half of the sign convention was an assertion. Whether a whole model is the
-right price for one station is a fair question — the answer here is that the model is nine lines.
+right price for one station is a fair question — the answer here is that the model is eleven
+lines of code.
 
 ---
 

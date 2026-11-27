@@ -22,9 +22,11 @@ a flow `i`, `PinB` has only `v`. MLS §9.3 makes that a type error.
 
 [Structural → Summary](hrw://stage/Structural/Summary)
 
-**Expected:** *Singular*. The model fails here instead, reported as a structural
-singularity — which is a misleading diagnosis for what is a wiring error. A reader
-following it would go and study their equations when the problem is one `connect`.
+**Expected:** *Singular* — the tab is flagged (amber), with 2 of 3 equations matched. The
+compile then fails at Solve lowering (red), on the same structural proof:
+`structurally singular system: 2 matched out of 3 equations and 3 unknowns`. Either way it is
+reported as a structural singularity — a misleading diagnosis for what is a wiring error. A
+reader following it would go and study their equations when the problem is one `connect`.
 
 ## ⚙ Station 3 — Ask the other implementation
 

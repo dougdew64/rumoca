@@ -1,4 +1,4 @@
-# Failure lab — Typecheck, which reports and does not stop at all
+# Failure lab — Typecheck, flagged, and the compile goes no further
 
 <!-- kind: failure -->
 
@@ -13,7 +13,8 @@ equation
 ```
 
 The question to hold: this model is *wrong*. It cannot be simulated, and no amount of later
-work will fix it. So why does the compiler keep going?
+work will fix it. Typecheck says so — and its tab is amber, not red. So what does that colour
+promise, and what do the tabs after it say?
 
 ---
 
@@ -21,9 +22,10 @@ work will fix it. So why does the compiler keep going?
 
 [Load DimensionMismatch → Typecheck](hrw://load/DimensionMismatch/Typecheck)
 
-**Expected:** Typecheck is flagged, the note says `typecheck: 1 diagnostic(s)`, and you see
-both: a `⚠ What went wrong` panel with the diagnostic, and the typechecked overlay as a tree
-below it. The panel is collapsible — fold it away once read.
+**Expected:** Typecheck is flagged (amber), the note says `typecheck: 1 diagnostic(s)`, and you
+see both: a `⚠ What went wrong` panel with the diagnostic, and the instantiated overlay as a
+tree below it — the last good state before the error. The panel is collapsible — fold it away
+once read.
 
 Typecheck evaluates dimensions across the instantiated model — it has to, because array sizes can
 come from parameters and are not always literal. Here `small` has 2 elements and `big` has 3, and
@@ -57,22 +59,22 @@ come from parameters and are not always literal. Here `small` has 2 elements and
 
 ---
 
-## Station 2 — The surprise
+## Station 2 — What every later tab says
 
 [Solve lowering](hrw://load/DimensionMismatch/SolveLowering)
 
-**Expected:** Solve lowering has content. So do Flatten, DAE construction and Structural
-analysis. Nothing after Typecheck refused to run.
+**Expected:** Solve lowering has no content; its note reads
+`not reached (Typecheck failed earlier)`. Flatten, DAE construction, Simplify, Structural and
+every tab between say the same. **Falsified if:** any tab after Typecheck shows a tree.
 
-This is the most surprising pane in the failure set. A model with a known type error was
-carried all the way to the solver's executable form.
+So a flagged Typecheck is where this compile ends. The amber colour is the outcome class HRW
+gives a stage that produced its artifact *and* reported a problem — Typecheck did both — but it
+does not promise the pipeline went on. Here nothing after it ran.
 
-That is deliberate, and it is what "recovering compiler" means: a diagnostic is a *report*, not a
-gate. The value is that one bad equation does not blind you to everything else about the model —
-you can still see its flat form, its incidence matrix, its BLT blocks.
-
-The cost is that a green-looking tab does not mean a correct model, and that is the thing
-worth carrying away from this lab.
+*(This station used to say the opposite — that a type error was carried all the way to the
+solver's executable form. It was true of 0.9.20 and is not of the release HRW builds on; the
+outcome matrix `the_corpus_outcome_matrix_is_unchanged` pins this row as Typecheck flagged and
+every later stage not reached.)*
 
 ---
 
@@ -80,15 +82,11 @@ worth carrying away from this lab.
 
 [Back to Typecheck](hrw://load/DimensionMismatch/Typecheck)
 
-**Expected:** the diagnostic names the equation and both dimensions. It is the only place in
-the eleven tabs that says this model is wrong.
+**Expected:** the diagnostic `ET002` names both dimensions — `expected [2], found [3]` — and
+the equation's location, line 11, `small = big;`.
 
-*(Since 2026-08-05 the typechecked overlay sits below it rather than being withheld — see station 1.
-The diagnostic is still the only place in eleven tabs that says the model is wrong.)*
-
-Ten tabs will show you a plausible-looking model. One tab says otherwise. If you skip it, every
-other tab lies to you by omission — not because HRW is hiding anything, but because a flat model
-of a bad model is still a flat model.
+Every other tab tells you only that it was not reached and that Typecheck is why. The *reason*
+is here and nowhere else.
 
 ---
 
@@ -100,19 +98,20 @@ of a bad model is still a flat model.
 
 Three specimens, three shapes:
 
-| | reports at | stops at |
+| | reports at | halts at |
 |---|---|---|
 | `UnclosedModel` | Parse | Parse |
-| `UndefinedRef` | Resolve | Flatten |
-| `DimensionMismatch` | Typecheck | nowhere |
+| `UndefinedRef` | Resolve | Resolve |
+| `DimensionMismatch` | Typecheck | Typecheck |
 
-The third row is the one nobody guesses.
+Each halts where it reports. What differs is the colour: Parse and Resolve are red (`Failed`),
+Typecheck is amber (`Flagged`), because Typecheck's tab still has an artifact to show.
 
 ---
 
 ## What to bring back
 
-- Should a flagged Typecheck be *visible from the other tabs*? Right now the only signal is on
-  the Typecheck tab itself.
-- Is there a class of model where continuing past a type error is actively useful to you? If not,
-  that is an argument to make the flag much louder.
+- Should a flagged stage that ends the compile look different from a flagged stage the compile
+  carries on past (Structural on `Drivetrain`, say)? Right now both are amber.
+- Station 2's notes say *which* stage stopped the compile. Is that enough, or do you want the
+  reason repeated on the later tabs?

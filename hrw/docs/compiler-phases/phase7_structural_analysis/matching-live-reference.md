@@ -61,7 +61,7 @@ The lines a live lab sends you to. Each is located by what the line *says*, so m
 | 15 | `FoundFree { eq: 2, var: 1 }` | 795 | 1 |
 | 16 | `Assign { eq: 2, var: 1 }` | 901 | 1 |
 
-## Ledger — `TwiceDefined` (fails — the displacement has nowhere to go)
+## Ledger — `TwiceDefined` (fails — its unmatched equation mentions no unknown, so nothing is explored)
 
 | idx | step | emit line | depth |
 |---|---|---|---|

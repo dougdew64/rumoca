@@ -24,15 +24,16 @@ block coupled.
 
 That shape is the entire input to structural analysis. No coefficient appears in it.
 
-## 📐 Station 2 — What HRW concludes from it
+## 📐 Station 2 — What Rumoca concludes from it
 
 [Structural → Tearing](hrw://stage/Structural/TearingAnim)
 
 **Expected:** the replay tears `command`, then makes `f_x[1]` and `f_x[2]` causal in
 turn, finishing with 1 tear and 1 residual equation.
 
-Everything you just watched was decided from the pattern alone. HRW never evaluated
-`controllerGain` or `plantGain` — and that is the claim the notebook tests.
+Everything you just watched was decided from the pattern alone. Rumoca's structural analysis —
+captured from the run that simulates, not recomputed by HRW — never evaluated
+`controllerGain` or `plantGain`, and that is the claim the notebook tests.
 
 ## 🧮 Station 3 — Where the values go in
 

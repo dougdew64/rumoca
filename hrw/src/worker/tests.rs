@@ -9694,3 +9694,435 @@ fn each_tolerance_source_has_its_own_words() {
         "a source with no words leaves the log saying only a number",
     );
 }
+
+// -- Every tab observes the run that simulates ---------------------------------
+//
+// The workspace `CLAUDE.md` rule (2026-11-26): every tab names the Rumoca call it
+// observes (`bridge::phase_source`), and a test proves that call is on the path that
+// produces the simulation. The tests below are those proofs for the tabs whose proof
+// is not elsewhere. Simplify through Solve lowering, and the live sessions, are proven
+// in `preparation`-facing tests and `live_trace::tests`.
+
+/// **A parse failure logs a Parse bracket and no other, and leaves none open.**
+///
+/// Until 2026-11-27 the Resolve bracket opened unconditionally and only the
+/// arm that resolves closed it, so `UnclosedModel`'s log carried a `Resolve`
+/// start with no end — a phase announced that never ran. `failure-parse.md`
+/// says "no bracket for any later phase", which is now what happens.
+#[test]
+fn a_parse_failure_logs_only_the_parse_bracket() {
+    let logs = std::sync::Mutex::new(Vec::new());
+    let mut w = WorkerState::new();
+    let path = PathBuf::from(format!(
+        "{}/specimens/UnclosedModel.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    let _ = w.compile(&path, &|msg: FromWorker| {
+        if let FromWorker::Log(entry) = msg {
+            logs.lock().unwrap().push(entry);
+        }
+    });
+    let logs = logs.into_inner().unwrap();
+    let starts: Vec<&str> = logs
+        .iter()
+        .filter(|e| matches!(e.level, LogLevel::StageStart))
+        .map(|e| e.message.as_str())
+        .collect();
+    let ends = logs
+        .iter()
+        .filter(|e| matches!(e.level, LogLevel::StageEnd))
+        .count();
+    assert_eq!(starts, vec!["Parse"], "only Parse ran: {starts:?}");
+    assert_eq!(ends, starts.len(), "a bracket was left open: {starts:?}");
+}
+
+/// **A resolve failure closes its bracket as failed, and opens no solve lowering.**
+///
+/// `failure-resolve.md` Station 4 states this sequence; this is what holds it.
+#[test]
+fn a_resolve_failure_logs_its_bracket_as_failed() {
+    let logs = std::sync::Mutex::new(Vec::new());
+    let mut w = WorkerState::new();
+    let path = PathBuf::from(format!(
+        "{}/specimens/UndefinedRef.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    let _ = w.compile(&path, &|msg: FromWorker| {
+        if let FromWorker::Log(entry) = msg {
+            logs.lock().unwrap().push(entry);
+        }
+    });
+    let logs = logs.into_inner().unwrap();
+    let starts: Vec<&str> = logs
+        .iter()
+        .filter(|e| matches!(e.level, LogLevel::StageStart))
+        .map(|e| e.message.as_str())
+        .collect();
+    assert!(
+        logs.iter().any(|e| matches!(e.level, LogLevel::StageEnd)
+            && e.message.starts_with("Resolve")
+            && e.message.ends_with("\u{2014} failed")),
+        "Resolve's bracket must close marked failed",
+    );
+    assert!(
+        !starts.contains(&"Rumoca solve lowering"),
+        "no DAE, so no preparation: {starts:?}"
+    );
+    for reading in ["Rumoca compile", "Instantiate", "Flatten", "Simplify"] {
+        assert!(
+            starts.iter().any(|s| s.starts_with(reading)),
+            "the lab says HRW still reads `{reading}` out of the compile's result: {starts:?}",
+        );
+    }
+    assert_eq!(
+        starts.first(),
+        Some(&"Parse"),
+        "the log begins with Parse: {starts:?}"
+    );
+    let ends = logs
+        .iter()
+        .filter(|e| matches!(e.level, LogLevel::StageEnd))
+        .count();
+    assert_eq!(ends, starts.len(), "a bracket was left open: {starts:?}");
+}
+
+/// A worker with no libraries, and `HarmonicOscillator`, which needs none.
+fn library_free_compile() -> (WorkerState, FromWorker) {
+    let mut w = WorkerState::new();
+    let path = PathBuf::from(format!(
+        "{}/specimens/HarmonicOscillator.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    let result = w.compile(&path, &|_: FromWorker| {});
+    (w, result)
+}
+
+/// **The Parse tab is the session's own parse — the AST the compile reads.**
+///
+/// Until 2026-11-27 HRW parsed the file a second time itself, which differs from
+/// the session's whenever the session expands an extension construct first.
+#[test]
+fn the_parse_tab_is_the_sessions_own_parse() {
+    let (w, result) = library_free_compile();
+    let FromWorker::Compiled { stages, .. } = result else {
+        panic!("expected Compiled");
+    };
+    let uri = w
+        .last_specimen_uri
+        .clone()
+        .expect("a specimen was registered");
+    let session_ast = w
+        .session
+        .get_document(&uri)
+        .and_then(|doc| doc.parsed())
+        .map(|ast| serde_json::to_value(ast).expect("an AST serializes"));
+    assert!(session_ast.is_some(), "the session holds no parse of {uri}");
+    assert_eq!(
+        stages.parse.value, session_ast,
+        "the Parse tab is not the session's parse of the document"
+    );
+}
+
+/// **The Resolve tab's tree is the one the compile resolves against.**
+///
+/// The tab reads `strict_compile_resolved()`; this proves the compile does not
+/// build a different tree, by observing that the session's cached tree is the
+/// same object before and after a compile of the same model.
+#[test]
+fn the_resolve_tab_reads_the_tree_the_compile_uses() {
+    let (mut w, _) = library_free_compile();
+    let tree_address = |w: &mut WorkerState| {
+        let (strict, _) = w.session.strict_compile_resolved().expect("resolves");
+        std::ptr::from_ref(strict.tree()) as usize
+    };
+    let before = tree_address(&mut w);
+    let _ = w
+        .session
+        .compile_model_strict_reachable_uncached_with_recovery("HarmonicOscillator");
+    let after = tree_address(&mut w);
+    assert_eq!(
+        before, after,
+        "the compile built a resolved tree of its own, so the Resolve tab's tree is \
+         not the one it compiled from",
+    );
+}
+
+/// **Run integrates the preparation the tabs show, and that preparation started
+/// from the DAE tab's system.**
+///
+/// Two links in one chain: the DAE tab's counts are the shape Simplify's first
+/// transform received (so the DAE tab is the preparation's input), and a Run right
+/// after the compile integrates the runtime that preparation produced, says so, and
+/// integrates exactly the states Index reduction names.
+#[test]
+fn the_run_integrates_the_preparation_the_tabs_show() {
+    let (mut w, result) = library_free_compile();
+    let FromWorker::Compiled { stages, dae, .. } = result else {
+        panic!("expected Compiled");
+    };
+    let dae = dae.expect("a DAE");
+    let counts = crate::dae_counts::DaeCounts::of(&dae);
+    let simplify = stages.simplify.value.as_ref().expect("Simplify publishes");
+    let first = &simplify["transforms"][0]["before"];
+    assert_eq!(
+        (
+            first["states"].as_u64(),
+            first["algebraics"].as_u64(),
+            first["continuous_equations"].as_u64()
+        ),
+        (
+            Some(counts.states as u64),
+            Some(counts.algebraics as u64),
+            Some(counts.continuous_equations as u64)
+        ),
+        "Simplify's first transform did not receive the DAE tab's system: {first}",
+    );
+
+    let logs = std::sync::Mutex::new(Vec::new());
+    let path = PathBuf::from(format!(
+        "{}/specimens/HarmonicOscillator.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    let sim = w
+        .simulate(
+            CompileTarget::File(&path),
+            "HarmonicOscillator",
+            1.0,
+            None,
+            &|msg: FromWorker| {
+                if let FromWorker::Log(entry) = msg {
+                    logs.lock().unwrap().push(entry.message);
+                }
+            },
+        )
+        .expect("simulates");
+    assert!(
+        logs.lock()
+            .unwrap()
+            .iter()
+            .any(|m| m == "integrating the prepared runtime the stage tabs show"),
+        "a Run right after the compile must integrate the compile's preparation",
+    );
+    let integrated = stages.index_reduction.value.as_ref().unwrap()["integrated"]
+        .as_array()
+        .map_or(0, Vec::len);
+    assert_eq!(
+        sim.n_states, integrated,
+        "the run integrated a different number of states from the ones Index \
+         reduction names",
+    );
+}
+
+/// **No tab is built from a phase HRW runs itself.**
+///
+/// Every call from HRW's production code into a Rumoca phase or `rumoca-sim`, and
+/// every session compile, is on this roster with the reason it is allowed. The
+/// defect this guards is the one the workspace `CLAUDE.md` rule was written after:
+/// HRW calling a phase on an input the simulation never sees and showing the
+/// result as the compilation — which had no checklist, so it crept in for weeks.
+/// A new call fails here by name; add it only with a reason that is about the run
+/// that simulates.
+#[test]
+fn no_tab_is_built_from_a_phase_hrw_runs_itself() {
+    const ROSTER: &[(&str, &str, &str)] = &[
+        (
+            "src/worker.rs",
+            ".compile_model_strict_reachable_uncached_with_recovery(",
+            "the compile every Parse..DAE tab reads; Run's compile; the connections live session",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_phase_flatten::connections::trace::start_capture(",
+            "captures the compile's own connection frames",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_phase_flatten::connections::trace::take_capture(",
+            "captures the compile's own connection frames",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_phase_flatten::connections::trace::start_live(",
+            "the connections live session, around the same compile",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_phase_flatten::connections::trace::end_live(",
+            "the connections live session, around the same compile",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_sim::simulate_prepared_runtime_with_optional_step_records(",
+            "the run itself",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_sim::simulate_with_diagnostics(",
+            "the NaN-trace retry after a failed run, logged as a re-run",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_phase_parse::format_parse_error(",
+            "renders the session's own parse errors as parse_to_ast does; parses nothing",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_sim::nan_trace::nan_trace_enabled(",
+            "the NaN-trace retry",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_sim::nan_trace::set_nan_trace(",
+            "the NaN-trace retry",
+        ),
+        (
+            "src/worker.rs",
+            "rumoca_sim::nan_trace::error_suggests_nonfinite(",
+            "the NaN-trace retry",
+        ),
+        (
+            "src/worker/preparation.rs",
+            "rumoca_sim::prepare_runtime_observed(",
+            "the one preparation Simplify..Solve lowering read and Run integrates",
+        ),
+        (
+            "src/worker/preparation.rs",
+            "rumoca_phase_structural::build_incidence(",
+            "a projection of the prepared system, inside that preparation's observer",
+        ),
+        (
+            "src/live_trace.rs",
+            "rumoca_sim::prepare_runtime_observed(",
+            "a live session: the same call, on the same DAE",
+        ),
+        (
+            "src/fidelity.rs",
+            "rumoca_sim::prepare_runtime_observed(",
+            "F2's oracle: the same call, on the same DAE",
+        ),
+        (
+            "src/fidelity.rs",
+            "rumoca_phase_structural::build_incidence(",
+            "F2's oracle, on the prepared system",
+        ),
+    ];
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let mut found: Vec<(String, String)> = Vec::new();
+    let mut stack = vec![root.join("src")];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).expect("src is readable").flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or_default();
+            if !name.ends_with(".rs")
+                || name.starts_with("tests")
+                || name.starts_with("test_")
+                || name.ends_with("_tests.rs")
+            {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(&root)
+                .expect("under the crate")
+                .to_string_lossy()
+                .replace('\\', "/");
+            let text = std::fs::read_to_string(&path).expect("readable");
+            for line in production_lines(&text) {
+                for call in phase_calls(line) {
+                    if !found.iter().any(|(f, c)| *f == rel && *c == call) {
+                        found.push((rel.clone(), call));
+                    }
+                }
+            }
+        }
+    }
+    let unlisted: Vec<_> = found
+        .iter()
+        .filter(|(f, c)| !ROSTER.iter().any(|(rf, rc, _)| rf == f && rc == c))
+        .collect();
+    assert!(
+        unlisted.is_empty(),
+        "HRW calls a Rumoca phase that is not on the roster. If a tab reads its result, \
+         it is reading a run the simulation does not make: {unlisted:#?}",
+    );
+    let stale: Vec<_> = ROSTER
+        .iter()
+        .filter(|(rf, rc, _)| !found.iter().any(|(f, c)| f == rf && c == rc))
+        .collect();
+    assert!(
+        stale.is_empty(),
+        "roster entries no call matches: {stale:#?}"
+    );
+}
+
+/// Every call in `line` into a Rumoca phase crate or `rumoca-sim`
+/// (`rumoca_phase_x::path::f(`, `rumoca_sim::f(`), and every uncached session
+/// compile (`.compile_model_…_uncached…(`), spelled as written up to the `(`.
+/// A path not followed by `(` is a type or an import, not a call, and is skipped.
+fn phase_calls(line: &str) -> Vec<String> {
+    let mut calls = Vec::new();
+    for prefix in ["rumoca_phase_", "rumoca_sim::", ".compile_model_"] {
+        let mut from = 0;
+        while let Some(offset) = line[from..].find(prefix) {
+            let start = from + offset;
+            let rest = &line[start..];
+            let len = rest
+                .char_indices()
+                .find(|(i, c)| *i > 0 && !(c.is_ascii_alphanumeric() || *c == '_' || *c == ':'))
+                .map_or(rest.len(), |(i, _)| i);
+            let path = &rest[..len];
+            let is_call = rest[len..].starts_with('(');
+            let is_uncached_compile = prefix != ".compile_model_" || path.contains("_uncached");
+            // A type's constructor (`SimOptions::default`) runs no phase, and the
+            // two label functions only render a name Rumoca's own way.
+            let is_type_path = path
+                .split("::")
+                .any(|segment| segment.starts_with(|c: char| c.is_ascii_uppercase()));
+            let is_label = path.ends_with("::equation_label") || path.ends_with("::unknown_label");
+            if is_call && is_uncached_compile && !is_type_path && !is_label && !path.ends_with("::")
+            {
+                calls.push(format!("{path}("));
+            }
+            from = start + len.max(1);
+        }
+    }
+    calls
+}
+
+/// The lines of `text` that are production code: comment lines and every
+/// `#[cfg(test)] mod … { … }` block are dropped.
+fn production_lines(text: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut lines = text.lines().peekable();
+    let mut skip_depth: Option<i32> = None;
+    while let Some(line) = lines.next() {
+        if let Some(depth) = skip_depth.as_mut() {
+            *depth += line.matches('{').count() as i32 - line.matches('}').count() as i32;
+            if *depth <= 0 {
+                skip_depth = None;
+            }
+            continue;
+        }
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("#[cfg(test)]")
+            && let Some(next) = lines.peek()
+            && next.trim_start().starts_with("mod ")
+            && next.trim_end().ends_with('{')
+        {
+            let next = lines.next().unwrap_or_default();
+            skip_depth = Some(next.matches('{').count() as i32 - next.matches('}').count() as i32);
+            continue;
+        }
+        if trimmed.starts_with("//") {
+            continue;
+        }
+        out.push(line);
+    }
+    out
+}

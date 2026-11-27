@@ -1,4 +1,4 @@
-# Failure lab — Resolve, where a name is looked up and the answer is recorded
+# Failure lab — Resolve, where a name is looked up and the compile stops
 
 <!-- kind: failure -->
 
@@ -7,39 +7,42 @@ much alone.
 
 Run the Parse failure lab first — or jump straight to the station that draws the distinction:
 [failure-parse, station 4](hrw://lab/failure-parse/station/station-4-the-distinction-this-specimen-anchors).
-It establishes `Failed` versus `Flagged`, and this lab is the
-first case of the second kind.
+It establishes `Failed` versus `Flagged`. This lab is the second `Failed`: a halt one phase
+later than Parse's, for a different reason.
 
-The question to hold: a name that does not exist is the simplest possible error. Why does it
-take *two* phases to deal with it?
+The question to hold: a name that does not exist is the simplest possible error. Where does the
+compiler find it, and what does every tab after that point say?
 
 ---
 
-## Station 1 — The error is found here
+## Station 1 — The error is found here, and the compile stops here
 
 [Load UndefinedRef → Resolve](hrw://load/UndefinedRef/Resolve)
 
-**Expected:** Resolve is flagged, and its note contains `unresolved component reference`. The
-stage still has a tree below the note — resolution produced something.
+**Expected:** Resolve has **Failed** (red), and its note reads
+`Resolve errors: unresolved component reference: 'missingGain'`. There is no tree — only the
+error panel, whose diagnostic `ER002` points at line 9, `y = missingGain * time;`.
 
-That is the whole lesson of this lab in one pane. Rumoca found the problem, wrote it down, and
-kept the partial result. Compare `UnclosedModel`, where Parse had nothing to hand on.
+Rumoca found the problem, wrote it down with its location, and went no further. Compare
+`UnclosedModel`, where Parse had nothing to hand on: here Parse succeeded, and Resolve is where
+the model stopped being a model.
 
 ---
 
-## Station 2 — And the compile stops somewhere else
+## Station 2 — What every later tab says
 
-[Flatten](hrw://load/UndefinedRef/Flatten)
+[Instantiate](hrw://load/UndefinedRef/Instantiate)
 
-**Expected:** Flatten has Failed — no tree — and says the reachable-closure pipeline produced
-no model.
+**Expected:** Instantiate says `not reached (the compile stopped before instantiate)`, and so
+does Typecheck. Flatten and every tab after it say
+`the reachable-closure pipeline produced no result for this model`. None of them is red.
 
-So the phase that reports is not the phase that stops. Resolve knew at station 1; the pipeline
-continued through Instantiate and Typecheck anyway, and gave up when flattening needed a name
-that was never bound.
+So the phase that reports *is* the phase that stops, and the tab colours say so: one red tab,
+at Resolve, and grey after it. **Falsified if:** any tab after Resolve is red, or shows a tree.
 
-This is worth sitting with, because it is the shape of most errors in this compiler: the
-diagnosis and the halt are in different places, and the log is what connects them.
+*(Until the v0.10.0 rebase this lab taught the opposite — Resolve merely flagged, and the
+compile continuing until Flatten gave up. That was HRW painting a halt as a flag; the outcome
+matrix `the_corpus_outcome_matrix_is_unchanged` now pins Resolve as the one `X` on this row.)*
 
 ---
 
@@ -47,8 +50,8 @@ diagnosis and the halt are in different places, and the log is what connects the
 
 [Load MissingComponentClass → Resolve](hrw://load/MissingComponentClass/Resolve)
 
-**Expected:** flagged again, but the note reads `unresolved type reference` — type, not
-component.
+**Expected:** Failed again, but the note reads `unresolved type reference: 'NoSuchBlock'` —
+type, not component.
 
 The two specimens differ by one line:
 
@@ -58,8 +61,8 @@ NoSuchBlock part;         // MissingComponentClass — a missing CLASS
 ```
 
 Modelica looks up classes and components by different rules, so the compiler can say which kind
-it failed to find. Everything else about the two compiles is identical — same flagged stage,
-same failing stage, same message at Flatten.
+it failed to find. Everything else about the two compiles is identical — the same failed stage,
+the same notes on every tab after it.
 
 This lab exists because that was not obvious. The specimen's first draft asserted a missing
 *class* would stop at Instantiate — a different phase — and that was wrong. It was caught by
@@ -72,18 +75,20 @@ you are not reading a confident false claim right now.
 
 Click the Log toggle above the stage tabs.
 
-**Expected:** brackets for `Parse`, `Resolve`, and `Rumoca compile` all opening and closing
-normally, with the failure appearing inside the compile. No bracket is missing — every phase
-up to the station actually ran.
+**Expected:** a `Parse` bracket, then a `Resolve` bracket that closes marked `— failed`. The
+`Rumoca compile` bracket and the Instantiate, Typecheck, Flatten, DAE construction, Simplify and
+Structural brackets inside and after it still appear — HRW reading out what the compile
+produced, which here is nothing, so each encloses a stage that reports *not reached*. There is
+no `Rumoca solve lowering` bracket: there was no DAE to prepare.
 
-Contrast `UnclosedModel`, where later brackets do not appear at all.
+Contrast `UnclosedModel`, where no bracket after Parse appears at all, because there was no
+model name to compile.
 
 ---
 
 ## What to bring back
 
-- Does the Resolve tab make it clear that its tree is partial? It is, and the pane may not
-  say so loudly enough.
-- Would you rather the *halt* be attributed to Resolve, since that is where the cause is? That
-  is a real design question and the answer is not obvious — the compiler's own structure says
-  Flatten.
+- Does the Resolve tab's error panel make the location obvious enough — line 9, the reference
+  itself — or did you have to hunt for it?
+- Station 4's brackets around stages that did not run: are they honest (HRW did read the
+  compile's result, and found nothing), or noise? That is a pane decision, and yours.

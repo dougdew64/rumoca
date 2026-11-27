@@ -105,7 +105,8 @@ fn generate_trace(name: &str) -> Result<(), String> {
     // **Canonicalize the drive-letter case, or the committed trace depends on which
     // shell generated it.**
     //
-    // `parse_to_ast` stamps whatever path it is handed into every `Location`, so this
+    // The session's parse stamps whatever URI a document is registered under into
+    // every `Location`, so this
     // string ends up in `parse.json`, `resolve.json`, `instantiate.json` and
     // `typecheck.json` — thousands of times. And `CARGO_MANIFEST_DIR` is not stable in
     // its drive letter: the committed traces carry `C:\Users\…` from one run, and on

@@ -12,12 +12,12 @@
       "solves": "v",
       "at": {
         "file": "hrw/specimens/MeasuredOscillator.mo",
-        "line": 22,
+        "line": 20,
         "column": 3,
         "excerpt": "Real v_meas",
         "line_text": "  Real v_meas(start = 1.0, fixed = true) \"tachometer reading: the measured velocity, stated at t = 0\";",
-        "byte_start": 1480,
-        "byte_end": 1491
+        "byte_start": 1334,
+        "byte_end": 1345
       }
     }
   ],

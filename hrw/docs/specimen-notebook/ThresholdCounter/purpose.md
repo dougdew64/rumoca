@@ -81,6 +81,6 @@ initial instant was mishandled.
 
 ## Verified
 
-Every phase produces IR — the corpus outcome matrix row is `OOOOOOOOOOO`. The Events expansion
+Every phase produces IR — the corpus outcome matrix row is `OOOOOOOOOOOO`. The Events expansion
 is read from the committed trace. The System Modeler values are from a run to `t = 1`, its
 oracle horizon; the Rumoca values are from this trace, which runs to `t = 2`.

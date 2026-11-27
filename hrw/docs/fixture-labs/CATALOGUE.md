@@ -10,7 +10,7 @@
 
 **Fixture lab — BLT: finding an order, and finding out there isn't one**
 
-Giving every equation a job is not yet a recipe. To evaluate `f_x[9]` — Ohm's law, which
+Giving every equation a job is not yet a recipe. In `RcCircuit`, `f_x[9]` is Ohm's law,
 
 - **Specimens:** `RcCircuit`, `ProportionalLoop`, `TwoLoops`
 - **Stages:** `Structural`
@@ -91,53 +91,52 @@ Every phase so far treated the model as one system of equations, true for all ti
 - **Stations:**
   - `fixture-lab-events-the-equations-that-are-not-always-true` — Fixture lab — Events: the equations that are not always true
   - `station-1-a-model-with-a-real-event` — Station 1 — A model with a real event
-  - `station-2-a-model-with-none-and-what-the-pane-says` — Station 2 — A model with none, and what the pane says
+  - `station-2-a-model-with-no-when-and-what-the-pane-says` — Station 2 — A model with no `when`, and what the pane says
   - `station-3-a-model-with-several` — Station 3 — A model with several
   - `what-this-lab-cannot-check` — What this lab cannot check
-  - `what-comes-next-in-the-chain` — What comes next in the chain
+  - `where-the-chain-ends` — Where the chain ends
 
 ## `failure-flatten`
 
-**Failure lab — Flatten, where the count is checked**
+**Failure lab — Flatten completes, and DAE construction checks the count**
 
-Specimen: `UnbalancedShaft` — `SingleInertia` with one line changed.
+Specimen: `UnbalancedShaft` — `SingleInertia` with `tau` demoted from a parameter to an
 
 - **Specimens:** `UnbalancedShaft`, `SingleInertia`
-- **Stages:** `Dae`, `Flatten`, `Resolve`
+- **Stages:** `Dae`, `Flatten`, `Resolve`, `Simplify`
 - **Stations:**
-  - `failure-lab-flatten-where-the-count-is-checked` — Failure lab — Flatten, where the count is checked
+  - `failure-lab-flatten-completes-and-dae-construction-checks-the-count` — Failure lab — Flatten completes, and DAE construction checks the count
   - `station-1-the-refusal` — Station 1 — The refusal
   - `station-2-why-it-could-not-be-checked-sooner` — Station 2 — Why it could not be checked sooner
-  - `station-3-the-phase-that-owns-the-error-and-the-phase-that-reports-it` — Station 3 — The phase that owns the error, and the phase that reports it
-  - `station-4-what-one-line-did` — Station 4 — What one line did
+  - `station-3-what-flatten-says` — Station 3 — What Flatten says
+  - `station-4-what-one-word-did` — Station 4 — What one word did
   - `what-to-bring-back` — What to bring back
 
 ## `failure-initialization`
 
 **Failure lab — Initialization, where too much information is the problem**
 
-Specimens: `OverInitRc` and `RotationalInertia`. Two ways the t=0 problem goes wrong, and
+Specimen: `OverInitRc` — `RcCircuit` with an `initial equation` section of two lines that
 
-- **Specimens:** `OverInitRc`, `RotationalInertia`
-- **Stages:** `Initialization`, `SolveLowering`
+- **Specimens:** `OverInitRc`
+- **Stages:** `Initialization`, `Simulation`
 - **Stations:**
   - `failure-lab-initialization-where-too-much-information-is-the-problem` — Failure lab — Initialization, where too much information is the problem
-  - `station-1-more-conditions-than-states` — Station 1 — More conditions than states
-  - `station-2-the-other-direction` — Station 2 — The other direction
-  - `station-3-everything-downstream-still-runs` — Station 3 — Everything downstream still runs
-  - `station-4-the-determinacy-verdict` — Station 4 — The determinacy verdict
+  - `station-1-the-plan-rumoca-lowered` — Station 1 — The plan Rumoca lowered
+  - `station-2-the-run-evaluates-the-check-and-refuses` — Station 2 — The run evaluates the check, and refuses
+  - `station-3-where-the-two-conditions-are-kept` — Station 3 — Where the two conditions are kept
   - `what-to-bring-back` — What to bring back
 
 ## `failure-parse`
 
-**Failure lab — Parse, the only phase that truly stops**
+**Failure lab — Parse, the earliest halt**
 
 Specimen: `UnclosedModel` — ten lines of valid Modelica with its `end` clause removed.
 
 - **Specimens:** `UnclosedModel`, `Drivetrain`
 - **Stages:** `Parse`, `Resolve`, `Structural`
 - **Stations:**
-  - `failure-lab-parse-the-only-phase-that-truly-stops` — Failure lab — Parse, the only phase that truly stops
+  - `failure-lab-parse-the-earliest-halt` — Failure lab — Parse, the earliest halt
   - `station-1-the-failure-itself` — Station 1 — The failure itself
   - `station-2-what-stopped-costs` — Station 2 — What "stopped" costs
   - `station-3-the-log-agrees-with-the-tabs` — Station 3 — The log agrees with the tabs
@@ -146,16 +145,16 @@ Specimen: `UnclosedModel` — ten lines of valid Modelica with its `end` clause 
 
 ## `failure-resolve`
 
-**Failure lab — Resolve, where a name is looked up and the answer is recorded**
+**Failure lab — Resolve, where a name is looked up and the compile stops**
 
 Specimens: `UndefinedRef` and `MissingComponentClass`. Run them together; neither is worth
 
 - **Specimens:** `UndefinedRef`, `MissingComponentClass`
-- **Stages:** `Flatten`, `Resolve`
+- **Stages:** `Instantiate`, `Resolve`
 - **Stations:**
-  - `failure-lab-resolve-where-a-name-is-looked-up-and-the-answer-is-recorded` — Failure lab — Resolve, where a name is looked up and the answer is recorded
-  - `station-1-the-error-is-found-here` — Station 1 — The error is found here
-  - `station-2-and-the-compile-stops-somewhere-else` — Station 2 — And the compile stops somewhere else
+  - `failure-lab-resolve-where-a-name-is-looked-up-and-the-compile-stops` — Failure lab — Resolve, where a name is looked up and the compile stops
+  - `station-1-the-error-is-found-here-and-the-compile-stops-here` — Station 1 — The error is found here, and the compile stops here
+  - `station-2-what-every-later-tab-says` — Station 2 — What every later tab says
   - `station-3-which-kind-of-name-was-missing` — Station 3 — Which *kind* of name was missing
   - `station-4-read-it-in-the-log` — Station 4 — Read it in the log
   - `what-to-bring-back` — What to bring back
@@ -167,7 +166,7 @@ Specimens: `UndefinedRef` and `MissingComponentClass`. Run them together; neithe
 Specimens: `TwiceDefined` and `CapacitorLoop`. Both are flagged `singular`. They are not
 
 - **Specimens:** `TwiceDefined`, `CapacitorLoop`
-- **Stages:** `Dae`, `Structural`
+- **Stages:** `Dae`, `IndexReduction`, `Structural`
 - **Stations:**
   - `failure-lab-structural-analysis-where-counting-stops-being-enough` — Failure lab — Structural analysis, where counting stops being enough
   - `station-1-square-and-singular-anyway` — Station 1 — Square, and singular anyway
@@ -178,16 +177,16 @@ Specimens: `TwiceDefined` and `CapacitorLoop`. Both are flagged `singular`. They
 
 ## `failure-typecheck`
 
-**Failure lab — Typecheck, which reports and does not stop at all**
+**Failure lab — Typecheck, flagged, and the compile goes no further**
 
 Specimen: `DimensionMismatch` — a 2-vector assigned from a 3-vector.
 
 - **Specimens:** `DimensionMismatch`, `UnclosedModel`
 - **Stages:** `Flatten`, `SolveLowering`, `Typecheck`
 - **Stations:**
-  - `failure-lab-typecheck-which-reports-and-does-not-stop-at-all` — Failure lab — Typecheck, which reports and does not stop at all
+  - `failure-lab-typecheck-flagged-and-the-compile-goes-no-further` — Failure lab — Typecheck, flagged, and the compile goes no further
   - `station-1-the-diagnosis` — Station 1 — The diagnosis
-  - `station-2-the-surprise` — Station 2 — The surprise
+  - `station-2-what-every-later-tab-says` — Station 2 — What every later tab says
   - `station-3-where-the-truth-is-kept` — Station 3 — Where the truth is kept
   - `station-4-compare-where-the-compile-halts` — Station 4 — Compare where the compile halts
   - `what-to-bring-back` — What to bring back
@@ -236,27 +235,26 @@ Counting a model's states can give you the wrong number — not miscounted, but 
 
 The system is square, ordered and index-1 — and the integrator still cannot take its first
 
-- **Specimens:** `BouncingBall`, `RcCircuit`, `OverInitRc`, `RotationalInertia`
-- **Stages:** `Initialization`
+- **Specimens:** `BouncingBall`, `RcCircuit`, `MeasuredOscillator`, `OverInitRc`
+- **Stages:** `Initialization`, `Simulation`
 - **Stations:**
   - `fixture-lab-initialization-the-values-at-t-0` — Fixture lab — Initialization: the values at t = 0
   - `station-1-the-case-with-nothing-to-solve` — Station 1 — The case with nothing to solve
-  - `station-2-the-case-with-a-real-initialization-system` — Station 2 — The case with a real initialization system
+  - `station-2-the-case-with-a-real-plan` — Station 2 — The case with a real plan
   - `station-3-the-case-that-specifies-too-much` — Station 3 — The case that specifies too much
-  - `station-4-square-and-still-singular-again` — Station 4 — Square and still singular, again
   - `what-this-lab-cannot-check` — What this lab cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `matching-live`
 
-**Fixture lab — Matching, live: the call stack is the augmenting path**
+**Fixture lab — Matching, live: the `stack` local is the augmenting path**
 
 This is the only lab that stops Rumoca mid-algorithm and reads its state in a debugger.
 
-- **Specimens:** `ProportionalLoop`, `TwiceDefined`
+- **Specimens:** `ProportionalLoop`, `CapacitorLoop`
 - **Stages:** `Structural`
 - **Stations:**
-  - `fixture-lab-matching-live-the-call-stack-is-the-augmenting-path` — Fixture lab — Matching, live: the call stack is the augmenting path
+  - `fixture-lab-matching-live-the-stack-local-is-the-augmenting-path` — Fixture lab — Matching, live: the `stack` local is the augmenting path
   - `station-0-two-things-must-be-true-before-any-of-this-works` — Station 0 — Two things must be true before any of this works
   - `station-1-arm-an-anchor-and-learn-what-an-anchor-is-named` — Station 1 — Arm an anchor, and learn what an anchor is named
   - `station-2-the-augmenting-path-is-a-vector-you-can-read-at-once` — Station 2 — The augmenting path is a vector you can read at once
@@ -330,7 +328,7 @@ The first cross-platform lab. Two stations in HRW, then a notebook — because t
 - **Stations:**
   - `structural-rank-vs-numerical-rank` — Structural rank vs numerical rank
   - `station-1-the-pattern-from-a-real-model` — 📐 Station 1 — The pattern, from a real model
-  - `station-2-what-hrw-concludes-from-it` — 📐 Station 2 — What HRW concludes from it
+  - `station-2-what-rumoca-concludes-from-it` — 📐 Station 2 — What Rumoca concludes from it
   - `station-3-where-the-values-go-in` — 🧮 Station 3 — Where the values go in
   - `station-4-back-to-hrw-and-what-it-would-say` — 📐 Station 4 — Back to HRW, and what it would say
   - `what-each-side-uniquely-holds` — What each side uniquely holds

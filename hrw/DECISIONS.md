@@ -6046,3 +6046,43 @@ Found getting the slow suite green after the 11-26 change.
 Five tests that asserted HRW-computed facts were rewritten against the real run (InitProbe's plan,
 the pendulum's recovery route, three MSL classes solve lowering refuses, the simulate log's
 provenance, the corpus matrix's new Simplify column).
+
+## 2026-11-27 (later) — The comprehensive audit under *every tab observes the run that simulates*
+
+Doug: *"Start with the tabs, and then complete the lab audit. Fix all defects identified in
+either audit."*
+
+**Tabs — four defects, each now pinned by a test reaching the real run:**
+
+- **Parse was HRW's own second parse** (`parse_to_ast` on the file's text) beside the session's,
+  which expands extension constructs first. It now reads the session's parse
+  (`the_parse_tab_is_the_sessions_own_parse`), rendering errors exactly as before.
+- **Live debug sessions stepped a run Rumoca never makes**: `observe_sort` and
+  `watch_prepare_for_solve` on the raw DAE, beside a playback of the simplified one. For
+  `Drivetrain` the two matchings differ. A Rumoca-side live listener
+  (`preparation_trace::set_live_listener`, its own commit) now lets a session watch the real
+  preparation (`a_live_session_steps_the_frames_the_compile_recorded`,
+  `a_live_reduction_session_steps_the_tabs_search`).
+- **A parse failure left a `Resolve` bracket open** — a phase announced that never ran.
+- **The reduction banner wrote its own mechanism** (*"selected N coordinates on the constraint
+  manifold"*) where the run's route says *"recovered via formal derivatives"*; it quotes the
+  route now. And a "raw DAE" phrase where the system is the simplified one.
+
+Proven-on-path tests were added for Resolve (the tree is the compile's), for Run integrating the
+tabs' preparation, and `no_tab_is_built_from_a_phase_hrw_runs_itself`, a source scan rostering
+every Rumoca phase call HRW's production code makes.
+
+**Labs — every one of the 22 was read against the regenerated traces**, by four parallel
+audits whose findings were re-verified before each edit. **The failure labs were the worst and
+predate 11-26**: four of six taught outcomes the corpus no longer has — Resolve and Typecheck
+"flagged and carrying on" when both stop the compile, an unbalanced count "failing at Flatten"
+when DAE construction owns it, OverInitRc "refused at a count" when the plan keeps a surplus
+check that the run evaluates and refuses (residual 50). `initialization.md`, `events.md` and
+`solve-lowering.md` quoted fields that no longer exist; `matching-live.md` Station 3 walked a
+displacement the real run never takes, and now walks `CapacitorLoop`'s. The specimen
+`purpose.md` files carried two fabrications — a tab note never written and a code phrase that
+exists nowhere — and those are gone too.
+
+**The pattern:** none of this was caught because the labs and purpose files are checked for
+link *resolution*, never for claims. The rule's test requirement covers tabs; prose that reports
+a tab is a reporter too, and nothing checks it yet beyond this audit.

@@ -1379,10 +1379,11 @@ pub enum FromWorker {
         /// Every step of the matching search, **from the run that produced the
         /// blocks above** — not a re-derivation performed when the tab opens.
         ///
-        /// On 0.10.0 that is true by construction rather than by care:
-        /// `inspect_structural_report` returns the report and these steps from
-        /// one call, through one observer threaded into the real search. There
-        /// is no second traced implementation that could drift.
+        /// That is true by construction rather than by care: since 2026-11-26
+        /// these are the steps of the first `Source` analysis captured inside
+        /// solve lowering's real preparation (`preparation::structural_stage`),
+        /// the same capture the Structural report is read from. A live session
+        /// steps the same analysis (`live_trace::spawn_structural_live`).
         matching_frames: Vec<rumoca_phase_structural::MatchingRecord>,
         /// The SCC search, from the same run, **one segment per traversal**.
         ///
@@ -1402,11 +1403,10 @@ pub enum FromWorker {
         tearing_frames: Vec<Vec<rumoca_phase_structural::TearingRecord>>,
         // **The index-reduced system's own three searches are gone with the
         // funnel.** They came from re-running reduction on a cloned DAE, which
-        // 0.10.0 makes impossible (`Dae` is immutable and not `Clone`) and
-        // unnecessary (`inspect_prepare_for_solve` observes the real one). The
-        // re-model did not restore them: that seam records rounds, not the searches
-        // inside them, so the Index Reduction tab offers no frame views. See
-        // `index_reduction_stage`.
+        // 0.10.0 makes impossible (`Dae` is immutable and not `Clone`). The real
+        // preparation's capture does hold the analyses inside each round, but the
+        // Index Reduction tab offers no frame views of them yet. See
+        // `preparation::index_reduction_stage`.
         /// Every MLS §3.7.5 history-operator site, and what each one lowered to.
         ///
         /// **Sites rather than the old frames, because the subject changed.** On
@@ -2626,20 +2626,24 @@ impl WorkerState {
     ///
     /// This is the most complex method in the worker — it orchestrates the
     /// entire Rumoca pipeline and produces the `FromWorker::Compiled` result
-    /// that populates all ten stage tabs in the UI.
+    /// that populates every compilation stage tab in the UI.
     ///
-    /// # Pipeline stages (in order)
+    /// # Pipeline stages (in order), and the ONE Rumoca call each reads
     ///
-    /// 1. **Parse** — `rumoca_phase_parse::parse_to_ast()` — source text to AST
-    /// 2. **Resolve** — `session.resolved()` — name resolution against the MSL
-    /// 3. **Instantiate** — `rumoca_phase_instantiate::instantiate_model()` — class instantiation
-    /// 4. **Typecheck** — `rumoca_phase_typecheck::typecheck_instanced()` — type checking
-    /// 5. **Flatten** — extracted from the reachable-closure pipeline result
-    /// 6. **Structural** — `rumoca_phase_structural::build_structural_report()` — matching + BLT
-    /// 7. **Index reduction** — `rumoca_phase_structural::inspect_prepare_for_solve()` — the reduction search
-    /// 8. **Initialization** — the same preparation's initial-value pins
-    /// 9. **Events** — the DAE's condition algebra, read through `DaeView::conditions` and its siblings
-    /// 10. **Solve lowering** — `rumoca_phase_solve::lower_solve_problem()` — DAE to solve problem
+    /// HRW runs no phase itself. Two calls produce every tab, and the simulation
+    /// integrates what the second returns:
+    ///
+    /// - **`Session::compile_model_strict_reachable_uncached_with_recovery`** —
+    ///   Parse (the session's own parsed document), Resolve (the strict-compile
+    ///   tree the compile uses), Instantiate and Typecheck (`rumoca_compile::observe`
+    ///   capture), Flatten and DAE construction (the result).
+    /// - **`rumoca_sim::prepare_runtime_observed`** on that DAE — Simplify,
+    ///   Structural, Index reduction, Initialization, Events' lowered half and Solve
+    ///   lowering, through the two preparation capture scopes
+    ///   (`worker::preparation`).
+    ///
+    /// `bridge::phase_source` is the per-tab roster, and
+    /// `no_tab_is_built_from_a_phase_hrw_runs_itself` keeps `src/` honest to it.
     ///
     /// # Progressive streaming pattern
     ///
@@ -2993,9 +2997,8 @@ impl WorkerState {
         // Disk text and parsed text therefore agree by construction.
         //
         // Deliberately **not** fixed by giving `Located::source` the real text:
-        // that feeds `parse_to_ast` below, so it would change what the compile
-        // does for every library model and invalidate the 2,614/2,626 fidelity
-        // measurement. This capture is observation-only.
+        // that text is what a specimen is registered with below, so changing it
+        // would change what the compile does. This capture is observation-only.
         let library_source = matches!(target, CompileTarget::Library(_)).then(|| LibrarySource {
             uri: uri.clone(),
             // The error is carried, not swallowed: a blank pane is exactly the
@@ -3023,44 +3026,64 @@ impl WorkerState {
         // =====================================================================
         // Stage 1: PARSE — source text to AST
         // =====================================================================
-        // Rumoca API: `parse_to_ast(source, file_name)` parses Modelica source
-        // into an AST. Returns `Ok(StoredDefinition)` or `Err` on syntax error.
-        // We grab the first class name from `ast.classes` as the model name.
+        // **The session's own parse of the document, not a second one** (2026-11-27).
         //
-        // **`&uri`, not the basename.** The `file_name` argument is stamped into
-        // every `Location` in the resulting AST, and the session parsed these same
-        // bytes with the full document URI. Passing a basename made HRW's parse
-        // differ from the compiler's own AST for the file — measured 2026-08-01 at
-        // **400 of 400** MSL documents, and **0 of 400** once the URI was passed.
-        // The bytes and every span already agreed; this one field did not.
+        // Until then HRW called `parse_to_ast` itself on the file's text, beside
+        // the session's parse that the compile actually reads. Same function, same
+        // bytes, mostly the same tree — but not always: the session expands
+        // extension constructs in the text before it parses
+        // (`rumoca_compile::parse::expanded_document_source`), so a model using one
+        // showed an AST Rumoca never compiled. The workspace `CLAUDE.md` rule is
+        // that a tab reads the run that simulates, so it now reads that parse.
         //
-        // It is not cosmetic. `bridge::slice_source` resolves a location to a file
-        // by trying `file_name` as a path and falling back to the specimen path.
-        // A basename is not a path, and for a **library model the fallback is a
-        // qualified name**, so pointing at a Parse node emitted no excerpt at all.
-        // Worse, `Path::new("Resistor.mo").is_file()` is a *relative* test: run
-        // from a directory holding a same-named file, it would have sliced the
-        // wrong one and emitted a confident wrong excerpt.
+        // A specimen is (re)registered here, which is where the session parses it,
+        // so this bracket times the real parse. A library model's document was
+        // parsed when its library loaded, so this bracket only reads it. The
+        // **whole declaring file** is shown either way, matching the source view.
         log(LogLevel::StageStart, "Parse".to_owned());
         let t_stage = Instant::now();
-        // **`display_source`, not `source`.** For a library model `source` is `""`
-        // -- Rumoca discards source-root text -- so this parsed an empty string
-        // and produced `{"classes":{},"within":null}` for **every MSL model**,
-        // shown as a *successful* stage. An empty green tab asserts "this model
-        // parsed to nothing", which is false, and is indistinguishable from a
-        // model that genuinely declares nothing. Worse than an error, which at
-        // least points somewhere. Fixed 2026-08-01 at Doug's request, after the
-        // source view made the disagreement visible: the pane showed a file full
-        // of declarations while the Parse tab claimed it held none.
-        //
-        // This is display-only for a library model. The pipeline below works from
-        // the session's resolved tree, never from this AST, so the stage now
-        // reports what Rumoca would parse without changing what it compiles.
-        //
-        // The **whole declaring file** is parsed, matching what the source view
-        // shows. A library file declares many classes and the reader is looking
-        // at all of them.
-        let (parse, model) = match rumoca_phase_parse::parse_to_ast(display_source, &uri) {
+        // **Only a specimen is registered.** A library model's document is
+        // already in a durable source root; adding it as a workspace document
+        // would have the session hold the same file twice, and removing it later
+        // would evict part of the library. (The history of the session rebuild
+        // this replaced is under Resolve below.)
+        if given_qualified.is_none() {
+            if let Some(prev) = self.last_specimen_uri.take()
+                && prev != uri
+            {
+                self.session.remove_document(&prev);
+            }
+            // Remove then re-add the specimen so the session treats it as new — without
+            // this, `update_document` sees identical source text and short-circuits,
+            // returning cached results (the registration code never re-runs).
+            self.session.remove_document(&uri);
+            self.session.update_document(&uri, &source);
+            self.last_specimen_uri = Some(uri.clone());
+        }
+        // The session's text, not the file's: the errors' spans are offsets into the
+        // text the session parsed, which is the expanded one when expansion ran.
+        let session_text = self.session.document_source_text(&uri);
+        let session_parse = match self.session.get_document(&uri) {
+            Some(doc) => match doc.parsed() {
+                Some(ast) => Ok(ast),
+                // Rendered exactly as `parse_to_ast` renders them — each error with
+                // its source excerpt and the expected tokens.
+                None => Err(doc
+                    .parse_errors()
+                    .iter()
+                    .map(|e| {
+                        rumoca_phase_parse::format_parse_error(
+                            e,
+                            &uri,
+                            session_text.as_deref().unwrap_or(display_source),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n\n")),
+            },
+            None => Err(format!("the session holds no document for {uri}")),
+        };
+        let (parse, model) = match session_parse {
             Ok(ast) => {
                 // For a specimen, `ast.classes.keys().next()` is the model: the
                 // file declares one. For a **library** model the name was given,
@@ -3071,10 +3094,9 @@ impl WorkerState {
                     Some(q) => q.rsplit('.').next().map(str::to_owned),
                     None => ast.classes.keys().next().cloned(),
                 };
-                (Stage::from_ser(&ast), model)
+                (Stage::from_ser(ast), model)
             }
-            Err(e) => {
-                let msg = format!("{e:#}");
+            Err(msg) => {
                 // **A library model keeps its name through a parse failure.**
                 //
                 // `None` here stops the pipeline dead: the big `match &model`
@@ -3129,7 +3151,14 @@ impl WorkerState {
         // Resolution merges the specimen's AST with the loaded MSL library,
         // resolving all names (component types, extends clauses, etc.) to their
         // definitions in the class tree.
-        log(LogLevel::StageStart, "Resolve".to_owned());
+        //
+        // **Opened only when there is a model to resolve** (2026-11-27). With no
+        // model the `None` arm below runs no resolution and closes nothing, so an
+        // unconditional open left a `Resolve` bracket that never closed — a bracket
+        // claiming a phase started that never ran.
+        if model.is_some() {
+            log(LogLevel::StageStart, "Resolve".to_owned());
+        }
         let t_stage = Instant::now();
         // **The session rebuild that used to sit here is gone — 2026-08-26.**
         //
@@ -3154,19 +3183,8 @@ impl WorkerState {
         // already in a durable source root; adding it as a workspace document
         // would have the session hold the same file twice, and removing it later
         // would evict part of the library.
-        if given_qualified.is_none() {
-            if let Some(prev) = self.last_specimen_uri.take()
-                && prev != uri
-            {
-                self.session.remove_document(&prev);
-            }
-            // Remove then re-add the specimen so the session treats it as new — without
-            // this, `update_document` sees identical source text and short-circuits,
-            // returning cached results (the registration code never re-runs).
-            self.session.remove_document(&uri);
-            self.session.update_document(&uri, &source);
-            self.last_specimen_uri = Some(uri.clone());
-        }
+        // (The specimen's document is registered before Parse, above: the Parse
+        // tab reads the session's own parse of it.)
         let mut def_index = BTreeMap::new();
         // **Seeded with the not-reached note rather than left blank — 2026-08-25.**
         // These two are filled during typecheck when there is a model. When parse
@@ -4335,7 +4353,8 @@ pub(crate) const AWAITING_REMODEL_MARKER: &str = "HRW cannot display it yet";
 /// loudly.
 #[cfg(test)]
 /// *Initialization left this list on 2026-11-03*, re-modelled onto
-/// `initial_pins` — see [`initialization_from_initial_pins`]. Its three blocked
+/// `initial_pins` (and on 2026-11-26 onto the plan solve lowering lowers — see
+/// `preparation::initialization_stage`). Its three blocked
 /// tests were restored in the same commit, which
 /// `worker::tests::the_tests_blocked_on_a_remodel_are_still_blocked` required
 /// rather than trusted.
@@ -6832,8 +6851,8 @@ const UNINSTRUMENTED_PHASES: &[(&str, Option<&str>, &str)] = &[
     // never make it speak. The data is real; only the *phase* is not.
     //
     // **Initialization was listed here and should not have been.** It called
-    // `rumoca_phase_structural::build_ic_plan` (on 0.10.x it reads the pins of
-    // `inspect_prepare_for_solve`), a real algorithm in an instrumented
+    // `rumoca_phase_structural::build_ic_plan` (since 2026-11-26 it reads the plan
+    // solve lowering lowered, `lower_initialization`), a real algorithm in an instrumented
     // crate — the claim was written after reading the first ten lines of
     // `initialization_stage` and stopping before the call. The
     // `calls-no-Rumoca-function` check below exists because of that.

@@ -90,12 +90,12 @@
           "unknown": "b",
           "location": {
             "file": "hrw/specimens/TwiceDefined.mo",
-            "line": 14,
+            "line": 16,
             "column": 3,
             "excerpt": "Real b",
             "line_text": "  Real b;",
-            "byte_start": 784,
-            "byte_end": 790
+            "byte_start": 972,
+            "byte_end": 978
           }
         }
       ],

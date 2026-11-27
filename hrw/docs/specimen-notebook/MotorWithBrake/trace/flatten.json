@@ -781,8 +781,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 1992,
-            "end": 1994
+            "start": 2076,
+            "end": 2078
           }
         }
       },
@@ -1792,8 +1792,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2047,
-            "end": 2050
+            "start": 2131,
+            "end": 2134
           }
         }
       },
@@ -2157,8 +2157,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2119,
-            "end": 2120
+            "start": 2203,
+            "end": 2204
           }
         }
       },
@@ -2646,8 +2646,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2103,
-            "end": 2107
+            "start": 2187,
+            "end": 2191
           }
         }
       },
@@ -2854,8 +2854,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2224,
-            "end": 2227
+            "start": 2308,
+            "end": 2311
           }
         }
       },
@@ -4981,8 +4981,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2369,
-            "end": 2373
+            "start": 2453,
+            "end": 2457
           }
         }
       },
@@ -5049,8 +5049,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2387,
-            "end": 2388
+            "start": 2471,
+            "end": 2472
           }
         }
       },
@@ -5127,8 +5127,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2401,
-            "end": 2402
+            "start": 2485,
+            "end": 2486
           }
         }
       },
@@ -5227,16 +5227,16 @@
         "local": false,
         "span": {
           "source": 13584111925557694778,
-          "start": 2456,
-          "end": 2469
+          "start": 2540,
+          "end": 2553
         },
         "parts": [
           {
             "ident": "maxSpeed",
             "span": {
               "source": 13584111925557694778,
-              "start": 2456,
-              "end": 2469
+              "start": 2540,
+              "end": 2553
             },
             "subs": [],
             "def_id": 107
@@ -5245,23 +5245,23 @@
       },
       "source_span": {
         "source": 13584111925557694778,
-        "start": 2456,
-        "end": 2469
+        "start": 2540,
+        "end": 2553
       },
       "type_id": 113,
       "variability": {
         "Parameter": {
           "text": "parameter",
           "location": {
-            "start_line": 40,
+            "start_line": 41,
             "start_column": 3,
-            "end_line": 40,
+            "end_line": 41,
             "end_column": 12,
-            "start": 2446,
-            "end": 2455,
+            "start": 2530,
+            "end": 2539,
             "source": 13584111925557694778
           },
-          "token_number": 145,
+          "token_number": 146,
           "token_type": 48
         }
       },
@@ -5277,8 +5277,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2472,
-            "end": 2476
+            "start": 2556,
+            "end": 2560
           }
         }
       },
@@ -5298,8 +5298,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2472,
-            "end": 2476
+            "start": 2556,
+            "end": 2560
           }
         }
       },
@@ -5321,16 +5321,16 @@
         "local": false,
         "span": {
           "source": 13584111925557694778,
-          "start": 2506,
-          "end": 2523
+          "start": 2590,
+          "end": 2607
         },
         "parts": [
           {
             "ident": "overSpeed",
             "span": {
               "source": 13584111925557694778,
-              "start": 2506,
-              "end": 2523
+              "start": 2590,
+              "end": 2607
             },
             "subs": [],
             "def_id": 108
@@ -5339,8 +5339,8 @@
       },
       "source_span": {
         "source": 13584111925557694778,
-        "start": 2506,
-        "end": 2523
+        "start": 2590,
+        "end": 2607
       },
       "type_id": 91,
       "variability": "Empty",
@@ -5356,8 +5356,8 @@
           },
           "span": {
             "source": 13584111925557694778,
-            "start": 2532,
-            "end": 2537
+            "start": 2616,
+            "end": 2621
           }
         }
       },
@@ -11687,8 +11687,8 @@
                 "subscripts": [],
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 2881,
-                  "end": 2887
+                  "start": 2965,
+                  "end": 2971
                 }
               }
             },
@@ -11700,16 +11700,16 @@
                     "local": false,
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2456,
-                      "end": 2469
+                      "start": 2540,
+                      "end": 2553
                     },
                     "parts": [
                       {
                         "ident": "maxSpeed",
                         "span": {
                           "source": 13584111925557694778,
-                          "start": 2456,
-                          "end": 2469
+                          "start": 2540,
+                          "end": 2553
                         },
                         "subs": [],
                         "def_id": 107
@@ -11723,15 +11723,15 @@
                 "subscripts": [],
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 2890,
-                  "end": 2898
+                  "start": 2974,
+                  "end": 2982
                 }
               }
             },
             "span": {
               "source": 13584111925557694778,
-              "start": 2881,
-              "end": 2898
+              "start": 2965,
+              "end": 2982
             }
           }
         },
@@ -11746,15 +11746,15 @@
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2920,
-                    "end": 2924
+                    "start": 3004,
+                    "end": 3008
                   }
                 }
               },
               "span": {
                 "source": 13584111925557694778,
-                "start": 2908,
-                "end": 2917
+                "start": 2992,
+                "end": 3001
               },
               "origin": "when equation assignment to overSpeed"
             }
@@ -11762,8 +11762,8 @@
         ],
         "span": {
           "source": 13584111925557694778,
-          "start": 2881,
-          "end": 2898
+          "start": 2965,
+          "end": 2982
         }
       },
       "else_when": [
@@ -11812,8 +11812,8 @@
                   "subscripts": [],
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2937,
-                    "end": 2943
+                    "start": 3021,
+                    "end": 3027
                   }
                 }
               },
@@ -11828,16 +11828,16 @@
                           "local": false,
                           "span": {
                             "source": 13584111925557694778,
-                            "start": 2456,
-                            "end": 2469
+                            "start": 2540,
+                            "end": 2553
                           },
                           "parts": [
                             {
                               "ident": "maxSpeed",
                               "span": {
                                 "source": 13584111925557694778,
-                                "start": 2456,
-                                "end": 2469
+                                "start": 2540,
+                                "end": 2553
                               },
                               "subs": [],
                               "def_id": 107
@@ -11851,8 +11851,8 @@
                       "subscripts": [],
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2946,
-                        "end": 2954
+                        "start": 3030,
+                        "end": 3038
                       }
                     }
                   },
@@ -11863,22 +11863,22 @@
                       },
                       "span": {
                         "source": 13584111925557694778,
-                        "start": 2957,
-                        "end": 2960
+                        "start": 3041,
+                        "end": 3044
                       }
                     }
                   },
                   "span": {
                     "source": 13584111925557694778,
-                    "start": 2946,
-                    "end": 2960
+                    "start": 3030,
+                    "end": 3044
                   }
                 }
               },
               "span": {
                 "source": 13584111925557694778,
-                "start": 2937,
-                "end": 2960
+                "start": 3021,
+                "end": 3044
               }
             }
           },
@@ -11893,15 +11893,15 @@
                     },
                     "span": {
                       "source": 13584111925557694778,
-                      "start": 2982,
-                      "end": 2987
+                      "start": 3066,
+                      "end": 3071
                     }
                   }
                 },
                 "span": {
                   "source": 13584111925557694778,
-                  "start": 2970,
-                  "end": 2979
+                  "start": 3054,
+                  "end": 3063
                 },
                 "origin": "when equation assignment to overSpeed"
               }
@@ -11909,15 +11909,15 @@
           ],
           "span": {
             "source": 13584111925557694778,
-            "start": 2937,
-            "end": 2960
+            "start": 3021,
+            "end": 3044
           }
         }
       ],
       "span": {
         "source": 13584111925557694778,
-        "start": 2881,
-        "end": 2885
+        "start": 2965,
+        "end": 2969
       }
     }
   ],

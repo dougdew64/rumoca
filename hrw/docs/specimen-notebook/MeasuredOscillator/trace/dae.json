@@ -7,7 +7,7 @@
       {
         "source_id": 7901817617377633324,
         "file": "hrw/specimens/MeasuredOscillator.mo",
-        "content_bytes": 1869
+        "content_bytes": 1723
       }
     ]
   },
@@ -36,16 +36,16 @@
         "origin": "source",
         "span": {
           "source": 7901817617377633324,
-          "start": 1242,
-          "end": 1248
+          "start": 1096,
+          "end": 1102
         }
       },
       {
         "origin": "source",
         "span": {
           "source": 7901817617377633324,
-          "start": 1251,
-          "end": 1252
+          "start": 1105,
+          "end": 1106
         }
       }
     ],
@@ -59,8 +59,8 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1242,
-            "end": 1248
+            "start": 1096,
+            "end": 1102
           }
         },
         "attributes": {
@@ -68,16 +68,16 @@
             "local": false,
             "span": {
               "source": 7901817617377633324,
-              "start": 1242,
-              "end": 1248
+              "start": 1096,
+              "end": 1102
             },
             "parts": [
               {
                 "ident": "m",
                 "span": {
                   "source": 7901817617377633324,
-                  "start": 1242,
-                  "end": 1248
+                  "start": 1096,
+                  "end": 1102
                 },
                 "subs": [],
                 "def_id": 99
@@ -111,8 +111,8 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1273,
-            "end": 1279
+            "start": 1127,
+            "end": 1133
           }
         },
         "attributes": {
@@ -120,16 +120,16 @@
             "local": false,
             "span": {
               "source": 7901817617377633324,
-              "start": 1273,
-              "end": 1279
+              "start": 1127,
+              "end": 1133
             },
             "parts": [
               {
                 "ident": "k",
                 "span": {
                   "source": 7901817617377633324,
-                  "start": 1273,
-                  "end": 1279
+                  "start": 1127,
+                  "end": 1133
                 },
                 "subs": [],
                 "def_id": 100
@@ -163,8 +163,8 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1316,
-            "end": 1322
+            "start": 1170,
+            "end": 1176
           }
         },
         "attributes": {
@@ -172,16 +172,16 @@
             "local": false,
             "span": {
               "source": 7901817617377633324,
-              "start": 1316,
-              "end": 1322
+              "start": 1170,
+              "end": 1176
             },
             "parts": [
               {
                 "ident": "T",
                 "span": {
                   "source": 7901817617377633324,
-                  "start": 1316,
-                  "end": 1322
+                  "start": 1170,
+                  "end": 1176
                 },
                 "subs": [],
                 "def_id": 101
@@ -215,8 +215,8 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1355,
-            "end": 1361
+            "start": 1209,
+            "end": 1215
           }
         },
         "attributes": {
@@ -224,16 +224,16 @@
             "local": false,
             "span": {
               "source": 7901817617377633324,
-              "start": 1355,
-              "end": 1361
+              "start": 1209,
+              "end": 1215
             },
             "parts": [
               {
                 "ident": "x",
                 "span": {
                   "source": 7901817617377633324,
-                  "start": 1355,
-                  "end": 1361
+                  "start": 1209,
+                  "end": 1215
                 },
                 "subs": [],
                 "def_id": 102
@@ -269,8 +269,8 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1433,
-            "end": 1439
+            "start": 1287,
+            "end": 1293
           }
         },
         "attributes": {
@@ -278,16 +278,16 @@
             "local": false,
             "span": {
               "source": 7901817617377633324,
-              "start": 1433,
-              "end": 1439
+              "start": 1287,
+              "end": 1293
             },
             "parts": [
               {
                 "ident": "v",
                 "span": {
                   "source": 7901817617377633324,
-                  "start": 1433,
-                  "end": 1439
+                  "start": 1287,
+                  "end": 1293
                 },
                 "subs": [],
                 "def_id": 103
@@ -321,8 +321,8 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1480,
-            "end": 1491
+            "start": 1334,
+            "end": 1345
           }
         },
         "attributes": {
@@ -330,16 +330,16 @@
             "local": false,
             "span": {
               "source": 7901817617377633324,
-              "start": 1480,
-              "end": 1491
+              "start": 1334,
+              "end": 1345
             },
             "parts": [
               {
                 "ident": "v_meas",
                 "span": {
                   "source": 7901817617377633324,
-                  "start": 1480,
-                  "end": 1491
+                  "start": 1334,
+                  "end": 1345
                 },
                 "subs": [],
                 "def_id": 104
@@ -375,8 +375,8 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1583,
-            "end": 1594
+            "start": 1437,
+            "end": 1448
           }
         },
         "attributes": {
@@ -384,16 +384,16 @@
             "local": false,
             "span": {
               "source": 7901817617377633324,
-              "start": 1583,
-              "end": 1594
+              "start": 1437,
+              "end": 1448
             },
             "parts": [
               {
                 "ident": "v_filt",
                 "span": {
                   "source": 7901817617377633324,
-                  "start": 1583,
-                  "end": 1594
+                  "start": 1437,
+                  "end": 1448
                 },
                 "subs": [],
                 "def_id": 105
@@ -635,79 +635,231 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1251,
-            "end": 1252
+            "start": 1105,
+            "end": 1106
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1251,
-            "end": 1252
+            "start": 1105,
+            "end": 1106
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1282,
-            "end": 1283
+            "start": 1136,
+            "end": 1137
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1282,
-            "end": 1283
+            "start": 1136,
+            "end": 1137
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1325,
-            "end": 1328
+            "start": 1179,
+            "end": 1182
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1325,
-            "end": 1328
+            "start": 1179,
+            "end": 1182
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1370,
-            "end": 1373
+            "start": 1224,
+            "end": 1227
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1433,
-            "end": 1439
+            "start": 1287,
+            "end": 1293
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1500,
-            "end": 1503
+            "start": 1354,
+            "end": 1357
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1603,
+            "start": 1457,
+            "end": 1460
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1522,
+            "end": 1528
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1531,
+            "end": 1532
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1522,
+            "end": 1528
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1536,
+            "end": 1537
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1540,
+            "end": 1546
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1536,
+            "end": 1546
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1550,
+            "end": 1551
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1554,
+            "end": 1555
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1550,
+            "end": 1555
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1549,
+            "end": 1555
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1536,
+            "end": 1546
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1559,
+            "end": 1565
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1568,
+            "end": 1569
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1559,
+            "end": 1565
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1573,
+            "end": 1574
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1577,
+            "end": 1588
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1573,
+            "end": 1588
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1591,
+            "end": 1597
+          }
+        },
+        {
+          "origin": "source",
+          "span": {
+            "source": 7901817617377633324,
+            "start": 1600,
             "end": 1606
           }
         },
@@ -715,168 +867,16 @@
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1668,
-            "end": 1674
+            "start": 1591,
+            "end": 1606
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 7901817617377633324,
-            "start": 1677,
-            "end": 1678
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1668,
-            "end": 1674
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1682,
-            "end": 1683
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1686,
-            "end": 1692
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1682,
-            "end": 1692
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1696,
-            "end": 1697
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1700,
-            "end": 1701
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1696,
-            "end": 1701
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1695,
-            "end": 1701
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1682,
-            "end": 1692
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1705,
-            "end": 1711
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1714,
-            "end": 1715
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1705,
-            "end": 1711
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1719,
-            "end": 1720
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1723,
-            "end": 1734
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1719,
-            "end": 1734
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1737,
-            "end": 1743
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1746,
-            "end": 1752
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1737,
-            "end": 1752
-          }
-        },
-        {
-          "origin": "source",
-          "span": {
-            "source": 7901817617377633324,
-            "start": 1719,
-            "end": 1734
+            "start": 1573,
+            "end": 1588
           }
         }
       ],
@@ -891,8 +891,8 @@
             "origin": "source",
             "span": {
               "source": 7901817617377633324,
-              "start": 1668,
-              "end": 1678
+              "start": 1522,
+              "end": 1532
             }
           }
         }
@@ -904,8 +904,8 @@
             "origin": "source",
             "span": {
               "source": 7901817617377633324,
-              "start": 1682,
-              "end": 1701
+              "start": 1536,
+              "end": 1555
             }
           }
         }
@@ -917,8 +917,8 @@
             "origin": "source",
             "span": {
               "source": 7901817617377633324,
-              "start": 1705,
-              "end": 1715
+              "start": 1559,
+              "end": 1569
             }
           }
         }
@@ -930,8 +930,8 @@
             "origin": "source",
             "span": {
               "source": 7901817617377633324,
-              "start": 1719,
-              "end": 1752
+              "start": 1573,
+              "end": 1606
             }
           }
         }

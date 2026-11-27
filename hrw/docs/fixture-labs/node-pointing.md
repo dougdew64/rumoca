@@ -16,7 +16,7 @@ a made-up path is a broken test that looks fine.
 
 [RcCircuit → Structural → Tree](hrw://load/RcCircuit/Structural/Tree)
 
-**Expected:** the Structural IR tree with every header collapsed — `blocks`,
+**Expected:** the Structural IR tree with every header collapsed — `analyses`, `blocks`,
 `incidence` and `matching` all show a twisty and no contents. Nothing opens by default:
 headers open only for a followed identifier, for Reveal identifiers, or for a jump
 target, and none of those is active yet.
@@ -40,7 +40,8 @@ that link mean?", and that question is open until you move on.
 [Point at `incidence.rows[0].equation_text`](hrw://stage/Structural/Tree/node/incidence.rows[0].equation_text)
 
 **Expected:** `incidence`, `rows` and `rows[0]` all expand, and the view scrolls to
-`equation_text`, whose value is `0 - (src.p.i + src.n.i)` — the first equation's text.
+`equation_text`, whose value is `0 = src.n.i + src.i` — the first equation's text, as the
+analysed (simplified) system has it.
 
 This is the discriminating station. Getting there by hand is four clicks and a scroll; if it
 lands without them, the verb works.

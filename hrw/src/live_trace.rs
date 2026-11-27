@@ -187,36 +187,60 @@ pub fn live_trace_breakpoint(frame_index: usize) {
     std::hint::black_box(LAST_FRAME_INDEX.load(Ordering::Acquire));
 }
 
-/// Spawn a live-debug thread that runs **the real structural analysis** over
-/// `dae` and streams the steps `select` accepts into a [`LiveTrace`].
+/// Run Rumoca's real simulation preparation of `dae` on this thread, handing
+/// each step to `on_step` **as it happens**.
+///
+/// This is the call the compile observes for the Simplify through Solve
+/// lowering tabs (`worker::preparation::observe`), on the same DAE with the
+/// same options that reach lowering, under
+/// `rumoca_phase_structural::preparation_trace`'s live listener. So a live
+/// session steps through exactly the analyses the recorded frames came from.
+///
+/// # Why not `observe_sort` / `watch_prepare_for_solve` on the DAE (until 2026-11-27)
+///
+/// Those analyse the compile's **raw** DAE. Solve lowering never does: it
+/// simplifies the DAE first (the Simplify tab) and analyses the result. So a
+/// live session stepped a run Rumoca never makes, beside a playback of the one
+/// it does — and for a model the simplification changes, the two disagreed.
+fn watch_real_preparation(
+    dae: &rumoca_ir_dae::Dae,
+    on_step: impl FnMut(rumoca_phase_structural::preparation_trace::LiveStep<'_>) + 'static,
+) {
+    use rumoca_phase_structural::preparation_trace as trace;
+    trace::start_capture();
+    trace::set_live_listener(Some(Box::new(on_step)));
+    let _ = rumoca_sim::prepare_runtime_observed(dae, &rumoca_sim::SimOptions::default(), |_| {});
+    trace::set_live_listener(None);
+    // The capture is what enables the listener; its contents are the compile's,
+    // already shown, so they are dropped rather than kept as a second copy.
+    let _ = trace::take_capture();
+}
+
+/// Spawn a live-debug thread that watches **the real structural analysis** —
+/// the first `Source` analysis of solve lowering's preparation, the one the
+/// Structural tab and the recorded animations show — and streams the steps
+/// `select` accepts into a [`LiveTrace`].
 ///
 /// Returns the receiver the animation drains and the flag it polls for
 /// completion, or `None` if the thread could not be spawned.
 ///
-/// # Why this runs `sort` rather than the one algorithm being animated
+/// # Why this watches the whole analysis rather than the one algorithm animated
 ///
 /// Each animation used to re-run its own algorithm on data reconstructed from
 /// the pane — `maximum_matching` over the incidence rows the matrix widget was
 /// showing, and for tearing a hand-rolled block-local incidence plus its own
-/// matching and BLT. Two problems with that, and the second is the serious one:
+/// matching and BLT. **The pane's rows are a projection, not the system**:
+/// re-running an algorithm over them steps something adjacent to what the
+/// compiler did, and nothing would report the difference.
 ///
-/// - It needed `maximum_matching`, `build_dependency_graph` and `blt`, none of
-///   which are public on 0.10.0 — reconstruction is no longer even possible
-///   from outside the crate.
-/// - **The pane's rows are a projection, not the system.** Re-running an
-///   algorithm over them steps something adjacent to what the compiler did,
-///   and nothing would report the difference.
+/// A live session is a genuine re-run — that is what was asked for, and
+/// `CLAUDE.md` is explicit that this is the legitimate kind — of **the same
+/// call over the same input** as the compile ([`watch_real_preparation`]),
+/// which is the most a re-run can honestly be.
 ///
-/// `observe_sort` runs the analysis Rumoca runs, over the DAE itself, and
-/// streams owned steps out as they happen. A live session is a genuine re-run
-/// — that is what was asked for, and `CLAUDE.md` is explicit that this is the
-/// legitimate kind — but it is now a re-run of **the same code over the same
-/// input**, which is the most a re-run can honestly be.
-///
-/// The analysis continues past the steps `select` wants (matching finishes,
-/// then Tarjan, then tearing). That costs a little work after the last frame
-/// and is why `done` is set when `observe_sort` *returns*, not when the last
-/// accepted record is pushed.
+/// The preparation continues past the steps `select` wants (matching finishes,
+/// then Tarjan, tearing, reduction and lowering). That is why `done` is set when
+/// the preparation *returns*, not when the last accepted record is pushed.
 /// `select` is `FnMut` so a caller can carry state across steps — the tearing
 /// view needs this, because it tags each step with the block whose
 /// `BlockStart` most recently went past.
@@ -239,16 +263,24 @@ where
         .name(thread_name.to_owned())
         .spawn(move || {
             lt.wait_for_debugger();
-            // Where HRW's `LiveTrace` meets the phase's sink. The phase crate
-            // never learns `LiveTrace` exists: `observe_sort` takes
-            // `impl FnMut(StructuralRecord)`, so the observation seam stays
-            // free of any HRW type.
-            dae.inspect(|view| {
-                let _ = rumoca_phase_structural::observe_sort(view, |record| {
-                    if let Some(frame) = select(record) {
+            // Where HRW's `LiveTrace` meets the phase's listener. The phase crate
+            // never learns `LiveTrace` exists, so the observation seam stays free
+            // of any HRW type. Only the FIRST `Source` analysis is forwarded: later
+            // analyses (reduction candidates, rebuilt systems) are other systems.
+            use rumoca_phase_structural::preparation_trace::{AnalysisContext, LiveStep};
+            let mut in_source = false;
+            let mut source_seen = false;
+            watch_real_preparation(&dae, move |step| match step {
+                LiveStep::AnalysisBegin(context) => {
+                    in_source = context == AnalysisContext::Source && !source_seen;
+                    source_seen |= in_source;
+                }
+                LiveStep::Analysis { record, .. } if in_source => {
+                    if let Some(frame) = select(record.clone()) {
                         lt.push(frame);
                     }
-                });
+                }
+                _ => {}
             });
             done_for_thread.store(true, std::sync::atomic::Ordering::Release);
         })
@@ -257,43 +289,24 @@ where
     Some((rx, done))
 }
 
-/// Adapts a closure to Rumoca's [`ReductionWatcher`] trait.
-///
-/// The reduction seam takes a trait where `observe_sort` takes an `impl FnMut`, which
-/// suits a stateful consumer better but costs a closure caller this four-line adapter.
-/// It lives here rather than upstream so the crate's new public surface stays one trait
-/// and one function.
-struct WatchFn<G>(G);
-
-impl<G> rumoca_phase_structural::ReductionWatcher for WatchFn<G>
-where
-    G: FnMut(rumoca_phase_structural::ReductionRecord),
-{
-    fn record(&mut self, record: rumoca_phase_structural::ReductionRecord) {
-        (self.0)(record);
-    }
-}
-
-/// Run index reduction on a worker thread, pushing each record it observes as a frame.
+/// Watch index reduction on a worker thread, pushing each record it observes as a frame.
 ///
 /// The reduction twin of [`spawn_structural_live`], and the same three things make it a
 /// live session rather than a replay: the thread waits at
 /// [`LiveTrace::wait_for_debugger`] so the reader arrives before the first step, each
 /// push pauses by `frame_delay` so a debugger can stop between events, and the records
-/// come from Rumoca's own observation of a reduction that is **happening now**.
+/// come from Rumoca's own observation of a reduction that is **happening now** — the
+/// reducer inside solve lowering's real preparation ([`watch_real_preparation`]), whose
+/// records the Index reduction tab shows.
 ///
-/// # Why this needs an upstream seam at all, and did not have one until 2026-11-04
+/// # Why a live seam at all
 ///
-/// `inspect_prepare_for_solve` returns its report *after* the run completes. Feeding a
-/// finished report into this channel on a timer would look identical on screen and be a
-/// recording wearing a live label — which is why the pane said so and offered nothing
-/// instead. `watch_prepare_for_solve` is the per-event seam that makes the real thing
-/// possible; `crates/rumoca-phase-structural` carries it, and
-/// `docs/upstream-strategy.md` is why it is shaped as a general observability API rather
-/// than as something HRW-specific.
-///
-/// **Rumoca never learns `LiveTrace` exists.** It takes a watcher; the HRW type lives on
-/// this side of the call, exactly as `observe_sort`'s closure does.
+/// A report returned *after* the run completes, fed into this channel on a timer, would
+/// look identical on screen and be a recording wearing a live label. The per-event seam
+/// is `rumoca_phase_structural::preparation_trace::set_live_listener` (2026-11-27; it
+/// replaced `watch_prepare_for_solve`, which reduced the raw DAE rather than the
+/// simplified one solve lowering reduces). `docs/upstream-strategy.md` is why it is
+/// shaped as a general observability API rather than as something HRW-specific.
 pub fn spawn_reduction_live<F, S>(
     dae: std::sync::Arc<rumoca_ir_dae::Dae>,
     frame_delay: Duration,
@@ -313,17 +326,16 @@ where
         .name(thread_name.to_owned())
         .spawn(move || {
             lt.wait_for_debugger();
-            // The prepared system is dropped: this thread exists to observe the search,
-            // and the compile already holds the result every pane reads. Keeping it
-            // would be a second prepared DAE with nothing to reconcile it against.
-            let _ = rumoca_phase_structural::watch_prepare_for_solve(
-                &dae,
-                &mut WatchFn(|record| {
-                    if let Some(frame) = select(record) {
-                        lt.push(frame);
-                    }
-                }),
-            );
+            // The prepared runtime is dropped: this thread exists to observe the
+            // search, and the compile already holds the result every pane reads.
+            use rumoca_phase_structural::preparation_trace::LiveStep;
+            watch_real_preparation(&dae, move |step| {
+                if let LiveStep::Reduction(record) = step
+                    && let Some(frame) = select(record.clone())
+                {
+                    lt.push(frame);
+                }
+            });
             // Set when the call *returns*, not on the last push — reduction does work
             // after its final record (finalizing the prepared system), and a reader
             // told "finished" early would re-enable the controls mid-run. Same reason
@@ -481,6 +493,141 @@ mod tests {
         assert!(
             last.iter().any(Option::is_some),
             "the last step must show a matching that was actually built: {last:?}"
+        );
+    }
+
+    /// **A live session steps exactly the frames the compile recorded — the run
+    /// that simulates — not a run over the raw DAE.**
+    ///
+    /// `Drivetrain`, because solve lowering's Simplify step merges 53 of its
+    /// aliases before any analysis, so its first analysis is of a different system
+    /// from the compile's DAE. Until 2026-11-27 a live session ran `observe_sort`
+    /// on that raw DAE and stepped a matching Rumoca never performs; the second
+    /// assertion is that old run, kept so this test shows it can tell the two
+    /// apart. (A small alias model was tried first and Simplify left it unchanged,
+    /// so the comparison could not discriminate.)
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn a_live_session_steps_the_frames_the_compile_recorded() {
+        let crate::worker::FromWorker::Compiled {
+            dae: Some(dae),
+            matching_frames: recorded,
+            ..
+        } = crate::worker::test_msl::compile_specimen_shared("Drivetrain")
+        else {
+            panic!("Drivetrain must compile");
+        };
+
+        let raw_matching = dae.inspect(|view| {
+            let mut steps = Vec::new();
+            let _ = rumoca_phase_structural::observe_sort(view, |record| {
+                if let rumoca_phase_structural::StructuralRecord::Matching(matching) = record {
+                    steps.push(matching);
+                }
+            });
+            steps
+        });
+
+        let (rx, done) =
+            spawn_structural_live(dae, Duration::from_millis(0), "test-live-real", |record| {
+                match record {
+                    rumoca_phase_structural::StructuralRecord::Matching(matching) => Some(matching),
+                    _ => None,
+                }
+            })
+            .expect("the thread must spawn");
+        let mut live = Vec::new();
+        for _ in 0..200 {
+            live.extend(rx.try_iter());
+            if done.load(std::sync::atomic::Ordering::Acquire) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        live.extend(rx.try_iter());
+
+        assert!(
+            !recorded.is_empty(),
+            "the compile must record matching frames"
+        );
+        assert_eq!(
+            format!("{live:?}"),
+            format!("{recorded:?}"),
+            "the live session stepped a different matching from the one the compile \
+             recorded",
+        );
+        assert_ne!(
+            format!("{raw_matching:?}"),
+            format!("{recorded:?}"),
+            "the raw DAE's matching must differ from the simplified one here, or this \
+             test cannot tell a live session on the wrong input from one on the right",
+        );
+    }
+
+    /// **A live reduction session steps the records the Index reduction tab shows.**
+    ///
+    /// The tab's `search` is every reduction record of the compile's real
+    /// preparation; a live session must deliver the same number, in the same
+    /// order of kinds. `Drivetrain` reduces over six rounds, so there is a search
+    /// worth comparing.
+    #[test]
+    #[cfg_attr(
+        not(feature = "slow-tests"),
+        ignore = "compile-heavy; run with --features slow-tests"
+    )]
+    fn a_live_reduction_session_steps_the_tabs_search() {
+        let crate::worker::FromWorker::Compiled {
+            dae: Some(dae),
+            stages,
+            ..
+        } = crate::worker::test_msl::compile_specimen_shared("Drivetrain")
+        else {
+            panic!("Drivetrain must compile");
+        };
+        let search = stages
+            .index_reduction
+            .value
+            .as_ref()
+            .and_then(|v| v["search"].as_array().cloned())
+            .expect("Index reduction publishes its search");
+
+        let (rx, done) =
+            spawn_reduction_live(dae, Duration::from_millis(0), "test-live-reduction", Some)
+                .expect("the thread must spawn");
+        let mut live = Vec::new();
+        for _ in 0..500 {
+            live.extend(rx.try_iter());
+            if done.load(std::sync::atomic::Ordering::Acquire) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        live.extend(rx.try_iter());
+
+        assert!(
+            !search.is_empty(),
+            "Drivetrain's reduction must record a search"
+        );
+        assert_eq!(
+            live.len(),
+            search.len(),
+            "the live session delivered a different number of reduction records from \
+             the tab's search",
+        );
+        let round = |kinds: Vec<bool>| kinds.iter().filter(|r| **r).count();
+        assert_eq!(
+            round(
+                live.iter()
+                    .map(|r| matches!(r, rumoca_phase_structural::ReductionRecord::Round { .. }))
+                    .collect()
+            ),
+            stages.index_reduction.value.as_ref().unwrap()["rounds"]
+                .as_u64()
+                .unwrap_or_default() as usize,
+            "the live session's rounds differ from the tab's",
         );
     }
 

@@ -1,8 +1,8 @@
 {
   "model": "MeasuredOscillator",
   "specimen": "specimens/MeasuredOscillator.mo",
-  "specimen_fnv1a": "f773c1f2ec458f7c",
-  "rumoca_rev": "75f844c42",
+  "specimen_fnv1a": "d28a39e123dbf180",
+  "rumoca_rev": "0ad078cef",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

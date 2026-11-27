@@ -1,8 +1,8 @@
 {
   "model": "IncompatibleConnect",
   "specimen": "specimens/IncompatibleConnect.mo",
-  "specimen_fnv1a": "8275dd3b1c19203f",
-  "rumoca_rev": "75f844c42",
+  "specimen_fnv1a": "ac381adcd50e24f4",
+  "rumoca_rev": "0ad078cef",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {

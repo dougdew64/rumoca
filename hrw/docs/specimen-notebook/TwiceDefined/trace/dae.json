@@ -7,7 +7,7 @@
       {
         "source_id": 6225591493931505345,
         "file": "hrw/specimens/TwiceDefined.mo",
-        "content_bytes": 842
+        "content_bytes": 1030
       }
     ]
   },
@@ -29,8 +29,8 @@
         "origin": "source",
         "span": {
           "source": 6225591493931505345,
-          "start": 774,
-          "end": 780
+          "start": 962,
+          "end": 968
         }
       }
     ],
@@ -44,8 +44,8 @@
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 774,
-            "end": 780
+            "start": 962,
+            "end": 968
           }
         },
         "attributes": {
@@ -53,16 +53,16 @@
             "local": false,
             "span": {
               "source": 6225591493931505345,
-              "start": 774,
-              "end": 780
+              "start": 962,
+              "end": 968
             },
             "parts": [
               {
                 "ident": "a",
                 "span": {
                   "source": 6225591493931505345,
-                  "start": 774,
-                  "end": 780
+                  "start": 962,
+                  "end": 968
                 },
                 "subs": [],
                 "def_id": 99
@@ -96,8 +96,8 @@
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 784,
-            "end": 790
+            "start": 972,
+            "end": 978
           }
         },
         "attributes": {
@@ -105,16 +105,16 @@
             "local": false,
             "span": {
               "source": 6225591493931505345,
-              "start": 784,
-              "end": 790
+              "start": 972,
+              "end": 978
             },
             "parts": [
               {
                 "ident": "b",
                 "span": {
                   "source": 6225591493931505345,
-                  "start": 784,
-                  "end": 790
+                  "start": 972,
+                  "end": 978
                 },
                 "subs": [],
                 "def_id": 100
@@ -203,64 +203,64 @@
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 774,
-            "end": 780
+            "start": 962,
+            "end": 968
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 784,
-            "end": 790
+            "start": 972,
+            "end": 978
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 803,
-            "end": 804
+            "start": 991,
+            "end": 992
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 807,
-            "end": 810
+            "start": 995,
+            "end": 998
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 803,
-            "end": 804
+            "start": 991,
+            "end": 992
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 814,
-            "end": 815
+            "start": 1002,
+            "end": 1003
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 818,
-            "end": 822
+            "start": 1006,
+            "end": 1010
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 6225591493931505345,
-            "start": 814,
-            "end": 815
+            "start": 1002,
+            "end": 1003
           }
         }
       ],
@@ -275,8 +275,8 @@
             "origin": "source",
             "span": {
               "source": 6225591493931505345,
-              "start": 803,
-              "end": 810
+              "start": 991,
+              "end": 998
             }
           }
         }
@@ -288,8 +288,8 @@
             "origin": "source",
             "span": {
               "source": 6225591493931505345,
-              "start": 814,
-              "end": 822
+              "start": 1002,
+              "end": 1010
             }
           }
         }

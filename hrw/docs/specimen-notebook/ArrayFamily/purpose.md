@@ -57,7 +57,7 @@ Compare `TwoLoops`, where the blocks are genuinely coupled and no compaction is 
 
 ## Verified
 
-Every phase produces IR — the corpus outcome matrix row is `OOOOOOOOOOO`. The published block reads
+Every phase produces IR — the corpus outcome matrix row is `OOOOOOOOOOOO`. The published block reads
 `first_row: 0, row_count: 8` against an 8-equation incidence, so the partition is complete and F4 is
 quiet. Renaming those two keys so F4 cannot read them reproduces both halves of the old defect
 exactly, which is how the repair was checked rather than assumed.

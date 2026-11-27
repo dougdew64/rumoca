@@ -223,14 +223,22 @@ pub const REFERENCE_PATH: &str =
 /// Specimens rendered into the reference, and why each earns its place.
 ///
 /// One that succeeds and one that fails, because the pair is the teaching
-/// content: both reach a displacement at depth 2, and only one of them ends at
-/// a free variable (`docs/ideas.md` #73).
+/// content (`docs/ideas.md` #73). `ProportionalLoop` reaches a displacement and
+/// it ends at a free variable. `TwiceDefined` fails *before* any displacement:
+/// in the system solve lowering analyses, Simplify has folded its second
+/// equation to `0 = 1 - time`, which mentions no unknown, so there is nothing to
+/// explore. (Until 2026-11-26 both reached a displacement at depth 2 — on HRW's
+/// own call over the unsimplified DAE. A failing displacement on the real path is
+/// `CapacitorLoop`'s, which loads the MSL and so is not rendered here.)
 const LEDGER_SPECIMENS: &[(&str, &str)] = &[
     (
         "ProportionalLoop",
         "succeeds — the displacement finds a home",
     ),
-    ("TwiceDefined", "fails — the displacement has nowhere to go"),
+    (
+        "TwiceDefined",
+        "fails — its unmatched equation mentions no unknown, so nothing is explored",
+    ),
 ];
 
 /// Strip a trailing `//` line comment so commented-out parens cannot unbalance
@@ -376,9 +384,10 @@ pub fn derive_depths(steps: &[MatchingStep]) -> Vec<usize> {
 /// between a new public API existing only to serve a documentation generator,
 /// which upstream would rightly question, or reading the real analysis. This
 /// reads the real analysis: `compile_specimen` runs the pipeline and
-/// `structural_stage` fills `matching_frames` from
-/// `inspect_structural_report`, so the ledger describes the compile rather than
-/// a re-derivation over a stored matrix.
+/// `preparation::structural_stage` fills `matching_frames` from the first
+/// `Source` analysis captured inside solve lowering's real preparation, so the
+/// ledger describes the run that simulates rather than a re-derivation over a
+/// stored matrix.
 ///
 /// **It is also still in the fast suite**, which was the stated reason for
 /// reading the trace. Both `LEDGER_SPECIMENS` are MSL-free, so no library
@@ -720,7 +729,10 @@ mod tests {
             "ProportionalLoop's depths must match the run stack"
         );
 
-        // TwiceDefined, observed depths 0,1,1,1,0,1,1,1,0.
+        // A failing displacement: observed on TwiceDefined until 2026-11-26 (on the
+        // unsimplified DAE), depths 0,1,1,1,0,1,1,1,0. Kept as a synthetic case
+        // because derive_depths must still handle the shape — CapacitorLoop takes it
+        // on the real path.
         let twice = [
             TryEquation(0),
             Explore { eq: 0, var: 0 },
@@ -739,15 +751,15 @@ mod tests {
         assert_eq!(
             derive_depths(&twice),
             vec![0, 1, 1, 1, 0, 1, 1, 1, 0],
-            "TwiceDefined's depths must match the run stack"
+            "a failing displacement's depths must match the run stack"
         );
     }
 
     /// **The generated ledger reproduces the run run, step for step.**
     ///
-    /// Non-vacuity for the whole generator: it re-runs the real algorithm over
-    /// `TwiceDefined`'s recorded incidence and must produce exactly the frames
-    /// Doug stepped through, in order. If the specimen, the algorithm or the
+    /// Non-vacuity for the whole generator: it reads the matching frames of
+    /// `TwiceDefined`'s real compile and must produce exactly those frames, in
+    /// order. If the specimen, the algorithm or the
     /// trace changes, this fails rather than silently describing a different run.
     ///
     /// **Seven frames since 2026-11-26, not ten — and the difference is the lesson.**

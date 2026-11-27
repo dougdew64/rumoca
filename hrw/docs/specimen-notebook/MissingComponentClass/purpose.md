@@ -16,7 +16,8 @@ Modelica looks up a **class** and a **component** by different rules, so the com
 | `UndefinedRef` | a variable in an equation | `unresolved component reference` |
 | **`MissingComponentClass`** | a component's type | `unresolved type reference` |
 
-**Both stop in exactly the same place** — flagged at Resolve, `Failed` at Flatten, same message.
+**Both stop in exactly the same place** — `Failed` at Resolve, and every later tab says it was
+not reached or that the compile produced no result.
 The pair exists because the *diagnostic* differs while the *outcome* does not.
 
 ## The mistake this specimen corrected

@@ -14,7 +14,14 @@ bolted on: `C.v = 0` *and* `der(C.v) = 0`.
 
 Authored as the **initialization over-determination** case, and deliberately separable: the
 continuous model is perfectly well-posed and index-1. Only the initialization is broken, which
-makes it a clean test of initialization determinacy rather than of structure.
+makes it a clean test of initialization rather than of structure.
+
+**What the real run does with it** (2026-11-26): every compilation stage succeeds. The
+Initialization tab shows the lowered plan — row 0 `Solved` for `C.v` (from `C.v = 0`), row 1 a
+`SurplusAlgebraicCheck` (from `der(C.v) = 0`), note *2 initialization row(s), 1 surplus check(s)*.
+The **run** then fails at its first instant, because the check does not hold: with `C.v = 0` the
+current is 5 V / 100 Ω = 0.05 A, so `der(C.v)` = 0.05 / 1 mF = 50, and the simulation error
+reports that surplus-check residual, `5.000000e1`.
 
 ## Where it has been used
 

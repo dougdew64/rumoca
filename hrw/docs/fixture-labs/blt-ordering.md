@@ -2,9 +2,10 @@
 
 <!-- kind: concept -->
 
-**Giving every equation a job is not yet a recipe.** To evaluate `f_x[9]` — Ohm's law, which
-determines `R.v` — you need `R.R_actual` and `R.i`, and those come from other equations. So the
-equations have dependencies, and a dependency graph either lays out in a line or it does not.
+**Giving every equation a job is not yet a recipe.** In `RcCircuit`, `f_x[9]` is Ohm's law,
+`0 = R.v - R.R_actual*-src.i`, and the matching uses it to determine `src.i`. To evaluate it you
+need `R.v` and `R.R_actual`, and those come from other equations. So the equations have
+dependencies, and a dependency graph either lays out in a line or it does not.
 
 If it does, the whole system is a sequence of direct assignments: compute this, then that, then
 the next, with no iteration anywhere. If it does not, some group of equations is circular and has
@@ -55,8 +56,9 @@ three unknowns.
 Falsified if: three scalar blocks appear, or the block's size is other than 3.
 
 *What just happened.* A matching does not imply an order. Each equation had a job and the jobs
-could not be sequenced, because `command` needs `error`, `error` needs `measurement`, and
-`measurement` needs `command`.
+could not be sequenced. Read them the way the matching assigned them: `f_x[1]` determines
+`error` and needs `command`, `f_x[2]` determines `command` and needs `measurement`, and `f_x[0]`
+determines `measurement` and needs `error`. Each needs the next, round the loop.
 
 So the compiler stops trying to sequence and declares a simultaneous block: three equations
 that must be solved together, which at run time means a numerical solve — Newton iteration for a
@@ -119,12 +121,15 @@ already computed. `RcCircuit` has 23 blocks of size 1, `ProportionalLoop` has on
 is to solve.
 
 The algorithm is Tarjan's strongly-connected-components, on the graph whose vertices are
-equations and whose edges follow the matching. An SCC *is* a simultaneous block, and Tarjan
-returns them in reverse topological order, which is the solve order for free. The animated
-stepper under Structural → Tarjan replays that search.
+equations and whose edges follow the matching. An SCC *is* a simultaneous block. Rumoca draws
+each edge from an equation to the equations it *needs* (`blt.rs`), and on that graph Tarjan's
+output — reverse topological order — puts every dependency first, which is the solve order for
+free. The animated stepper under Structural → Tarjan replays that search.
 
 **The edges are arrows, and the arrows are the information.** After matching, each equation
-computes one unknown; draw an arrow from A to B when B needs the value A computes:
+computes one unknown. For reading, draw the arrows the way values flow — from A to B when B needs
+the value A computes (the reverse of Rumoca's edges, so here the solve order is the arrows'
+order):
 
 ```text
 e1:  x = 1           needs nothing

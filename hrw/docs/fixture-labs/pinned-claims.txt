@@ -99,7 +99,7 @@ connect-expansion.md            | blurb | A connector is a bundle of variables t
 dae-construction.md             | blurb | A numerical integrator never sees your model.
 events.md                       | blurb | Every phase so far treated the model as one system of equations
 failure-flatten.md              | blurb | Specimen: `UnbalancedShaft`
-failure-initialization.md       | blurb | Specimens: `OverInitRc`
+failure-initialization.md       | blurb | Specimen: `OverInitRc`
 failure-parse.md                | blurb | Specimen: `UnclosedModel`
 failure-resolve.md              | blurb | Specimens: `UndefinedRef`
 failure-structural.md           | blurb | Specimens: `TwiceDefined`

@@ -40,14 +40,21 @@
 //!    does not move, and round 4 then succeeds, because the *system* changed even
 //!    though the number did not. Rendering `Held` as a failure would teach that round
 //!    3 was wasted.
-//! 2. **Reduction is not a size reduction.** `CapacitorLoop` is admitted with 1 state,
-//!    13 algebraics and 14 equations before *and* after. A pane showing only counts
-//!    would say nothing happened; what changed is one manifold constraint and the
-//!    matching, so the manifold count is shown beside the sizes.
-//! 3. **Zero candidates is not a refusal.** `CartesianPendulum` discovers *nothing* in
-//!    either lane across three alternations. Rumoca does not decline to differentiate
-//!    `x^2 + y^2 = L^2`; it finds nothing to try, which is a sharper statement of
-//!    `docs/ideas.md` #83 than "index reduction does not work".
+//! 2. **Reduction is not a size reduction.** `Drivetrain` goes from 97 equations to
+//!    **122**, and from 88 algebraics to 119, while its states fall 9 → 3: the `after`
+//!    side is the prepared system lowering consumed, which state selection rebuilt on a
+//!    formal-derivative basis. A reader expecting reduction to eliminate equations
+//!    would read the growth as an error. The manifold count is shown beside the sizes
+//!    too, because identical counts plus a manifold constraint would be a change the
+//!    sizes alone hide — a case the code still handles, though no corpus specimen
+//!    shows it since 2026-11-26 (`CapacitorLoop` was that case on HRW's own reducer
+//!    call; in the real run one Direct demotion takes it from 1 state to 0).
+//! 3. **A refusal is not the compiler's verdict.** `CartesianPendulum`'s Holonomic lane
+//!    discovers the rod constraint `x^2 + y^2 = L^2`, attempts it once, and refuses it
+//!    as `would_create_vacuous_residual`; the reducer ends `singular`. State selection
+//!    then recovers the system via formal derivatives in the same run, so the model
+//!    simulates. Rendering the refusal as the outcome would repeat the five defects
+//!    that were exactly that mistake.
 //!
 //! ## Why this is a panel, not a canvas
 //!
@@ -76,8 +83,8 @@ pub struct SystemSize {
     states: u64,
     algebraics: u64,
     equations: u64,
-    /// Constraints reduction left on the state manifold. `None` for the raw system,
-    /// which has none by definition.
+    /// Constraints reduction left on the state manifold. `None` for the `before` side
+    /// (the system the reducer was given), which has none by definition.
     manifold: Option<u64>,
 }
 
@@ -856,7 +863,8 @@ mod tests {
         assert!(!view.changed_without_resizing());
     }
 
-    /// The `before` side carries no manifold column, because the raw system has none.
+    /// The `before` side carries no manifold column, because the system the reducer was
+    /// given has none.
     ///
     /// `Some(0)` would be a measurement of something that does not apply; the pane
     /// shows an em dash for it.

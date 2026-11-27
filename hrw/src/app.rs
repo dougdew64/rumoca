@@ -802,11 +802,12 @@ struct CompileFrames {
     // re-running the reduction funnel on a cloned DAE, which 0.10.0 makes
     // impossible — `Dae` is immutable and no longer `Clone` — and which was a
     // re-derivation rather than an observation of the compile. **The re-model
-    // (2026-11-04) declined to bring them back**: `inspect_prepare_for_solve`
-    // records the reduction's rounds, not the matching passes inside each rebuild,
-    // so the Index Reduction tab offers no frame views. See
-    // `worker::index_reduction_stage`. (This said "the re-model will take them"
-    // until the 2026-11-07 sweep.)
+    // (2026-11-04) declined to bring them back**, and the Index Reduction tab offers
+    // no frame views. Since 2026-11-26 the real preparation's capture does hold the
+    // analyses inside each round, so they are now obtainable from the run that
+    // simulates; no view reads them yet. See
+    // `worker::preparation::index_reduction_stage`. (This said "the re-model will
+    // take them" until the 2026-11-07 sweep.)
     /// MLS §3.7.5 history-operator sites, and what each one lowered to.
     ///
     /// **Sites, not frames, and the difference is not cosmetic.** 0.9.20
@@ -2406,10 +2407,10 @@ impl App {
     ///
     /// The choice above is the whole reason this accessor exists and the reasoning still
     /// holds; what changed is that the missing half is now known to be *unobtainable*
-    /// rather than merely unported. `inspect_prepare_for_solve` records the reduction's
-    /// rounds, not the matching passes inside each rebuild, so **the reduced system's
-    /// report is observable and its search is not**. Restoring a branch would mean
-    /// observing `sort` on the reduced DAE a second time, which is a re-run.
+    /// rather than merely unported. *(Superseded 2026-11-26: the real preparation's
+    /// capture records every analysis inside each round, so the reduced system's
+    /// search is now observable from the run that simulates. No view reads it yet, and
+    /// this accessor still returns only the Structural tab's frames.)*
     ///
     /// **The old justification was that nothing indexes into these from the Index
     /// Reduction tab, and that is no longer the protection.** It held while the stage
@@ -3053,10 +3054,10 @@ impl App {
             StructuralView::Summary => Some(is_index_reduction || is_singular),
             // **The three frame-driven animations are NOT offered on Index Reduction**,
             // stated rather than left to starve. Their frames come from
-            // `structural_frames_for_stage`, which can only hand them the **raw**
-            // system's — `inspect_prepare_for_solve` records the reduction's rounds, not
-            // the matching passes inside each rebuild, so the reduced system's report is
-            // observable and its search is not.
+            // `structural_frames_for_stage`, which hands them only the Structural
+            // tab's — the first analysis of the simplified system — while Index
+            // Reduction shows the reduced one. Pairing them would animate the wrong
+            // system's search.
             //
             // They drew nothing on that tab until 2026-11-04 only because they looked for
             // a top-level `incidence` the re-modelled payload nests under `after`. That is
@@ -5041,11 +5042,11 @@ impl App {
             // a `record` fallback that re-ran the run; that was removed, and the
             // contradiction stood until the 2026-11-07 sweep.)
             //
-            // **The frames are the raw system's**, from `build_structural_report`. The
-            // Index Reduction tab does not offer the frame-consuming sub-views at all
-            // (`worker::index_reduction_stage`): its search is not observable, and
-            // pairing the raw frames with reduced block names would animate a search
-            // that never happened.
+            // **The frames are the Structural tab's** — the first analysis of the
+            // simplified system, inside solve lowering's real preparation. The Index
+            // Reduction tab does not offer the frame-consuming sub-views at all
+            // (`worker::preparation::index_reduction_stage`): pairing these frames with
+            // reduced block names would animate a search that never happened.
             self.stage_views.tearing_anim = Some(
                 self.stages
                     .get(self.stage)

@@ -7,16 +7,16 @@
         "local": false,
         "span": {
           "source": 6225591493931505345,
-          "start": 774,
-          "end": 780
+          "start": 962,
+          "end": 968
         },
         "parts": [
           {
             "ident": "a",
             "span": {
               "source": 6225591493931505345,
-              "start": 774,
-              "end": 780
+              "start": 962,
+              "end": 968
             },
             "subs": [],
             "def_id": 99
@@ -32,12 +32,12 @@
         ]
       },
       "source_location": {
-        "start_line": 13,
+        "start_line": 15,
         "start_column": 3,
-        "end_line": 13,
+        "end_line": 15,
         "end_column": 9,
-        "start": 774,
-        "end": 780,
+        "start": 962,
+        "end": 968,
         "source": 6225591493931505345
       },
       "dims": [],
@@ -80,8 +80,8 @@
           },
           "span": {
             "source": 6225591493931505345,
-            "start": 774,
-            "end": 780
+            "start": 962,
+            "end": 968
           }
         }
       },
@@ -119,16 +119,16 @@
         "local": false,
         "span": {
           "source": 6225591493931505345,
-          "start": 784,
-          "end": 790
+          "start": 972,
+          "end": 978
         },
         "parts": [
           {
             "ident": "b",
             "span": {
               "source": 6225591493931505345,
-              "start": 784,
-              "end": 790
+              "start": 972,
+              "end": 978
             },
             "subs": [],
             "def_id": 100
@@ -144,12 +144,12 @@
         ]
       },
       "source_location": {
-        "start_line": 14,
+        "start_line": 16,
         "start_column": 3,
-        "end_line": 14,
+        "end_line": 16,
         "end_column": 9,
-        "start": 784,
-        "end": 790,
+        "start": 972,
+        "end": 978,
         "source": 6225591493931505345
       },
       "dims": [],
@@ -192,8 +192,8 @@
           },
           "span": {
             "source": 6225591493931505345,
-            "start": 784,
-            "end": 790
+            "start": 972,
+            "end": 978
           }
         }
       },
@@ -254,15 +254,15 @@
                       "ident": {
                         "text": "a",
                         "location": {
-                          "start_line": 16,
+                          "start_line": 18,
                           "start_column": 3,
-                          "end_line": 16,
+                          "end_line": 18,
                           "end_column": 4,
-                          "start": 803,
-                          "end": 804,
+                          "start": 991,
+                          "end": 992,
                           "source": 6225591493931505345
                         },
-                        "token_number": 21,
+                        "token_number": 23,
                         "token_type": 64
                       },
                       "subs": null
@@ -270,8 +270,8 @@
                   ],
                   "span": {
                     "source": 6225591493931505345,
-                    "start": 803,
-                    "end": 804
+                    "start": 991,
+                    "end": 992
                   }
                 }
               },
@@ -281,21 +281,21 @@
                   "token": {
                     "text": "1.0",
                     "location": {
-                      "start_line": 16,
+                      "start_line": 18,
                       "start_column": 7,
-                      "end_line": 16,
+                      "end_line": 18,
                       "end_column": 10,
-                      "start": 807,
-                      "end": 810,
+                      "start": 995,
+                      "end": 998,
                       "source": 6225591493931505345
                     },
-                    "token_number": 23,
+                    "token_number": 25,
                     "token_type": 68
                   },
                   "span": {
                     "source": 6225591493931505345,
-                    "start": 807,
-                    "end": 810
+                    "start": 995,
+                    "end": 998
                   }
                 }
               }
@@ -315,8 +315,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 6225591493931505345,
-            "start": 803,
-            "end": 810
+            "start": 991,
+            "end": 998
           }
         },
         {
@@ -330,15 +330,15 @@
                       "ident": {
                         "text": "a",
                         "location": {
-                          "start_line": 17,
+                          "start_line": 19,
                           "start_column": 3,
-                          "end_line": 17,
+                          "end_line": 19,
                           "end_column": 4,
-                          "start": 814,
-                          "end": 815,
+                          "start": 1002,
+                          "end": 1003,
                           "source": 6225591493931505345
                         },
-                        "token_number": 25,
+                        "token_number": 27,
                         "token_type": 64
                       },
                       "subs": null
@@ -346,8 +346,8 @@
                   ],
                   "span": {
                     "source": 6225591493931505345,
-                    "start": 814,
-                    "end": 815
+                    "start": 1002,
+                    "end": 1003
                   }
                 }
               },
@@ -359,15 +359,15 @@
                       "ident": {
                         "text": "time",
                         "location": {
-                          "start_line": 17,
+                          "start_line": 19,
                           "start_column": 7,
-                          "end_line": 17,
+                          "end_line": 19,
                           "end_column": 11,
-                          "start": 818,
-                          "end": 822,
+                          "start": 1006,
+                          "end": 1010,
                           "source": 6225591493931505345
                         },
-                        "token_number": 27,
+                        "token_number": 29,
                         "token_type": 64
                       },
                       "subs": null
@@ -375,8 +375,8 @@
                   ],
                   "span": {
                     "source": 6225591493931505345,
-                    "start": 818,
-                    "end": 822
+                    "start": 1006,
+                    "end": 1010
                   }
                 }
               }
@@ -396,8 +396,8 @@
           "source_scope_id": 1,
           "span": {
             "source": 6225591493931505345,
-            "start": 814,
-            "end": 822
+            "start": 1002,
+            "end": 1010
           }
         }
       ],

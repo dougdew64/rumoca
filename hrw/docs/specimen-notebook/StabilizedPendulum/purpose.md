@@ -10,8 +10,9 @@ the code never says what it is *for*.
 **The pendulum's index problem solved by the modeller instead of by the compiler.**
 
 `CartesianPendulum` is index 3: the constraint `x^2 + y^2 = L^2` contains no derivative, so
-nothing in the system determines `lambda` until the constraint is differentiated twice. Rumoca
-does not implement general Pantelides, so it stops there. This file is the *other* way out, and
+nothing in the system determines `lambda` until the constraint is differentiated twice. On 0.9.20
+Rumoca had no route through that, so it stopped there (v0.10.4 has one — below). This file is the
+*other* way out, and
 it is the way the field used before there was an algorithm: differentiate the constraint by hand,
 and add feedback terms so the differentiated form does not drift away from the original one —
 
@@ -43,8 +44,11 @@ simulation       FAILED    BDF: Failed to factorise matrix: SymbolicSingular { i
 **The hand reduction works.** Where `CartesianPendulum` reports `Structural … singular` and then
 `still singular after reduction`, this model passes both — and Rumoca correctly identifies
 it as already index 1. That is a real confirmation that Baumgarte's 1972 construction does what
-it claims, checked by a compiler that has no idea it was applied. **That remains true on v0.10.4**,
-and it is the durable half of this specimen's value.
+it claims, checked by a compiler that has no idea it was applied. **The substance remains true on
+v0.10.4**, and it is the durable half of this specimen's value: Structural is not singular, and
+the reducer needs **no reduction round**. Its outcome is `sorted` rather than `borrowed`, though —
+derivative-alias normalization rebuilds the system first, so the Index reduction note reads
+*normalized without a reduction round*, not *already index-1*.
 
 **And on 0.9.20 it still did not run.** Initialization could not match `lambda` to an equation, so
 `lambda` never received a consistent initial value, and the solver's iteration matrix was singular
@@ -57,24 +61,28 @@ the model simulates 501 samples to t = 2 s on **4 states**, with `lambda` peakin
 against the hand-computed rod tension 3*mg* = 29.43.
 
 **And `CartesianPendulum` runs too**, which this file was written assuming would not happen: v0.10.4
-reduces the *unstabilized* model to **2** states by choosing coordinates on the constraint manifold.
+reduces the *unstabilized* model to **2** states. Its reducer still refuses; state selection then
+takes the route Rumoca names *singular system recovered via formal derivatives* — it differentiates
+the system formally and selects an independent basis, `{y, der(y)}` (`$state_coordinates[1..2]` in
+the run). `x`, `vx`, `vy` and `lambda` are algebraics reconstructed each step, not integrated.
 So the corpus holds the same physics solved two ways, and the numbers separate them cleanly:
 
-| | this model — Baumgarte, by hand | `CartesianPendulum` — chart on the manifold |
+| | this model — Baumgarte, by hand | `CartesianPendulum` — formal-derivative basis |
 |---|---|---|
 | integrated states | 4 | **2** |
 | `\|x² + y² − L²\|`, final sample | 2.9e-06 | **4.6e-12** |
 | `lambda` peak | 29.4301 | 29.4303 |
 
 **Six orders of magnitude, and both get the physics right.** Damping a constraint violation keeps
-it small; removing the constraint by changing coordinates means there is nothing to drift. That is
+it small; integrating only two independent coordinates and reconstructing the rest leaves the
+position constraint nothing to drift on. That is
 the clearest statement of what index reduction buys that this corpus can make, and it needs both
 specimens to make it — so **this one's purpose has changed rather than expired**: it was evidence
 of a gap, and it is now the control in a comparison.
 
-So Rumoca's inability to simulate a constrained pendulum is **not only** the missing Pantelides
-implementation. There is a second, independent stop downstream, in initialization of an algebraic
-unknown, and it is reached even when the index problem has already been removed. Naming only the
+So on 0.9.20 Rumoca's inability to simulate a constrained pendulum was **not only** the missing
+index-reduction route. There was a second, independent stop downstream, in initialization of an
+algebraic unknown, reached even when the index problem had already been removed. Naming only the
 first would have been wrong, and this specimen is what made the second visible.
 
 ## Validated by the oracle first
