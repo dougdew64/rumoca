@@ -1,23 +1,16 @@
 {
-  "determinacy": {
-    "state_scalars": 3,
-    "determined": 2,
-    "only_guessed": [
-      "v_filt"
-    ],
-    "definitions": 1,
-    "checks": 0,
-    "partly_fixed_states": []
-  },
-  "pins": [
+  "summary": [
     {
-      "role": "definition",
-      "coordinate": "v",
-      "scalar": 0,
-      "value": "1",
-      "source": "v_meas",
-      "source_scalar": 0,
-      "declared_at": {
+      "role": "Solved",
+      "rows": 1
+    }
+  ],
+  "rows": [
+    {
+      "row": 0,
+      "role": "Solved",
+      "solves": "v",
+      "at": {
         "file": "hrw/specimens/MeasuredOscillator.mo",
         "line": 22,
         "column": 3,
@@ -27,5 +20,13 @@
         "byte_end": 1491
       }
     }
-  ]
+  ],
+  "unknowns": [
+    "v"
+  ],
+  "given_states": [
+    "x"
+  ],
+  "manifold_rows": 0,
+  "roles_note": "Rumoca's own InitializationRowRole per residual row: Solved rows determine an unknown; a SurplusCheck row reads only values something else fixed, so it is a consistency check (MLS 3.6 §8.6) that the run evaluates"
 }

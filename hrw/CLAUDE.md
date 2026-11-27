@@ -670,14 +670,20 @@ the next phase touches — is procedure and lives there.
 > `x² + y² = L²` and substituting it back leaves `0 = 0`. The reduction happens in
 > `rumoca-phase-solve`'s **state selection**, which picks independent coordinates on the constraint
 > manifold. **So one phase reports failure and the next succeeds. Do not read the reducer's report
-> as the compiler's verdict** — **five** HRW defects were that mistake, and one is open
-> (`Drivetrain`'s 5 / 3 / 3, in `docs/tech-debt.md`).
+> as the compiler's verdict** — **five** HRW defects were that mistake.
 >
 > **The fifth: the banner was fixed on 11-04 and the TAB STAYED RED**, a stage outcome being that
-> fact's second home. Both now read one `state_scalar_count`
-> (`worker::reconcile_reduction_with_lowering`, `stage_tabs::tab_color`), and **`Flagged` is amber,
-> not red**. `note_is_error`'s other callers followed on 2026-11-07 — two keep it on purpose, and
+> fact's second home. `Flagged` is amber, not red (`stage_tabs::tab_color`), and
+> `note_is_error`'s other callers followed on 2026-11-07 — two keep it on purpose, and
 > `docs/tech-debt.md`'s 11-05 entry says which and why.
+>
+> **The root cause went on 2026-11-26** (`DECISIONS.md`, *the tabs show one real
+> preparation*): the Index reduction tab was HRW running the reducer itself on the DAE before
+> solve lowering's simplifications — a run Rumoca never makes — patched afterwards by a
+> reconcile step to agree with lowering. Every tab from Simplify to Solve lowering now reads one
+> observed run of solve lowering, the reducer's refusal and state selection's recovery appear
+> in the same tab (`route`), and `Drivetrain`'s "5 / 3 / 3" is gone: the real run integrates
+> 3 everywhere.
 >
 > **This is not a branch of `hrw`.** Both descend from `main`; `hrw` is 1199 commits of HRW work on
 > 0.9.20 and still points at 2026-09-25, while the 0.10.0 branch took upstream's v0.10.0 (PR #340)
@@ -830,8 +836,11 @@ the next phase touches — is procedure and lives there.
 >
 > **Doug runs labs in compiler-phase order** *(2026-08-22)*: **dae-construction → matching (→
 > matching-live) → blt-ordering → tearing → index-reduction → initialization → solve-lowering →
-> events**, which is `the-pipeline.md`'s own numbering. **That is a rule about sequence, not a
-> report on position.**
+> events**. **That is a rule about sequence, not a report on position.** *(It said "which is
+> `the-pipeline.md`'s own numbering" until 2026-11-26, when the route list was folded into that
+> lab's walk through HRW's tabs, which puts Events before Solve lowering. Neither is Rumoca's run
+> order exactly: Events is a tab, not a phase — DAE construction records the event data, and solve
+> lowering lowers it — so running events last, after solve-lowering, stands.)*
 >
 > **The iteration loop, the gate traps and the one-lab-at-a-time rule are in
 > [`docs/fixture-labs/README.md`](docs/fixture-labs/README.md)** — read before touching a lab.

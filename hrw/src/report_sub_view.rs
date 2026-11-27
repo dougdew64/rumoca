@@ -245,42 +245,32 @@ fn reduction_banner(
     }
 }
 
-/// **When this reduction's state count and the lowered one differ, say both** — the
-/// HRW half of `Drivetrain`'s 5 / 3 / 3 (`docs/tech-debt.md`, the post-rebase sweep's
-/// open item 4).
+/// **What state selection decided after the reducer, and what it integrates** — read
+/// from the stage's own `route` and `integrated`, which the real preparation recorded.
 ///
-/// `Drivetrain`'s reducer sorts after six rounds with **5** states (`after.n_states`),
-/// and solve lowering then integrates **3** (`solve_layout.state_scalar_count`). Both
-/// are true, they come from different phases, and nothing on this tab said so: the
-/// banner read *"reduction ran until it sorted"* and the reader was left to discover the
-/// 3 on another tab and wonder which was wrong.
+/// # What this replaced (2026-11-26)
 ///
-/// **It states the two numbers and does not explain the step between them**, because
-/// that step happens inside solve lowering — for `Drivetrain`, `rumoca-phase-solve`'s
-/// state selection, which is private — and HRW cannot see which states were kept or
-/// why. Saying so is the honest version; a reason would be invented, and for
-/// `CapacitorLoop` (1 → 0) the cause has not been verified at all.
-///
-/// # The two counts are in different units unless proven otherwise
-///
-/// `after.n_states` counts state **variables**; `state_scalar_count` counts
-/// **scalars**. `ArrayFamily` is the counter-example, measured on 2026-11-07 while
-/// writing this: an index-1 model whose one state is an 8-array reads 1 and 8, and the
-/// first draft would have told the reader that lowering added seven states. So the note
-/// is shown only when `n_states + n_algebraics == n_unknowns` — every variable a
-/// scalar, so the variable count *is* the scalar count. That is arithmetic on the
-/// stage's own counts, not a reading of names. Otherwise `None`, as when either count
-/// is missing or the two agree (the ordinary case).
-fn two_phase_state_note(after: &serde_json::Value, lowered: Option<u64>) -> Option<String> {
-    let reduced = after["n_states"].as_u64()?;
-    let all_scalar = reduced + after["n_algebraics"].as_u64()? == after["n_unknowns"].as_u64()?;
-    let lowered = lowered?;
-    (all_scalar && reduced != lowered).then(|| {
+/// A *two-phase note* stood here: when the reducer's state count and solve lowering's
+/// differed (`Drivetrain` 5 / 3), it stated both and said the step between them
+/// "happens in solve lowering, which HRW cannot yet observe". Both halves are gone.
+/// The 5 was HRW's own reduction of the unsimplified DAE, which the solve path never
+/// runs; and the step is now observed — `rumoca-phase-solve`'s preparation trace
+/// records the route state selection took and the names it integrates. So the tab
+/// says what happened instead of reporting a disagreement.
+fn selection_note(value: &serde_json::Value) -> Option<String> {
+    let route = value["route"].as_array()?.last()?.as_str()?;
+    let names: Vec<&str> = value["integrated"]
+        .as_array()?
+        .iter()
+        .filter_map(serde_json::Value::as_str)
+        .collect();
+    Some(if names.is_empty() {
+        format!("State selection: {route}. It integrates no state.")
+    } else {
         format!(
-            "This reduction left {reduced} state(s); solve lowering integrates {lowered}. \
-             The two counts are different phases' \u{2014} the step between them happens \
-             in solve lowering, which HRW cannot yet observe. The Solve Lowering tab shows \
-             the {lowered} it kept."
+            "State selection: {route}. It integrates {}: {}.",
+            names.len(),
+            names.join(", ")
         )
     })
 }
@@ -414,12 +404,12 @@ pub(crate) fn report_sub_view_row_ui(
             ui.label(egui::RichText::new(label).color(colour).strong());
             ui.weak(gloss);
         });
-        // The reducer's count beside the lowered one, when they differ in one unit.
+        // What state selection decided after the reducer, and what it integrates.
         if let Some(note) = stages
             .get(StageKind::IndexReduction)
             .value
             .as_ref()
-            .and_then(|v| two_phase_state_note(&v["after"], lowered_state_scalars))
+            .and_then(selection_note)
         {
             ui.weak(note);
         }
@@ -737,21 +727,20 @@ mod tests {
         );
     }
 
-    /// **The two-phase note fires on exactly the specimens whose counts really differ**,
-    /// read from the committed traces rather than from numbers written here.
+    /// **What state selection says it integrates is what lowering integrates**, on every
+    /// committed trace — the property the two-phase note used to report the absence of.
     ///
-    /// `Drivetrain` (5 → 3) and `CapacitorLoop` (1 → 0) differ in one unit. `ArrayFamily`
-    /// reads 1 and 8 because one counts variables and the other scalars, and must stay
-    /// silent — the first draft did not, and would have said lowering added seven
-    /// states. Every other specimen agrees and is silent.
+    /// Both numbers come from the one observed preparation: `integrated` from
+    /// `rumoca-phase-solve`'s preparation trace, `state_scalar_count` from the lowered
+    /// model. If they ever disagree, the trace recorded a different selection from the
+    /// one lowered, and the tab would be telling a story about another run.
     #[test]
-    fn the_two_phase_note_fires_only_where_the_counts_really_differ() {
+    fn the_selection_names_exactly_what_lowering_integrates() {
         let dir = std::path::Path::new(crate::manifest_path!("docs", "specimen-notebook"));
         let read = |model: &str, stage: &str| -> Option<serde_json::Value> {
             let text = std::fs::read_to_string(dir.join(model).join("trace").join(stage)).ok()?;
             serde_json::from_str(&text).ok()
         };
-        let mut fired = Vec::new();
         let mut checked = 0;
         for entry in std::fs::read_dir(dir).expect("specimen notebook").flatten() {
             let model = entry.file_name().to_string_lossy().into_owned();
@@ -761,28 +750,40 @@ mod tests {
             ) else {
                 continue;
             };
+            let (Some(integrated), Some(lowered)) = (
+                ir["integrated"].as_array(),
+                sl["solve_layout"]["state_scalar_count"].as_u64(),
+            ) else {
+                continue;
+            };
             checked += 1;
-            let lowered = sl["solve_layout"]["state_scalar_count"].as_u64();
-            if two_phase_state_note(&ir["after"], lowered).is_some() {
-                fired.push(model);
-            }
+            assert_eq!(
+                integrated.len() as u64,
+                lowered,
+                "{model}: the selection names {integrated:?} but lowering integrates {lowered}",
+            );
+            assert!(
+                selection_note(&ir).is_some(),
+                "{model}: a recorded selection must produce the note",
+            );
         }
-        fired.sort();
         assert!(
             checked >= 15,
             "only {checked} traces read; the walk is broken"
         );
-        assert_eq!(fired, ["CapacitorLoop", "Drivetrain"]);
     }
 
-    /// The note reaches the screen under the banner, with both numbers.
+    /// The selection note reaches the screen under the banner.
     #[test]
-    fn a_two_phase_reduction_names_both_counts_on_screen() {
+    fn the_selection_note_reaches_the_screen() {
+        // `Drivetrain`'s real values, from its committed trace.
         let stages = StageBundle {
             index_reduction: crate::worker::Stage::ok(serde_json::json!({
                 "rounds": 6,
                 "outcome": { "kind": "sorted", "admitted": true },
-                "after": { "n_states": 5, "n_algebraics": 92, "n_unknowns": 97 },
+                "route": ["reducer accepted the system", "reduced to a formal-derivative basis"],
+                "integrated": ["mount.s_rel", "L.i", "mount.v_rel"],
+                "after": { "n_states": 3 },
             })),
             solve_lowering: crate::worker::Stage::ok(serde_json::json!({
                 "solve_layout": { "state_scalar_count": 3 },
@@ -801,10 +802,11 @@ mod tests {
         h.run_steps(2);
         assert!(
             h.query_by_label_contains(
-                "This reduction left 5 state(s); solve lowering integrates 3"
+                "State selection: reduced to a formal-derivative basis. It integrates 3: \
+                 mount.s_rel, L.i, mount.v_rel."
             )
             .is_some(),
-            "Drivetrain's two counts must both be on the tab that shows the first",
+            "the route and what it integrates must be on the Index reduction tab",
         );
     }
 

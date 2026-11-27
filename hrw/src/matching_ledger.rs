@@ -750,14 +750,23 @@ mod tests {
     /// Doug stepped through, in order. If the specimen, the algorithm or the
     /// trace changes, this fails rather than silently describing a different run.
     ///
-    /// **Ten frames since 2026-08-23, not nine** — the traced run now opens with
-    /// `Start`, describing the system before the search. Every index below moved
-    /// by one, which is the whole reason this test is spelled out step by step.
+    /// **Seven frames since 2026-11-26, not ten — and the difference is the lesson.**
+    /// The Structural tab now shows the analysis Rumoca's solve path actually runs,
+    /// on the simplified system. There `fold_constant_values` has propagated
+    /// `a = 1.0` into the second equation, which becomes `0 = 1 - time` and mentions
+    /// no unknown at all. So the search finds nothing to explore for equation 1 and
+    /// gives up at once: no `Explore`, no `TryDisplace`, no `DisplaceFail`. The
+    /// ten-frame displacement walk this test pinned until then was HRW's own call on
+    /// the unsimplified DAE — a search the solve path never performs.
     #[test]
     fn the_generated_ledger_reproduces_the_twicedefined_walk() {
         let rows = ledger_rows("TwiceDefined").expect("TwiceDefined must have a structural trace");
         let steps: Vec<&str> = rows.iter().map(|(_, s, _, _)| s.as_str()).collect();
-        assert_eq!(rows.len(), 10, "the run produced ten frames, got {steps:?}");
+        assert_eq!(
+            rows.len(),
+            7,
+            "the run produced seven frames, got {steps:?}"
+        );
 
         assert!(
             steps[0].contains("Start"),
@@ -765,17 +774,22 @@ mod tests {
         );
         assert!(steps[1].contains("TryEquation(0)"));
         assert!(
-            steps[7].contains("TryDisplace"),
-            "frame 7 is the displacement"
+            steps[4].contains("Assign"),
+            "frame 4 pairs equation 0 with a"
         );
-        assert!(steps[8].contains("DisplaceFail"), "frame 8 is the refusal");
+        assert!(steps[5].contains("TryEquation(1)"));
         assert!(
-            steps[9].contains("EquationFailed(1)"),
-            "frame 9 is the give-up"
+            steps[6].contains("EquationFailed(1)"),
+            "frame 6 is the give-up: equation 1 mentions no unknown"
+        );
+        assert!(
+            !steps.iter().any(|step| step.contains("TryDisplace")),
+            "the simplified system leaves nothing to displace: {steps:?}"
         );
 
         let depths: Vec<usize> = rows.iter().map(|(_, _, _, d)| *d).collect();
-        assert_eq!(depths, vec![0, 0, 1, 1, 1, 0, 1, 1, 1, 0]);
+        // The old walk's first six depths, then the give-up at depth 0.
+        assert_eq!(depths, vec![0, 0, 1, 1, 1, 0, 0]);
     }
 
     /// **Every anchor is found.** A `None` from the scan would silently drop a

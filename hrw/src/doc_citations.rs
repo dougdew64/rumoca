@@ -4532,13 +4532,24 @@ mod tests {
         };
         for entry in entries.flatten() {
             let structural = entry.path().join("trace/structural.json");
-            let Ok(raw) = std::fs::read_to_string(&structural) else {
-                continue;
-            };
-            let Ok(json) = serde_json::from_str::<serde_json::Value>(&raw) else {
-                continue;
-            };
-            collect_equation_strings(&json, &mut labels, &mut residuals);
+            if let Some(json) = std::fs::read_to_string(&structural)
+                .ok()
+                .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+            {
+                collect_equation_strings(&json, &mut labels, &mut residuals);
+            }
+            // **And the equation sheet** (2026-11-26): the Flatten → Equations pane's
+            // text, rendered from the compiled DAE. The Structural tab now shows the
+            // system solve lowering analyses — after its simplifications merged
+            // aliases — so the DAE's own equations, which labs quote, are rendered
+            // on the sheet and not necessarily there.
+            let sheet = entry.path().join("trace/equations.json");
+            if let Some(json) = std::fs::read_to_string(&sheet)
+                .ok()
+                .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+            {
+                collect_sheet_texts(&json, &mut residuals);
+            }
         }
         assert!(
             labels.len() > 50 && residuals.len() > 50,
@@ -5810,6 +5821,28 @@ mod tests {
     /// be right by luck about the other.
     fn residual_body(s: &str) -> &str {
         s.strip_prefix("0 = ").unwrap_or(s)
+    }
+
+    /// Every equation `text` on a published equation sheet, as residual bodies.
+    fn collect_sheet_texts(v: &serde_json::Value, residuals: &mut BTreeSet<String>) {
+        match v {
+            serde_json::Value::Object(map) => {
+                for (k, val) in map {
+                    if k == "text"
+                        && let Some(s) = val.as_str()
+                    {
+                        residuals.insert(residual_body(s).to_owned());
+                    }
+                    collect_sheet_texts(val, residuals);
+                }
+            }
+            serde_json::Value::Array(items) => {
+                for item in items {
+                    collect_sheet_texts(item, residuals);
+                }
+            }
+            _ => {}
+        }
     }
 
     /// Recursively harvest `equation` labels and `equation_text` residuals.

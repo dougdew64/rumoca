@@ -36,22 +36,22 @@
     {
       "equation": "f_x[6] (flange.tau = -tau)",
       "id": "f_x[6]",
-      "unknown": "torque.flange.tau"
+      "unknown": "torque.tau"
     },
     {
       "equation": "f_x[7] (y = k)",
       "id": "f_x[7]",
-      "unknown": "tau.y"
+      "unknown": "inertia.flange_a.tau"
     },
     {
       "equation": "f_x[8] (SI.Torque tau)",
       "id": "f_x[8]",
-      "unknown": "inertia.flange_a.tau"
+      "unknown": "torque.flange.tau"
     },
     {
       "equation": "f_x[9] (tau)",
       "id": "f_x[9]",
-      "unknown": "torque.tau"
+      "unknown": "tau.y"
     },
     {
       "equation": "f_x[10] (SI.Angle phi)",
@@ -91,27 +91,6 @@
       "size": 1,
       "equation": "f_x[7] (y = k)",
       "id": "f_x[7]",
-      "unknown": "tau.y"
-    },
-    {
-      "kind": "scalar",
-      "size": 1,
-      "equation": "f_x[9] (tau)",
-      "id": "f_x[9]",
-      "unknown": "torque.tau"
-    },
-    {
-      "kind": "scalar",
-      "size": 1,
-      "equation": "f_x[6] (flange.tau = -tau)",
-      "id": "f_x[6]",
-      "unknown": "torque.flange.tau"
-    },
-    {
-      "kind": "scalar",
-      "size": 1,
-      "equation": "f_x[8] (SI.Torque tau)",
-      "id": "f_x[8]",
       "unknown": "inertia.flange_a.tau"
     },
     {
@@ -145,6 +124,27 @@
     {
       "kind": "scalar",
       "size": 1,
+      "equation": "f_x[6] (flange.tau = -tau)",
+      "id": "f_x[6]",
+      "unknown": "torque.tau"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[8] (SI.Torque tau)",
+      "id": "f_x[8]",
+      "unknown": "torque.flange.tau"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
+      "equation": "f_x[9] (tau)",
+      "id": "f_x[9]",
+      "unknown": "tau.y"
+    },
+    {
+      "kind": "scalar",
+      "size": 1,
       "equation": "f_x[10] (SI.Angle phi)",
       "id": "f_x[10]",
       "unknown": "torque.flange.phi"
@@ -174,7 +174,7 @@
         "unknowns": [
           0
         ],
-        "equation_text": "0 = inertia.phi - inertia.flange_a.phi"
+        "equation_text": "0 = inertia.flange_a.phi - inertia.phi"
       },
       {
         "equation": "f_x[1] (phi = flange_b.phi)",
@@ -182,7 +182,7 @@
         "unknowns": [
           2
         ],
-        "equation_text": "0 = inertia.phi - inertia.flange_b.phi"
+        "equation_text": "0 = inertia.flange_b.phi - inertia.phi"
       },
       {
         "equation": "f_x[2] (w = der(phi))",
@@ -223,18 +223,18 @@
         "equation": "f_x[6] (flange.tau = -tau)",
         "id": "f_x[6]",
         "unknowns": [
-          8,
+          1,
           10
         ],
-        "equation_text": "0 = torque.flange.tau - -torque.tau"
+        "equation_text": "0 = torque.tau - inertia.flange_a.tau"
       },
       {
         "equation": "f_x[7] (y = k)",
         "id": "f_x[7]",
         "unknowns": [
-          11
+          1
         ],
-        "equation_text": "0 = tau.y - tau.k"
+        "equation_text": "0 = inertia.flange_a.tau - tau.k"
       },
       {
         "equation": "f_x[8] (SI.Torque tau)",
@@ -249,19 +249,18 @@
         "equation": "f_x[9] (tau)",
         "id": "f_x[9]",
         "unknowns": [
-          10,
+          1,
           11
         ],
-        "equation_text": "0 = tau.y - torque.tau"
+        "equation_text": "0 = tau.y - inertia.flange_a.tau"
       },
       {
         "equation": "f_x[10] (SI.Angle phi)",
         "id": "f_x[10]",
         "unknowns": [
-          0,
           7
         ],
-        "equation_text": "0 = torque.flange.phi - inertia.flange_a.phi"
+        "equation_text": "0 = torque.flange.phi - inertia.phi"
       },
       {
         "equation": "f_x[11] (SI.Torque tau)",
@@ -272,5 +271,14 @@
         "equation_text": "0 = inertia.flange_b.tau"
       }
     ]
-  }
+  },
+  "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+  "analyses": [
+    {
+      "context": "Source",
+      "equations": 12,
+      "unknowns": 12,
+      "result": "sorted: 12 block(s), 0 coupled"
+    }
+  ]
 }

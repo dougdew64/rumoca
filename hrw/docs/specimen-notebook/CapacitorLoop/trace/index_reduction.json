@@ -1,16 +1,21 @@
 {
-  "rounds": 2,
-  "n_records": 8,
+  "rounds": 1,
+  "n_records": 5,
   "outcome": {
     "kind": "sorted",
     "admitted": true,
-    "rounds": 2,
+    "rounds": 1,
     "meaning": "reduction ran until the system sorted"
   },
   "lanes": [
-    "direct",
-    "holonomic"
+    "direct"
   ],
+  "route": [
+    "reducer accepted the system",
+    "no manifold: StateSelect preferences decided"
+  ],
+  "integrated": [],
+  "alternate_charts": 0,
   "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
   "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
   "before": {
@@ -38,10 +43,10 @@
           "equation": "f_x[0] (0 = p.i + n.i)",
           "id": "f_x[0]",
           "unknowns": [
-            3,
+            0,
             5
           ],
-          "equation_text": "0 = 0 - (src.p.i + src.n.i)"
+          "equation_text": "0 = src.n.i + src.i"
         },
         {
           "equation": "f_x[1] (i = p.i)",
@@ -50,17 +55,16 @@
             0,
             3
           ],
-          "equation_text": "0 = src.i - src.p.i"
+          "equation_text": "0 = src.p.i - src.i"
         },
         {
           "equation": "f_x[2] (v = p.v - n.v)",
           "id": "f_x[2]",
           "unknowns": [
             1,
-            2,
-            4
+            2
           ],
-          "equation_text": "0 = src.v - (src.p.v - src.n.v)"
+          "equation_text": "0 = src.v - (src.p.v - 0)"
         },
         {
           "equation": "f_x[3] (v = V)",
@@ -74,64 +78,62 @@
           "equation": "f_x[4] (0 = p.i + n.i)",
           "id": "f_x[4]",
           "unknowns": [
-            9,
+            0,
             11
           ],
-          "equation_text": "0 = 0 - (C.p.i + C.n.i)"
+          "equation_text": "0 = C.n.i - src.i"
         },
         {
           "equation": "f_x[5] (i = p.i)",
           "id": "f_x[5]",
           "unknowns": [
-            6,
-            9
+            0,
+            6
           ],
-          "equation_text": "0 = C.i - C.p.i"
+          "equation_text": "0 = C.i + src.i"
         },
         {
           "equation": "f_x[6] (v = p.v - n.v)",
           "id": "f_x[6]",
           "unknowns": [
-            8,
-            10
+            2
           ],
-          "equation_text": "0 = C.v - (C.p.v - C.n.v)"
+          "equation_text": "0 = C.v - (src.p.v - 0)"
         },
         {
           "equation": "f_x[7] (i = C*der(v))",
           "id": "f_x[7]",
           "unknowns": [
-            6,
+            0,
             7
           ],
-          "equation_text": "0 = C.i - C.C*der(C.v)"
+          "equation_text": "0 = -src.i - C.C*der(C.v)"
         },
         {
           "equation": "f_x[8] (p.v = 0)",
           "id": "f_x[8]",
           "unknowns": [
-            12
+            4
           ],
-          "equation_text": "0 = gnd.p.v - 0"
+          "equation_text": "0 = src.n.v - 0"
         },
         {
           "equation": "f_x[9] (SI.Current i)",
           "id": "f_x[9]",
           "unknowns": [
-            3,
+            0,
             9
           ],
-          "equation_text": "0 = src.p.i + C.p.i"
+          "equation_text": "0 = C.p.i + src.i"
         },
         {
           "equation": "f_x[10] (SI.Current i)",
           "id": "f_x[10]",
           "unknowns": [
-            5,
-            11,
+            0,
             13
           ],
-          "equation_text": "0 = src.n.i + C.n.i + gnd.p.i"
+          "equation_text": "0 = -src.i + src.i + gnd.p.i"
         },
         {
           "equation": "f_x[11] (SI.ElectricPotential v)",
@@ -140,38 +142,51 @@
             2,
             8
           ],
-          "equation_text": "0 = src.p.v - C.p.v"
+          "equation_text": "0 = C.p.v - src.p.v"
         },
         {
           "equation": "f_x[12] (SI.ElectricPotential v)",
           "id": "f_x[12]",
           "unknowns": [
-            4,
             10
           ],
-          "equation_text": "0 = src.n.v - C.n.v"
+          "equation_text": "0 = C.n.v - 0"
         },
         {
           "equation": "f_x[13] (SI.ElectricPotential v)",
           "id": "f_x[13]",
           "unknowns": [
-            10,
             12
           ],
-          "equation_text": "0 = C.n.v - gnd.p.v"
+          "equation_text": "0 = gnd.p.v - 0"
         }
       ]
     },
+    "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+    "analyses": [
+      {
+        "context": "Source",
+        "equations": 14,
+        "unknowns": 14,
+        "result": "structurally singular system: 13 matched out of 14 equations and 14 unknowns"
+      },
+      {
+        "context": "DirectCandidate",
+        "equations": 14,
+        "unknowns": 14,
+        "result": "sorted: 14 block(s), 0 coupled"
+      }
+    ],
     "matching": [
       {
         "equation": "f_x[0] (0 = p.i + n.i)",
         "id": "f_x[0]",
-        "unknown": "src.p.i"
+        "unknown": "src.n.i"
       },
       {
         "equation": "f_x[1] (i = p.i)",
         "id": "f_x[1]",
-        "unknown": "src.i"
+        "unknown": "src.p.i"
       },
       {
         "equation": "f_x[2] (v = p.v - n.v)",
@@ -194,11 +209,6 @@
         "unknown": "C.i"
       },
       {
-        "equation": "f_x[6] (v = p.v - n.v)",
-        "id": "f_x[6]",
-        "unknown": "C.n.v"
-      },
-      {
         "equation": "f_x[7] (i = C*der(v))",
         "id": "f_x[7]",
         "unknown": "der(C.v)"
@@ -206,7 +216,7 @@
       {
         "equation": "f_x[8] (p.v = 0)",
         "id": "f_x[8]",
-        "unknown": "gnd.p.v"
+        "unknown": "src.n.v"
       },
       {
         "equation": "f_x[9] (SI.Current i)",
@@ -216,7 +226,7 @@
       {
         "equation": "f_x[10] (SI.Current i)",
         "id": "f_x[10]",
-        "unknown": "src.n.i"
+        "unknown": "src.i"
       },
       {
         "equation": "f_x[11] (SI.ElectricPotential v)",
@@ -226,7 +236,12 @@
       {
         "equation": "f_x[12] (SI.ElectricPotential v)",
         "id": "f_x[12]",
-        "unknown": "src.n.v"
+        "unknown": "C.n.v"
+      },
+      {
+        "equation": "f_x[13] (SI.ElectricPotential v)",
+        "id": "f_x[13]",
+        "unknown": "gnd.p.v"
       }
     ],
     "error": {
@@ -237,10 +252,10 @@
       "n_matched": 13,
       "rank_deficiency": 1,
       "unmatched_equations": [
-        "f_x[13] (SI.ElectricPotential v)"
+        "f_x[6] (v = p.v - n.v)"
       ],
       "unmatched_equation_ids": [
-        "f_x[13]"
+        "f_x[6]"
       ],
       "unmatched_unknowns": [
         "gnd.p.i"
@@ -260,16 +275,12 @@
         }
       ],
       "over_determined_block": {
-        "equations": 7,
-        "unknowns": 6,
+        "equations": 3,
+        "unknowns": 2,
         "sample": [
           "f_x[2]",
           "f_x[3]",
-          "f_x[6]",
-          "f_x[8]",
-          "f_x[11]",
-          "f_x[12]",
-          "f_x[13]"
+          "f_x[6]"
         ]
       },
       "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."
@@ -291,12 +302,12 @@
       {
         "equation": "f_x[1] (i = p.i)",
         "id": "f_x[1]",
-        "unknown": "src.i"
+        "unknown": "src.p.i"
       },
       {
         "equation": "f_x[2] (v = p.v - n.v)",
         "id": "f_x[2]",
-        "unknown": "der(C.v)"
+        "unknown": "src.p.v"
       },
       {
         "equation": "f_x[3] (v = V)",
@@ -311,27 +322,27 @@
       {
         "equation": "f_x[5] (i = p.i)",
         "id": "f_x[5]",
-        "unknown": "C.p.i"
+        "unknown": "C.i"
       },
       {
         "equation": "f_x[6] (v = p.v - n.v)",
         "id": "f_x[6]",
-        "unknown": "C.p.v"
+        "unknown": "C.v"
       },
       {
         "equation": "f_x[7] (i = C*der(v))",
         "id": "f_x[7]",
-        "unknown": "C.i"
+        "unknown": "src.i"
       },
       {
         "equation": "f_x[8] (p.v = 0)",
         "id": "f_x[8]",
-        "unknown": "gnd.p.v"
+        "unknown": "src.n.v"
       },
       {
         "equation": "f_x[9] (SI.Current i)",
         "id": "f_x[9]",
-        "unknown": "src.p.i"
+        "unknown": "C.p.i"
       },
       {
         "equation": "f_x[10] (SI.Current i)",
@@ -341,47 +352,26 @@
       {
         "equation": "f_x[11] (SI.ElectricPotential v)",
         "id": "f_x[11]",
-        "unknown": "src.p.v"
+        "unknown": "C.p.v"
       },
       {
         "equation": "f_x[12] (SI.ElectricPotential v)",
         "id": "f_x[12]",
-        "unknown": "src.n.v"
+        "unknown": "C.n.v"
       },
       {
         "equation": "f_x[13] (SI.ElectricPotential v)",
         "id": "f_x[13]",
-        "unknown": "C.n.v"
+        "unknown": "gnd.p.v"
       }
     ],
     "blocks": [
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[2] (v = p.v - n.v)",
-        "id": "f_x[2]",
-        "unknown": "der(C.v)"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
         "equation": "f_x[7] (i = C*der(v))",
         "id": "f_x[7]",
-        "unknown": "C.i"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[5] (i = p.i)",
-        "id": "f_x[5]",
-        "unknown": "C.p.i"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[9] (SI.Current i)",
-        "id": "f_x[9]",
-        "unknown": "src.p.i"
+        "unknown": "src.i"
       },
       {
         "kind": "scalar",
@@ -395,7 +385,7 @@
         "size": 1,
         "equation": "f_x[1] (i = p.i)",
         "id": "f_x[1]",
-        "unknown": "src.i"
+        "unknown": "src.p.i"
       },
       {
         "kind": "scalar",
@@ -407,6 +397,13 @@
       {
         "kind": "scalar",
         "size": 1,
+        "equation": "f_x[2] (v = p.v - n.v)",
+        "id": "f_x[2]",
+        "unknown": "src.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
         "equation": "f_x[4] (0 = p.i + n.i)",
         "id": "f_x[4]",
         "unknown": "C.n.i"
@@ -414,23 +411,30 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[8] (p.v = 0)",
-        "id": "f_x[8]",
-        "unknown": "gnd.p.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[13] (SI.ElectricPotential v)",
-        "id": "f_x[13]",
-        "unknown": "C.n.v"
+        "equation": "f_x[5] (i = p.i)",
+        "id": "f_x[5]",
+        "unknown": "C.i"
       },
       {
         "kind": "scalar",
         "size": 1,
         "equation": "f_x[6] (v = p.v - n.v)",
         "id": "f_x[6]",
-        "unknown": "C.p.v"
+        "unknown": "C.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[8] (p.v = 0)",
+        "id": "f_x[8]",
+        "unknown": "src.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[9] (SI.Current i)",
+        "id": "f_x[9]",
+        "unknown": "C.p.i"
       },
       {
         "kind": "scalar",
@@ -444,18 +448,23 @@
         "size": 1,
         "equation": "f_x[11] (SI.ElectricPotential v)",
         "id": "f_x[11]",
-        "unknown": "src.p.v"
+        "unknown": "C.p.v"
       },
       {
         "kind": "scalar",
         "size": 1,
         "equation": "f_x[12] (SI.ElectricPotential v)",
         "id": "f_x[12]",
-        "unknown": "src.n.v"
+        "unknown": "C.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[13] (SI.ElectricPotential v)",
+        "id": "f_x[13]",
+        "unknown": "gnd.p.v"
       }
     ],
-    "n_states": 1,
-    "n_algebraics": 13,
     "incidence": {
       "n_eq": 14,
       "n_var": 14,
@@ -467,7 +476,7 @@
         "src.n.v",
         "src.n.i",
         "C.i",
-        "der(C.v)",
+        "C.v",
         "C.p.v",
         "C.p.i",
         "C.n.v",
@@ -480,10 +489,10 @@
           "equation": "f_x[0] (0 = p.i + n.i)",
           "id": "f_x[0]",
           "unknowns": [
-            3,
+            0,
             5
           ],
-          "equation_text": "0 = 0 - (src.p.i + src.n.i)"
+          "equation_text": "0 = src.n.i + src.i"
         },
         {
           "equation": "f_x[1] (i = p.i)",
@@ -492,15 +501,16 @@
             0,
             3
           ],
-          "equation_text": "0 = src.i - src.p.i"
+          "equation_text": "0 = src.p.i - src.i"
         },
         {
           "equation": "f_x[2] (v = p.v - n.v)",
           "id": "f_x[2]",
           "unknowns": [
-            7
+            1,
+            2
           ],
-          "equation_text": "0 = +-der(C.v)"
+          "equation_text": "0 = src.v - (src.p.v - 0)"
         },
         {
           "equation": "f_x[3] (v = V)",
@@ -514,64 +524,62 @@
           "equation": "f_x[4] (0 = p.i + n.i)",
           "id": "f_x[4]",
           "unknowns": [
-            9,
+            0,
             11
           ],
-          "equation_text": "0 = 0 - (C.p.i + C.n.i)"
+          "equation_text": "0 = C.n.i - src.i"
         },
         {
           "equation": "f_x[5] (i = p.i)",
           "id": "f_x[5]",
           "unknowns": [
-            6,
-            9
+            0,
+            6
           ],
-          "equation_text": "0 = C.i - C.p.i"
+          "equation_text": "0 = C.i + src.i"
         },
         {
           "equation": "f_x[6] (v = p.v - n.v)",
           "id": "f_x[6]",
           "unknowns": [
-            8,
-            10
+            2,
+            7
           ],
-          "equation_text": "0 = C.v - (C.p.v - C.n.v)"
+          "equation_text": "0 = C.v - (src.p.v - 0)"
         },
         {
           "equation": "f_x[7] (i = C*der(v))",
           "id": "f_x[7]",
           "unknowns": [
-            6,
-            7
+            0
           ],
-          "equation_text": "0 = C.i - C.C*der(C.v)"
+          "equation_text": "0 = -src.i - C.C*0"
         },
         {
           "equation": "f_x[8] (p.v = 0)",
           "id": "f_x[8]",
           "unknowns": [
-            12
+            4
           ],
-          "equation_text": "0 = gnd.p.v - 0"
+          "equation_text": "0 = src.n.v - 0"
         },
         {
           "equation": "f_x[9] (SI.Current i)",
           "id": "f_x[9]",
           "unknowns": [
-            3,
+            0,
             9
           ],
-          "equation_text": "0 = src.p.i + C.p.i"
+          "equation_text": "0 = C.p.i + src.i"
         },
         {
           "equation": "f_x[10] (SI.Current i)",
           "id": "f_x[10]",
           "unknowns": [
-            5,
-            11,
+            0,
             13
           ],
-          "equation_text": "0 = src.n.i + C.n.i + gnd.p.i"
+          "equation_text": "0 = -src.i + src.i + gnd.p.i"
         },
         {
           "equation": "f_x[11] (SI.ElectricPotential v)",
@@ -580,29 +588,30 @@
             2,
             8
           ],
-          "equation_text": "0 = src.p.v - C.p.v"
+          "equation_text": "0 = C.p.v - src.p.v"
         },
         {
           "equation": "f_x[12] (SI.ElectricPotential v)",
           "id": "f_x[12]",
           "unknowns": [
-            4,
             10
           ],
-          "equation_text": "0 = src.n.v - C.n.v"
+          "equation_text": "0 = C.n.v - 0"
         },
         {
           "equation": "f_x[13] (SI.ElectricPotential v)",
           "id": "f_x[13]",
           "unknowns": [
-            10,
             12
           ],
-          "equation_text": "0 = C.n.v - gnd.p.v"
+          "equation_text": "0 = gnd.p.v - 0"
         }
       ]
     },
-    "n_manifold_constraints": 1
+    "n_manifold_constraints": 0,
+    "n_states": 0,
+    "n_state_declarations": 0,
+    "n_algebraics": 14
   },
   "search": [
     {
@@ -611,10 +620,10 @@
       "round": 1,
       "residue": 2,
       "unmatched_equations": [
-        "f_x[13] (SI.ElectricPotential v)"
+        "f_x[6] (v = p.v - n.v)"
       ],
       "unmatched_equation_ids": [
-        "f_x[13]"
+        "f_x[6]"
       ],
       "unmatched_unknowns": [
         {
@@ -627,47 +636,15 @@
       "kind": "candidates",
       "lane": "direct",
       "group": "direct_admissible",
-      "discovered": 0
-    },
-    {
-      "kind": "candidates",
-      "lane": "direct",
-      "group": "direct_conditional",
-      "discovered": 0
-    },
-    {
-      "kind": "round",
-      "lane": "holonomic",
-      "round": 1,
-      "residue": 2,
-      "unmatched_equations": [
-        "f_x[13] (SI.ElectricPotential v)"
-      ],
-      "unmatched_equation_ids": [
-        "f_x[13]"
-      ],
-      "unmatched_unknowns": [
-        {
-          "name": "gnd.p.i",
-          "kind": "algebraic"
-        }
-      ]
-    },
-    {
-      "kind": "candidates",
-      "lane": "holonomic",
-      "group": "holonomic",
       "discovered": 2
     },
     {
       "kind": "attempt",
-      "lane": "holonomic",
+      "lane": "direct",
       "identity": {
-        "form": "holonomic",
-        "owner_ordinal": 2,
-        "body_ordinal": null,
-        "component_scalar": null,
-        "residual_ordinal": 31,
+        "form": "direct",
+        "state_ordinal": 8,
+        "rhs_ordinal": 34,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/TwoPin.mo",
           "line": 10,
@@ -676,10 +653,7 @@
           "line_text": "  v = p.v - n.v;",
           "byte_start": 407,
           "byte_end": 420
-        },
-        "anchored_state_ordinals": [
-          8
-        ]
+        }
       },
       "outcome": {
         "kind": "sorted"
@@ -687,13 +661,11 @@
     },
     {
       "kind": "selected",
-      "lane": "holonomic",
+      "lane": "direct",
       "identity": {
-        "form": "holonomic",
-        "owner_ordinal": 2,
-        "body_ordinal": null,
-        "component_scalar": null,
-        "residual_ordinal": 31,
+        "form": "direct",
+        "state_ordinal": 8,
+        "rhs_ordinal": 34,
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/TwoPin.mo",
           "line": 10,
@@ -702,10 +674,7 @@
           "line_text": "  v = p.v - n.v;",
           "byte_start": 407,
           "byte_end": 420
-        },
-        "anchored_state_ordinals": [
-          8
-        ]
+        }
       },
       "residue_before": 2,
       "residue_after": null
@@ -716,6 +685,5 @@
         "kind": "sorted"
       }
     }
-  ],
-  "stalled": null
+  ]
 }

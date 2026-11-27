@@ -2,7 +2,7 @@
   "model": "GearWithBrake",
   "specimen": "specimens/GearWithBrake.mo",
   "specimen_fnv1a": "1b099f72fdf7aea1",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -29,17 +29,21 @@
       "has_ir": true,
       "note": "7 state(s), 37 algebraic(s), 44 continuous equation(s)"
     },
+    "simplify": {
+      "has_ir": true,
+      "note": "2 of 4 transform(s) changed the system"
+    },
     "structural": {
       "has_ir": true,
       "note": "singular"
     },
     "index_reduction": {
       "has_ir": true,
-      "note": "sorted after 5 round(s): 7 state(s) → 2"
+      "note": "reducer sorted after 5 round(s); no manifold: StateSelect preferences decided — integrates 2 state coordinate(s)"
     },
     "initialization": {
       "has_ir": true,
-      "note": null
+      "note": "0 initialization row(s), 0 surplus check(s)"
     },
     "events": {
       "has_ir": true,

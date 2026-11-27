@@ -1,0 +1,123 @@
+{
+  "n_equations": 4,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 4,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = errorA - (reference - plantA*commandA)",
+          "origin": "source DAE object",
+          "source_lines": [
+            20
+          ]
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = commandA - gainA*errorA",
+          "origin": "source DAE object",
+          "source_lines": [
+            21
+          ]
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = errorB - (commandA - plantB*commandB)",
+          "origin": "source DAE object",
+          "source_lines": [
+            22
+          ]
+        },
+        {
+          "id": "f_x[3]",
+          "index": 3,
+          "text": "0 = commandB - gainB*errorB",
+          "origin": "source DAE object",
+          "source_lines": [
+            23
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 0,
+    "algebraics": 4,
+    "parameters": 5,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "reference",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "gainA",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "10",
+      "unit": null
+    },
+    {
+      "id": "plantA",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "2",
+      "unit": null
+    },
+    {
+      "id": "gainB",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "5",
+      "unit": null
+    },
+    {
+      "id": "plantB",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "3",
+      "unit": null
+    },
+    {
+      "id": "errorA",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "commandA",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "errorB",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "commandB",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

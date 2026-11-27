@@ -117,43 +117,32 @@ pub fn routes(stage: StageKind) -> Option<&'static [Route]> {
     }
 }
 
-/// `worker::initialization_from_initial_pins` builds each pin from one
-/// `rumoca_phase_structural::InitialValuePin`, and the stage's `pins` array is
-/// `PreparedSystem::pins`. Every route here is read from that function.
+/// Since 2026-11-26 the stage publishes the plan solve lowering lowered
+/// (`worker/preparation.rs`, `initialization_plan_json`), read through the typed
+/// accessors of `rumoca_ir_solve::InitializationSolveSystem`. Each route names the
+/// field the key was read from. (Until then it published the reducer's pins and
+/// routed to `InitialValuePin`.)
 const INITIALIZATION_ROUTES: &[Route] = &[
-    Route::same("pins", "PreparedSystem"),
-    Route::same("role", "InitialValuePin"),
-    Route::same("coordinate", "InitialValuePin"),
-    Route::same("scalar", "InitialValuePin"),
-    // HRW renders the pin's signed terms as one expression; the doc is the terms'.
-    Route::same("value", "InitialValuePin"),
-    Route::same("source", "InitialValuePin"),
-    Route::same("source_scalar", "InitialValuePin"),
-    // **Renamed**: HRW publishes the pin's `provenance` as a resolved source location.
-    Route {
-        key: "declared_at",
-        krate: "rumoca-phase-structural",
-        ty: "InitialValuePin",
-        field: "provenance",
-    },
+    Route::solve("rows", "residual"),
+    Route::solve("role", "row_roles"),
+    Route::solve("solves", "row_targets"),
+    Route::solve("unknowns", "projection_unknowns"),
+    Route::solve("given_states", "given_state_indices"),
+    Route::solve("manifold_rows", "manifold_row_count"),
 ];
 
 /// Keys the Initialization stage publishes that **deliberately carry no tooltip**.
 ///
-/// `determinacy` and its six counts are HRW's own summary over the pins and the DAE's
-/// states — Rumoca documents none of them, so any doc would be HRW-written prose, and
-/// that waits for real use (Doug's choice, 2026-11-08). The rest are the parts of a
-/// source location HRW resolves for `declared_at`.
+/// `summary`, `row`, `at` and `roles_note` are HRW's own tally, index, resolved
+/// location and gloss — Rumoca documents none of them. The rest are the parts of a
+/// source location HRW resolves for `at`.
 /// `the_initialization_pane_routes_every_key_it_publishes` holds the two lists, this
 /// and [`INITIALIZATION_ROUTES`], against what the stage actually publishes.
 pub const INITIALIZATION_UNDOCUMENTED: &[&str] = &[
-    "determinacy",
-    "state_scalars",
-    "determined",
-    "only_guessed",
-    "definitions",
-    "checks",
-    "partly_fixed_states",
+    "summary",
+    "row",
+    "at",
+    "roles_note",
     "file",
     "line",
     "column",
@@ -164,13 +153,13 @@ pub const INITIALIZATION_UNDOCUMENTED: &[&str] = &[
 ];
 
 impl Route {
-    /// A route to `rumoca-phase-structural`'s `ty`, whose field is named like the key.
-    const fn same(key: &'static str, ty: &'static str) -> Self {
+    /// A route to a field of `rumoca-ir-solve`'s `InitializationSolveSystem`.
+    const fn solve(key: &'static str, field: &'static str) -> Self {
         Self {
             key,
-            krate: "rumoca-phase-structural",
-            ty,
-            field: key,
+            krate: "rumoca-ir-solve",
+            ty: "InitializationSolveSystem",
+            field,
         }
     }
 }
@@ -581,7 +570,7 @@ mod tests {
                 checked += 1;
             }
         }
-        assert!(checked >= 8, "only {checked} routes were checked");
+        assert!(checked >= 6, "only {checked} routes were checked");
         let bogus = Route {
             key: "scalar",
             krate: "rumoca-phase-structural",
@@ -594,36 +583,29 @@ mod tests {
         );
     }
 
-    /// The routed table is the reason for the `types` table: a pin's `scalar` is the
-    /// **pin's** doc, not the longer one on `PinTerm`.
+    /// The routed table is the reason for the `types` table: a row's `role` is the
+    /// **plan's** doc, not whichever `role` field the crate-level table kept.
     ///
-    /// Before 2026-11-08 the Initialization pane showed *"zero for scalar terms"* for a
-    /// pin's `scalar`, because the crate-level table keeps one doc per name per crate and
-    /// `PinTerm`'s is one character longer. The premise assertion keeps this meaningful:
-    /// if the crate-level doc ever becomes the pin's, the type table is no longer what
-    /// this test is measuring.
+    /// The crate-level table keeps one doc per name per crate, and `rumoca-ir-solve`
+    /// has other `role` fields (a variable declaration's role among them), so without
+    /// the route the Initialization pane would describe a row's role as something
+    /// else's. *(Until 2026-11-26 this test pinned a pin's `scalar` against `PinTerm`'s
+    /// doc, the same defect on the payload the stage published then.)*
     #[test]
-    fn a_pins_scalar_is_described_as_a_pins() {
+    fn a_rows_role_is_described_as_the_plans() {
         let help = FieldHelp::load();
-        let crate_level = help
-            .by_field
-            .get("scalar")
-            .and_then(|m| m.get("rumoca-phase-structural"))
-            .expect("rumoca-phase-structural documents `scalar`");
-        assert!(
-            crate_level.contains("terms"),
-            "premise: the crate-level doc is PinTerm's \u{2014} got {crate_level:?}",
-        );
-
         let tip = help
             .for_stage(StageKind::Initialization)
-            .get("scalar")
-            .expect("Initialization routes `scalar`");
+            .get("role")
+            .expect("Initialization routes `role`");
         assert!(
-            tip.contains("scalar pins") && !tip.contains("terms"),
-            "a pin's `scalar` must carry InitialValuePin's doc: {tip:?}",
+            tip.contains("residual row"),
+            "a row's `role` must carry InitializationSolveSystem's doc: {tip:?}",
         );
-        assert!(tip.ends_with("InitialValuePin::scalar"), "{tip:?}");
+        assert!(
+            tip.ends_with("InitializationSolveSystem::row_roles"),
+            "{tip:?}"
+        );
     }
 
     /// A routed stage carries exactly its routes: no key borrows another type's doc.
@@ -649,11 +631,7 @@ mod tests {
                 table.get(*key),
             );
         }
-        for (key, must_not) in [
-            ("role", "announced_time"),
-            ("value", "modification"),
-            ("source", "eager resolution"),
-        ] {
+        for (key, must_not) in [("role", "announced_time"), ("unknowns", "import")] {
             let tip = table.get(key).expect("routed");
             assert!(
                 !tip.contains(must_not),
@@ -665,8 +643,8 @@ mod tests {
     /// Every key the Initialization stage publishes is routed or deliberately bare, and
     /// both lists name only keys it publishes.
     ///
-    /// Read from the committed `MeasuredOscillator` trace — the first curated specimen
-    /// with pins, so the only one where a pin's keys are observable at all. A new key
+    /// Read from the committed `MeasuredOscillator` trace — a curated specimen whose
+    /// lowered plan has a row, so a row's keys are observable. A new key
     /// in the stage fails here until someone decides whether it has a Rumoca doc; a key
     /// the stage stops publishing fails here instead of leaving a dead route.
     #[test]
@@ -694,8 +672,10 @@ mod tests {
             serde_json::from_str(&std::fs::read_to_string(path).expect("committed trace"))
                 .expect("trace parses");
         assert!(
-            stage["pins"].as_array().is_some_and(|p| !p.is_empty()),
-            "premise: MeasuredOscillator publishes a pin, or a pin's keys are unobserved",
+            stage["rows"]
+                .as_array()
+                .is_some_and(|rows| !rows.is_empty()),
+            "premise: MeasuredOscillator's plan has a row, or a row's keys are unobserved",
         );
         let mut published = std::collections::BTreeSet::new();
         keys(&stage, &mut published);

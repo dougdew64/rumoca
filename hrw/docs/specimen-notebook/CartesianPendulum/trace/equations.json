@@ -1,0 +1,137 @@
+{
+  "n_equations": 5,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 5,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = der(x) - vx",
+          "origin": "source DAE object",
+          "source_lines": [
+            12
+          ]
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = der(y) - vy",
+          "origin": "source DAE object",
+          "source_lines": [
+            13
+          ]
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = m*der(vx) - -(lambda*x)",
+          "origin": "source DAE object",
+          "source_lines": [
+            14
+          ]
+        },
+        {
+          "id": "f_x[3]",
+          "index": 3,
+          "text": "0 = m*der(vy) - (-(lambda*y) - m*g)",
+          "origin": "source DAE object",
+          "source_lines": [
+            15
+          ]
+        },
+        {
+          "id": "f_x[4]",
+          "index": 4,
+          "text": "0 = x^2 + y^2 - L^2",
+          "origin": "source DAE object",
+          "source_lines": [
+            16
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 4,
+    "algebraics": 1,
+    "parameters": 3,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "L",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "m",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "g",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "9.81",
+      "unit": null
+    },
+    {
+      "id": "x",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[0]",
+        "equation_text": "0 = der(x) - vx"
+      },
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "y",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[1]",
+        "equation_text": "0 = der(y) - vy"
+      },
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "vx",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[2]",
+        "equation_text": "0 = m*der(vx) - -(lambda*x)"
+      },
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "vy",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[3]",
+        "equation_text": "0 = m*der(vy) - (-(lambda*y) - m*g)"
+      },
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "lambda",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

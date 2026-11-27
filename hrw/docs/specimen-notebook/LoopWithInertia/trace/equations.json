@@ -1,0 +1,119 @@
+{
+  "n_equations": 4,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 4,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = inertia*der(w) - command",
+          "origin": "source DAE object",
+          "source_lines": [
+            31
+          ]
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = measurement - (w + sensorFeedthrough*command)",
+          "origin": "source DAE object",
+          "source_lines": [
+            32
+          ]
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = error - (reference - measurement)",
+          "origin": "source DAE object",
+          "source_lines": [
+            33
+          ]
+        },
+        {
+          "id": "f_x[3]",
+          "index": 3,
+          "text": "0 = command - controllerGain*error",
+          "origin": "source DAE object",
+          "source_lines": [
+            34
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 1,
+    "algebraics": 3,
+    "parameters": 4,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "reference",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "controllerGain",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "10",
+      "unit": null
+    },
+    {
+      "id": "inertia",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "0.5",
+      "unit": null
+    },
+    {
+      "id": "sensorFeedthrough",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "0.1",
+      "unit": null
+    },
+    {
+      "id": "w",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[0]",
+        "equation_text": "0 = inertia*der(w) - command"
+      },
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "error",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "command",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "measurement",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

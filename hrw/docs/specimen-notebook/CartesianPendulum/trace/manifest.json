@@ -2,7 +2,7 @@
   "model": "CartesianPendulum",
   "specimen": "specimens/CartesianPendulum.mo",
   "specimen_fnv1a": "95583943547159b1",
-  "rumoca_rev": "422a838a",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -29,17 +29,21 @@
       "has_ir": true,
       "note": "4 state(s), 1 algebraic(s), 5 continuous equation(s)"
     },
+    "simplify": {
+      "has_ir": true,
+      "note": "0 of 4 transform(s) changed the system"
+    },
     "structural": {
       "has_ir": true,
       "note": "singular"
     },
     "index_reduction": {
       "has_ir": true,
-      "note": "this reducer's search stayed singular; solve lowering selected 2 independent coordinate(s) on the constraint manifold and lowered the model"
+      "note": "reducer stayed singular; singular system recovered via formal derivatives — integrates 2 state coordinate(s)"
     },
     "initialization": {
-      "has_ir": false,
-      "note": "no initial-value pins: structural preparation did not admit this system (structurally singular system: 4 matched out of 5 equations and 5 unknowns). The Structural tab reports why — initialization has nothing to plan until a system is admitted."
+      "has_ir": true,
+      "note": "0 initialization row(s), 0 surplus check(s)"
     },
     "events": {
       "has_ir": true,

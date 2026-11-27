@@ -2,12 +2,12 @@
   "model": "UnclosedModel",
   "specimen": "specimens/UnclosedModel.mo",
   "specimen_fnv1a": "673623c1cb3db0a9",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
       "has_ir": true,
-      "note": "EP001\n\n  × unexpected end of input\n    ╭─[C:\\Users\\dougd\\source\\repos\\rumoca\\hrw/specimens/UnclosedModel.mo:11:1]\n 10 │   der(x) = -x;\n    ╰────\n  help: expected one of: algorithm, annotation, connect, der, end, equation,\n        external, false, for, if, initial, not, protected, public, pure, true,\n        when, string, unsignedinteger, (, ., {, +, -, dotplus, dotminus, [\n"
+      "note": "EP001\n\n  × unexpected end of input\n    ╭─[/home/dougdew/dev/rumoca/hrw/specimens/UnclosedModel.mo:11:1]\n 10 │   der(x) = -x;\n    ╰────\n  help: expected one of: algorithm, annotation, connect, der, end, equation,\n        external, false, for, if, initial, not, protected, public, pure, true,\n        when, string, unsignedinteger, (, ., {, +, -, dotplus, dotminus, [\n"
     },
     "resolve": {
       "has_ir": false,
@@ -26,6 +26,10 @@
       "note": "not reached (parse produced no model to compile)"
     },
     "dae": {
+      "has_ir": false,
+      "note": "not reached (parse produced no model to compile)"
+    },
+    "simplify": {
       "has_ir": false,
       "note": "not reached (parse produced no model to compile)"
     },

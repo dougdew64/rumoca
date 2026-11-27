@@ -79,17 +79,117 @@ use serde_json::Value;
 use crate::worker::StageBundle;
 
 /// A report HRW publishes that carries an incidence matrix, together with the
-/// DAE it claims to describe.
+/// incidence Rumoca built for the system it claims to describe.
 ///
-/// `dae` is `None` when the subject's system is not one we hold — nothing in
-/// the bundle is like that today, but F2 skips rather than guesses if it
-/// appears, because comparing against the wrong DAE would manufacture failures.
+/// `oracle` is `None` when the caller did not run the real preparation (the MSL
+/// sweep's size cap): F2 then skips rather than guesses, because comparing
+/// against the wrong system would manufacture failures — or, worse, pass.
 pub struct Subject<'a> {
     /// Where this report lives, for a violation message: `Structural`,
     /// `IndexReduction`, `IndexReduction.before`.
     pub label: String,
     pub report: &'a Value,
-    pub dae: Option<&'a rumoca_ir_dae::Dae>,
+    pub oracle: Option<&'a IncidenceOracle>,
+}
+
+/// An incidence as Rumoca built it in the run that simulates: F2's oracle.
+///
+/// **Why this replaced a `&Dae` on 2026-11-27.** F2 used to call `build_incidence`
+/// on the compile's raw DAE, and its reduced oracle called `prepare_for_solve` on
+/// that DAE too. Neither is a run Rumoca makes: solve lowering simplifies the DAE
+/// first (the Simplify tab) and analyses *that*. Once the tabs read the real run,
+/// the old oracle reported 273 "violations" — every one of them the oracle being
+/// wrong, not the tab. The standing rule in the workspace `CLAUDE.md` (*every tab
+/// observes the run that simulates*) is the reason for the change.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IncidenceOracle {
+    /// Unknown names, in column order.
+    pub unknowns: Vec<String>,
+    /// `equation_label` of each row, in row order.
+    pub labels: Vec<String>,
+    /// Column set of each row, in row order.
+    pub rows: Vec<BTreeSet<usize>>,
+}
+
+/// F2's oracles for one model, from one real preparation.
+#[derive(Debug, Default)]
+pub struct RealRunOracles {
+    /// The analysis the Structural tab shows: the first `Source` analysis.
+    pub structural: Option<IncidenceOracle>,
+    /// The prepared system lowering consumed, which Index reduction's `after` shows.
+    pub reduced: Option<IncidenceOracle>,
+}
+
+impl RealRunOracles {
+    /// Run Rumoca's real simulation preparation of `dae` and keep the two
+    /// incidences F2 compares against.
+    ///
+    /// **This is a second run of the compile's own call**, `prepare_runtime_observed`
+    /// on the same DAE, so it is the same run rather than a different one: the
+    /// options that reach lowering (execution policy, initial inputs, overrides)
+    /// are the defaults in both, since HRW sets only `t_end` and tolerances, which
+    /// lowering does not read. What F2 then checks is HRW's *translation* —
+    /// that the tab published the right analysis, in the right order, unpermuted —
+    /// and, as a side effect, that the preparation is deterministic.
+    pub fn of(dae: &rumoca_ir_dae::Dae) -> Self {
+        use rumoca_phase_structural::preparation_trace::{
+            self as trace, AnalysisContext, PreparationEvent,
+        };
+        trace::start_capture();
+        let mut reduced = None;
+        let _ = rumoca_sim::prepare_runtime_observed(
+            dae,
+            &rumoca_sim::SimOptions::default(),
+            |model| reduced = Self::prepared_incidence(model.prepared()),
+        );
+        let structural = trace::take_capture()
+            .into_iter()
+            .find_map(|event| match event {
+                PreparationEvent::StructuralAnalysis {
+                    context: AnalysisContext::Source,
+                    incidence: Some(incidence),
+                    ..
+                } => Some(IncidenceOracle {
+                    labels: incidence.rows.iter().map(|row| row.label.clone()).collect(),
+                    rows: incidence
+                        .rows
+                        .iter()
+                        .map(|row| row.unknowns.iter().copied().collect())
+                        .collect(),
+                    unknowns: incidence.unknowns,
+                }),
+                _ => None,
+            });
+        Self {
+            structural,
+            reduced,
+        }
+    }
+
+    /// `build_incidence` on the prepared system, labelled by Rumoca's own functions.
+    fn prepared_incidence(
+        prepared: &rumoca_phase_structural::PreparedDae<'_>,
+    ) -> Option<IncidenceOracle> {
+        prepared.inspect(|system| {
+            let view = system.view;
+            let inc = rumoca_phase_structural::build_incidence(view).ok()?;
+            Some(IncidenceOracle {
+                unknowns: inc
+                    .unknowns
+                    .iter()
+                    .map(|unknown| rumoca_phase_structural::unknown_label(view, *unknown))
+                    .collect(),
+                labels: (0..inc.n_eq)
+                    .map(|i| rumoca_phase_structural::equation_label(view, &inc.equation_refs[i]))
+                    .collect(),
+                rows: inc
+                    .eq_unknowns
+                    .iter()
+                    .map(|row| row.iter().copied().collect())
+                    .collect(),
+            })
+        })
+    }
 }
 
 /// One violation, tagged with the check that raised it.
@@ -258,21 +358,13 @@ pub fn specimens_without_oracle_verdict<'a>(
 
 /// Run every subject-based and view-based check on one compiled model.
 ///
-/// **The `reduced` parameter is gone for the v0.10.0 rebase, and the reason it
-/// existed is worth keeping.** It was `Option` because index reduction is
-/// capped by system size, exactly as the survey caps it: passing `None` omitted
-/// the `IndexReduction` subjects so a 10,175-equation model still contributed
-/// F2, F3, F5, F6 and F7 on its `Structural` subject rather than dropping out of
-/// the corpus. **That cap must come back with the re-model** — it is the
-/// difference between a corpus sweep that covers the large models and one that
-/// silently excludes them.
-///
-/// **Back as `reduced`, 2026-11-07** (the post-rebase sweep's open item 1): the
-/// reduced `&Dae` from `PreparedDae::as_dae()`, which a runner obtains from
-/// `prepare_for_solve` **only below its `--max-reduce-eq` cap** and passes `None`
-/// above it. `None` costs only F2 on the `IndexReduction` subject — F3–F5 still run
-/// on it, from the stage's own report — so the cap no longer drops a large model's
-/// reduced system from the sweep entirely. See [`subjects`].
+/// **`oracles` is F2's, from the run that simulates** — [`RealRunOracles::of`]. A
+/// runner computes them **only below its `--max-reduce-eq` cap** and passes
+/// `RealRunOracles::default()` above it, which costs only F2: F3–F5 still run on
+/// every subject from the stage's own report, so the cap never drops a large model
+/// from the sweep. *(Until 2026-11-27 the oracle was a `&Dae` — the raw one, and a
+/// `prepare_for_solve` of it — which is not what solve lowering analyses. See
+/// [`IncidenceOracle`].)*
 ///
 /// F8 (sizes) is the runner's business, not this function's: it is a measurement and
 /// raises nothing. *(This line said F9 was the runner's too, which stopped being true on
@@ -284,7 +376,7 @@ pub fn specimens_without_oracle_verdict<'a>(
 pub fn check_model(
     stages: &StageBundle,
     dae: &rumoca_ir_dae::Dae,
-    reduced: Option<&rumoca_ir_dae::Dae>,
+    oracles: &RealRunOracles,
     sheet: Option<&crate::equation_sheet::EquationSheet>,
     index: Option<&crate::identifier_index::IdentifierIndex>,
     coverage: &mut Coverage,
@@ -314,8 +406,8 @@ pub fn check_model(
     }
 
     // `Structural`, plus `IndexReduction` whenever the stage admitted a system; F2
-    // on the second runs only when `reduced` was supplied. See `subjects`.
-    for s in subjects(stages, dae, reduced) {
+    // runs on each only when its oracle was supplied. See `subjects`.
+    for s in subjects(stages, oracles) {
         // F2-F5's unit is the subject: one per incidence-bearing report each could act on.
         let acted: Vec<&'static str> = SUBJECT_CHECKS
             .into_iter()
@@ -606,8 +698,8 @@ pub fn parse_subjects(column: &str) -> Vec<(String, Vec<String>)> {
 /// **Can subject check `check` act on `s`?** — the conditions each one skips on, in one
 /// place, so a report row can say what was examined rather than only what failed.
 ///
-/// - **F2** needs the DAE the subject describes as its oracle. `IndexReduction` has one
-///   only when the runner computed the reduced system under `--max-reduce-eq`.
+/// - **F2** needs the incidence the real run built for the subject's system — an
+///   [`IncidenceOracle`], which a runner computes only under `--max-reduce-eq`.
 /// - **F3** always acts: every subject carries an incidence, and F3 checks the published
 ///   counts against it.
 /// - **F4** needs a `blocks` array. A singular system has none, because the analysis
@@ -620,7 +712,7 @@ pub fn parse_subjects(column: &str) -> Vec<(String, Vec<String>)> {
 /// this says it engages — so a guard changed in one place fails by name.
 pub fn engages(check: &str, s: &Subject) -> bool {
     match check {
-        "F2" => s.dae.is_some(),
+        "F2" => s.oracle.is_some(),
         "F3" => true,
         "F4" => s.report["blocks"].is_array(),
         "F5" => s.report["matching"].is_array(),
@@ -657,53 +749,38 @@ pub fn group_by_check(
     out
 }
 
-/// Every incidence-bearing report in the bundle, with the DAE it describes.
+/// Every incidence-bearing report in the bundle, with the oracle for the system it
+/// describes.
 ///
-/// **One DAE, not two, for the v0.10.0 rebase.** This took the raw system *and*
-/// the index-reduced one, because the Structural stage describes the raw system
-/// and Index Reduction the reduced one — a distinction that made F1's first
-/// tearing check fail for the wrong reason, and which still matters.
-///
-/// It became one in the v0.10.0 rebase, when the reduced DAE could not be had: it
-/// came from `worker::index_reduce_in_place` re-running reduction over a *clone*, and
-/// 0.10.0's `Dae` is immutable and not `Clone`.
-///
-/// # Two again since 2026-11-07 (the post-rebase sweep's open item 1)
-///
-/// The Index Reduction stage publishes the admitted system's analysis under `after`,
-/// and **`IndexReduction` is pushed whenever `after` carries an incidence** — so F3,
-/// F4 and F5, which check a report against itself, now cover every reduced system
-/// whatever the caller passes. `reduced` is the oracle F2 needs: the reduced `&Dae`
-/// from `PreparedDae::as_dae()`. **The worker's own `PreparedDae` cannot be handed
-/// over** — it borrows the compile's `Dae` and does not cross the worker's channel — so
-/// a caller computes one with the public `prepare_for_solve`, the entry point the
-/// compile itself uses, under the size cap `check_model` describes. With `None`, F2
-/// skips the subject rather than comparing it against the raw system, which would have
-/// compiled and been a lie: every F2 comparison under that label would then pass by
-/// describing the wrong system.
+/// **Two subjects, two systems.** `Structural` is solve lowering's first analysis,
+/// of the DAE after the Simplify tab's transforms; `IndexReduction` is its `after`,
+/// the prepared system lowering consumed. Neither is the compile's raw DAE, which is
+/// why the oracles come from [`RealRunOracles::of`] and not from a `&Dae`. With no
+/// oracle, F2 skips the subject; F3, F4 and F5 check a report against itself and run
+/// on every subject whatever the caller passes.
 ///
 /// **`IndexReduction.before` is not pushed**, deliberately. The worker builds it as a
-/// clone of the Structural report (`index_reduction_from_observation`), so its F2–F5
-/// would repeat the Structural subject's exactly — doubling the costliest checks on the
-/// largest models to learn nothing new.
-pub fn subjects<'a>(
-    stages: &'a StageBundle,
-    dae: &'a rumoca_ir_dae::Dae,
-    reduced: Option<&'a rumoca_ir_dae::Dae>,
-) -> Vec<Subject<'a>> {
+/// copy of the Structural report (`worker::preparation::index_reduction_stage`), so its
+/// F2–F5 would repeat the Structural subject's exactly — doubling the costliest checks
+/// on the largest models to learn nothing new.
+pub fn subjects<'a>(stages: &'a StageBundle, oracles: &'a RealRunOracles) -> Vec<Subject<'a>> {
     let mut out = Vec::new();
-    let mut push = |label: &str, report: Option<&'a Value>, d: Option<&'a rumoca_ir_dae::Dae>| {
+    let mut push = |label: &str, report: Option<&'a Value>, oracle: Option<&'a IncidenceOracle>| {
         if let Some(r) = report
             && r.get("incidence").is_some()
         {
             out.push(Subject {
                 label: label.to_owned(),
                 report: r,
-                dae: d,
+                oracle,
             });
         }
     };
-    push("Structural", stages.structural.value.as_ref(), Some(dae));
+    push(
+        "Structural",
+        stages.structural.value.as_ref(),
+        oracles.structural.as_ref(),
+    );
     push(
         "IndexReduction",
         stages
@@ -712,7 +789,7 @@ pub fn subjects<'a>(
             .as_ref()
             .map(|v| &v["after"])
             .filter(|after| !after.is_null()),
-        reduced,
+        oracles.reduced.as_ref(),
     );
     out
 }
@@ -778,111 +855,79 @@ fn index_of(names: &[String]) -> (BTreeMap<&str, usize>, Vec<String>) {
 
 // ---------------------------------------------------------------- F2
 
-/// **F2 — the published incidence is what Rumoca builds.**
+/// **F2 — the published incidence is what Rumoca built in the run that simulates.**
 ///
-/// Compared against a fresh `build_incidence` on the DAE the subject
-/// describes: same dimensions, same unknown order, same row labels, and the
-/// same column set per row.
+/// Compared against the subject's [`IncidenceOracle`]: same dimensions, same
+/// unknown order, same row labels, and the same column set per row.
 ///
 /// Order matters and is checked as order. Every downstream view indexes into
 /// these arrays, so a permutation would leave the matrix looking entirely
 /// plausible while every label sat against the wrong row.
 ///
-/// # Two v0.10.0 changes, and one of them is a finding rather than a port
-///
-/// `build_incidence` takes a `DaeView` and returns a `Result`, so the whole
-/// check runs inside `Dae::inspect`. **A derivation failure is reported, not
-/// skipped**: `subjects()` only yields a subject when a report actually
-/// published an incidence, so a DAE whose incidence cannot be built while HRW
-/// published one for it is a genuine discrepancy. Returning no findings there
-/// would be a fidelity check passing vacuously, which is the exact failure this
-/// suite exists to catch.
-///
-/// `Incidence::unknown_names` is gone; the unknowns are `UnknownId`s now and
-/// are rendered through `unknown_label`, the same function the published view
-/// uses. That is the stronger comparison — the old one compared against
-/// whatever `unknown_names` happened to hold, while this compares against the
-/// renderer the publisher itself calls.
+/// **The oracle is the real run's, not a re-derivation from the raw DAE**
+/// (2026-11-27). Against the raw DAE this check reported 273 violations once the
+/// tabs showed the real run: the oracle was describing a system solve lowering
+/// never analyses. See [`IncidenceOracle`].
 pub fn check_f2(s: &Subject) -> Vec<String> {
-    let Some(dae) = s.dae else { return Vec::new() };
-    dae.inspect(|view| {
-        let mut v = Vec::new();
-        let inc = match rumoca_phase_structural::build_incidence(view) {
-            Ok(inc) => inc,
-            Err(e) => {
-                v.push(format!(
-                    "{}: build_incidence failed ({e}), but an incidence was published for \
-                     this DAE — the published matrix cannot have come from this analysis",
-                    s.label,
-                ));
-                return v;
-            }
-        };
+    let Some(oracle) = s.oracle else {
+        return Vec::new();
+    };
+    let mut v = Vec::new();
+    let (n_eq, n_var) = (
+        s.report["incidence"]["n_eq"].as_u64().unwrap_or(u64::MAX) as usize,
+        s.report["incidence"]["n_var"].as_u64().unwrap_or(u64::MAX) as usize,
+    );
+    if n_eq != oracle.rows.len() {
+        v.push(format!(
+            "{}: n_eq {n_eq} published, {} in the real run",
+            s.label,
+            oracle.rows.len()
+        ));
+    }
+    if n_var != oracle.unknowns.len() {
+        v.push(format!(
+            "{}: n_var {n_var} published, {} in the real run",
+            s.label,
+            oracle.unknowns.len()
+        ));
+    }
 
-        let (n_eq, n_var) = (
-            s.report["incidence"]["n_eq"].as_u64().unwrap_or(u64::MAX) as usize,
-            s.report["incidence"]["n_var"].as_u64().unwrap_or(u64::MAX) as usize,
-        );
-        if n_eq != inc.n_eq {
-            v.push(format!(
-                "{}: n_eq {n_eq} published, {} from build_incidence",
-                s.label, inc.n_eq
-            ));
-        }
-        if n_var != inc.n_var {
-            v.push(format!(
-                "{}: n_var {n_var} published, {} from build_incidence",
-                s.label, inc.n_var
-            ));
-        }
+    let published_unknowns = unknown_names(s.report);
+    if published_unknowns != oracle.unknowns {
+        v.push(format!(
+            "{}: unknown_names differ from the real run's (first difference at {:?})",
+            s.label,
+            published_unknowns
+                .iter()
+                .zip(&oracle.unknowns)
+                .position(|(a, b)| a != b)
+                .map_or_else(|| "length".to_owned(), |i| i.to_string()),
+        ));
+    }
 
-        let published_unknowns = unknown_names(s.report);
-        let real_unknowns: Vec<String> = inc
-            .unknowns
-            .iter()
-            .map(|unknown| rumoca_phase_structural::unknown_label(view, *unknown))
-            .collect();
-        if published_unknowns != real_unknowns {
-            v.push(format!(
-                "{}: unknown_names differ from build_incidence (first difference at {:?})",
+    if row_labels(s.report) != oracle.labels {
+        v.push(format!(
+            "{}: row equation labels differ from the real run's",
+            s.label
+        ));
+    }
+
+    let published_rows = row_sets(s.report);
+    for (i, real) in oracle.rows.iter().enumerate() {
+        match published_rows.get(i) {
+            Some(pub_row) if pub_row == real => {}
+            Some(pub_row) => v.push(format!(
+                "{}: row {i} publishes {pub_row:?}, the real run built {real:?}",
                 s.label,
-                published_unknowns
-                    .iter()
-                    .zip(&real_unknowns)
-                    .position(|(a, b)| a != b)
-                    .map_or_else(|| "length".to_owned(), |i| i.to_string()),
-            ));
+            )),
+            None => v.push(format!(
+                "{}: row {i} missing; only {} published",
+                s.label,
+                published_rows.len()
+            )),
         }
-
-        let published_labels = row_labels(s.report);
-        let real_labels: Vec<String> = (0..inc.n_eq)
-            .map(|i| rumoca_phase_structural::equation_label(view, &inc.equation_refs[i]))
-            .collect();
-        if published_labels != real_labels {
-            v.push(format!(
-                "{}: row equation labels differ from equation_label",
-                s.label
-            ));
-        }
-
-        let published_rows = row_sets(s.report);
-        for (i, real) in inc.eq_unknowns.iter().enumerate() {
-            let real: BTreeSet<usize> = real.iter().copied().collect();
-            match published_rows.get(i) {
-                Some(pub_row) if *pub_row == real => {}
-                Some(pub_row) => v.push(format!(
-                    "{}: row {i} publishes {pub_row:?}, build_incidence says {real:?}",
-                    s.label,
-                )),
-                None => v.push(format!(
-                    "{}: row {i} missing; only {} published",
-                    s.label,
-                    published_rows.len()
-                )),
-            }
-        }
-        v
-    })
+    }
+    v
 }
 
 // ---------------------------------------------------------------- F3
@@ -1557,17 +1602,15 @@ mod tests {
                 }
             }
 
-            // The reduced oracle for F2 on the `IndexReduction` subject, through the
-            // public entry point the compile uses (see `subjects`). These specimens are
-            // small, so no size cap applies.
-            let prepared = rumoca_phase_structural::prepare_for_solve(&dae);
-            let reduced = prepared.as_ref().ok().map(|p| p.as_dae());
+            // F2's oracles, from the real preparation (see `RealRunOracles::of`).
+            // These specimens are small, so no size cap applies.
+            let oracles = RealRunOracles::of(&dae);
             if stages.index_reduction.outcome == crate::worker::Outcome::Ok {
                 admitted += 1;
             }
-            for s in subjects(&stages, &dae, reduced) {
+            for s in subjects(&stages, &oracles) {
                 subjects_checked += 1;
-                if s.label == "IndexReduction" && s.dae.is_some() {
+                if s.label == "IndexReduction" && s.oracle.is_some() {
                     reduced_with_oracle += 1;
                 }
                 if s.report["blocks"].as_array().is_some_and(|b| !b.is_empty()) {
@@ -1771,7 +1814,7 @@ mod tests {
     /// guard changed in one place and not the other fails here by name.
     ///
     /// F2's engaged direction needs a real DAE and is driven by
-    /// `check_model_reports_what_each_check_examined` instead; here it is the `dae: None`
+    /// `check_model_reports_what_each_check_examined` instead; here it is the `oracle: None`
     /// case, which is the one the `--max-reduce-eq` cap produces.
     #[test]
     fn subject_checks_skip_exactly_what_they_do_not_engage() {
@@ -1811,7 +1854,7 @@ mod tests {
             let s = Subject {
                 label: shape.to_owned(),
                 report,
-                dae: None,
+                oracle: None,
             };
             for (name, check) in checks {
                 let fired = !check(&s).is_empty();
@@ -1898,15 +1941,14 @@ mod tests {
                 panic!("{name}: expected Compiled");
             };
             let dae = dae.unwrap_or_else(|| panic!("{name}: no DAE"));
-            let prepared = rumoca_phase_structural::prepare_for_solve(&dae);
-            let reduced = prepared.as_ref().ok().map(|p| p.as_dae());
+            let oracles = RealRunOracles::of(&dae);
 
-            let run = |reduced: Option<&rumoca_ir_dae::Dae>,
+            let run = |oracles: &RealRunOracles,
                        only: Option<&std::collections::BTreeSet<String>>| {
                 check_model(
                     &stages,
                     &dae,
-                    reduced,
+                    oracles,
                     equation_sheet.as_ref(),
                     identifier_index.as_ref(),
                     &mut Coverage::default(),
@@ -1915,8 +1957,8 @@ mod tests {
                 )
                 .1
             };
-            let e = run(reduced, None);
-            let subs = subjects(&stages, &dae, reduced);
+            let e = run(&oracles, None);
+            let subs = subjects(&stages, &oracles);
 
             let labels: Vec<&str> = e.subjects.iter().map(|(l, _)| l.as_str()).collect();
             let expected: Vec<&str> = subs.iter().map(|s| s.label.as_str()).collect();
@@ -1964,14 +2006,14 @@ mod tests {
                     reduced_subjects += 1;
                     assert_eq!(
                         acted.contains(&"F2"),
-                        reduced.is_some(),
+                        oracles.reduced.is_some(),
                         "{name}: the reduced subject has F2 exactly when it has an oracle"
                     );
                 }
             }
 
             // Above the cap: no oracle. The reduced subject keeps F3-F5 and loses F2.
-            let capped = run(None, None);
+            let capped = run(&RealRunOracles::default(), None);
             if let Some((_, acted)) = capped.subjects.iter().find(|(l, _)| l == "IndexReduction") {
                 assert!(!acted.contains(&"F2"), "{name}: F2 with no oracle");
                 assert!(acted.contains(&"F3"), "{name}: F3 needs no oracle");
@@ -1979,7 +2021,7 @@ mod tests {
 
             // `--only-checks F3`: every other check absent, not zero.
             let only = std::collections::BTreeSet::from(["F3".to_owned()]);
-            let one = run(reduced, Some(&only));
+            let one = run(&oracles, Some(&only));
             assert_eq!(
                 one.by_check.keys().copied().collect::<Vec<_>>(),
                 vec!["F3"],
@@ -2391,7 +2433,7 @@ mod tests {
         let clean = Subject {
             label: "T".into(),
             report: &base,
-            dae: None,
+            oracle: None,
         };
         assert!(check_f3(&clean).is_empty(), "{:?}", check_f3(&clean));
         assert!(check_f4(&clean).is_empty(), "{:?}", check_f4(&clean));
@@ -2404,7 +2446,7 @@ mod tests {
             !check_f3(&Subject {
                 label: "T".into(),
                 report: &bad,
-                dae: None
+                oracle: None
             })
             .is_empty(),
             "F3 must notice n_equations disagreeing with the incidence",
@@ -2417,7 +2459,7 @@ mod tests {
             !check_f4(&Subject {
                 label: "T".into(),
                 report: &bad,
-                dae: None
+                oracle: None
             })
             .is_empty(),
             "F4 must notice an equation covered by no block",
@@ -2431,7 +2473,7 @@ mod tests {
             !check_f5(&Subject {
                 label: "T".into(),
                 report: &bad,
-                dae: None
+                oracle: None
             })
             .is_empty(),
             "F5 must notice a pair that is not an incidence non-zero",
@@ -2447,7 +2489,7 @@ mod tests {
             !check_f5(&Subject {
                 label: "T".into(),
                 report: &bad,
-                dae: None
+                oracle: None
             })
             .is_empty(),
             "F5 must notice an unknown matched twice",
@@ -2723,12 +2765,12 @@ mod tests {
              must notice the mismatch",
         );
 
-        // F2 — the published incidence belongs to a different DAE, so re-deriving the
-        // incidence from this DAE cannot reproduce it.
+        // F2 — the published incidence belongs to a different model, so the other
+        // model's real run cannot reproduce it.
         let mut fired = 0usize;
         let mut subjects_seen = 0usize;
-        // No reduced oracle: the cross-pairing is about the raw subject.
-        for s in subjects(&stages_a, &dae_b, None) {
+        let oracles_b = RealRunOracles::of(&dae_b);
+        for s in subjects(&stages_a, &oracles_b) {
             subjects_seen += 1;
             if !check_f2(&s).is_empty() {
                 fired += 1;
@@ -2740,9 +2782,9 @@ mod tests {
         );
         assert!(
             fired > 0,
-            "F2 re-derives the incidence with build_incidence and compares it against the \
-             published one; against the wrong DAE that comparison must fail for at least \
-             one of the {subjects_seen} subjects",
+            "F2 compares the published incidence against the real run's; against another \
+             model's run that comparison must fail for at least one of the \
+             {subjects_seen} subjects",
         );
     }
 
@@ -2784,7 +2826,7 @@ mod tests {
             check_f4(&Subject {
                 label: "T".into(),
                 report,
-                dae: None,
+                oracle: None,
             })
         };
 
@@ -3052,9 +3094,9 @@ mod tests {
 
         // One of each partial kind the corpus contains, plus a normal component for
         // contrast. **`BooleanMIMOs` was tried first and produced a value for every
-        // stage** — which is why this scans several rather than asserting on one, and
-        // why the failure message below is worth reading rather than fixing by
-        // swapping the name.
+        // stage** (true until 2026-11-27; see the end of this test) — which is why
+        // this scans several rather than asserting on one, and why the failure
+        // message below is worth reading rather than fixing by swapping the name.
         const CANDIDATES: &[&str] = &[
             "Modelica.Blocks.Interfaces.BooleanMIMOs",
             "Modelica.Blocks.Icons.Block",
@@ -3065,6 +3107,13 @@ mod tests {
 
         let mut with_empty = 0usize;
         let mut empty_detail: Vec<String> = Vec::new();
+        /// One candidate that has an empty stage.
+        struct Stop<'a> {
+            model: &'a str,
+            empties: Vec<&'static str>,
+            lowering_failed: bool,
+        }
+        let mut stops: Vec<Stop> = Vec::new();
         for name in CANDIDATES {
             let FromWorker::Compiled { stages, .. } =
                 crate::worker::test_msl::compile_library_shared(name)
@@ -3102,7 +3151,21 @@ mod tests {
                 .collect();
             if !empties.is_empty() {
                 with_empty += 1;
-                empty_detail.push(format!("{name}: {empties:?}"));
+                // The failing stage's own note beside the list, so a finding says why.
+                let why = crate::worker::StageKind::COMPILATION
+                    .iter()
+                    .map(|k| stages.get(*k))
+                    .find(|s| s.outcome == crate::worker::Outcome::Failed)
+                    .and_then(|s| s.note.clone())
+                    .unwrap_or_default();
+                empty_detail.push(format!("{name}: {empties:?} — {why}"));
+                let lowering_failed = stages.get(crate::worker::StageKind::SolveLowering).outcome
+                    == crate::worker::Outcome::Failed;
+                stops.push(Stop {
+                    model: name,
+                    empties: empties.clone(),
+                    lowering_failed,
+                });
                 // The clause restated as the property, so a change that drops a note
                 // fails here as well as inside F10.
                 for kind in crate::worker::StageKind::COMPILATION {
@@ -3141,29 +3204,49 @@ mod tests {
         // stopping early rather than about HRW's disabled panes — the distinction
         // that assertion is for.
         //
-        // **Pinned by name as well as by count.** A count of 2 would also be
-        // satisfied by two *complete* models silently failing to flatten, which is
-        // the finding that would matter far more than this one.
-        let partials: Vec<&String> = empty_detail
-            .iter()
-            .filter(|d| d.contains("BaseClasses") || d.contains("Internal"))
-            .collect();
+        // # 5 SINCE 2026-11-27: THREE MORE, AND THEY STOP AT SOLVE LOWERING
+        //
+        // When the tabs began reading the real run, three more candidates gained an
+        // empty stage: Initialization, because Rumoca's solve lowering refuses them —
+        // `BooleanMIMOs` for an unconnected input with no default, `Icons.Block` and
+        // `ExternalCombiTable1D` as having "no variables or equations to simulate".
+        // The initialization plan is part of lowering, so with no lowering there is
+        // no plan, and the stage says so. Before, HRW filled that tab from its own
+        // `prepare_for_solve` call on the raw DAE, which these classes pass — a plan
+        // for a simulation Rumoca never runs.
+        //
+        // **Pinned by name, and by WHERE each stops.** A count alone would also be
+        // satisfied by a *complete* model silently failing to flatten, which is the
+        // finding that would matter far more than any of these.
+        let names = |pick: &dyn Fn(&Stop) -> bool| -> Vec<&str> {
+            stops.iter().filter(|s| pick(s)).map(|s| s.model).collect()
+        };
         assert_eq!(
-            partials.len(),
-            with_empty,
-            "every MSL model that stops early must be a partial base class; a \
-             COMPLETE model failing to flatten is a different and much larger \
-             finding:\n  {}",
+            names(&|s| s.empties.contains(&"Flatten")),
+            vec![
+                "Modelica.Electrical.Batteries.BaseClasses.BaseCellStack",
+                "Modelica.Blocks.Tables.Internal.CombiTable2DBase",
+            ],
+            "only the two partial base classes decline to flatten; a COMPLETE model \
+             failing to flatten is a different and much larger finding:\n  {}",
+            empty_detail.join("\n  "),
+        );
+        assert_eq!(
+            names(&|s| s.empties == ["Initialization"] && s.lowering_failed),
+            vec![
+                "Modelica.Blocks.Interfaces.BooleanMIMOs",
+                "Modelica.Blocks.Icons.Block",
+                "Modelica.Blocks.Types.ExternalCombiTable1D",
+            ],
+            "these three are refused by solve lowering, and so have no initialization \
+             plan:\n  {}",
             empty_detail.join("\n  "),
         );
         assert_eq!(
             with_empty,
-            2,
-            "the number of MSL models stopping early has moved. Two partial base \
-             classes stop before Flatten on v0.10.0, which is what gives F10's \
-             absence clause its corpus coverage; a third \u{2014} or a second that \
-             is not partial \u{2014} is a new finding and belongs in \
-             docs/fidelity-plan.md.\n  {}",
+            5,
+            "the number of MSL models stopping early has moved; a new one is a new \
+             finding and belongs in docs/fidelity-plan.md.\n  {}",
             empty_detail.join("\n  "),
         );
     }

@@ -341,9 +341,26 @@ mod tests {
             stage["outcome"]["residue"], 2,
             "residue sums both deficits, so one rank deficiency reads as 2",
         );
-        assert!(
-            stage["after"].is_null(),
-            "a system that was not admitted has no `after` to show",
+        // **And the compiler carries it anyway, in the same run** (2026-11-27). The
+        // reducer's refusal above is not the compiler's verdict: state selection
+        // recovers the singular system via formal derivatives, and `after` is the
+        // system lowering consumed. This asserted `after` was null until the tab read
+        // the real run; before that it was HRW's own reducer call on the raw DAE,
+        // which stops at the refusal and never reaches state selection.
+        assert_eq!(
+            stage["route"],
+            serde_json::json!(["singular system recovered via formal derivatives"]),
+            "state selection's recovery is the route the real run took",
+        );
+        assert_eq!(
+            stage["integrated"],
+            serde_json::json!(["y", "der(y)"]),
+            "the chart System Modeler also picks: {}",
+            stage["integrated"],
+        );
+        assert_eq!(
+            stage["after"]["n_states"], 2,
+            "lowering integrates the two chart coordinates",
         );
 
         // **Nothing to try, rather than something refused** — the sharpest statement

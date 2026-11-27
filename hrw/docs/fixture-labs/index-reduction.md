@@ -287,7 +287,8 @@ before the search and advances one record at a time:
 
 ## Station 5 — Two lanes, and one of them sees what the other cannot
 
-`CapacitorLoop` is a capacitor straight across an ideal voltage source. One state.
+`CapacitorLoop` is a capacitor straight across an ideal voltage source. One state. It is the
+model [matching](hrw://lab/matching) left structurally singular in its Station 3.
 
 > **Predict.** The Direct lane searches first and finds **nothing** — zero candidates in both of
 > its proof groups. Does that make this system irreducible?

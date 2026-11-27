@@ -5,134 +5,121 @@
 **Start here.** This is the map for the labs of the compiler phases, in the order
 the compiler runs them.
 
-The thesis, in one line: a Modelica model is a pile of equations with no order, no causality
-and no idea which quantities are independent — and compiling it is six mathematical problems, each
-with a named algorithm and a textbook behind it.
-
 > Every lab below draws its numbers from the specimens' generated notebook traces.
 
 ---
 
-## The one structural idea the whole pipeline turns on
+## One model, through every tab
 
-A permutation.
+Rumoca gets from your text to a running simulation in two big steps:
 
-Matching builds one — each equation paired with the unknown it solves. BLT permutes *again*, into
-blocks, and the result is block lower triangular. Tearing splits each block and takes a Schur
-complement. Index reduction discovers the state vector was the wrong size for the manifold the
-system moves on.
+- **Compile** turns the text into a DAE, the model as one system of equations. HRW shows its
+  phases as tabs 1–6.
+- **Solve lowering** turns the DAE into programs a solver can run. It first simplifies the
+  DAE (tab 7), then does the structural work — matching and ordering (tab 8), index
+  reduction and choosing which variables to integrate (tab 9), the starting values (tab
+  10) — and produces the programs (tab 12). All of those tabs show one run of it, the same
+  run the simulation uses.
 
-All four are the same kind of operation: rearranging a matrix until its structure is obvious,
-before any number exists. That is the sentence to hold onto if you are reading these alongside
-a linear-algebra course — and the coarse form of matching-plus-SCCs has a name there, the
-Dulmage-Mendelsohn decomposition.
+Tab 11 is not a step of its own, and tab 13 runs the result. The quickest way to see the whole
+pipeline is to send one small model through every tab.
 
----
+[Load HarmonicOscillator](hrw://load/HarmonicOscillator/Parse), then click each tab in turn:
 
-## Three graphs, three classical questions
-
-*(Added 2026-08-12, from a question on `connect-expansion.md`'s first paragraph. It lives here rather
-than in any one lab because it spans four of them.)*
-
-The word "graph" appears in three labs meaning three different things. They are easy to conflate and
-the distinction is what makes each algorithm the obvious choice rather than an arbitrary one:
-
-1 · the connection graph — `connect-expansion`
-
-- vertices: connector variables
-- edges: one edge per connector member, per `connect` — undirected
-- asks: connected components · union-find
-
-2 · the incidence graph — `matching`
-
-- vertices: equations ∪ unknowns, bipartite
-- edges: "this equation mentions this unknown"
-- asks: maximum matching · augmenting paths
-
-3 · the dependency graph — `blt-ordering`
-
-- vertices: equations
-- edges: derived from the matching — directed
-- asks: *strongly* connected components · Tarjan
-
-**Why the first and third need different algorithms.** Both ask *"which items belong
-together?"* The difference is whether the lines have arrows.
-
-**In the connection graph they don't.** `connect(R.n, C.p)` says R.n and C.p are the same
-electrical node, and that is just as true read backwards. Belonging together is mutual, and it
-chains: if R.n is joined to C.p and C.p to L.p, all three are one node, whatever order the
-`connect`s were written in. **Union-find** is the algorithm for that: it keeps groups, and merges
-two whenever a line joins them.
-
-**In the dependency graph the lines are arrows.** After matching, each equation computes one
-unknown; draw an arrow from A to B when B needs the value A computes:
-
-```text
-e1:  x = 1           needs nothing
-e2:  y = 2*x         needs x  (from e1)
-e3:  z = y + w       needs y  (from e2) and w (from e4)
-e4:  w = z / 2       needs z  (from e3)
+```modelica
+model HarmonicOscillator
+  parameter Real omega = 1.0;
+  Real x(start = 1.0) "position";
+  Real v(start = 0.0) "velocity";
+equation
+  der(x) = v;
+  der(v) = -omega ^ 2 * x;
+end HarmonicOscillator;
 ```
 
-The arrows run e1 → e2 → e3, and e3 ⇄ e4. **The one-way arrows are information**: e1 → e2 says
-e1 can be solved first, on its own. Equations belong together only when *each needs the other* —
-here e3 and e4, which must be solved simultaneously. Such a group is a *strongly connected
-component*, and **Tarjan's algorithm** finds them and returns them in an order where each comes
-after everything it needs: `{e1} → {e2} → {e3, e4}`. That order *is* the evaluation order —
-solve x, then y, then z and w together — and it is what `blt-ordering.md` builds.
+This model is so simple that most stages have little to do. That is useful: you see what each
+stage *produces* without the clutter, and each entry names the lab whose model makes that stage
+work hard.
 
-**Union-find would get this wrong.** It ignores the arrows, so it would merge e1 with e2, e2 with
-e3, and report all four as one group to solve at once: not false, but the order is gone, and
-three easy steps have become one coupled solve.
+**1 · [Parse](hrw://load/HarmonicOscillator/Parse)** reads the text into a syntax tree: one
+model, three declarations, two equations. Nothing is understood yet, only structured.
+
+**2 · [Resolve](hrw://load/HarmonicOscillator/Resolve)** connects every name to its
+declaration. The `omega` inside `der(v) = -omega ^ 2 * x` now points at `parameter Real omega`.
+
+**3 · [Instantiate](hrw://load/HarmonicOscillator/Instantiate)** builds the model's component
+tree with modifiers applied. This model has no components, so the tree is just its three
+variables.
+
+**4 · [Typecheck](hrw://load/HarmonicOscillator/Typecheck)** checks that every expression's type
+and size fit. Here everything is a scalar `Real`, so there is nothing to report.
+
+**5 · [Flatten](hrw://load/HarmonicOscillator/Flatten)** produces one flat list: three variables
+(`omega`, `x`, `v`) and two equations. In a model built from components, this is where every
+`connect` becomes equations — [connect-expansion](hrw://lab/connect-expansion).
+
+**6 · [Dae](hrw://load/HarmonicOscillator/Dae)** sorts the variables by role. `x` and `v` appear
+inside `der()`, so they are *states*; `omega` is a parameter; there are no other unknowns.
+Result: 2 states, 0 algebraic variables, 2 equations —
+[dae-construction](hrw://lab/dae-construction).
+
+**7 · [Simplify](hrw://load/HarmonicOscillator/Simplify)** is where solve lowering begins: four
+transforms that tidy the DAE before any structural work — substitute parameters that can be
+fixed now, inline marked functions, merge variables that are only copies of each other (`a =
+b`), fold constants. None of the four changes this model; `Drivetrain`'s aliases are where they
+matter.
+
+**Predict, before you click Structural:** the next stage pairs each equation with the one unknown
+it will compute. What are the two unknowns?
+
+**8 · [Structural](hrw://load/HarmonicOscillator/Structural)** shows that the unknowns are
+`der(x)` and `der(v)`, *not* `x` and `v`. At every instant the integrator already knows the
+states; what the equations must supply is how fast they are changing. Matching pairs
+`der(x) = v` with `der(x)`, and the other equation with `der(v)`. Each forms its own block of
+size 1, and none need solving together. A model where equations *do* need each other is
+`ProportionalLoop` — [matching](hrw://lab/matching), [blt-ordering](hrw://lab/blt-ordering),
+[tearing](hrw://lab/tearing). To watch matching's search from inside Rumoca, step by step, there
+is [matching-live](hrw://lab/matching-live): the only lab that needs a debugger and the bridge
+extension, where every other lab runs from HRW alone.
+
+**9 · [IndexReduction](hrw://load/HarmonicOscillator/IndexReduction)** has nothing to reduce:
+the reducer's outcome is *borrowed* — already index-1, both derivatives computed directly — and
+state selection keeps `x` and `v` as the two states to integrate. A model where the derivatives
+cannot be computed directly is the pendulum, whose rod forces the bob to stay on a circle —
+[index-reduction](hrw://lab/index-reduction).
+
+**10 · [Initialization](hrw://load/HarmonicOscillator/Initialization)** shows the plan for the
+starting values, and here it is empty: no row to solve, nothing given. `x` and `v` have `start`
+values, but nothing *fixes* them — no `fixed = true`, no `initial equation` — so the start
+values are only guesses, and the simulation starts from them: `x = 1`, `v = 0` —
+[initialization](hrw://lab/initialization).
+
+**11 · [Events](hrw://load/HarmonicOscillator/Events)** lists the moments where the model
+switches behaviour. It is not a step of its own: it shows the event data DAE construction (tab 6)
+recorded, and what solve lowering made of it. Every count is zero: there is no `if` or `when`
+here. `BouncingBall` has one — [events](hrw://lab/events).
+
+**12 · [SolveLowering](hrw://load/HarmonicOscillator/SolveLowering)** turns the equations into
+small programs over numbered slots: `omega` is `P[0]`, `x` is `Y[0]`, `v` is `Y[1]`. The
+program for `der(x)` is *load `Y[1]`*. The one for `der(v)` loads `P[0]`, multiplies it by
+itself, multiplies by `Y[0]` and negates — `omega ^ 2` has become `omega * omega` —
+[solve-lowering](hrw://lab/solve-lowering).
+
+**13 · [Simulation](hrw://load/HarmonicOscillator/Simulation)** runs those programs from 0 to
+2 s. The exact solution is `x = cos t`, `v = −sin t`, so it can be checked: at 2 s Rumoca gives
+`x = −0.416146` against `cos 2 = −0.416147`, and `v = −0.909292` against
+`−sin 2 = −0.909297`.
+
+So compile (tabs 1–6) turns your text into equations, solve lowering (tabs 7–10 and 12) turns
+the equations into programs that compute the derivatives, and the simulation (tab 13) runs them.
+
+The labs linked above can be run in the order they appear. If you would rather follow the
+mathematics than the machinery, run matching, blt-ordering and tearing first: they are one
+continuous argument, and the densest linear algebra in the set.
 
 ---
 
-## Three things worth knowing before you start
-
-Structural singularity means two opposite things. `CapacitorLoop` is singular because the
-model is wrong. `Drivetrain` is singular because its DAE has index > 1, which is ordinary and
-curable. `matching.md` Act 3 shows the first; `index-reduction.md` Act 4 shows the second. A
-rank deficiency is a question, not a verdict — probably the single most useful idea in the set.
-
-Only one algorithm here is a heuristic. Matching, Tarjan and index reduction give answers
-correct by construction. Tearing is greedy and can be beaten: a torn block always computes
-the right numbers, and may iterate on more of them than it had to.
-
-One lab needs a debugger and the bridge extension. `matching-live.md` alone — everything
-else runs from HRW.
-
----
-
-## The route
-
-Each entry opens the lab in HRW. The file links are for reading outside it.
-
-1. [connect-expansion](hrw://lab/connect-expansion) — what does `connect` mean?
-2. [dae-construction](hrw://lab/dae-construction) — what is a well-posed system?
-3. [matching](hrw://lab/matching) — which equation solves which unknown?
-   - 3a · [matching-live](hrw://lab/matching-live) — *(debugger)* what does the
-     search look like from inside?
-4. [blt-ordering](hrw://lab/blt-ordering) — in what order can they be solved?
-5. [tearing](hrw://lab/tearing) — how do you solve a block that has no order?
-6. [index-reduction](hrw://lab/index-reduction) — which states are actually
-   independent?
-7. [initialization](hrw://lab/initialization) — where does it start?
-8. [solve-lowering](hrw://lab/solve-lowering) — how does a name become a number?
-9. [events](hrw://lab/events) — what happens at an instant?
-
-Two orderings, and they differ. The list above is *pipeline* order. If you would rather follow
-the mathematics than the machinery, run 3 → 4 → 5 first: matching, BLT and tearing are one
-continuous argument on the same three-equation model, and they are the densest linear algebra in
-the set.
-
----
-
-## Two open questions you may hit
-
-A state-count inconsistency. `Drivetrain`'s index reduction demotes nine states to three,
-while solve lowering reports 9, and `GearWithBrake` shows the same gap. It is reproduced,
-recorded in `docs/upstream-issues.md`, and not diagnosed — `solve-lowering.md` deliberately
-omits its natural example because of it.
+## A question you may hit
 
 *(Resolved 2026-09-02, and it was never a Rumoca question.* `RcCircuit` reports one
 `synthetic_root_conditions` while having no `when` clause because the field counts roots
@@ -160,12 +147,14 @@ algebraic. Three labs, one decomposition.
 irreducible block because nothing can be ordered; tearing cuts it to a 1×1 iteration; solve
 lowering confirms zero states — a model with no dynamics at all.
 
-`Drivetrain` = 97 → 20 → 3. 97 equations after flattening, 20 after index reduction, 3
-surviving states. The middle number is why index reduction exists; the last is how many degrees
-of freedom the machine really has.
+`Drivetrain` = 97 equations and 9 states → 3 integrated. Simplify merges 53 aliases; the
+reducer then runs 6 rounds, and state selection reduces to a basis of 3 — `mount.s_rel`, `L.i`
+and `mount.v_rel` — which is exactly what Solve lowering and the simulation integrate.
 
-`OverInitRc` = 1 state, 2 conditions, surplus +1. The only over-determined specimen, and it
-differs from `RcCircuit` by two lines.
+`OverInitRc` = 1 state, 2 initial equations, 1 too many. It differs from `RcCircuit` by those
+two lines. The Initialization tab shows Rumoca's plan: `C.v = 0` is *Solved* for `C.v`, and
+`der(C.v) = 0` is a *surplus check* the model must satisfy. It does not: with the capacitor
+empty, current flows, and the run fails at initialization with the check's residual at 50.
 
 ---
 

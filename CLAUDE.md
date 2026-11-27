@@ -41,6 +41,29 @@ had no checklist while a Rumoca change did. Every one of those replays was repla
 scopes in two days, once the trade was priced out loud. **The rules below are a quality bar for
 a change that should happen, not a reason to avoid it.**
 
+## Every tab observes the run that simulates *(Doug, 2026-11-26)*
+
+**Every HRW tab names the Rumoca call it observes, and a test proves that call is on the path
+that produces the simulation.** A tab's data must come from the compile, or from the one
+preparation the simulation integrates (`hrw/src/worker/preparation.rs`) — never from HRW calling
+a phase itself on some other input. `hrw/src/bridge.rs`'s `phase_source` is the roster of
+those calls.
+
+- **A test against HRW's own traces does not count.** The traces are written by the same
+  stages, so a lab or tab agreeing with them proves nothing. The proof must reach the real run
+  (a capture scope, the shared artifact) or an independent oracle (System Modeler, a closed form).
+- **A real Rumoca function is not proof of fidelity.** `inspect_prepare_for_solve` is genuine
+  Rumoca on genuine data, and for weeks it was the wrong input: the solve path simplifies the DAE
+  first. Read the path that simulates; do not trust a function's name or a code comment.
+- **A tab without that test is unproven**, and must be treated as possibly false until it has
+  one.
+
+**Why:** found 2026-11-26. From Structural onward the tabs showed HRW's own calls on the DAE
+before solve lowering's simplifications. The symptoms — `Drivetrain`'s 5 / 3 / 3, the pendulum
+"refused" yet simulating — were explained away and patched, while every check compared HRW to
+itself. The labs built on those tabs taught a run Rumoca never makes. See `hrw/DECISIONS.md`
+(2026-11-26).
+
 ## Instrumentation discipline
 
 Instrumentation of the Rumoca crates is **intended**, but must be:

@@ -2,7 +2,7 @@
   "model": "CapacitorLoop",
   "specimen": "specimens/CapacitorLoop.mo",
   "specimen_fnv1a": "85d851eb99b13a47",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -29,17 +29,21 @@
       "has_ir": true,
       "note": "1 state(s), 13 algebraic(s), 14 continuous equation(s)"
     },
+    "simplify": {
+      "has_ir": true,
+      "note": "2 of 4 transform(s) changed the system"
+    },
     "structural": {
       "has_ir": true,
       "note": "singular"
     },
     "index_reduction": {
       "has_ir": true,
-      "note": "sorted after 2 round(s): state count unchanged, 1 manifold constraint(s)"
+      "note": "reducer sorted after 1 round(s); no manifold: StateSelect preferences decided — integrates 0 state coordinate(s)"
     },
     "initialization": {
       "has_ir": true,
-      "note": null
+      "note": "0 initialization row(s), 0 surplus check(s)"
     },
     "events": {
       "has_ir": true,

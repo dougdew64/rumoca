@@ -1,0 +1,100 @@
+{
+  "transforms": [
+    {
+      "transform": "fold_evaluable_parameters",
+      "what_it_does": "replaces reads of evaluable parameters by their settled values",
+      "changed": false,
+      "before": {
+        "states": 4,
+        "algebraics": 1,
+        "outputs": 0,
+        "parameters": 3,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 5,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "inline_annotated_calls",
+      "what_it_does": "inlines Inline / LateInline pure function calls before index reduction",
+      "changed": false,
+      "before": {
+        "states": 4,
+        "algebraics": 1,
+        "outputs": 0,
+        "parameters": 3,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 5,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "quotient_aliases",
+      "what_it_does": "merges copy and negation aliases (a = b, a = -b) onto one representative",
+      "changed": false,
+      "before": {
+        "states": 4,
+        "algebraics": 1,
+        "outputs": 0,
+        "parameters": 3,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 5,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "fold_constant_values",
+      "what_it_does": "evaluates constant pure calls and propagates literal algebraics",
+      "changed": false,
+      "before": {
+        "states": 4,
+        "algebraics": 1,
+        "outputs": 0,
+        "parameters": 3,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 5,
+        "initialization_equations": 0
+      },
+      "after": null
+    }
+  ],
+  "alias_quotients": [
+    {
+      "scope": "Source",
+      "eliminated": 0,
+      "classes": []
+    },
+    {
+      "scope": "FormalDerivatives",
+      "eliminated": 4,
+      "classes": [
+        "Quotiented { representative: \"vx\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.x\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"vy\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.y\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"$formal_derivative.2.x\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.vx\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"$formal_derivative.2.y\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.vy\", negated: false }], retained_states: [] }"
+      ]
+    },
+    {
+      "scope": "FormalDerivatives",
+      "eliminated": 4,
+      "classes": [
+        "Quotiented { representative: \"vx\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.x\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"vy\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.y\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"$formal_derivative.2.x\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.vx\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"$formal_derivative.2.y\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.vy\", negated: false }], retained_states: [] }"
+      ]
+    }
+  ],
+  "note": "solve lowering runs these four, in this order, on the DAE before any structural analysis; each reads the previous one's output"
+}

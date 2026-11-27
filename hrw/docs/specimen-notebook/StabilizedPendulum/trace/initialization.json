@@ -1,16 +1,8 @@
 {
-  "determinacy": {
-    "state_scalars": 4,
-    "determined": 0,
-    "only_guessed": [
-      "x",
-      "y",
-      "vx",
-      "vy"
-    ],
-    "definitions": 0,
-    "checks": 0,
-    "partly_fixed_states": []
-  },
-  "pins": []
+  "summary": [],
+  "rows": [],
+  "unknowns": [],
+  "given_states": [],
+  "manifold_rows": 0,
+  "roles_note": "Rumoca's own InitializationRowRole per residual row: Solved rows determine an unknown; a SurplusCheck row reads only values something else fixed, so it is a consistency check (MLS 3.6 §8.6) that the run evaluates"
 }

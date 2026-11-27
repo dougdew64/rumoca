@@ -1,0 +1,831 @@
+{
+  "n_equations": 48,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 33,
+      "equations": [
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = 0 - (src.p.i + src.n.i)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = src.i - src.p.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[3]",
+          "index": 3,
+          "text": "0 = src.v - (src.p.v - src.n.v)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[4]",
+          "index": 4,
+          "text": "0 = src.v - src.V",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[5]",
+          "index": 5,
+          "text": "0 = 0 - (R.p.i + R.n.i)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[6]",
+          "index": 6,
+          "text": "0 = R.i - R.p.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[7]",
+          "index": 7,
+          "text": "0 = R.v - (R.p.v - R.n.v)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[8]",
+          "index": 8,
+          "text": "0 = R.T_heatPort - R.T",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[9]",
+          "index": 9,
+          "text": "0 = R.R_actual - R.R*(1 + R.alpha*(R.T_heatPort - R.T_ref))",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[10]",
+          "index": 10,
+          "text": "0 = R.v - R.R_actual*R.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[11]",
+          "index": 11,
+          "text": "0 = R.LossPower - R.v*R.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[12]",
+          "index": 12,
+          "text": "0 = 0 - (L.p.i + L.n.i)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[13]",
+          "index": 13,
+          "text": "0 = L.i - L.p.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[14]",
+          "index": 14,
+          "text": "0 = L.v - (L.p.v - L.n.v)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[15]",
+          "index": 15,
+          "text": "0 = L.L*der(L.i) - L.v",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[16]",
+          "index": 16,
+          "text": "0 = emf.fixed.flange.phi - emf.fixed.phi0",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[17]",
+          "index": 17,
+          "text": "0 = emf.internalSupport.flange.tau - emf.internalSupport.tau",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[18]",
+          "index": 18,
+          "text": "0 = emf.internalSupport.flange.phi - emf.internalSupport.phi",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[19]",
+          "index": 19,
+          "text": "0 = emf.v - (emf.p.v - emf.n.v)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[20]",
+          "index": 20,
+          "text": "0 = 0 - (emf.p.i + emf.n.i)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[21]",
+          "index": 21,
+          "text": "0 = emf.i - emf.p.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[22]",
+          "index": 22,
+          "text": "0 = emf.phi - (emf.flange.phi - emf.internalSupport.phi)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[23]",
+          "index": 23,
+          "text": "0 = emf.w - der(emf.phi)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[24]",
+          "index": 24,
+          "text": "0 = emf.k*emf.w - emf.v",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[25]",
+          "index": 25,
+          "text": "0 = emf.tau - -(emf.k*emf.i)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[26]",
+          "index": 26,
+          "text": "0 = emf.tauElectrical - -emf.tau",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[27]",
+          "index": 27,
+          "text": "0 = emf.tau - emf.flange.tau",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[28]",
+          "index": 28,
+          "text": "0 = gnd.p.v - 0",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[29]",
+          "index": 29,
+          "text": "0 = load.phi - load.flange_a.phi",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[30]",
+          "index": 30,
+          "text": "0 = load.phi - load.flange_b.phi",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[31]",
+          "index": 31,
+          "text": "0 = load.w - der(load.phi)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[32]",
+          "index": 32,
+          "text": "0 = load.a - der(load.w)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[33]",
+          "index": 33,
+          "text": "0 = load.J*load.a - (load.flange_a.tau + load.flange_b.tau)",
+          "origin": "source DAE object",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Potential equality",
+      "family": "Connector equations",
+      "description": "One connection set's potential variables made equal: n-1 equations for n connectors",
+      "n": 7,
+      "equations": [
+        {
+          "id": "f_x[40]",
+          "index": 40,
+          "text": "0 = emf.internalSupport.flange.phi - emf.fixed.flange.phi",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[41]",
+          "index": 41,
+          "text": "0 = src.p.v - R.p.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[42]",
+          "index": 42,
+          "text": "0 = R.n.v - L.p.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[43]",
+          "index": 43,
+          "text": "0 = L.n.v - emf.p.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[44]",
+          "index": 44,
+          "text": "0 = emf.n.v - src.n.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[45]",
+          "index": 45,
+          "text": "0 = src.n.v - gnd.p.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[46]",
+          "index": 46,
+          "text": "0 = emf.flange.phi - load.flange_a.phi",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Flow conservation",
+      "family": "Connector equations",
+      "description": "One connection set's flow variables summed to zero: exactly 1 equation per set",
+      "n": 6,
+      "equations": [
+        {
+          "id": "f_x[34]",
+          "index": 34,
+          "text": "0 = emf.internalSupport.flange.tau + emf.fixed.flange.tau",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[35]",
+          "index": 35,
+          "text": "0 = src.p.i + R.p.i",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[36]",
+          "index": 36,
+          "text": "0 = R.n.i + L.p.i",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[37]",
+          "index": 37,
+          "text": "0 = L.n.i + emf.p.i",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[38]",
+          "index": 38,
+          "text": "0 = emf.n.i + src.n.i + gnd.p.i",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[39]",
+          "index": 39,
+          "text": "0 = emf.flange.tau + load.flange_a.tau",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Unconnected flow",
+      "family": "Connector equations",
+      "description": "A flow variable with no connection at all, set to zero (MLS 9.2)",
+      "n": 1,
+      "equations": [
+        {
+          "id": "f_x[47]",
+          "index": 47,
+          "text": "0 = load.flange_b.tau",
+          "origin": "generated DAE object (unconnected-flow equation)",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Bindings",
+      "family": null,
+      "description": "Variable bindings from declarations (parameter values, fixed starts)",
+      "n": 1,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = emf.internalSupport.tau - -emf.tau",
+          "origin": "generated DAE object (binding equation)",
+          "source_lines": []
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 4,
+    "algebraics": 44,
+    "parameters": 12,
+    "constants": 0,
+    "discrete": 1,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "src.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "src.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "src.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "src.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "src.n.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "src.n.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "src.V",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "V"
+    },
+    {
+      "id": "R.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "R.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "R.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "R.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "R.n.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "R.n.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "R.useHeatPort",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "false",
+      "unit": null
+    },
+    {
+      "id": "R.T",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "R.T_ref",
+      "unit": "K"
+    },
+    {
+      "id": "R.LossPower",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "W"
+    },
+    {
+      "id": "R.T_heatPort",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "288.15",
+      "unit": "K"
+    },
+    {
+      "id": "R.R",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "Ohm"
+    },
+    {
+      "id": "R.T_ref",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "300.15",
+      "unit": "K"
+    },
+    {
+      "id": "R.alpha",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "1/K"
+    },
+    {
+      "id": "R.R_actual",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "Ohm"
+    },
+    {
+      "id": "L.i",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[15]",
+        "equation_text": "0 = L.L*der(L.i) - L.v"
+      },
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "L.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "L.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "L.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "L.n.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "L.n.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "L.L",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "H"
+    },
+    {
+      "id": "emf.useSupport",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "false",
+      "unit": null
+    },
+    {
+      "id": "emf.k",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "N.m/A"
+    },
+    {
+      "id": "emf.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "emf.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "emf.phi",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[23]",
+        "equation_text": "0 = emf.w - der(emf.phi)"
+      },
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "emf.w",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad/s"
+    },
+    {
+      "id": "emf.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "emf.tauElectrical",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "emf.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "emf.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "emf.n.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "emf.n.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "emf.flange.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "emf.flange.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "emf.fixed.phi0",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "emf.fixed.flange.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "emf.fixed.flange.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "emf.internalSupport.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "emf.internalSupport.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "emf.internalSupport.flange.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "emf.internalSupport.flange.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "gnd.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "gnd.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "load.flange_a.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "load.flange_a.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "load.flange_b.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "load.flange_b.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "load.J",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "kg.m2"
+    },
+    {
+      "id": "load.phi",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[31]",
+        "equation_text": "0 = load.w - der(load.phi)"
+      },
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "load.w",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[32]",
+        "equation_text": "0 = load.a - der(load.w)"
+      },
+      "start": "0",
+      "unit": "rad/s"
+    },
+    {
+      "id": "load.a",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad/s2"
+    },
+    {
+      "id": "maxSpeed",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "30",
+      "unit": null
+    },
+    {
+      "id": "overSpeed",
+      "kind": "discrete",
+      "derivative_evidence": null,
+      "start": "false",
+      "unit": null
+    }
+  ]
+}

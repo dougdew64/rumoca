@@ -2,7 +2,7 @@
   "model": "Drivetrain",
   "specimen": "specimens/Drivetrain.mo",
   "specimen_fnv1a": "8a7b13d217d23398",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -29,17 +29,21 @@
       "has_ir": true,
       "note": "9 state(s), 88 algebraic(s), 97 continuous equation(s)"
     },
+    "simplify": {
+      "has_ir": true,
+      "note": "2 of 4 transform(s) changed the system"
+    },
     "structural": {
       "has_ir": true,
       "note": "singular"
     },
     "index_reduction": {
       "has_ir": true,
-      "note": "sorted after 6 round(s): 9 state(s) → 5"
+      "note": "reducer sorted after 6 round(s); reduced to a formal-derivative basis — integrates 3 state coordinate(s)"
     },
     "initialization": {
       "has_ir": true,
-      "note": null
+      "note": "0 initialization row(s), 0 surplus check(s)"
     },
     "events": {
       "has_ir": true,

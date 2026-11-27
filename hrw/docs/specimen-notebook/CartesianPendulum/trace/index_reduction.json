@@ -11,6 +11,14 @@
     "direct",
     "holonomic"
   ],
+  "route": [
+    "singular system recovered via formal derivatives"
+  ],
+  "integrated": [
+    "y",
+    "der(y)"
+  ],
+  "alternate_charts": 1,
   "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
   "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
   "before": {
@@ -67,6 +75,51 @@
         }
       ]
     },
+    "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+    "analyses": [
+      {
+        "context": "Source",
+        "equations": 5,
+        "unknowns": 5,
+        "result": "structurally singular system: 4 matched out of 5 equations and 5 unknowns"
+      },
+      {
+        "context": "HolonomicRound",
+        "equations": 5,
+        "unknowns": 5,
+        "result": "structurally singular system: 4 matched out of 5 equations and 5 unknowns"
+      },
+      {
+        "context": "HolonomicPass",
+        "equations": 5,
+        "unknowns": 5,
+        "result": "structurally singular system: 4 matched out of 5 equations and 5 unknowns"
+      },
+      {
+        "context": "StateCandidate",
+        "equations": 13,
+        "unknowns": 13,
+        "result": "sorted: 8 block(s), 1 coupled"
+      },
+      {
+        "context": "StateCandidate",
+        "equations": 13,
+        "unknowns": 13,
+        "result": "sorted: 8 block(s), 1 coupled"
+      },
+      {
+        "context": "FormalAliasQuotient",
+        "equations": 13,
+        "unknowns": 13,
+        "result": "sorted: 10 block(s), 1 coupled"
+      },
+      {
+        "context": "FormalAliasQuotient",
+        "equations": 13,
+        "unknowns": 13,
+        "result": "sorted: 10 block(s), 1 coupled"
+      }
+    ],
     "matching": [
       {
         "equation": "f_x[0] (der(x) = vx)",
@@ -132,7 +185,331 @@
     "n_algebraics": 1,
     "n_equations": 5
   },
-  "after": null,
+  "after": {
+    "n_equations": 13,
+    "n_unknowns": 13,
+    "coupled_block_count": 1,
+    "matching": [
+      {
+        "equation": "f_x[0] (der(x) = vx)",
+        "id": "f_x[0]",
+        "unknown": "$formal_derivative.1.x"
+      },
+      {
+        "equation": "f_x[1] (der(y) = vy)",
+        "id": "f_x[1]",
+        "unknown": "$formal_derivative.1.y"
+      },
+      {
+        "equation": "f_x[2] (m * der(vx) = -lambda * x)",
+        "id": "f_x[2]",
+        "unknown": "lambda"
+      },
+      {
+        "equation": "f_x[3] (m * der(vy) = -lambda * y - m * g)",
+        "id": "f_x[3]",
+        "unknown": "$formal_derivative.2.y"
+      },
+      {
+        "equation": "f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)",
+        "id": "f_x[4]",
+        "unknown": "x"
+      },
+      {
+        "equation": "f_x[5] (der(x) = vx)",
+        "id": "f_x[5]",
+        "unknown": "$formal_derivative.1.vx"
+      },
+      {
+        "equation": "f_x[6] (der(y) = vy)",
+        "id": "f_x[6]",
+        "unknown": "$formal_derivative.1.vy"
+      },
+      {
+        "equation": "f_x[7] (x ^ 2 + y ^ 2 = L ^ 2)",
+        "id": "f_x[7]",
+        "unknown": "vx"
+      },
+      {
+        "equation": "f_x[8] (x ^ 2 + y ^ 2 = L ^ 2)",
+        "id": "f_x[8]",
+        "unknown": "$formal_derivative.2.x"
+      },
+      {
+        "equation": "f_x[9] (Real y)",
+        "id": "f_x[9]",
+        "unknown": "y"
+      },
+      {
+        "equation": "f_x[10] (Real y)",
+        "id": "f_x[10]",
+        "unknown": "vy"
+      },
+      {
+        "equation": "f_x[11] (Real y)",
+        "id": "f_x[11]",
+        "unknown": "der($state_coordinates[1])"
+      },
+      {
+        "equation": "f_x[12] (Real y)",
+        "id": "f_x[12]",
+        "unknown": "der($state_coordinates[2])"
+      }
+    ],
+    "blocks": [
+      {
+        "kind": "structured_scalar",
+        "size": 2,
+        "origin": "f_x[9] (Real y)",
+        "point_count": 2,
+        "equations_per_point": 1,
+        "first_row": 9,
+        "row_count": 2
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)",
+        "id": "f_x[4]",
+        "unknown": "x"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[7] (x ^ 2 + y ^ 2 = L ^ 2)",
+        "id": "f_x[7]",
+        "unknown": "vx"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[0] (der(x) = vx)",
+        "id": "f_x[0]",
+        "unknown": "$formal_derivative.1.x"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[1] (der(y) = vy)",
+        "id": "f_x[1]",
+        "unknown": "$formal_derivative.1.y"
+      },
+      {
+        "kind": "coupled",
+        "size": 3,
+        "equations": [
+          "f_x[3] (m * der(vy) = -lambda * y - m * g)",
+          "f_x[8] (x ^ 2 + y ^ 2 = L ^ 2)",
+          "f_x[2] (m * der(vx) = -lambda * x)"
+        ],
+        "ids": [
+          "f_x[3]",
+          "f_x[8]",
+          "f_x[2]"
+        ],
+        "unknowns": [
+          "$formal_derivative.2.y",
+          "$formal_derivative.2.x",
+          "lambda"
+        ],
+        "tearing": {
+          "tear_vars": [
+            "$formal_derivative.2.y"
+          ],
+          "residual_equations": [
+            "f_x[2] (m * der(vx) = -lambda * x)"
+          ],
+          "residual_equation_ids": [
+            "f_x[2]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[8] (x ^ 2 + y ^ 2 = L ^ 2)",
+              "id": "f_x[8]",
+              "variable": "$formal_derivative.2.x"
+            },
+            {
+              "equation": "f_x[3] (m * der(vy) = -lambda * y - m * g)",
+              "id": "f_x[3]",
+              "variable": "lambda"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[5] (der(x) = vx)",
+        "id": "f_x[5]",
+        "unknown": "$formal_derivative.1.vx"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[6] (der(y) = vy)",
+        "id": "f_x[6]",
+        "unknown": "$formal_derivative.1.vy"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[11] (Real y)",
+        "id": "f_x[11]",
+        "unknown": "der($state_coordinates[1])"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[12] (Real y)",
+        "id": "f_x[12]",
+        "unknown": "der($state_coordinates[2])"
+      }
+    ],
+    "incidence": {
+      "n_eq": 13,
+      "n_var": 13,
+      "unknown_names": [
+        "x",
+        "y",
+        "vx",
+        "vy",
+        "lambda",
+        "$formal_derivative.1.x",
+        "$formal_derivative.2.x",
+        "$formal_derivative.1.y",
+        "$formal_derivative.2.y",
+        "$formal_derivative.1.vx",
+        "$formal_derivative.1.vy",
+        "der($state_coordinates[1])",
+        "der($state_coordinates[2])"
+      ],
+      "rows": [
+        {
+          "equation": "f_x[0] (der(x) = vx)",
+          "id": "f_x[0]",
+          "unknowns": [
+            2,
+            5
+          ],
+          "equation_text": "0 = $formal_derivative.1.x - vx"
+        },
+        {
+          "equation": "f_x[1] (der(y) = vy)",
+          "id": "f_x[1]",
+          "unknowns": [
+            3,
+            7
+          ],
+          "equation_text": "0 = $formal_derivative.1.y - vy"
+        },
+        {
+          "equation": "f_x[2] (m * der(vx) = -lambda * x)",
+          "id": "f_x[2]",
+          "unknowns": [
+            0,
+            4,
+            6
+          ],
+          "equation_text": "0 = m*$formal_derivative.2.x - -(lambda*x)"
+        },
+        {
+          "equation": "f_x[3] (m * der(vy) = -lambda * y - m * g)",
+          "id": "f_x[3]",
+          "unknowns": [
+            1,
+            4,
+            8
+          ],
+          "equation_text": "0 = m*$formal_derivative.2.y - (-(lambda*y) - m*g)"
+        },
+        {
+          "equation": "f_x[4] (x ^ 2 + y ^ 2 = L ^ 2)",
+          "id": "f_x[4]",
+          "unknowns": [
+            0,
+            1
+          ],
+          "equation_text": "0 = x^2 + y^2 - L^2"
+        },
+        {
+          "equation": "f_x[5] (der(x) = vx)",
+          "id": "f_x[5]",
+          "unknowns": [
+            6,
+            9
+          ],
+          "equation_text": "0 = $formal_derivative.1.vx - $formal_derivative.2.x"
+        },
+        {
+          "equation": "f_x[6] (der(y) = vy)",
+          "id": "f_x[6]",
+          "unknowns": [
+            8,
+            10
+          ],
+          "equation_text": "0 = $formal_derivative.1.vy - $formal_derivative.2.y"
+        },
+        {
+          "equation": "f_x[7] (x ^ 2 + y ^ 2 = L ^ 2)",
+          "id": "f_x[7]",
+          "unknowns": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "equation_text": "0 = +(2*x^(2 - 1)*vx + 2*y^(2 - 1)*vy)"
+        },
+        {
+          "equation": "f_x[8] (x ^ 2 + y ^ 2 = L ^ 2)",
+          "id": "f_x[8]",
+          "unknowns": [
+            0,
+            1,
+            2,
+            3,
+            6,
+            8
+          ],
+          "equation_text": "0 = +(2*(2 - 1)*x^(2 - 2)*vx*vx + 2*x^(2 - 1)*$formal_derivative.2.x + 2*(2 - 1)*y^(2 - 2)*vy*vy + 2*y^(2 - 1)*$formal_derivative.2.y)"
+        },
+        {
+          "equation": "f_x[9] (Real y)",
+          "id": "f_x[9]",
+          "unknowns": [
+            1
+          ]
+        },
+        {
+          "equation": "f_x[10] (Real y)",
+          "id": "f_x[10]",
+          "unknowns": [
+            3
+          ]
+        },
+        {
+          "equation": "f_x[11] (Real y)",
+          "id": "f_x[11]",
+          "unknowns": [
+            3,
+            11
+          ]
+        },
+        {
+          "equation": "f_x[12] (Real y)",
+          "id": "f_x[12]",
+          "unknowns": [
+            8,
+            12
+          ]
+        }
+      ]
+    },
+    "n_manifold_constraints": 0,
+    "n_states": 2,
+    "n_state_declarations": 1,
+    "n_algebraics": 11
+  },
   "search": [
     {
       "kind": "round",
@@ -252,6 +629,5 @@
         "residue": 2
       }
     }
-  ],
-  "stalled": null
+  ]
 }

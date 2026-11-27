@@ -46,5 +46,743 @@
       "trigger": "always",
       "guard": "not (1 + R.alpha*(R.T_heatPort - R.T_ref) >= 0.0000000000000002220446049250313)"
     }
-  ]
+  ],
+  "lowered": {
+    "events": {
+      "root_conditions": {
+        "programs": [
+          [
+            {
+              "Const": {
+                "dst": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "LoadP": {
+                "dst": 1,
+                "index": 5
+              }
+            },
+            {
+              "LoadY": {
+                "dst": 2,
+                "index": 16
+              }
+            },
+            {
+              "LoadP": {
+                "dst": 3,
+                "index": 4
+              }
+            },
+            {
+              "Binary": {
+                "dst": 4,
+                "op": "Sub",
+                "lhs": 2,
+                "rhs": 3
+              }
+            },
+            {
+              "Binary": {
+                "dst": 5,
+                "op": "Mul",
+                "lhs": 1,
+                "rhs": 4
+              }
+            },
+            {
+              "Binary": {
+                "dst": 6,
+                "op": "Add",
+                "lhs": 0,
+                "rhs": 5
+              }
+            },
+            {
+              "Const": {
+                "dst": 7,
+                "value": 2.220446049250313e-16
+              }
+            },
+            {
+              "Binary": {
+                "dst": 8,
+                "op": "Sub",
+                "lhs": 7,
+                "rhs": 6
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 8
+              }
+            }
+          ]
+        ],
+        "program_spans": [
+          {
+            "source": 17867382465268392184,
+            "start": 619,
+            "end": 676
+          }
+        ],
+        "output_placements": {
+          "Dense": {
+            "count": 1
+          }
+        }
+      },
+      "root_relation_memory_targets": [
+        {
+          "P": {
+            "index": 30,
+            "byte_offset": 240
+          }
+        }
+      ],
+      "root_zero_domains": [
+        "NonPositive"
+      ],
+      "root_relation_refresh_roles": [
+        "AlgebraicDependent"
+      ],
+      "condition_memory_parameter_indices": [
+        27,
+        28,
+        29
+      ],
+      "scheduled_root_conditions": [],
+      "scheduled_time_events": [],
+      "dynamic_time_event_names": [],
+      "dynamic_time_event_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "action_conditions": {
+        "programs": [
+          [
+            {
+              "Const": {
+                "dst": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "LoadP": {
+                "dst": 1,
+                "index": 29
+              }
+            },
+            {
+              "Unary": {
+                "dst": 2,
+                "op": "Not",
+                "arg": 1
+              }
+            },
+            {
+              "Binary": {
+                "dst": 3,
+                "op": "And",
+                "lhs": 0,
+                "rhs": 2
+              }
+            },
+            {
+              "FunctionConditional": {
+                "dst_start": 4,
+                "capture_start": 4,
+                "program": {
+                  "owner": null,
+                  "capture_count": 0,
+                  "target_widths": [
+                    1
+                  ],
+                  "result_count": 1,
+                  "arms": [
+                    {
+                      "condition_register_count": 1,
+                      "result_register_count": 9,
+                      "condition": [
+                        {
+                          "LoadP": {
+                            "dst": 0,
+                            "index": 31
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 0
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "Const": {
+                            "dst": 0,
+                            "value": 1.0
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 1,
+                            "index": 5
+                          }
+                        },
+                        {
+                          "LoadY": {
+                            "dst": 2,
+                            "index": 16
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 3,
+                            "index": 4
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 4,
+                            "op": "Sub",
+                            "lhs": 2,
+                            "rhs": 3
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 5,
+                            "op": "Mul",
+                            "lhs": 1,
+                            "rhs": 4
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 6,
+                            "op": "Add",
+                            "lhs": 0,
+                            "rhs": 5
+                          }
+                        },
+                        {
+                          "Const": {
+                            "dst": 7,
+                            "value": 2.220446049250313e-16
+                          }
+                        },
+                        {
+                          "Compare": {
+                            "dst": 8,
+                            "op": "Ge",
+                            "lhs": 6,
+                            "rhs": 7
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 8
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fallback_register_count": 1,
+                  "fallback": [
+                    {
+                      "LoadP": {
+                        "dst": 0,
+                        "index": 30
+                      }
+                    },
+                    {
+                      "StoreOutput": {
+                        "src": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "Unary": {
+                "dst": 5,
+                "op": "Not",
+                "arg": 4
+              }
+            },
+            {
+              "Binary": {
+                "dst": 6,
+                "op": "And",
+                "lhs": 3,
+                "rhs": 5
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 6
+              }
+            }
+          ]
+        ],
+        "program_spans": [
+          {
+            "source": 17867382465268392184,
+            "start": 611,
+            "end": 720
+          }
+        ],
+        "output_placements": {
+          "Dense": {
+            "count": 1
+          }
+        }
+      },
+      "actions": [
+        {
+          "kind": "Assert",
+          "message": {
+            "parts": [
+              {
+                "Text": "Temperature outside scope of model!"
+              }
+            ]
+          },
+          "span": {
+            "source": 17867382465268392184,
+            "start": 611,
+            "end": 720
+          },
+          "origin": "source DAE object",
+          "clock_owner": null,
+          "assertion_projection": null
+        }
+      ],
+      "has_terminal_event": false,
+      "delays": {
+        "source_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "delay_time_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "delay_max_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "value_parameter_indices": [],
+        "source_is_discrete": []
+      }
+    },
+    "discrete": {
+      "event_iteration_plan": {
+        "runs": [],
+        "partitions": [],
+        "schedule": {
+          "event_pass": [
+            "RelationOverrides",
+            "RuntimeAssignments",
+            "AlgebraicProjection",
+            "RuntimeAssignments",
+            "RelationRefresh",
+            "RelationSettle"
+          ],
+          "relation_pass": [
+            "DiscreteSettle",
+            "SettledIfRelationsUnchanged",
+            "AlgebraicProjection",
+            "RuntimeAssignments"
+          ],
+          "settle_pass": [
+            "DiscreteOwners",
+            "RuntimeAssignments",
+            "SettledIfUnchanged",
+            "AlgebraicProjection",
+            "RuntimeAssignments"
+          ],
+          "fixed_point_cap": 32,
+          "stalled_settle": {
+            "iteration_cap": 32,
+            "line_search_halvings": 16
+          },
+          "relation_surface_window": 8,
+          "mode_search_relations": 4
+        }
+      },
+      "runtime_assignment_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "runtime_assignment_targets": [],
+      "runtime_assignment_roles": [],
+      "post_commit_assignment_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "post_commit_assignment_targets": [],
+      "post_commit_assignment_runtime_rows": [],
+      "rhs": {
+        "programs": [
+          [
+            {
+              "FunctionConditional": {
+                "dst_start": 0,
+                "capture_start": 0,
+                "program": {
+                  "owner": null,
+                  "capture_count": 0,
+                  "target_widths": [
+                    1
+                  ],
+                  "result_count": 1,
+                  "arms": [
+                    {
+                      "condition_register_count": 1,
+                      "result_register_count": 9,
+                      "condition": [
+                        {
+                          "LoadP": {
+                            "dst": 0,
+                            "index": 31
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 0
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "Const": {
+                            "dst": 0,
+                            "value": 1.0
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 1,
+                            "index": 5
+                          }
+                        },
+                        {
+                          "LoadY": {
+                            "dst": 2,
+                            "index": 16
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 3,
+                            "index": 4
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 4,
+                            "op": "Sub",
+                            "lhs": 2,
+                            "rhs": 3
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 5,
+                            "op": "Mul",
+                            "lhs": 1,
+                            "rhs": 4
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 6,
+                            "op": "Add",
+                            "lhs": 0,
+                            "rhs": 5
+                          }
+                        },
+                        {
+                          "Const": {
+                            "dst": 7,
+                            "value": 2.220446049250313e-16
+                          }
+                        },
+                        {
+                          "Compare": {
+                            "dst": 8,
+                            "op": "Ge",
+                            "lhs": 6,
+                            "rhs": 7
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 8
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fallback_register_count": 1,
+                  "fallback": [
+                    {
+                      "LoadP": {
+                        "dst": 0,
+                        "index": 30
+                      }
+                    },
+                    {
+                      "StoreOutput": {
+                        "src": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 0
+              }
+            }
+          ],
+          [
+            {
+              "FunctionConditional": {
+                "dst_start": 0,
+                "capture_start": 0,
+                "program": {
+                  "owner": null,
+                  "capture_count": 0,
+                  "target_widths": [
+                    1
+                  ],
+                  "result_count": 1,
+                  "arms": [
+                    {
+                      "condition_register_count": 1,
+                      "result_register_count": 9,
+                      "condition": [
+                        {
+                          "LoadP": {
+                            "dst": 0,
+                            "index": 31
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 0
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "Const": {
+                            "dst": 0,
+                            "value": 1.0
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 1,
+                            "index": 5
+                          }
+                        },
+                        {
+                          "LoadY": {
+                            "dst": 2,
+                            "index": 16
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 3,
+                            "index": 4
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 4,
+                            "op": "Sub",
+                            "lhs": 2,
+                            "rhs": 3
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 5,
+                            "op": "Mul",
+                            "lhs": 1,
+                            "rhs": 4
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 6,
+                            "op": "Add",
+                            "lhs": 0,
+                            "rhs": 5
+                          }
+                        },
+                        {
+                          "Const": {
+                            "dst": 7,
+                            "value": 2.220446049250313e-16
+                          }
+                        },
+                        {
+                          "Compare": {
+                            "dst": 8,
+                            "op": "Ge",
+                            "lhs": 6,
+                            "rhs": 7
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 8
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fallback_register_count": 1,
+                  "fallback": [
+                    {
+                      "LoadP": {
+                        "dst": 0,
+                        "index": 30
+                      }
+                    },
+                    {
+                      "StoreOutput": {
+                        "src": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "Unary": {
+                "dst": 1,
+                "op": "Not",
+                "arg": 0
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 1
+              }
+            }
+          ]
+        ],
+        "program_spans": [
+          {
+            "source": 17867382465268392184,
+            "start": 619,
+            "end": 676
+          },
+          {
+            "source": 17867382465268392184,
+            "start": 611,
+            "end": 720
+          }
+        ],
+        "output_placements": {
+          "Dense": {
+            "count": 2
+          }
+        }
+      },
+      "update_targets": [
+        {
+          "P": {
+            "index": 27,
+            "byte_offset": 216
+          }
+        },
+        {
+          "P": {
+            "index": 28,
+            "byte_offset": 224
+          }
+        }
+      ],
+      "row_roles": [
+        "ConditionMemory",
+        "ConditionMemory"
+      ],
+      "pre_modes": [
+        "FollowCurrent",
+        "FollowCurrent"
+      ],
+      "observation_refresh": [
+        false,
+        false
+      ],
+      "observation_refresh_reads_y": false,
+      "integrator_history_effects": [
+        "preserve",
+        "preserve"
+      ],
+      "clock_owners": [
+        null,
+        null
+      ],
+      "guarded_assignments": [],
+      "event_transactions": [],
+      "structured_rhs": {
+        "nodes": []
+      },
+      "structured_updates": [],
+      "clock_partition_order": [],
+      "clock_partition_intermediates": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "clock_partition_intermediate_targets": [],
+      "clock_partition_intermediate_clocks": []
+    }
+  }
 }

@@ -528,14 +528,16 @@ and not yet done.
 
 > **CLOSED 2026-11-08 by `specimens/MeasuredOscillator.mo`**, which covers both cases asked for
 > below in one model: a state pinned by its own `fixed = true`, and a value *transferred* onto a
-> state from a measured alias (the `source` column's case). `the_initialization_pane_shows_each_pin_and_its_role`
-> still uses its scratch model, which says the same thing; nothing forces it to move.
+> state from a measured alias (the `source` column's case). `the_initialization_pane_shows_rumocas_plan_for_three_kinds_of_state`
+> still uses its scratch model, which says the same thing; nothing forces it to move. *(Since
+> 2026-11-27 the pane shows Rumoca's lowered plan — given states, unknowns, and a role per
+> row — rather than pins; the cases below are the same, the vocabulary is not.)*
 
 **Found 2026-11-03** while re-modelling that pane. Every curated specimen states `start = …` and
 none states `fixed = true`, so no model in the corpus produces a single initial-value pin. The pane
 is correct and informative about it — `SingleInertia` reports `only_guessed: ["phi", "w"]` — but
 nothing in the corpus exercises the pin rendering, and
-`the_initialization_pane_shows_each_pin_and_its_role` has to use a scratch specimen to cover it.
+`the_initialization_pane_shows_rumocas_plan_for_three_kinds_of_state` has to use a scratch specimen to cover it.
 
 **This is the same shape as F10's absence clause**, which went uncovered for three months for
 exactly this reason, and it is a *specimen* gap rather than a code one.
@@ -1790,7 +1792,7 @@ sweep because each is real work or needs a decision. **Rank 0 first** (it shows 
 | 1a | — | **found by item 1:** `before`/`after.n_equations`, the DAE note, the survey's `n_equations` column and both size caps read `DaeCounts::continuous_equations`, Rumoca's residual arena, which holds no structured family. `ArrayFamily` read 0 equations beside an 8-row incidence. **FIXED**: `DaeCounts::continuous_scalar_rows` mirrors `rumoca-phase-solve`'s private scalar-row counter; `the_scalar_row_count_is_the_published_incidence_on_every_specimen` pins it on every specimen | done; the survey re-run carries the corrected column |
 | 2 | ~~**Rank 0 candidate: three `note_is_error` callers still read `Flagged` as failed**~~ | **FIXED 2026-11-07, and measuring found a fourth defect that WAS rank 0.** `pipeline_context` filed a `Failed` *final* stage as a flag, so `IncompatibleConnect`'s and `TwiceDefined`'s Solve-lowering refusal reached `focus.json` under *"the compile CONTINUED … not failures"*. Caught while checking `compile_outcome`'s reuse of it against the outcome matrix, before any code changed; `a_failed_final_stage_is_a_stop_not_a_flag` failed first | done |
 | 3 | ~~A diagnostic in a non-specimen file still resolves its span against the specimen~~ | **The premise was wrong, and the half that was real is FIXED 2026-11-07.** Nothing resolved against the wrong file — the 11-04 identity guard refuses — so a library label was `null`, a missing fact rather than a false one. The Resolve path now keeps `ModelDiagnostics.source_map` and resolves such a label in its own file. The three `PhaseResult::Failed` paths still refuse: their only map is `resolved_cached()`, a clone of the whole resolved tree | the `PhaseResult` paths, only if a cheap map appears |
-| 4 | The two-phase reduction count (`Drivetrain` 5 / 3 / 3): ~~the `sorted` banner never states the lowered count~~ | **HRW half FIXED 2026-11-07**: `report_sub_view::two_phase_state_note` states both counts under the banner and says the step between them is not observable. Fires on `Drivetrain` and `CapacitorLoop` only, checked against every committed trace. **Not yet:** which states lowering kept, and why — that needs the `state_selection` seam | a public seam in `rumoca-phase-solve` (the strongest PR candidate) |
+| 4 | ~~The two-phase reduction count (`Drivetrain` 5 / 3 / 3)~~ | **RESOLVED 2026-11-26.** The 5 was HRW running the reducer itself on the unsimplified DAE. Every tab now reads one observed run of solve lowering (`worker/preparation.rs`), and `rumoca-phase-solve`'s new `preparation_trace` records state selection's route and the integrated names, so the Index reduction tab shows which states were kept and by which route. `two_phase_state_note` became `selection_note`; `the_selection_names_exactly_what_lowering_integrates` checks every trace | the seam this asked for: `rumoca_phase_solve::preparation_trace` |
 | 5 | ~~The committed MSL survey still shows `panicked: 2`, although D1 is fixed~~ | **DONE 2026-11-07** by item 1's re-survey: `panicked` is gone, and `Modelica.Blocks.Continuous.Der` and `…Machines.Utilities.DQCurrentController` now read `failed:ToDae` with D1's reported certificate error (`3d70ef00`) instead of an assertion | done |
 | 6 | ~~Initialization has no field tooltips~~ — **the title was wrong: it had nine, and five were false** | **FIXED 2026-11-08 by Doug's option B.** `gen_field_help` now records each doc's owning type (`types`, beside the unchanged `fields`), and `field_help::routes` maps each key the stage publishes to a named type's field — the pins to `InitialValuePin`, `pins` to `PreparedSystem`, `declared_at` to `provenance`. A routed stage gets exactly its routes: the five false tooltips (`definitions`, `role`, `value`, `source`, `column`, each borrowed from another type by the longest-doc fallback) are gone, `scalar` is the pin's doc instead of `PinTerm`'s, and HRW's own `determinacy` counts carry none (Doug's 6b). Four new tests, each shown failing on a planted drift first | done |
 | 7 | ~~No specimen declares `fixed = true`, none uses `edge`/`change`~~ | **DONE 2026-11-08, two specimens, System Modeler first.** `MeasuredOscillator`: three states settled three ways (own `fixed`, a value transferred from a measured alias, a bare guess) — its Initialization pane reads `determined 2 of 3`, `only_guessed [v_filt]`, one `definition` pin on `v` sourced from `v_meas`, and System Modeler agrees on every initial value. `ThresholdCounter`: `edge` and `change` on one relation, and the Events pane shows both expanded into `pre`. **The second one found a Rumoca divergence** — both counters fire once at initialization, where System Modeler does not — reproduced on both tools and recorded as `upstream-issues.md` D3 | done |
@@ -3667,6 +3669,11 @@ complement: a tab the app OFFERS and the pane cannot fill.** That check is what 
 wants, and it is the one that would have found all five at once.
 
 ### 11-04, the two-phase reduction — three panes, three numbers, all correct
+
+*(**Resolved 2026-11-26**, and the diagnosis below was half wrong: the Index Reduction pane's
+"9 → 5" was not one of Rumoca's two places at all, but HRW's own run of the reducer on the DAE
+before solve lowering's simplifications. The tabs now read one observed run; see item 4 of the
+post-rebase sweep table.)*
 
 **v0.10.4 reduces in two places, and HRW reports them as if they were one.** `prepare_for_solve`
 demotes what its lanes can reach; `rumoca-phase-solve`'s state selection then picks a chart on

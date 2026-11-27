@@ -1,0 +1,414 @@
+{
+  "n_equations": 23,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 16,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = 0 - (src.p.i + src.n.i)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = src.i - src.p.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = src.v - (src.p.v - src.n.v)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[3]",
+          "index": 3,
+          "text": "0 = src.v - src.V",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[4]",
+          "index": 4,
+          "text": "0 = 0 - (R.p.i + R.n.i)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[5]",
+          "index": 5,
+          "text": "0 = R.i - R.p.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[6]",
+          "index": 6,
+          "text": "0 = R.v - (R.p.v - R.n.v)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[7]",
+          "index": 7,
+          "text": "0 = R.T_heatPort - R.T",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[8]",
+          "index": 8,
+          "text": "0 = R.R_actual - R.R*(1 + R.alpha*(R.T_heatPort - R.T_ref))",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[9]",
+          "index": 9,
+          "text": "0 = R.v - R.R_actual*R.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[10]",
+          "index": 10,
+          "text": "0 = R.LossPower - R.v*R.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[11]",
+          "index": 11,
+          "text": "0 = 0 - (C.p.i + C.n.i)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[12]",
+          "index": 12,
+          "text": "0 = C.i - C.p.i",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[13]",
+          "index": 13,
+          "text": "0 = C.v - (C.p.v - C.n.v)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[14]",
+          "index": 14,
+          "text": "0 = C.i - C.C*der(C.v)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[15]",
+          "index": 15,
+          "text": "0 = gnd.p.v - 0",
+          "origin": "source DAE object",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Potential equality",
+      "family": "Connector equations",
+      "description": "One connection set's potential variables made equal: n-1 equations for n connectors",
+      "n": 4,
+      "equations": [
+        {
+          "id": "f_x[19]",
+          "index": 19,
+          "text": "0 = src.p.v - R.p.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[20]",
+          "index": 20,
+          "text": "0 = R.n.v - C.p.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[21]",
+          "index": 21,
+          "text": "0 = C.n.v - src.n.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[22]",
+          "index": 22,
+          "text": "0 = src.n.v - gnd.p.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Flow conservation",
+      "family": "Connector equations",
+      "description": "One connection set's flow variables summed to zero: exactly 1 equation per set",
+      "n": 3,
+      "equations": [
+        {
+          "id": "f_x[16]",
+          "index": 16,
+          "text": "0 = src.p.i + R.p.i",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[17]",
+          "index": 17,
+          "text": "0 = R.n.i + C.p.i",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[18]",
+          "index": 18,
+          "text": "0 = C.n.i + src.n.i + gnd.p.i",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 1,
+    "algebraics": 22,
+    "parameters": 7,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "src.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "src.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "src.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "src.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "src.n.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "src.n.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "src.V",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "V"
+    },
+    {
+      "id": "R.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "R.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "R.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "R.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "R.n.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "R.n.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "R.useHeatPort",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "false",
+      "unit": null
+    },
+    {
+      "id": "R.T",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "R.T_ref",
+      "unit": "K"
+    },
+    {
+      "id": "R.LossPower",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "W"
+    },
+    {
+      "id": "R.T_heatPort",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "288.15",
+      "unit": "K"
+    },
+    {
+      "id": "R.R",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "Ohm"
+    },
+    {
+      "id": "R.T_ref",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "300.15",
+      "unit": "K"
+    },
+    {
+      "id": "R.alpha",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "1/K"
+    },
+    {
+      "id": "R.R_actual",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "Ohm"
+    },
+    {
+      "id": "C.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "C.v",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[14]",
+        "equation_text": "0 = C.i - C.C*der(C.v)"
+      },
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "C.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "C.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "C.n.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "C.n.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    },
+    {
+      "id": "C.C",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "F"
+    },
+    {
+      "id": "gnd.p.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "V"
+    },
+    {
+      "id": "gnd.p.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "A"
+    }
+  ]
+}

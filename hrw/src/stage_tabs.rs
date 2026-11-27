@@ -175,16 +175,33 @@ pub(crate) fn stage_tabs_ui(
                      matching cannot assign one equation per unknown unless they agree.",
             ),
         ),
+        // **Simplify through Solve lowering are one Rumoca call** (2026-11-26): solve
+        // lowering, run once and watched (`worker/preparation.rs`). The tooltips said
+        // "the RAW DAE" and "inspect_prepare_for_solve" until then, which described
+        // HRW's own calls and not the run Rumoca simulates.
+        (
+            StageKind::Simplify,
+            "Simplify",
+            &stages.simplify,
+            Some(
+                "The first thing solve lowering does, before any structural work: four \
+                     source transforms, in order — fold evaluable parameters, inline \
+                     annotated calls, merge aliases (a = b, a = -b), fold constants. Each \
+                     reads the previous one's output. Every tab to the right describes the \
+                     system these produce, not the DAE as built.",
+            ),
+        ),
         (
             StageKind::Structural,
             "Structural",
             &stages.structural,
             Some(
-                "Structural analysis of the RAW DAE (Rumoca phase 7): maximum matching \
-                     (equation↔unknown), BLT blocks (size>1 = algebraic loop), and tearing. \
-                     A high-index system (rigid constraints) reports SINGULAR here — see the \
-                     Index reduction tab for the reduced, solvable form. BLT spy-plot (drag \
-                     to pan, scroll to zoom, click a block to capture) or the raw report tree.",
+                "The first structural analysis solve lowering ran, on the simplified \
+                     system: maximum matching (equation↔unknown), BLT blocks (size>1 = \
+                     algebraic loop), and tearing. A high-index system (rigid constraints) \
+                     reports SINGULAR here — the reducer starts from this analysis. \
+                     `analyses` lists every analysis preparation ran, and why. BLT spy-plot \
+                     (drag to pan, scroll to zoom, click a block to capture) or the report tree.",
             ),
         ),
         (
@@ -192,15 +209,12 @@ pub(crate) fn stage_tabs_ui(
             "Index reduction",
             &stages.index_reduction,
             Some(
-                // Rewritten 2026-11-07: it described 0.9.20's "funnel", a fixed pipeline of
-                // steps that 0.10.0 replaced with a search (`worker::index_reduction_from_observation`).
-                "Rumoca's preparation for solving (inspect_prepare_for_solve). Reduction is a \
-                     search: rounds alternate a Direct and a Holonomic lane, and each attempt \
-                     rebuilds and re-sorts the whole system, so its outcome is measured, not \
-                     predicted. Before is the Structural report; after is the prepared system. \
-                     An index-1 model has nothing to reduce. A refusal here is not the \
-                     compiler's verdict: state selection in Solve lowering can still reduce \
-                     the model (CartesianPendulum is the case).",
+                "The reducer's search as solve lowering ran it: rounds alternate a Direct \
+                     and a Holonomic lane, each attempt rebuilding and re-sorting the system. \
+                     Then state selection decides (`route`) whether to retain the reduced \
+                     system or reduce to a formal-derivative basis, and `integrated` names \
+                     what the solver integrates. Before is the Structural report; after is \
+                     the prepared system lowering consumed.",
             ),
         ),
         (
@@ -208,13 +222,12 @@ pub(crate) fn stage_tabs_ui(
             "Initialization",
             &stages.initialization,
             Some(
-                // Rewritten 2026-11-07: it described 0.9.20's solve plan (`build_ic_plan`, a
-                // relaxation hint), which 0.10.0 replaced with pins.
-                "The initial-value pins of the same preparation Index reduction reports on. \
-                     Each initial equation (MLS §8.6) is rewritten onto the coordinate it is \
-                     about, with a role: Definition (it determines a state's initial value) or \
-                     Check (it stays a residual the initialization instant must satisfy). Not \
-                     a solve plan: the values themselves are computed when simulation starts.",
+                "The initialization plan solve lowering lowered (MLS §8.6), row by row, \
+                     in Rumoca's own roles: a Solved row determines an unknown; a \
+                     SurplusCheck row reads only values something else fixed, so it is a \
+                     consistency check the run evaluates and can fail. given_states are \
+                     states whose start values are fixed. The values themselves are \
+                     computed when simulation starts.",
             ),
         ),
         (
@@ -222,13 +235,10 @@ pub(crate) fn stage_tabs_ui(
             "Events",
             &stages.events,
             Some(
-                // Rewritten 2026-11-07: it named 0.9.20's flat f_z / f_m collections and a
-                // root partition. 0.10.0 states conditions as an algebra.
-                "The DAE's condition algebra. Relations are the comparisons an event can \
-                     hinge on; conditions are boolean terms over them (and, or, not, and the \
-                     edge-of-any a vector `when` needs, MLS 8.3.5.1); roots are relations \
-                     watched for a sign change, each with the condition that activates it; \
-                     event actions say what fires and when. A smooth model shows none.",
+                "Not a separate step. The DAE's condition algebra as DAE construction \
+                     recorded it — relations, conditions, roots watched for a sign change, \
+                     event actions — and, under `lowered`, the event partition solve \
+                     lowering built from it. A smooth model shows none.",
             ),
         ),
         (
@@ -236,9 +246,10 @@ pub(crate) fn stage_tabs_ui(
             "Solve lowering",
             &stages.solve_lowering,
             Some(
-                "The DAE lowered to a SolveModel (phase 8): the solvable form the \
-                     simulator runs — residual programs, variable layout, mass matrix, Jacobian \
-                     sparsity. This is the compile step just before simulation.",
+                "The executable SolveProblem solve lowering produced — variable layout, \
+                     residual and derivative programs, initialization, events. It is the \
+                     problem the simulator integrates: Run integrates this preparation's \
+                     runtime, not a second lowering.",
             ),
         ),
     ];

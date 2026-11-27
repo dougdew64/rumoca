@@ -5,9 +5,15 @@
     "kind": "borrowed",
     "admitted": true,
     "rounds": 0,
-    "meaning": "the raw system sorted and normalization left it unchanged: already index-1, nothing rebuilt"
+    "meaning": "the system the reducer was given (the Simplify tab's output) sorted and normalization left it unchanged: already index-1, nothing rebuilt"
   },
   "lanes": [],
+  "route": [
+    "reducer accepted the system",
+    "no manifold: StateSelect preferences decided"
+  ],
+  "integrated": [],
+  "alternate_charts": 0,
   "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
   "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
   "before": {
@@ -23,7 +29,7 @@
       {
         "equation": "f_x[1] (i = p.i)",
         "id": "f_x[1]",
-        "unknown": "src.i"
+        "unknown": "src.p.i"
       },
       {
         "equation": "f_x[2] (v = p.v - n.v)",
@@ -43,12 +49,12 @@
       {
         "equation": "f_x[5] (i = p.i)",
         "id": "f_x[5]",
-        "unknown": "seg1.R.p.i"
+        "unknown": "seg1.R.i"
       },
       {
         "equation": "f_x[6] (v = p.v - n.v)",
         "id": "f_x[6]",
-        "unknown": "seg1.R.v"
+        "unknown": "seg1.n.v"
       },
       {
         "equation": "f_x[7] (T_heatPort = T)",
@@ -63,7 +69,7 @@
       {
         "equation": "f_x[9] (v = R_actual*i)",
         "id": "f_x[9]",
-        "unknown": "seg1.R.i"
+        "unknown": "seg1.R.v"
       },
       {
         "equation": "f_x[10] (LossPower = v*i)",
@@ -83,7 +89,7 @@
       {
         "equation": "f_x[13] (v = p.v - n.v)",
         "id": "f_x[13]",
-        "unknown": "seg2.R.p.v"
+        "unknown": "seg2.R.v"
       },
       {
         "equation": "f_x[14] (T_heatPort = T)",
@@ -98,7 +104,7 @@
       {
         "equation": "f_x[16] (v = R_actual*i)",
         "id": "f_x[16]",
-        "unknown": "seg2.R.v"
+        "unknown": "src.i"
       },
       {
         "equation": "f_x[17] (LossPower = v*i)",
@@ -108,12 +114,12 @@
       {
         "equation": "f_x[18] (p.v = 0)",
         "id": "f_x[18]",
-        "unknown": "gnd.p.v"
+        "unknown": "src.n.v"
       },
       {
         "equation": "f_x[19] (SI.Current i)",
         "id": "f_x[19]",
-        "unknown": "seg1.p.i"
+        "unknown": "seg1.R.p.i"
       },
       {
         "equation": "f_x[20] (SI.Current i)",
@@ -133,7 +139,7 @@
       {
         "equation": "f_x[23] (SI.Current i)",
         "id": "f_x[23]",
-        "unknown": "src.p.i"
+        "unknown": "seg1.p.i"
       },
       {
         "equation": "f_x[24] (SI.Current i)",
@@ -163,12 +169,12 @@
       {
         "equation": "f_x[29] (SI.ElectricPotential v)",
         "id": "f_x[29]",
-        "unknown": "seg1.n.v"
+        "unknown": "seg2.p.v"
       },
       {
         "equation": "f_x[30] (SI.ElectricPotential v)",
         "id": "f_x[30]",
-        "unknown": "seg2.p.v"
+        "unknown": "seg2.R.p.v"
       },
       {
         "equation": "f_x[31] (SI.ElectricPotential v)",
@@ -183,7 +189,7 @@
       {
         "equation": "f_x[33] (SI.ElectricPotential v)",
         "id": "f_x[33]",
-        "unknown": "src.n.v"
+        "unknown": "gnd.p.v"
       }
     ],
     "blocks": [
@@ -197,58 +203,9 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[18] (p.v = 0)",
-        "id": "f_x[18]",
-        "unknown": "gnd.p.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[33] (SI.ElectricPotential v)",
-        "id": "f_x[33]",
-        "unknown": "src.n.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
         "equation": "f_x[2] (v = p.v - n.v)",
         "id": "f_x[2]",
         "unknown": "src.p.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[27] (SI.ElectricPotential v)",
-        "id": "f_x[27]",
-        "unknown": "seg1.R.p.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[14] (T_heatPort = T)",
-        "id": "f_x[14]",
-        "unknown": "seg2.R.T_heatPort"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
-        "id": "f_x[15]",
-        "unknown": "seg2.R.R_actual"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[32] (SI.ElectricPotential v)",
-        "id": "f_x[32]",
-        "unknown": "seg2.n.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[31] (SI.ElectricPotential v)",
-        "id": "f_x[31]",
-        "unknown": "seg2.R.n.v"
       },
       {
         "kind": "scalar",
@@ -265,140 +222,68 @@
         "unknown": "seg1.R.R_actual"
       },
       {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[14] (T_heatPort = T)",
+        "id": "f_x[14]",
+        "unknown": "seg2.R.T_heatPort"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "id": "f_x[15]",
+        "unknown": "seg2.R.R_actual"
+      },
+      {
         "kind": "coupled",
-        "size": 13,
+        "size": 4,
         "equations": [
-          "f_x[4] (0 = p.i + n.i)",
-          "f_x[20] (SI.Current i)",
-          "f_x[24] (SI.Current i)",
-          "f_x[21] (SI.Current i)",
-          "f_x[12] (i = p.i)",
-          "f_x[16] (v = R_actual*i)",
-          "f_x[13] (v = p.v - n.v)",
-          "f_x[30] (SI.ElectricPotential v)",
-          "f_x[29] (SI.ElectricPotential v)",
-          "f_x[28] (SI.ElectricPotential v)",
-          "f_x[6] (v = p.v - n.v)",
           "f_x[9] (v = R_actual*i)",
-          "f_x[5] (i = p.i)"
+          "f_x[6] (v = p.v - n.v)",
+          "f_x[13] (v = p.v - n.v)",
+          "f_x[16] (v = R_actual*i)"
         ],
         "ids": [
-          "f_x[4]",
-          "f_x[20]",
-          "f_x[24]",
-          "f_x[21]",
-          "f_x[12]",
-          "f_x[16]",
-          "f_x[13]",
-          "f_x[30]",
-          "f_x[29]",
-          "f_x[28]",
-          "f_x[6]",
           "f_x[9]",
-          "f_x[5]"
+          "f_x[6]",
+          "f_x[13]",
+          "f_x[16]"
         ],
         "unknowns": [
-          "seg1.R.n.i",
-          "seg1.n.i",
-          "seg2.p.i",
-          "seg2.R.p.i",
-          "seg2.R.i",
-          "seg2.R.v",
-          "seg2.R.p.v",
-          "seg2.p.v",
-          "seg1.n.v",
-          "seg1.R.n.v",
           "seg1.R.v",
-          "seg1.R.i",
-          "seg1.R.p.i"
+          "seg1.n.v",
+          "seg2.R.v",
+          "src.i"
         ],
         "tearing": {
           "tear_vars": [
-            "seg1.R.n.i"
+            "seg1.R.v"
           ],
           "residual_equations": [
-            "f_x[30] (SI.ElectricPotential v)"
+            "f_x[16] (v = R_actual*i)"
           ],
           "residual_equation_ids": [
-            "f_x[30]"
+            "f_x[16]"
           ],
           "causal_sequence": [
             {
-              "equation": "f_x[20] (SI.Current i)",
-              "id": "f_x[20]",
-              "variable": "seg1.n.i"
-            },
-            {
-              "equation": "f_x[4] (0 = p.i + n.i)",
-              "id": "f_x[4]",
-              "variable": "seg1.R.p.i"
-            },
-            {
-              "equation": "f_x[24] (SI.Current i)",
-              "id": "f_x[24]",
-              "variable": "seg2.p.i"
-            },
-            {
-              "equation": "f_x[5] (i = p.i)",
-              "id": "f_x[5]",
-              "variable": "seg1.R.i"
-            },
-            {
-              "equation": "f_x[21] (SI.Current i)",
-              "id": "f_x[21]",
-              "variable": "seg2.R.p.i"
+              "equation": "f_x[6] (v = p.v - n.v)",
+              "id": "f_x[6]",
+              "variable": "seg1.n.v"
             },
             {
               "equation": "f_x[9] (v = R_actual*i)",
               "id": "f_x[9]",
-              "variable": "seg1.R.v"
-            },
-            {
-              "equation": "f_x[12] (i = p.i)",
-              "id": "f_x[12]",
-              "variable": "seg2.R.i"
-            },
-            {
-              "equation": "f_x[6] (v = p.v - n.v)",
-              "id": "f_x[6]",
-              "variable": "seg1.R.n.v"
-            },
-            {
-              "equation": "f_x[16] (v = R_actual*i)",
-              "id": "f_x[16]",
-              "variable": "seg2.R.v"
-            },
-            {
-              "equation": "f_x[28] (SI.ElectricPotential v)",
-              "id": "f_x[28]",
-              "variable": "seg1.n.v"
+              "variable": "src.i"
             },
             {
               "equation": "f_x[13] (v = p.v - n.v)",
               "id": "f_x[13]",
-              "variable": "seg2.R.p.v"
-            },
-            {
-              "equation": "f_x[29] (SI.ElectricPotential v)",
-              "id": "f_x[29]",
-              "variable": "seg2.p.v"
+              "variable": "seg2.R.v"
             }
           ]
         }
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[19] (SI.Current i)",
-        "id": "f_x[19]",
-        "unknown": "seg1.p.i"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[23] (SI.Current i)",
-        "id": "f_x[23]",
-        "unknown": "src.p.i"
       },
       {
         "kind": "scalar",
@@ -412,7 +297,21 @@
         "size": 1,
         "equation": "f_x[1] (i = p.i)",
         "id": "f_x[1]",
-        "unknown": "src.i"
+        "unknown": "src.p.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[4] (0 = p.i + n.i)",
+        "id": "f_x[4]",
+        "unknown": "seg1.R.n.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[5] (i = p.i)",
+        "id": "f_x[5]",
+        "unknown": "seg1.R.i"
       },
       {
         "kind": "scalar",
@@ -431,6 +330,13 @@
       {
         "kind": "scalar",
         "size": 1,
+        "equation": "f_x[12] (i = p.i)",
+        "id": "f_x[12]",
+        "unknown": "seg2.R.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
         "equation": "f_x[17] (LossPower = v*i)",
         "id": "f_x[17]",
         "unknown": "seg2.R.LossPower"
@@ -438,9 +344,51 @@
       {
         "kind": "scalar",
         "size": 1,
+        "equation": "f_x[18] (p.v = 0)",
+        "id": "f_x[18]",
+        "unknown": "src.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[19] (SI.Current i)",
+        "id": "f_x[19]",
+        "unknown": "seg1.R.p.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[20] (SI.Current i)",
+        "id": "f_x[20]",
+        "unknown": "seg1.n.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[21] (SI.Current i)",
+        "id": "f_x[21]",
+        "unknown": "seg2.R.p.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
         "equation": "f_x[22] (SI.Current i)",
         "id": "f_x[22]",
         "unknown": "seg2.n.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[23] (SI.Current i)",
+        "id": "f_x[23]",
+        "unknown": "seg1.p.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[24] (SI.Current i)",
+        "id": "f_x[24]",
+        "unknown": "seg2.p.i"
       },
       {
         "kind": "scalar",
@@ -455,6 +403,55 @@
         "equation": "f_x[26] (SI.ElectricPotential v)",
         "id": "f_x[26]",
         "unknown": "seg1.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[27] (SI.ElectricPotential v)",
+        "id": "f_x[27]",
+        "unknown": "seg1.R.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[28] (SI.ElectricPotential v)",
+        "id": "f_x[28]",
+        "unknown": "seg1.R.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[29] (SI.ElectricPotential v)",
+        "id": "f_x[29]",
+        "unknown": "seg2.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[30] (SI.ElectricPotential v)",
+        "id": "f_x[30]",
+        "unknown": "seg2.R.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[31] (SI.ElectricPotential v)",
+        "id": "f_x[31]",
+        "unknown": "seg2.R.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[32] (SI.ElectricPotential v)",
+        "id": "f_x[32]",
+        "unknown": "seg2.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[33] (SI.ElectricPotential v)",
+        "id": "f_x[33]",
+        "unknown": "gnd.p.v"
       }
     ],
     "incidence": {
@@ -501,10 +498,10 @@
           "equation": "f_x[0] (0 = p.i + n.i)",
           "id": "f_x[0]",
           "unknowns": [
-            3,
+            0,
             5
           ],
-          "equation_text": "0 = 0 - (src.p.i + src.n.i)"
+          "equation_text": "0 = src.n.i + src.i"
         },
         {
           "equation": "f_x[1] (i = p.i)",
@@ -513,17 +510,16 @@
             0,
             3
           ],
-          "equation_text": "0 = src.i - src.p.i"
+          "equation_text": "0 = src.p.i - src.i"
         },
         {
           "equation": "f_x[2] (v = p.v - n.v)",
           "id": "f_x[2]",
           "unknowns": [
             1,
-            2,
-            4
+            2
           ],
-          "equation_text": "0 = src.v - (src.p.v - src.n.v)"
+          "equation_text": "0 = src.v - (src.p.v - 0)"
         },
         {
           "equation": "f_x[3] (v = V)",
@@ -537,29 +533,29 @@
           "equation": "f_x[4] (0 = p.i + n.i)",
           "id": "f_x[4]",
           "unknowns": [
-            13,
+            0,
             15
           ],
-          "equation_text": "0 = 0 - (seg1.R.p.i + seg1.R.n.i)"
+          "equation_text": "0 = seg1.R.n.i - src.i"
         },
         {
           "equation": "f_x[5] (i = p.i)",
           "id": "f_x[5]",
           "unknowns": [
-            10,
-            13
+            0,
+            10
           ],
-          "equation_text": "0 = seg1.R.i - seg1.R.p.i"
+          "equation_text": "0 = seg1.R.i + src.i"
         },
         {
           "equation": "f_x[6] (v = p.v - n.v)",
           "id": "f_x[6]",
           "unknowns": [
-            11,
-            12,
-            14
+            2,
+            8,
+            11
           ],
-          "equation_text": "0 = seg1.R.v - (seg1.R.p.v - seg1.R.n.v)"
+          "equation_text": "0 = seg1.R.v - (src.p.v - seg1.n.v)"
         },
         {
           "equation": "f_x[7] (T_heatPort = T)",
@@ -582,49 +578,48 @@
           "equation": "f_x[9] (v = R_actual*i)",
           "id": "f_x[9]",
           "unknowns": [
-            10,
+            0,
             11,
             18
           ],
-          "equation_text": "0 = seg1.R.v - seg1.R.R_actual*seg1.R.i"
+          "equation_text": "0 = seg1.R.v - seg1.R.R_actual*-src.i"
         },
         {
           "equation": "f_x[10] (LossPower = v*i)",
           "id": "f_x[10]",
           "unknowns": [
-            10,
+            0,
             11,
             16
           ],
-          "equation_text": "0 = seg1.R.LossPower - seg1.R.v*seg1.R.i"
+          "equation_text": "0 = seg1.R.LossPower - seg1.R.v*-src.i"
         },
         {
           "equation": "f_x[11] (0 = p.i + n.i)",
           "id": "f_x[11]",
           "unknowns": [
-            26,
+            0,
             28
           ],
-          "equation_text": "0 = 0 - (seg2.R.p.i + seg2.R.n.i)"
+          "equation_text": "0 = seg2.R.n.i - src.i"
         },
         {
           "equation": "f_x[12] (i = p.i)",
           "id": "f_x[12]",
           "unknowns": [
-            23,
-            26
+            0,
+            23
           ],
-          "equation_text": "0 = seg2.R.i - seg2.R.p.i"
+          "equation_text": "0 = seg2.R.i + src.i"
         },
         {
           "equation": "f_x[13] (v = p.v - n.v)",
           "id": "f_x[13]",
           "unknowns": [
-            24,
-            25,
-            27
+            8,
+            24
           ],
-          "equation_text": "0 = seg2.R.v - (seg2.R.p.v - seg2.R.n.v)"
+          "equation_text": "0 = seg2.R.v - (seg1.n.v - 0)"
         },
         {
           "equation": "f_x[14] (T_heatPort = T)",
@@ -647,102 +642,101 @@
           "equation": "f_x[16] (v = R_actual*i)",
           "id": "f_x[16]",
           "unknowns": [
-            23,
+            0,
             24,
             31
           ],
-          "equation_text": "0 = seg2.R.v - seg2.R.R_actual*seg2.R.i"
+          "equation_text": "0 = seg2.R.v - seg2.R.R_actual*-src.i"
         },
         {
           "equation": "f_x[17] (LossPower = v*i)",
           "id": "f_x[17]",
           "unknowns": [
-            23,
+            0,
             24,
             29
           ],
-          "equation_text": "0 = seg2.R.LossPower - seg2.R.v*seg2.R.i"
+          "equation_text": "0 = seg2.R.LossPower - seg2.R.v*-src.i"
         },
         {
           "equation": "f_x[18] (p.v = 0)",
           "id": "f_x[18]",
           "unknowns": [
-            32
+            4
           ],
-          "equation_text": "0 = gnd.p.v - 0"
+          "equation_text": "0 = src.n.v - 0"
         },
         {
           "equation": "f_x[19] (SI.Current i)",
           "id": "f_x[19]",
           "unknowns": [
-            7,
+            0,
             13
           ],
-          "equation_text": "0 = -seg1.p.i + seg1.R.p.i"
+          "equation_text": "0 = seg1.R.p.i + src.i"
         },
         {
           "equation": "f_x[20] (SI.Current i)",
           "id": "f_x[20]",
           "unknowns": [
-            9,
-            15
+            0,
+            9
           ],
-          "equation_text": "0 = seg1.R.n.i + -seg1.n.i"
+          "equation_text": "0 = seg1.n.i - src.i"
         },
         {
           "equation": "f_x[21] (SI.Current i)",
           "id": "f_x[21]",
           "unknowns": [
-            20,
+            0,
             26
           ],
-          "equation_text": "0 = -seg2.p.i + seg2.R.p.i"
+          "equation_text": "0 = seg2.R.p.i + src.i"
         },
         {
           "equation": "f_x[22] (SI.Current i)",
           "id": "f_x[22]",
           "unknowns": [
-            22,
-            28
+            0,
+            22
           ],
-          "equation_text": "0 = seg2.R.n.i + -seg2.n.i"
+          "equation_text": "0 = seg2.n.i - src.i"
         },
         {
           "equation": "f_x[23] (SI.Current i)",
           "id": "f_x[23]",
           "unknowns": [
-            3,
+            0,
             7
           ],
-          "equation_text": "0 = src.p.i + seg1.p.i"
+          "equation_text": "0 = seg1.p.i + src.i"
         },
         {
           "equation": "f_x[24] (SI.Current i)",
           "id": "f_x[24]",
           "unknowns": [
-            9,
+            0,
             20
           ],
-          "equation_text": "0 = seg1.n.i + seg2.p.i"
+          "equation_text": "0 = seg2.p.i + src.i"
         },
         {
           "equation": "f_x[25] (SI.Current i)",
           "id": "f_x[25]",
           "unknowns": [
-            5,
-            22,
+            0,
             33
           ],
-          "equation_text": "0 = seg2.n.i + src.n.i + gnd.p.i"
+          "equation_text": "0 = src.i + -src.i + gnd.p.i"
         },
         {
           "equation": "f_x[26] (SI.ElectricPotential v)",
           "id": "f_x[26]",
           "unknowns": [
-            6,
-            12
+            2,
+            6
           ],
-          "equation_text": "0 = seg1.p.v - seg1.R.p.v"
+          "equation_text": "0 = seg1.p.v - src.p.v"
         },
         {
           "equation": "f_x[27] (SI.ElectricPotential v)",
@@ -769,46 +763,52 @@
             8,
             19
           ],
-          "equation_text": "0 = seg1.n.v - seg2.p.v"
+          "equation_text": "0 = seg2.p.v - seg1.n.v"
         },
         {
           "equation": "f_x[30] (SI.ElectricPotential v)",
           "id": "f_x[30]",
           "unknowns": [
-            19,
+            8,
             25
           ],
-          "equation_text": "0 = seg2.p.v - seg2.R.p.v"
+          "equation_text": "0 = seg2.R.p.v - seg1.n.v"
         },
         {
           "equation": "f_x[31] (SI.ElectricPotential v)",
           "id": "f_x[31]",
           "unknowns": [
-            21,
             27
           ],
-          "equation_text": "0 = seg2.R.n.v - seg2.n.v"
+          "equation_text": "0 = seg2.R.n.v - 0"
         },
         {
           "equation": "f_x[32] (SI.ElectricPotential v)",
           "id": "f_x[32]",
           "unknowns": [
-            4,
             21
           ],
-          "equation_text": "0 = seg2.n.v - src.n.v"
+          "equation_text": "0 = seg2.n.v - 0"
         },
         {
           "equation": "f_x[33] (SI.ElectricPotential v)",
           "id": "f_x[33]",
           "unknowns": [
-            4,
             32
           ],
-          "equation_text": "0 = src.n.v - gnd.p.v"
+          "equation_text": "0 = gnd.p.v - 0"
         }
       ]
     },
+    "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+    "analyses": [
+      {
+        "context": "Source",
+        "equations": 34,
+        "unknowns": 34,
+        "result": "sorted: 31 block(s), 1 coupled"
+      }
+    ],
     "n_states": 0,
     "n_algebraics": 34
   },
@@ -825,7 +825,7 @@
       {
         "equation": "f_x[1] (i = p.i)",
         "id": "f_x[1]",
-        "unknown": "src.i"
+        "unknown": "src.p.i"
       },
       {
         "equation": "f_x[2] (v = p.v - n.v)",
@@ -845,12 +845,12 @@
       {
         "equation": "f_x[5] (i = p.i)",
         "id": "f_x[5]",
-        "unknown": "seg1.R.p.i"
+        "unknown": "seg1.R.i"
       },
       {
         "equation": "f_x[6] (v = p.v - n.v)",
         "id": "f_x[6]",
-        "unknown": "seg1.R.v"
+        "unknown": "seg1.n.v"
       },
       {
         "equation": "f_x[7] (T_heatPort = T)",
@@ -865,7 +865,7 @@
       {
         "equation": "f_x[9] (v = R_actual*i)",
         "id": "f_x[9]",
-        "unknown": "seg1.R.i"
+        "unknown": "seg1.R.v"
       },
       {
         "equation": "f_x[10] (LossPower = v*i)",
@@ -885,7 +885,7 @@
       {
         "equation": "f_x[13] (v = p.v - n.v)",
         "id": "f_x[13]",
-        "unknown": "seg2.R.p.v"
+        "unknown": "seg2.R.v"
       },
       {
         "equation": "f_x[14] (T_heatPort = T)",
@@ -900,7 +900,7 @@
       {
         "equation": "f_x[16] (v = R_actual*i)",
         "id": "f_x[16]",
-        "unknown": "seg2.R.v"
+        "unknown": "src.i"
       },
       {
         "equation": "f_x[17] (LossPower = v*i)",
@@ -910,12 +910,12 @@
       {
         "equation": "f_x[18] (p.v = 0)",
         "id": "f_x[18]",
-        "unknown": "gnd.p.v"
+        "unknown": "src.n.v"
       },
       {
         "equation": "f_x[19] (SI.Current i)",
         "id": "f_x[19]",
-        "unknown": "seg1.p.i"
+        "unknown": "seg1.R.p.i"
       },
       {
         "equation": "f_x[20] (SI.Current i)",
@@ -935,7 +935,7 @@
       {
         "equation": "f_x[23] (SI.Current i)",
         "id": "f_x[23]",
-        "unknown": "src.p.i"
+        "unknown": "seg1.p.i"
       },
       {
         "equation": "f_x[24] (SI.Current i)",
@@ -965,12 +965,12 @@
       {
         "equation": "f_x[29] (SI.ElectricPotential v)",
         "id": "f_x[29]",
-        "unknown": "seg1.n.v"
+        "unknown": "seg2.p.v"
       },
       {
         "equation": "f_x[30] (SI.ElectricPotential v)",
         "id": "f_x[30]",
-        "unknown": "seg2.p.v"
+        "unknown": "seg2.R.p.v"
       },
       {
         "equation": "f_x[31] (SI.ElectricPotential v)",
@@ -985,7 +985,7 @@
       {
         "equation": "f_x[33] (SI.ElectricPotential v)",
         "id": "f_x[33]",
-        "unknown": "src.n.v"
+        "unknown": "gnd.p.v"
       }
     ],
     "blocks": [
@@ -999,58 +999,9 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[18] (p.v = 0)",
-        "id": "f_x[18]",
-        "unknown": "gnd.p.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[33] (SI.ElectricPotential v)",
-        "id": "f_x[33]",
-        "unknown": "src.n.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
         "equation": "f_x[2] (v = p.v - n.v)",
         "id": "f_x[2]",
         "unknown": "src.p.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[27] (SI.ElectricPotential v)",
-        "id": "f_x[27]",
-        "unknown": "seg1.R.p.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[14] (T_heatPort = T)",
-        "id": "f_x[14]",
-        "unknown": "seg2.R.T_heatPort"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
-        "id": "f_x[15]",
-        "unknown": "seg2.R.R_actual"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[32] (SI.ElectricPotential v)",
-        "id": "f_x[32]",
-        "unknown": "seg2.n.v"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[31] (SI.ElectricPotential v)",
-        "id": "f_x[31]",
-        "unknown": "seg2.R.n.v"
       },
       {
         "kind": "scalar",
@@ -1067,140 +1018,68 @@
         "unknown": "seg1.R.R_actual"
       },
       {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[14] (T_heatPort = T)",
+        "id": "f_x[14]",
+        "unknown": "seg2.R.T_heatPort"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "id": "f_x[15]",
+        "unknown": "seg2.R.R_actual"
+      },
+      {
         "kind": "coupled",
-        "size": 13,
+        "size": 4,
         "equations": [
-          "f_x[4] (0 = p.i + n.i)",
-          "f_x[20] (SI.Current i)",
-          "f_x[24] (SI.Current i)",
-          "f_x[21] (SI.Current i)",
-          "f_x[12] (i = p.i)",
-          "f_x[16] (v = R_actual*i)",
-          "f_x[13] (v = p.v - n.v)",
-          "f_x[30] (SI.ElectricPotential v)",
-          "f_x[29] (SI.ElectricPotential v)",
-          "f_x[28] (SI.ElectricPotential v)",
-          "f_x[6] (v = p.v - n.v)",
           "f_x[9] (v = R_actual*i)",
-          "f_x[5] (i = p.i)"
+          "f_x[6] (v = p.v - n.v)",
+          "f_x[13] (v = p.v - n.v)",
+          "f_x[16] (v = R_actual*i)"
         ],
         "ids": [
-          "f_x[4]",
-          "f_x[20]",
-          "f_x[24]",
-          "f_x[21]",
-          "f_x[12]",
-          "f_x[16]",
-          "f_x[13]",
-          "f_x[30]",
-          "f_x[29]",
-          "f_x[28]",
-          "f_x[6]",
           "f_x[9]",
-          "f_x[5]"
+          "f_x[6]",
+          "f_x[13]",
+          "f_x[16]"
         ],
         "unknowns": [
-          "seg1.R.n.i",
-          "seg1.n.i",
-          "seg2.p.i",
-          "seg2.R.p.i",
-          "seg2.R.i",
-          "seg2.R.v",
-          "seg2.R.p.v",
-          "seg2.p.v",
-          "seg1.n.v",
-          "seg1.R.n.v",
           "seg1.R.v",
-          "seg1.R.i",
-          "seg1.R.p.i"
+          "seg1.n.v",
+          "seg2.R.v",
+          "src.i"
         ],
         "tearing": {
           "tear_vars": [
-            "seg1.R.n.i"
+            "seg1.R.v"
           ],
           "residual_equations": [
-            "f_x[30] (SI.ElectricPotential v)"
+            "f_x[16] (v = R_actual*i)"
           ],
           "residual_equation_ids": [
-            "f_x[30]"
+            "f_x[16]"
           ],
           "causal_sequence": [
             {
-              "equation": "f_x[20] (SI.Current i)",
-              "id": "f_x[20]",
-              "variable": "seg1.n.i"
-            },
-            {
-              "equation": "f_x[4] (0 = p.i + n.i)",
-              "id": "f_x[4]",
-              "variable": "seg1.R.p.i"
-            },
-            {
-              "equation": "f_x[24] (SI.Current i)",
-              "id": "f_x[24]",
-              "variable": "seg2.p.i"
-            },
-            {
-              "equation": "f_x[5] (i = p.i)",
-              "id": "f_x[5]",
-              "variable": "seg1.R.i"
-            },
-            {
-              "equation": "f_x[21] (SI.Current i)",
-              "id": "f_x[21]",
-              "variable": "seg2.R.p.i"
+              "equation": "f_x[6] (v = p.v - n.v)",
+              "id": "f_x[6]",
+              "variable": "seg1.n.v"
             },
             {
               "equation": "f_x[9] (v = R_actual*i)",
               "id": "f_x[9]",
-              "variable": "seg1.R.v"
-            },
-            {
-              "equation": "f_x[12] (i = p.i)",
-              "id": "f_x[12]",
-              "variable": "seg2.R.i"
-            },
-            {
-              "equation": "f_x[6] (v = p.v - n.v)",
-              "id": "f_x[6]",
-              "variable": "seg1.R.n.v"
-            },
-            {
-              "equation": "f_x[16] (v = R_actual*i)",
-              "id": "f_x[16]",
-              "variable": "seg2.R.v"
-            },
-            {
-              "equation": "f_x[28] (SI.ElectricPotential v)",
-              "id": "f_x[28]",
-              "variable": "seg1.n.v"
+              "variable": "src.i"
             },
             {
               "equation": "f_x[13] (v = p.v - n.v)",
               "id": "f_x[13]",
-              "variable": "seg2.R.p.v"
-            },
-            {
-              "equation": "f_x[29] (SI.ElectricPotential v)",
-              "id": "f_x[29]",
-              "variable": "seg2.p.v"
+              "variable": "seg2.R.v"
             }
           ]
         }
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[19] (SI.Current i)",
-        "id": "f_x[19]",
-        "unknown": "seg1.p.i"
-      },
-      {
-        "kind": "scalar",
-        "size": 1,
-        "equation": "f_x[23] (SI.Current i)",
-        "id": "f_x[23]",
-        "unknown": "src.p.i"
       },
       {
         "kind": "scalar",
@@ -1214,7 +1093,21 @@
         "size": 1,
         "equation": "f_x[1] (i = p.i)",
         "id": "f_x[1]",
-        "unknown": "src.i"
+        "unknown": "src.p.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[4] (0 = p.i + n.i)",
+        "id": "f_x[4]",
+        "unknown": "seg1.R.n.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[5] (i = p.i)",
+        "id": "f_x[5]",
+        "unknown": "seg1.R.i"
       },
       {
         "kind": "scalar",
@@ -1233,6 +1126,13 @@
       {
         "kind": "scalar",
         "size": 1,
+        "equation": "f_x[12] (i = p.i)",
+        "id": "f_x[12]",
+        "unknown": "seg2.R.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
         "equation": "f_x[17] (LossPower = v*i)",
         "id": "f_x[17]",
         "unknown": "seg2.R.LossPower"
@@ -1240,9 +1140,51 @@
       {
         "kind": "scalar",
         "size": 1,
+        "equation": "f_x[18] (p.v = 0)",
+        "id": "f_x[18]",
+        "unknown": "src.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[19] (SI.Current i)",
+        "id": "f_x[19]",
+        "unknown": "seg1.R.p.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[20] (SI.Current i)",
+        "id": "f_x[20]",
+        "unknown": "seg1.n.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[21] (SI.Current i)",
+        "id": "f_x[21]",
+        "unknown": "seg2.R.p.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
         "equation": "f_x[22] (SI.Current i)",
         "id": "f_x[22]",
         "unknown": "seg2.n.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[23] (SI.Current i)",
+        "id": "f_x[23]",
+        "unknown": "seg1.p.i"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[24] (SI.Current i)",
+        "id": "f_x[24]",
+        "unknown": "seg2.p.i"
       },
       {
         "kind": "scalar",
@@ -1257,10 +1199,57 @@
         "equation": "f_x[26] (SI.ElectricPotential v)",
         "id": "f_x[26]",
         "unknown": "seg1.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[27] (SI.ElectricPotential v)",
+        "id": "f_x[27]",
+        "unknown": "seg1.R.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[28] (SI.ElectricPotential v)",
+        "id": "f_x[28]",
+        "unknown": "seg1.R.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[29] (SI.ElectricPotential v)",
+        "id": "f_x[29]",
+        "unknown": "seg2.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[30] (SI.ElectricPotential v)",
+        "id": "f_x[30]",
+        "unknown": "seg2.R.p.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[31] (SI.ElectricPotential v)",
+        "id": "f_x[31]",
+        "unknown": "seg2.R.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[32] (SI.ElectricPotential v)",
+        "id": "f_x[32]",
+        "unknown": "seg2.n.v"
+      },
+      {
+        "kind": "scalar",
+        "size": 1,
+        "equation": "f_x[33] (SI.ElectricPotential v)",
+        "id": "f_x[33]",
+        "unknown": "gnd.p.v"
       }
     ],
-    "n_states": 0,
-    "n_algebraics": 34,
     "incidence": {
       "n_eq": 34,
       "n_var": 34,
@@ -1305,10 +1294,10 @@
           "equation": "f_x[0] (0 = p.i + n.i)",
           "id": "f_x[0]",
           "unknowns": [
-            3,
+            0,
             5
           ],
-          "equation_text": "0 = 0 - (src.p.i + src.n.i)"
+          "equation_text": "0 = src.n.i + src.i"
         },
         {
           "equation": "f_x[1] (i = p.i)",
@@ -1317,17 +1306,16 @@
             0,
             3
           ],
-          "equation_text": "0 = src.i - src.p.i"
+          "equation_text": "0 = src.p.i - src.i"
         },
         {
           "equation": "f_x[2] (v = p.v - n.v)",
           "id": "f_x[2]",
           "unknowns": [
             1,
-            2,
-            4
+            2
           ],
-          "equation_text": "0 = src.v - (src.p.v - src.n.v)"
+          "equation_text": "0 = src.v - (src.p.v - 0)"
         },
         {
           "equation": "f_x[3] (v = V)",
@@ -1341,29 +1329,29 @@
           "equation": "f_x[4] (0 = p.i + n.i)",
           "id": "f_x[4]",
           "unknowns": [
-            13,
+            0,
             15
           ],
-          "equation_text": "0 = 0 - (seg1.R.p.i + seg1.R.n.i)"
+          "equation_text": "0 = seg1.R.n.i - src.i"
         },
         {
           "equation": "f_x[5] (i = p.i)",
           "id": "f_x[5]",
           "unknowns": [
-            10,
-            13
+            0,
+            10
           ],
-          "equation_text": "0 = seg1.R.i - seg1.R.p.i"
+          "equation_text": "0 = seg1.R.i + src.i"
         },
         {
           "equation": "f_x[6] (v = p.v - n.v)",
           "id": "f_x[6]",
           "unknowns": [
-            11,
-            12,
-            14
+            2,
+            8,
+            11
           ],
-          "equation_text": "0 = seg1.R.v - (seg1.R.p.v - seg1.R.n.v)"
+          "equation_text": "0 = seg1.R.v - (src.p.v - seg1.n.v)"
         },
         {
           "equation": "f_x[7] (T_heatPort = T)",
@@ -1386,49 +1374,48 @@
           "equation": "f_x[9] (v = R_actual*i)",
           "id": "f_x[9]",
           "unknowns": [
-            10,
+            0,
             11,
             18
           ],
-          "equation_text": "0 = seg1.R.v - seg1.R.R_actual*seg1.R.i"
+          "equation_text": "0 = seg1.R.v - seg1.R.R_actual*-src.i"
         },
         {
           "equation": "f_x[10] (LossPower = v*i)",
           "id": "f_x[10]",
           "unknowns": [
-            10,
+            0,
             11,
             16
           ],
-          "equation_text": "0 = seg1.R.LossPower - seg1.R.v*seg1.R.i"
+          "equation_text": "0 = seg1.R.LossPower - seg1.R.v*-src.i"
         },
         {
           "equation": "f_x[11] (0 = p.i + n.i)",
           "id": "f_x[11]",
           "unknowns": [
-            26,
+            0,
             28
           ],
-          "equation_text": "0 = 0 - (seg2.R.p.i + seg2.R.n.i)"
+          "equation_text": "0 = seg2.R.n.i - src.i"
         },
         {
           "equation": "f_x[12] (i = p.i)",
           "id": "f_x[12]",
           "unknowns": [
-            23,
-            26
+            0,
+            23
           ],
-          "equation_text": "0 = seg2.R.i - seg2.R.p.i"
+          "equation_text": "0 = seg2.R.i + src.i"
         },
         {
           "equation": "f_x[13] (v = p.v - n.v)",
           "id": "f_x[13]",
           "unknowns": [
-            24,
-            25,
-            27
+            8,
+            24
           ],
-          "equation_text": "0 = seg2.R.v - (seg2.R.p.v - seg2.R.n.v)"
+          "equation_text": "0 = seg2.R.v - (seg1.n.v - 0)"
         },
         {
           "equation": "f_x[14] (T_heatPort = T)",
@@ -1451,102 +1438,101 @@
           "equation": "f_x[16] (v = R_actual*i)",
           "id": "f_x[16]",
           "unknowns": [
-            23,
+            0,
             24,
             31
           ],
-          "equation_text": "0 = seg2.R.v - seg2.R.R_actual*seg2.R.i"
+          "equation_text": "0 = seg2.R.v - seg2.R.R_actual*-src.i"
         },
         {
           "equation": "f_x[17] (LossPower = v*i)",
           "id": "f_x[17]",
           "unknowns": [
-            23,
+            0,
             24,
             29
           ],
-          "equation_text": "0 = seg2.R.LossPower - seg2.R.v*seg2.R.i"
+          "equation_text": "0 = seg2.R.LossPower - seg2.R.v*-src.i"
         },
         {
           "equation": "f_x[18] (p.v = 0)",
           "id": "f_x[18]",
           "unknowns": [
-            32
+            4
           ],
-          "equation_text": "0 = gnd.p.v - 0"
+          "equation_text": "0 = src.n.v - 0"
         },
         {
           "equation": "f_x[19] (SI.Current i)",
           "id": "f_x[19]",
           "unknowns": [
-            7,
+            0,
             13
           ],
-          "equation_text": "0 = -seg1.p.i + seg1.R.p.i"
+          "equation_text": "0 = seg1.R.p.i + src.i"
         },
         {
           "equation": "f_x[20] (SI.Current i)",
           "id": "f_x[20]",
           "unknowns": [
-            9,
-            15
+            0,
+            9
           ],
-          "equation_text": "0 = seg1.R.n.i + -seg1.n.i"
+          "equation_text": "0 = seg1.n.i - src.i"
         },
         {
           "equation": "f_x[21] (SI.Current i)",
           "id": "f_x[21]",
           "unknowns": [
-            20,
+            0,
             26
           ],
-          "equation_text": "0 = -seg2.p.i + seg2.R.p.i"
+          "equation_text": "0 = seg2.R.p.i + src.i"
         },
         {
           "equation": "f_x[22] (SI.Current i)",
           "id": "f_x[22]",
           "unknowns": [
-            22,
-            28
+            0,
+            22
           ],
-          "equation_text": "0 = seg2.R.n.i + -seg2.n.i"
+          "equation_text": "0 = seg2.n.i - src.i"
         },
         {
           "equation": "f_x[23] (SI.Current i)",
           "id": "f_x[23]",
           "unknowns": [
-            3,
+            0,
             7
           ],
-          "equation_text": "0 = src.p.i + seg1.p.i"
+          "equation_text": "0 = seg1.p.i + src.i"
         },
         {
           "equation": "f_x[24] (SI.Current i)",
           "id": "f_x[24]",
           "unknowns": [
-            9,
+            0,
             20
           ],
-          "equation_text": "0 = seg1.n.i + seg2.p.i"
+          "equation_text": "0 = seg2.p.i + src.i"
         },
         {
           "equation": "f_x[25] (SI.Current i)",
           "id": "f_x[25]",
           "unknowns": [
-            5,
-            22,
+            0,
             33
           ],
-          "equation_text": "0 = seg2.n.i + src.n.i + gnd.p.i"
+          "equation_text": "0 = src.i + -src.i + gnd.p.i"
         },
         {
           "equation": "f_x[26] (SI.ElectricPotential v)",
           "id": "f_x[26]",
           "unknowns": [
-            6,
-            12
+            2,
+            6
           ],
-          "equation_text": "0 = seg1.p.v - seg1.R.p.v"
+          "equation_text": "0 = seg1.p.v - src.p.v"
         },
         {
           "equation": "f_x[27] (SI.ElectricPotential v)",
@@ -1573,47 +1559,47 @@
             8,
             19
           ],
-          "equation_text": "0 = seg1.n.v - seg2.p.v"
+          "equation_text": "0 = seg2.p.v - seg1.n.v"
         },
         {
           "equation": "f_x[30] (SI.ElectricPotential v)",
           "id": "f_x[30]",
           "unknowns": [
-            19,
+            8,
             25
           ],
-          "equation_text": "0 = seg2.p.v - seg2.R.p.v"
+          "equation_text": "0 = seg2.R.p.v - seg1.n.v"
         },
         {
           "equation": "f_x[31] (SI.ElectricPotential v)",
           "id": "f_x[31]",
           "unknowns": [
-            21,
             27
           ],
-          "equation_text": "0 = seg2.R.n.v - seg2.n.v"
+          "equation_text": "0 = seg2.R.n.v - 0"
         },
         {
           "equation": "f_x[32] (SI.ElectricPotential v)",
           "id": "f_x[32]",
           "unknowns": [
-            4,
             21
           ],
-          "equation_text": "0 = seg2.n.v - src.n.v"
+          "equation_text": "0 = seg2.n.v - 0"
         },
         {
           "equation": "f_x[33] (SI.ElectricPotential v)",
           "id": "f_x[33]",
           "unknowns": [
-            4,
             32
           ],
-          "equation_text": "0 = src.n.v - gnd.p.v"
+          "equation_text": "0 = gnd.p.v - 0"
         }
       ]
     },
-    "n_manifold_constraints": 0
+    "n_manifold_constraints": 0,
+    "n_states": 0,
+    "n_state_declarations": 0,
+    "n_algebraics": 34
   },
   "search": [
     {
@@ -1622,6 +1608,5 @@
         "kind": "borrowed"
       }
     }
-  ],
-  "stalled": null
+  ]
 }

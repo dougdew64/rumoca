@@ -2,7 +2,7 @@
   "model": "OverDeterminedShaft",
   "specimen": "specimens/OverDeterminedShaft.mo",
   "specimen_fnv1a": "f40929dfbcfb85d8",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -28,6 +28,10 @@
     "dae": {
       "has_ir": true,
       "note": "unbalanced model: 3 equations, 2 unknowns (balance = 1); unknowns[state=2 algebraic=0 output=0 discrete_real=0 discrete_value=0] equations[continuous=3 discrete_real=0 b1c_definition=0]  (1 diagnostic(s))"
+    },
+    "simplify": {
+      "has_ir": false,
+      "note": "not reached (ToDae failed earlier)"
     },
     "structural": {
       "has_ir": false,

@@ -79,6 +79,16 @@ Eight merges, six sets, because two of them landed in sets that already existed.
 named twice, so `C.n.v`, `src.n.v` and `gnd.p.v` finish in one set of three — and their `.i`
 counterparts in another. The other two statements make sets of two.
 
+**The algorithm doing the merging is union-find, and it fits because a `connect` has no
+direction.** `connect(R.n, C.p)` says `R.n` and `C.p` are the same electrical node, which is just
+as true read backwards. And it chains: if `R.n` is joined to `C.p` and `C.p` to `L.p`, all three
+are one node, whatever order the statements were written in. Union-find keeps groups and merges
+two whenever a statement joins them, which is exactly that. *(The picture behind it is the
+**connection graph**: one vertex per connector variable, one undirected line per pairing. It is
+the first of three graphs in the labs, and the other two are different —
+[matching](hrw://lab/matching)'s has two kinds of vertex, and
+[blt-ordering](hrw://lab/blt-ordering)'s has arrows.)*
+
 **No set here has size one, and none can.** A merge always names two variables, and nothing else
 ever puts a variable into the union-find — so **every set starts at two and only grows.** The
 sizes you just read, 2, 2 and 3, are the whole range a four-statement circuit can produce.

@@ -124,19 +124,24 @@ fn generate_trace(name: &str) -> Result<(), String> {
     let source = std::fs::read_to_string(&specimen)
         .map_err(|e| format!("read {}: {e}", specimen.display()))?;
 
-    let FromWorker::Compiled { model, stages, .. } =
-        compile_specimen(&specimen, hrw::msl_roots()).map_err(|e| format!("compile: {e}"))?
+    let FromWorker::Compiled {
+        model,
+        stages,
+        equation_sheet,
+        ..
+    } = compile_specimen(&specimen, hrw::msl_roots()).map_err(|e| format!("compile: {e}"))?
     else {
         return Err("expected a Compiled result".into());
     };
     let model = model.unwrap_or_else(|| name.to_owned());
-    let by_name: [(&str, &Stage); 11] = [
+    let by_name: [(&str, &Stage); 12] = [
         ("parse", &stages.parse),
         ("resolve", &stages.resolve),
         ("instantiate", &stages.instantiate),
         ("typecheck", &stages.typecheck),
         ("flatten", &stages.flatten),
         ("dae", &stages.dae),
+        ("simplify", &stages.simplify),
         ("structural", &stages.structural),
         ("index_reduction", &stages.index_reduction),
         ("initialization", &stages.initialization),
@@ -176,6 +181,23 @@ fn generate_trace(name: &str) -> Result<(), String> {
             stage_name,
             serde_json::json!({ "has_ir": stage.value.is_some(), "note": stage.note }),
         );
+    }
+
+    // **The equation sheet, as the bridge publishes it** (2026-11-26) — the text the
+    // Flatten → Equations pane renders from the compiled DAE. Labs quote those
+    // equations, and `equation_text_quoted_in_labs_matches_the_traces` checks them
+    // against this file. Until then it checked them against the Structural tab's
+    // incidence, which showed the same DAE; since that tab shows the system solve
+    // lowering analyses — after its simplifications — it no longer does.
+    if let Some(sheet) = &equation_sheet {
+        std::fs::write(
+            trace_dir.join("equations.json"),
+            format!(
+                "{}\n",
+                serde_json::to_string_pretty(&sheet.to_bridge_json()).unwrap()
+            ),
+        )
+        .map_err(|e| format!("write equations: {e}"))?;
     }
 
     // --- Simulation trace ---

@@ -2,7 +2,7 @@
   "model": "TwiceDefined",
   "specimen": "specimens/TwiceDefined.mo",
   "specimen_fnv1a": "07b2a5eb824040ee",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -29,17 +29,21 @@
       "has_ir": true,
       "note": "0 state(s), 2 algebraic(s), 2 continuous equation(s)"
     },
+    "simplify": {
+      "has_ir": true,
+      "note": "1 of 4 transform(s) changed the system"
+    },
     "structural": {
       "has_ir": true,
       "note": "singular"
     },
     "index_reduction": {
       "has_ir": true,
-      "note": "still singular after reduction"
+      "note": "preparation failed: DAE structural proof failed: structurally singular system: 1 matched out of 2 equations and 2 unknowns"
     },
     "initialization": {
       "has_ir": false,
-      "note": "no initial-value pins: structural preparation did not admit this system (structurally singular system: 1 matched out of 2 equations and 2 unknowns). The Structural tab reports why — initialization has nothing to plan until a system is admitted."
+      "note": "no initialization was lowered: DAE structural proof failed: structurally singular system: 1 matched out of 2 equations and 2 unknowns"
     },
     "events": {
       "has_ir": true,

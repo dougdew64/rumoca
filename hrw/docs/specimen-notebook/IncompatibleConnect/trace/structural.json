@@ -15,7 +15,7 @@
           0,
           2
         ],
-        "equation_text": "0 = a.v - b.v"
+        "equation_text": "0 = b.v - a.v"
       },
       {
         "equation": "f_x[1] (Real i)",
@@ -35,6 +35,27 @@
       }
     ]
   },
+  "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+  "analyses": [
+    {
+      "context": "Source",
+      "equations": 3,
+      "unknowns": 3,
+      "result": "structurally singular system: 2 matched out of 3 equations and 3 unknowns"
+    },
+    {
+      "context": "HolonomicRound",
+      "equations": 3,
+      "unknowns": 3,
+      "result": "structurally singular system: 2 matched out of 3 equations and 3 unknowns"
+    },
+    {
+      "context": "HolonomicPass",
+      "equations": 3,
+      "unknowns": 3,
+      "result": "structurally singular system: 2 matched out of 3 equations and 3 unknowns"
+    }
+  ],
   "matching": [
     {
       "equation": "f_x[0] (Real v)",

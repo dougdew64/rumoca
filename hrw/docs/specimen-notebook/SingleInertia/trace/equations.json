@@ -1,0 +1,76 @@
+{
+  "n_equations": 2,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 2,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = der(phi) - w",
+          "origin": "source DAE object",
+          "source_lines": [
+            8
+          ]
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = J*der(w) - tau",
+          "origin": "source DAE object",
+          "source_lines": [
+            9
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 2,
+    "algebraics": 0,
+    "parameters": 2,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "J",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "tau",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "phi",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[0]",
+        "equation_text": "0 = der(phi) - w"
+      },
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "w",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[1]",
+        "equation_text": "0 = J*der(w) - tau"
+      },
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

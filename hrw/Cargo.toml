@@ -100,9 +100,10 @@ rumoca-phase-structural = { path = "../crates/rumoca-phase-structural" }
 # The flat model and its equation origins, read by the Flatten panes.
 rumoca-ir-flat = { path = "../crates/rumoca-ir-flat" }
 rumoca-ir-dae = { path = "../crates/rumoca-ir-dae" }  # the DAE type and its views (DaeView, conditions)
-rumoca-phase-solve = { path = "../crates/rumoca-phase-solve" }  # solve lowering (lower_solve_problem)
+rumoca-phase-solve = { path = "../crates/rumoca-phase-solve" }  # its preparation trace, and the lowered model's type
+rumoca-ir-solve = { path = "../crates/rumoca-ir-solve" }  # the lowered SolveProblem's typed initialization plan
 rumoca-solver = { path = "../crates/rumoca-solver" }  # the integrator's accepted-step records (MeStepRecord)
-rumoca-sim = { path = "../crates/rumoca-sim" }  # simulate (simulate_with_optional_step_records)
+rumoca-sim = { path = "../crates/rumoca-sim" }  # prepare_runtime_observed + simulate_prepared_runtime_with_optional_step_records
 # **Capture-and-inspect** (`screenshot.rs`): HRW photographs its own window on
 # request and Claude reads the PNG back. Already in `Cargo.lock` transitively — the
 # wgpu backend's own image handling pulls it — so naming it directly adds no crate to
