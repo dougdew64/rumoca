@@ -57,7 +57,31 @@ pub(crate) fn lower_runtime_fmi_artifact(
     ),
     SimulationDiagnosticError,
 > {
+    lower_runtime_fmi_artifact_observed(model, opts, |_| {})
+}
+
+/// [`lower_runtime_fmi_artifact`], lending the lowered model to `observe` after
+/// every experiment override is applied and before it is consumed into the
+/// runtime artifact.
+///
+/// Observation-only: `observe` receives a shared borrow and the artifact is
+/// built from the same value afterwards, so an observed lowering and an
+/// unobserved one produce the same artifact. The unobserved entry is this
+/// function with an empty observer, so the two cannot drift apart.
+#[cfg(any(feature = "solver-diffsol", feature = "solver-rk45"))]
+pub(crate) fn lower_runtime_fmi_artifact_observed(
+    model: &dae::Dae,
+    opts: &rumoca_solver::SimOptions,
+    mut observe: impl FnMut(&rumoca_phase_solve::LoweredSolveModel<'_>),
+) -> Result<
+    (
+        rumoca_solver::fmi_me::MeModelArtifact,
+        Option<rumoca_solver::fmi_me::MeExecutionBackend>,
+    ),
+    SimulationDiagnosticError,
+> {
     let lowered = super::lower_correlated_for_simulation_with_overrides(model, opts)?;
+    observe(&lowered);
     finish_runtime_fmi_artifact(lowered, opts)
 }
 

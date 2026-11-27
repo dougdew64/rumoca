@@ -161,7 +161,10 @@ impl<'source> FormalDerivativeSystem<'source> {
             .into_iter()
             .map(|chart| rebind_chart(&variables, chart))
             .collect::<Result<Vec<_>, _>>()?;
-        let structural = super::super::structural_analysis(&model)?;
+        let structural = super::super::analyse_structure(
+            &model,
+            crate::preparation_trace::AnalysisContext::StateCandidate,
+        )?;
         Ok(FormalStateCandidate {
             formal: self,
             model,

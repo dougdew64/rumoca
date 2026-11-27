@@ -17,6 +17,7 @@ mod state_selection;
 
 pub mod diagnostic_codes;
 pub mod fmi;
+pub mod preparation_trace;
 
 pub use error::LowerError;
 pub use layout::build_var_layout;

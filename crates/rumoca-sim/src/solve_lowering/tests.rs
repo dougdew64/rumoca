@@ -23,6 +23,8 @@ mod input_batches;
 mod jacobian_source_trajectories;
 #[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
 mod parameter_bindings;
+#[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
+mod prepared_runtime;
 mod probe_jacobian;
 #[cfg(feature = "solver-rk45")]
 mod quotient_root_capture;

@@ -14,6 +14,7 @@ mod differential_structure;
 pub mod incidence;
 mod matching;
 mod observation;
+pub mod preparation_trace;
 pub mod report;
 mod residual_normalization;
 pub mod runtime_defined;
@@ -115,7 +116,7 @@ pub fn observe_sort<'dae>(
     sort_with_observer(view, &mut observation::StructuralStreamer::new(sink))
 }
 
-fn sort_with_observer<'dae>(
+pub(crate) fn sort_with_observer<'dae>(
     view: dae::DaeView<'dae>,
     observer: &mut impl observation::StructuralObserver,
 ) -> Result<SortedDae<'dae>, StructuralError> {
@@ -148,7 +149,7 @@ pub(crate) fn sort_from_incidence<'dae>(
 }
 
 /// [`sort_from_incidence`], reporting each search step to `observer`.
-fn sort_from_incidence_with_observer<'dae>(
+pub(crate) fn sort_from_incidence_with_observer<'dae>(
     view: dae::DaeView<'dae>,
     incidence: &Incidence<'dae>,
     observer: &mut impl observation::StructuralObserver,
@@ -307,7 +308,7 @@ pub fn inspect_structural_report(
     (report, recorder.finish())
 }
 
-fn structural_report_from_sorted<'dae>(
+pub(crate) fn structural_report_from_sorted<'dae>(
     view: dae::DaeView<'dae>,
     sorted: &SortedDae<'dae>,
 ) -> StructuralReport {

@@ -9,7 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use rumoca_ir_dae as dae;
 
 use super::variables::{ReservedVariable, TargetVariable};
-use super::{ManifoldEntry, PreparedDae, PreparedSystem, structural_analysis, transformed};
+use super::{ManifoldEntry, PreparedDae, PreparedSystem, analyse_structure, transformed};
+use crate::preparation_trace::AnalysisContext;
 use crate::{BltBlock, EquationRef, StructuralError, UnknownId};
 
 pub(super) fn normalize(prepared: PreparedDae<'_>) -> Result<PreparedDae<'_>, StructuralError> {
@@ -31,7 +32,7 @@ pub(super) fn normalize(prepared: PreparedDae<'_>) -> Result<PreparedDae<'_>, St
     let (model, ids) =
         super::reconstruction::rebuild_derivative_aliases(prepared.as_dae(), &selected, &ids)?;
     let manifold = ManifoldEntry::replayed(ids, &redundant);
-    let structural = structural_analysis(&model)?;
+    let structural = analyse_structure(&model, AnalysisContext::DerivativeAliases)?;
     // Derivative-alias normalization runs only on the ordinary reducer path,
     // which issues no reduced state-selection charts; rebuilding the aliases
     // renumbers variables, so any charts (which name variable ordinals) could
