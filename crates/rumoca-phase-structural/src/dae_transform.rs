@@ -433,7 +433,7 @@ fn analyse_structure(
                 return Err(error);
             }
         };
-        let mut recorder = crate::observation::StructuralRecorder::default();
+        let mut recorder = crate::observation::PreparationRecorder::begin(context);
         let sorted = crate::sort_from_incidence_with_observer(view, &incidence, &mut recorder);
         crate::preparation_trace::emit_analysis(
             context,
@@ -497,7 +497,7 @@ fn analyse_structure_capturing(
             Ok(incidence) => {
                 let reusable = crate::incidence::ReusableIncidence::from_incidence(&incidence);
                 let sorted = if crate::preparation_trace::capturing() {
-                    let mut recorder = crate::observation::StructuralRecorder::default();
+                    let mut recorder = crate::observation::PreparationRecorder::begin(context);
                     let sorted =
                         crate::sort_from_incidence_with_observer(view, &incidence, &mut recorder);
                     crate::preparation_trace::emit_analysis(

@@ -183,8 +183,78 @@ pub(crate) fn capturing() -> bool {
     CAPTURE.with(|capture| capture.borrow().is_some())
 }
 
+/// One step of preparation, handed to a live listener the moment it happens.
+///
+/// The captured [`PreparationEvent`]s arrive only when each analysis has
+/// finished. A tool *watching* the run — paused at a breakpoint inside
+/// matching, say — needs each step as it is taken, so this carries the same
+/// records one at a time, with the boundaries that tell analyses apart.
+#[derive(Debug)]
+pub enum LiveStep<'a> {
+    /// An analysis is starting; every [`LiveStep::Analysis`] until the next
+    /// `AnalysisBegin` belongs to it.
+    AnalysisBegin(AnalysisContext),
+    /// One matching, Tarjan or tearing step of the current analysis.
+    Analysis {
+        context: AnalysisContext,
+        record: &'a crate::StructuralRecord,
+    },
+    /// One reduction record, the same one the capture keeps.
+    Reduction(&'a ReductionRecord),
+}
+
+/// Receives [`LiveStep`]s; see [`set_live_listener`].
+pub type LiveListener = Box<dyn FnMut(LiveStep<'_>)>;
+
+thread_local! {
+    /// Optional live listener, called only while a capture scope is open.
+    static LIVE: RefCell<Option<LiveListener>> = const { RefCell::new(None) };
+}
+
+/// Install (or with `None`, remove) a listener that receives every step of
+/// preparation **as it happens**, on this thread.
+///
+/// It is called only while a capture scope is open ([`start_capture`]), because
+/// the steps it receives are the ones the capture records: the listener sees
+/// the run the capture describes, one step at a time, and cannot change it.
+pub fn set_live_listener(listener: Option<LiveListener>) {
+    LIVE.with(|slot| *slot.borrow_mut() = listener);
+}
+
+/// Hand one step to the live listener, if one is installed.
+///
+/// The listener is taken out of its slot for the call and put back afterwards,
+/// so a listener that itself reaches this module cannot alias the slot. One
+/// that installs a different listener from inside the call keeps the new one;
+/// removing a listener is done from outside, between steps.
+fn notify(step: LiveStep<'_>) {
+    let Some(mut listener) = LIVE.with(|slot| slot.borrow_mut().take()) else {
+        return;
+    };
+    listener(step);
+    LIVE.with(|slot| {
+        let mut slot = slot.borrow_mut();
+        if slot.is_none() {
+            *slot = Some(listener);
+        }
+    });
+}
+
+pub(crate) fn notify_begin(context: AnalysisContext) {
+    notify(LiveStep::AnalysisBegin(context));
+}
+
+pub(crate) fn notify_step(context: AnalysisContext, record: &crate::StructuralRecord) {
+    notify(LiveStep::Analysis { context, record });
+}
+
 /// Append one event if a scope is open.
 pub(crate) fn emit(event: PreparationEvent) {
+    if let PreparationEvent::Reduction(record) = &event
+        && capturing()
+    {
+        notify(LiveStep::Reduction(record));
+    }
     CAPTURE.with(|capture| {
         if let Some(events) = capture.borrow_mut().as_mut() {
             events.push(event);
@@ -275,6 +345,28 @@ mod tests {
         assert!(
             take_capture().is_empty(),
             "an event emitted with no scope open was kept"
+        );
+    }
+
+    #[test]
+    fn the_live_listener_hears_each_step_and_stays_installed() {
+        use std::rc::Rc;
+        let heard = Rc::new(RefCell::new(Vec::new()));
+        let sink = Rc::clone(&heard);
+        set_live_listener(Some(Box::new(move |step| {
+            if let LiveStep::AnalysisBegin(context) = step {
+                sink.borrow_mut().push(context);
+            }
+        })));
+        notify_begin(AnalysisContext::Source);
+        notify_begin(AnalysisContext::DirectCandidate);
+        set_live_listener(None);
+        notify_begin(AnalysisContext::Source);
+        assert_eq!(
+            *heard.borrow(),
+            vec![AnalysisContext::Source, AnalysisContext::DirectCandidate],
+            "the listener must hear both steps, stay installed between them, and \
+             hear nothing once removed",
         );
     }
 

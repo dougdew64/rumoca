@@ -521,6 +521,41 @@ impl StructuralObserver for StructuralRecorder {
     }
 }
 
+/// The recorder a captured preparation analysis uses.
+///
+/// It records exactly what [`StructuralRecorder`] records, and also hands each
+/// step to the live listener [`crate::preparation_trace::set_live_listener`]
+/// installed, the moment the step happens — so a tool can *watch* the analyses
+/// the real solve runs, not only read them afterwards. One record serves both,
+/// so the live steps and the captured trace cannot disagree.
+pub(crate) struct PreparationRecorder {
+    context: crate::preparation_trace::AnalysisContext,
+    recorder: StructuralRecorder,
+}
+
+impl PreparationRecorder {
+    /// Announce the analysis to the live listener and start recording it.
+    pub(crate) fn begin(context: crate::preparation_trace::AnalysisContext) -> Self {
+        crate::preparation_trace::notify_begin(context);
+        Self {
+            context,
+            recorder: StructuralRecorder::default(),
+        }
+    }
+
+    pub(crate) fn finish(self) -> StructuralTrace {
+        self.recorder.finish()
+    }
+}
+
+impl StructuralObserver for PreparationRecorder {
+    fn observe(&mut self, event: StructuralEvent<'_>) {
+        let record = StructuralRecord::from_event(event);
+        crate::preparation_trace::notify_step(self.context, &record);
+        self.recorder.records.push(record);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
