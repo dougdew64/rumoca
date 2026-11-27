@@ -880,10 +880,12 @@ the next phase touches — is procedure and lives there.
 >
 > ## Open questions a lab session may hit
 >
-> - **A reproduced state-count inconsistency**, in `docs/upstream-issues.md`: `Drivetrain`'s index
->   reduction demotes nine states to three while solve lowering reports **9**, and
->   `GearWithBrake` shows the same gap. **Not diagnosed.** `solve-lowering.md` omits its natural
->   example rather than write around it. Needs a System Modeler adjudication (`#43`).
+> - **RESOLVED 2026-11-26, and it was HRW's defect: `Drivetrain`'s state-count inconsistency.**
+>   Index reduction "demoting nine states to three" while solve lowering reported 9 was HRW running
+>   the reducer itself on the DAE before solve lowering's simplifications. The real run integrates 3
+>   everywhere (`DECISIONS.md`, *the tabs show one real preparation*). **The `docs/upstream-issues.md`
+>   entry built on it still needs re-reading against the real run** before anyone treats it as
+>   Rumoca's.
 > - **RESOLVED 2026-09-02, and it was HRW's defect rather than Rumoca's.** `RcCircuit`'s one
 >   `synthetic_root_conditions` with no `when` clause is correct: the field counts roots Rumoca
 >   had to *synthesise* because no relation supplied one — here, over the MSL Resistor's

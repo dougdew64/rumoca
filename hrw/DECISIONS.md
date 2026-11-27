@@ -6086,3 +6086,21 @@ exists nowhere — and those are gone too.
 **The pattern:** none of this was caught because the labs and purpose files are checked for
 link *resolution*, never for claims. The rule's test requirement covers tabs; prose that reports
 a tab is a reporter too, and nothing checks it yet beyond this audit.
+
+## 2026-11-27 (later still) — The rebase procedure checked HRW against HRW, so it changed
+
+Doug asked how the 0.10.4 rebase closed confident while the tabs from Simplify onward showed a
+run Rumoca never makes. **The procedure's evidence was self-comparison**: tests pinning HRW's
+assumptions, traces written by the stages the tabs read, a fidelity oracle that was HRW's own
+reading. Step 3 went further and told the rebase to keep HRW's copy of the preparation funnel in
+Rumoca's order, which is maintaining the defect. Step 6 grepped labs for renamed code, which no
+changed outcome trips. And the visible symptoms (Drivetrain 5 / 3 / 3, the pendulum "refused"
+yet simulating) were patched to agree instead of diagnosed.
+
+`docs/updating-rumoca.md` now: lists the real-path tests in step 3 and drops the funnel bullet;
+adds **3d**, reading upstream's diff of the simulate path with one line per change naming the tab
+it affects; makes step 6 a claim check of every lab against the new traces, pinning what it
+corrects; adds to step 8 that the rebase is not closed while two tabs disagree; and replaces the
+rule of thumb's "green build + sane diffs is in good shape" with explicit closing conditions.
+Also corrected: `hrw/CLAUDE.md`'s open question on Drivetrain's state count, and the
+`upstream-issues.md` re-diagnosis that read HRW's 9 → 5 as Rumoca's.
