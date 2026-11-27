@@ -222,47 +222,34 @@ fn nonlinear_loop_has_a_coupled_block() {
     assert_eq!(v["coupled_block_count"], serde_json::json!(1));
 }
 
-/// **A capacitor across an ideal source is singular, and 0.10.0's holonomic lane
-/// rescues it — which is the opposite of what this test used to assert.**
+/// **A capacitor across an ideal source is singular, and one Direct-lane demotion
+/// of the capacitor's voltage sorts it — leaving no state at all.**
 ///
-/// # Re-keyed to the opposite claim, 2026-11-04
+/// # Re-keyed to the real run, 2026-11-26
 ///
-/// It read: *"Unlike Drivetrain, index reduction can NOT rescue it: both Structural
-/// and Index reduction stay singular (an observable initialization blow-up)"*, and
-/// asserted `index_reduction.note_is_error()`. On v0.10.0 that is false. Measured:
-/// the Direct lane finds **0** candidates in both its proof groups, the Holonomic
-/// lane then finds **2**, and the first one attempted **sorts** the system.
+/// Until this date the test asserted a **Holonomic** rescue with the counts
+/// unchanged (1 state, 13 algebraics, 14 equations before and after, plus one
+/// manifold constraint). That was HRW running the reducer itself on the DAE before
+/// solve lowering's simplifications. On the solve path, Simplify first merges 8
+/// alias classes; on that system the **Direct** lane discovers 2 candidates, demotes
+/// the capacitor's state on `v = p.v - n.v` (`TwoPin.mo:10`) in one round, and the
+/// system sorts: **0 states, 14 algebraics** — which is what the simulation
+/// integrates. *(It had been re-keyed once before, on 2026-11-04, from "nothing can
+/// rescue it" to the holonomic rescue; both earlier claims described a run Rumoca's
+/// simulation does not make.)*
 ///
-/// **A blocked test's body is a specification only while the data model it describes
-/// is the one being re-modelled onto.** Here it was not a stale *shape* but a stale
-/// *premise* — restoring it unchanged would have pinned a claim about the compiler
-/// that stopped being true, and the re-model would have been "finished" with a
-/// failing test or a false one. Recorded because this is the only one of the eight
-/// that inverted rather than rotted.
-///
-/// # What makes this specimen worth keeping
-///
-/// Its counts do not move: **1 state, 13 algebraics, 14 equations before and
-/// after.** What changes is one manifold constraint and the matching. So it is the
-/// corpus's proof that **reduction is not a size reduction** — a pane reporting only
-/// before/after counts would say nothing happened here, and be wrong.
-///
-/// Structural still reports singular with its error payload, which is the half of
-/// the old claim that survives: the raw system *is* singular. What is no longer true
-/// is that nothing can fix it.
+/// Structural still reports singular with its error payload: the system the reducer
+/// is handed *is* singular, which is the half of every version of this test that
+/// survives.
 #[test]
 #[cfg_attr(
     not(feature = "slow-tests"),
     ignore = "compile-heavy; run with --features slow-tests"
 )]
-fn capacitor_loop_is_singular_and_the_holonomic_lane_rescues_it() {
+fn capacitor_loop_is_singular_and_one_direct_demotion_sorts_it() {
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("CapacitorLoop") else {
         panic!("expected Compiled");
     };
-    assert!(
-        stages.flatten.value.is_some(),
-        "CapacitorLoop should still flatten"
-    );
     assert!(
         stages.structural.note_is_error(),
         "expected singular Structural"
@@ -277,82 +264,62 @@ fn capacitor_loop_is_singular_and_the_holonomic_lane_rescues_it() {
             .is_some(),
         "singular Structural should carry error details"
     );
-    // **The inverted half.** Reduction admits this system now.
+    let simplify = stages.simplify.value.as_ref().expect("Simplify ran");
+    assert_eq!(
+        simplify["alias_quotients"][0]["eliminated"], 8,
+        "Simplify merges CapacitorLoop's alias classes first: {simplify}",
+    );
+
     assert!(
         !stages.index_reduction.note_is_error(),
-        "0.10.0's holonomic lane rescues a capacitor-across-source loop: {:?}",
+        "the reduction admits the system: {:?}",
         stages.index_reduction.note,
     );
     let v = stages
         .index_reduction
         .value
         .as_ref()
-        .expect("a rescued reduction publishes its search");
-    assert_eq!(
-        v["outcome"]["kind"], "sorted",
-        "it sorted: {}",
-        v["outcome"]
-    );
-    assert_eq!(v["outcome"]["admitted"], true);
+        .expect("an admitted reduction publishes its search");
+    assert_eq!(v["outcome"]["kind"], "sorted", "{}", v["outcome"]);
+    assert_eq!(v["rounds"], 1);
+    assert_eq!(v["lanes"], serde_json::json!(["direct"]));
 
-    // The Direct lane cannot see this; the Holonomic lane can. Asserted as the
-    // *reason*, because "it sorted" alone would pass just as well if the Direct lane
-    // had done it, and then the specimen would have stopped being about the loop.
     let search = v["search"].as_array().expect("a search log");
     let selected: Vec<&serde_json::Value> =
         search.iter().filter(|r| r["kind"] == "selected").collect();
     assert_eq!(selected.len(), 1, "one selection sorted it: {selected:?}");
-    assert_eq!(selected[0]["lane"], "holonomic");
-    assert_eq!(selected[0]["identity"]["form"], "holonomic");
-    assert!(
-        selected[0]["residue_after"].is_null(),
-        "a selection that sorts the system has no residue after \u{2014} null, not 0: {}",
+    assert_eq!(selected[0]["lane"], "direct");
+    assert_eq!(
+        selected[0]["identity"]["declared_at"]["excerpt"], "v = p.v - n.v",
+        "the demotion is on the capacitor's voltage definition: {}",
         selected[0],
     );
-    let direct_found: u64 = search
-        .iter()
-        .filter(|r| r["kind"] == "candidates" && r["lane"] == "direct")
-        .filter_map(|r| r["discovered"].as_u64())
-        .sum();
-    assert_eq!(
-        direct_found, 0,
-        "the Direct lane must find nothing here, or this specimen no longer \
-         demonstrates the holonomic rescue",
+    assert!(
+        selected[0]["residue_after"].is_null(),
+        "a selection that sorts the system has no residue after \u{2014} null, not 0",
     );
 
-    // **Reduction is not a size reduction.** The counts are identical; the manifold
-    // constraint is the change.
-    for key in ["n_states", "n_algebraics", "n_equations"] {
-        assert_eq!(
-            v["before"][key], v["after"][key],
-            "{key} must be unchanged for CapacitorLoop",
-        );
-    }
-    assert_eq!(
-        v["after"]["n_manifold_constraints"], 1,
-        "one manifold constraint is what reduction actually added",
-    );
+    // One state in, none out: the capacitor's voltage is fixed by the source.
+    assert_eq!(v["before"]["n_states"], 1);
+    assert_eq!(v["after"]["n_states"], 0);
+    assert_eq!(v["integrated"], serde_json::json!([]));
 }
 
-/// **RcCircuit's only initial value is a guess, and the pane says so.**
+/// **RcCircuit's initialization plan is empty: its only initial value is a guess.**
 ///
-/// Restored 2026-11-03 and renamed, because there is no IC plan to have: this
-/// asserted `block_count >= 1` and a `relaxation_hint`, both from the `ic_plan`
-/// era. RcCircuit declares `C.v(start = 0)` without `fixed = true`, so nothing
-/// is pinned and the state's initial value comes out of the initialization
-/// solve.
+/// RcCircuit declares `C.v(start = 0)` without `fixed = true` and has no `initial
+/// equation`, so Rumoca's lowered plan has no row to solve and no given state.
+/// `rumoca-phase-solve`'s `initial_projection` says what happens then: *"a free
+/// state without a determining equation retains its start guess"*.
 ///
-/// **That is the specimen at the centre of the initialization defect**
-/// (`upstream-issues.md`): on 0.9.20 the solve returned the value that zeroes
-/// `der(C.v)` instead of the start, and the trajectory flat-lined at 5. So
-/// `only_guessed: ["C.v"]` is not a shortcoming of the pane — it is the pane
-/// naming the exact coordinate that went wrong, which the old determinacy
-/// verdict could not do.
+/// # Re-keyed 2026-11-26
 ///
-/// The old test's other point survives verbatim: a well-posed initialization
-/// must not be reported as over-determined (`ideas.md` #6). It is now asserted
-/// as *no surplus checks*, which is what over-determination would look like
-/// here.
+/// It asserted HRW's own `determinacy` count (`only_guessed: ["C.v"]`, `checks: 0`),
+/// computed over the reducer's pins — a count that never read `initial equation`
+/// sections and so called `OverInitRc`'s `C.v` "only guessed" too. The tab now shows
+/// the plan Rumoca lowered. The test's oldest point survives: a well-posed
+/// initialization must not be reported as over-determined (`ideas.md` #6) — here,
+/// no surplus-check row.
 #[test]
 #[cfg_attr(
     not(feature = "slow-tests"),
@@ -366,32 +333,16 @@ fn rc_circuits_only_initial_value_is_a_guess() {
         .initialization
         .value
         .unwrap_or_else(|| panic!("no initialization IR: {:?}", stages.initialization.note));
-    let det = &v["determinacy"];
-
     assert_eq!(
-        det["state_scalars"].as_u64(),
-        Some(1),
-        "RcCircuit has one continuous state, the capacitor voltage: {det}",
+        v["rows"],
+        serde_json::json!([]),
+        "no row: nothing to solve, and no surplus check: {v}"
     );
+    assert_eq!(v["unknowns"], serde_json::json!([]), "{v}");
     assert_eq!(
-        det["only_guessed"],
-        serde_json::json!(["C.v"]),
-        "`C.v` states a bare `start`, so its initial value is whatever the solve \
-         returns \u{2014} and naming it is what makes the initialization defect's \
-         blast radius visible: {det}",
-    );
-    assert_eq!(
-        det["determined"].as_u64(),
-        Some(0),
-        "nothing determines it: no `fixed = true`, and no value transferred onto \
-         it through an equality: {det}",
-    );
-    // Well-posed init must NOT be mis-flagged as over-determined (ideas #6).
-    assert_eq!(
-        det["checks"].as_u64(),
-        Some(0),
-        "a surplus stated value would appear as a Check residual; a well-posed \
-         model has none: {det}",
+        v["given_states"],
+        serde_json::json!([]),
+        "no `fixed = true`: {v}"
     );
 }
 
@@ -1126,8 +1077,12 @@ fn editing_a_file_changes_its_source_root_fingerprint() {
 /// asserted `reduction.funnel_completed`, `reduction.steps` and
 /// `reduction.n_states_before`, which were the ten-step funnel's keys and have no
 /// successor — 0.10.0 reduction is a search, not a pipeline. Re-keyed onto what
-/// "recovers" now means concretely: **9 states to 5 across 6 rounds**, with at least
-/// one selection recorded.
+/// "recovers" now means concretely, with at least one selection recorded.
+///
+/// **9 states to 3 since 2026-11-26, not 9 to 5.** The 5 was HRW's own run of the
+/// reducer on the DAE before solve lowering's simplifications. On the real path
+/// Simplify merges 53 aliases, the reducer runs 6 rounds in both lanes, and state
+/// selection reduces to the 3 the simulation integrates.
 ///
 /// Rounds are asserted as `>= 1` rather than `== 6`. The subject is recovery; the
 /// exact round count is a property of the candidate ordering, and pinning it here
@@ -1174,14 +1129,19 @@ fn drivetrain_index_reduction_stage_recovers_singular() {
         "the reduced system's own report carries its block count",
     );
 
-    // **What "recovers" means, as numbers.** Measured 2026-11-04: 9 states to 5.
+    // **What "recovers" means, as numbers.** Measured 2026-11-26 on the real run.
     let before = v["before"]["n_states"].as_u64().expect("states before");
     let after = v["after"]["n_states"].as_u64().expect("states after");
     assert!(
         after < before,
         "reduction must demote states for Drivetrain: {before} -> {after}",
     );
-    assert_eq!((before, after), (9, 5), "the measured demotion");
+    assert_eq!((before, after), (9, 3), "the measured reduction");
+    assert_eq!(
+        v["integrated"],
+        serde_json::json!(["mount.s_rel", "L.i", "mount.v_rel"]),
+        "what state selection integrates, by name",
+    );
 
     let rounds = v["rounds"].as_u64().expect("a round count");
     assert!(
@@ -1789,88 +1749,75 @@ fn identity_form(specimen: &str, identity: &serde_json::Value) -> String {
     form.to_owned()
 }
 
-/// **No stage reports an HRW sequencing fault.**
+/// **Initialization has a plan exactly when solve lowering lowered a model** — and the
+/// reducer refusing a system does not decide that.
 ///
-/// `index_reduction_stage` and `initialization_stage` both take the shared
-/// `ObservedReduction` as an `Option`, and both say so in plain words if it is
-/// `None` rather than reporting something about the model. That wording is a claim
-/// about HRW's own call order, so it must never reach a reader — and this is what
-/// fails if the two stages are ever sequenced before the preparation they read.
+/// # Re-keyed 2026-11-26
 ///
-/// # And the stronger half: the two stages agree about admission
+/// It asserted that Initialization had a value exactly when the *reducer* admitted
+/// the system, because both tabs then read HRW's own `inspect_prepare_for_solve`.
+/// On the real path that is false, and `CartesianPendulum` is why: the reducer stays
+/// singular, state selection recovers the system through formal derivatives, and
+/// solve lowering lowers it — with an initialization plan. The two tabs now read one
+/// observed run of solve lowering, so the invariant is between Initialization and
+/// Solve lowering.
 ///
-/// That agreement is the whole point of sharing one `inspect_prepare_for_solve`
-/// call. Index reduction publishes IR either way — a refusal is a result, and
-/// `CartesianPendulum`'s search log is its most interesting payload — while
-/// Initialization has pins only for a system that was admitted. **So
-/// `initialization.value.is_some()` must equal `index_reduction.outcome.admitted`**,
-/// on every specimen, and a disagreement means the two are no longer reading one
-/// preparation.
-///
-/// *The first version of this test asserted both stages always publish IR, and
-/// `CartesianPendulum` failed it correctly: it is not admitted, so Initialization
-/// says so instead. A true measurement of the wrong unit, which is the mistake this
-/// repository logs most often.*
+/// Must-fire on every side: `TwiceDefined` does not lower at all, and
+/// `CartesianPendulum` lowers despite the reducer's refusal.
 #[test]
 #[cfg_attr(
     not(feature = "slow-tests"),
     ignore = "compile-heavy; run with --features slow-tests"
 )]
-fn no_stage_reports_an_hrw_sequencing_fault() {
-    let mut checked = 0usize;
-    let mut admitted_seen = 0usize;
-    let mut refused_seen = 0usize;
+fn initialization_has_a_plan_exactly_when_solve_lowering_lowered() {
+    let mut lowered_seen = 0usize;
+    let mut not_lowered_seen = 0usize;
+    let mut refused_but_lowered = 0usize;
     for name in [
         "Drivetrain",
         "CartesianPendulum",
         "SingleInertia",
         "RcCircuit",
+        "TwiceDefined",
     ] {
         let FromWorker::Compiled { stages, .. } = compile_specimen_shared(name) else {
             panic!("expected Compiled for {name}");
         };
-        for (label, stage) in [
-            ("index reduction", &stages.index_reduction),
-            ("initialization", &stages.initialization),
-        ] {
-            checked += 1;
-            let note = stage.note.as_deref().unwrap_or("");
-            assert!(
-                !note.contains("sequencing fault"),
-                "{name}: {label} read no observation, so HRW ran the stage before the \
-                 preparation it depends on: {note}",
-            );
-        }
-
+        let lowered = stages.solve_lowering.outcome != Outcome::Failed;
+        assert_eq!(
+            stages.initialization.value.is_some(),
+            lowered,
+            "{name}: Initialization must have a plan exactly when solve lowering \
+             lowered the model: {:?} / {:?}",
+            stages.initialization.note,
+            stages.solve_lowering.note,
+        );
         // Index reduction always has a payload: a refusal is a result.
         let reduction = stages
             .index_reduction
             .value
             .as_ref()
             .unwrap_or_else(|| panic!("{name}: index reduction always publishes its search"));
-        let admitted = reduction["outcome"]["admitted"]
-            .as_bool()
-            .unwrap_or_else(|| panic!("{name}: the outcome states whether it was admitted"));
-        assert_eq!(
-            stages.initialization.value.is_some(),
-            admitted,
-            "{name}: initialization has pins exactly when reduction admitted the \
-             system; the two read one preparation",
-        );
-        if admitted {
-            admitted_seen += 1;
+        let admitted = reduction["outcome"]["admitted"].as_bool();
+        if lowered {
+            lowered_seen += 1;
+            if admitted == Some(false) {
+                refused_but_lowered += 1;
+            }
         } else {
-            refused_seen += 1;
+            not_lowered_seen += 1;
         }
     }
+    assert!(lowered_seen > 0, "no lowered specimen was examined");
     assert!(
-        checked > 0,
-        "no stage was examined, so this check proves nothing"
+        not_lowered_seen > 0,
+        "no specimen that fails to lower was examined"
     );
-    // Must-fire on both sides of the biconditional: with only admitted specimens the
-    // assertion above would hold for a stage that always published IR.
-    assert!(admitted_seen > 0, "no admitted specimen was examined");
-    assert!(refused_seen > 0, "no refused specimen was examined");
+    assert!(
+        refused_but_lowered > 0,
+        "no specimen showed the reducer refusing a system that still lowered \
+         \u{2014} CartesianPendulum is that case"
+    );
 }
 
 /// A scratch specimen compiles like any other (ideas #42).
@@ -5007,8 +4954,9 @@ fn every_stage_rendering_lands_on_a_real_node() {
     // pinned that a block with no expression gets **no** tooltip rather than an
     // empty one, goes the same way. **Neither is owed by the initialization
     // re-model** — `IcBlock` does not exist on 0.10.0, so there is no assignment to
-    // render; what replaced it is a pin's role, and
-    // `the_initialization_pane_shows_each_pin_and_its_role` pins that instead.
+    // render; what replaced it is a plan row's role, and
+    // `the_initialization_pane_shows_rumocas_plan_for_three_kinds_of_state` pins
+    // that instead.
     let ball = check_renderings("BouncingBall", &[StageKind::Dae, StageKind::Flatten]);
     let rc = check_renderings("RcCircuit", &[StageKind::Flatten]);
 
@@ -5235,49 +5183,33 @@ fn structural_incidence_has_equation_text_labels() {
 // a selection), `the_reduction_search_log_is_the_compiles_own_run` (every record
 // kind, and the ordinals' identity) and `a_normalized_system_is_not_called_index_1`.
 
-/// The Initialization stage IR includes the determinacy check.
+/// The Initialization stage IR is Rumoca's lowered plan, with every list present.
 ///
-/// **Restored and re-keyed 2026-11-03**, when initialization left
-/// `worker::AWAITING_REMODEL`. The old keys described the `ic_plan` era —
-/// `initial_equations`, `fixed_start_states`, `explicit_initial_conditions`,
-/// `surplus_over_states`, `verdict` — and none of them survives, because the
-/// question changed shape: 0.10.0 does not count initial equations against
-/// states, it records which coordinates a *proof* determined.
-///
-/// `only_guessed` is asserted as an array rather than merely present, because it
-/// is the field a reader acts on: every name in it is a state whose reported
-/// initial value came out of the solve rather than out of the model.
+/// Re-keyed twice: on 2026-11-03 from the `ic_plan` era's keys to HRW's
+/// `determinacy` count over the reducer's pins, and on 2026-11-26 to the plan
+/// solve lowering lowers (`worker/preparation.rs`, `initialization_plan_json`).
 #[test]
 #[cfg_attr(
     not(feature = "slow-tests"),
     ignore = "compile-heavy; run with --features slow-tests"
 )]
-fn initialization_ir_has_determinacy() {
+fn initialization_ir_is_rumocas_lowered_plan() {
+    // **Re-keyed 2026-11-26**: the stage publishes the plan solve lowering lowered,
+    // not HRW's determinacy count. Every list is present even when empty, so a pane
+    // never has to guess whether a field exists.
     let FromWorker::Compiled { stages, .. } = compile_specimen_shared("RcCircuit") else {
         panic!("expected Compiled");
     };
     let v = stages.initialization.value.expect("initialization IR");
-    let det = &v["determinacy"];
-    assert!(det.is_object(), "should have a determinacy section");
-    for key in [
-        "state_scalars",
-        "determined",
-        "only_guessed",
-        "definitions",
-        "checks",
-        "partly_fixed_states",
-    ] {
-        assert!(det.get(key).is_some(), "determinacy missing key: {key}");
+    for key in ["summary", "rows", "unknowns", "given_states"] {
+        assert!(v[key].is_array(), "`{key}` must be a list: {v}");
     }
+    assert!(v["manifold_rows"].is_u64(), "{v}");
     assert!(
-        det["only_guessed"].is_array(),
-        "`only_guessed` names the states, so it must be a list a reader can read: \
-         {det}",
-    );
-    assert!(
-        v["pins"].is_array(),
-        "the pins are a list even when empty, so a pane never has to guess \
-         whether the field exists: {v}",
+        v["roles_note"]
+            .as_str()
+            .is_some_and(|n| n.contains("SurplusCheck")),
+        "the payload explains Rumoca's roles: {v}",
     );
 }
 
@@ -5605,7 +5537,6 @@ fn a_compile_with_tracing_on_leaves_nothing_behind() {
         w.handle(ToWorker::SetTracing(false), &sink);
     }
     let logs = logs.into_inner().unwrap();
-
     // **Non-vacuity, and it is the whole point here**: tracing must have
     // produced something, or "nothing left behind" is trivially true.
     assert!(
@@ -5786,6 +5717,65 @@ fn a_compile_with_tracing_on_leaves_nothing_behind() {
         "the notice quotes a different count than the log actually contains \
          ({filed} filed under the four phases): {}",
         notice.message,
+    );
+}
+
+/// A `tracing::debug!` with a target nothing else uses, so the test below owns its
+/// callsite. Its first call anywhere is what registers it.
+fn emit_tracing_probe_event() {
+    tracing::debug!(target: "hrw_tracing_probe", "probe");
+}
+
+/// **A callsite first reached on ANOTHER thread while tracing is on is still
+/// captured on the worker's.**
+///
+/// tracing-core caches each callsite's interest when the callsite is first
+/// reached. With exactly one dispatcher registered — HRW's — it takes a shortcut
+/// (`has_just_one`) and asks only *the registering thread's* default, so a
+/// callsite first reached on a thread with no subscriber is cached `never` for
+/// every thread, the worker's included. Every later event from it is dropped.
+///
+/// Found 2026-11-27: `a_compile_with_tracing_on_leaves_nothing_behind` saw no
+/// Rumoca trace at all — not even a `Warn` — in the parallel suite, because it
+/// sorts early and other tests' compiles first reached Rumoca's callsites on their
+/// own threads during its window. Alone it passed. In the app the same happens to
+/// any callsite first reached off the worker thread, a rayon pool thread for one.
+/// The fix keeps a second, inert dispatcher registered (`TRACING_KEEPS_TWO`).
+#[test]
+fn a_callsite_first_reached_on_another_thread_is_still_traced() {
+    use std::sync::{Arc, Barrier};
+    let tracing_on = Arc::new(Barrier::new(2));
+    let reached_elsewhere = Arc::new(Barrier::new(2));
+    let other = {
+        let (tracing_on, reached_elsewhere) = (tracing_on.clone(), reached_elsewhere.clone());
+        std::thread::spawn(move || {
+            tracing_on.wait();
+            emit_tracing_probe_event(); // first reached here, with no subscriber
+            reached_elsewhere.wait();
+        })
+    };
+    let captured = std::thread::spawn(move || {
+        let mut w = WorkerState::new();
+        w.handle(ToWorker::SetTracing(true), &|_: FromWorker| {});
+        tracing_on.wait();
+        reached_elsewhere.wait();
+        emit_tracing_probe_event();
+        let captured = TRACE_BUFFER.with(|buf| {
+            buf.borrow()
+                .iter()
+                .filter(|(_, msg)| msg.contains("hrw_tracing_probe"))
+                .count()
+        });
+        w.handle(ToWorker::SetTracing(false), &|_: FromWorker| {});
+        captured
+    })
+    .join()
+    .expect("traced thread");
+    other.join().expect("other thread");
+    assert_eq!(
+        captured, 1,
+        "the callsite was first reached on a thread with no subscriber, and its \
+         cached interest silenced it on the traced thread too",
     );
 }
 
@@ -6898,9 +6888,20 @@ fn simulation_emits_log_entries() {
         stage_starts.contains(&"Compile (for simulation)"),
         "missing compile stage"
     );
+    // **Where the runtime came from is stated, one way or the other** (2026-11-26).
+    // A Run integrates the runtime the compile prepared when it is for the same
+    // source, and says so; otherwise it prepares afresh under its own bracket. Which
+    // one happens here depends on what this thread compiled before, so the claim is
+    // that exactly one of the two is logged — never neither, which would leave the
+    // reader unable to tell which preparation was integrated.
+    let reused = logs
+        .iter()
+        .any(|e| e.message == "integrating the prepared runtime the stage tabs show");
+    let prepared = stage_starts.contains(&"Rumoca solve lowering");
     assert!(
-        stage_starts.contains(&"Solve lowering"),
-        "missing solve lowering stage"
+        reused != prepared,
+        "the log must say which preparation was integrated: reused={reused}, \
+         prepared afresh={prepared}",
     );
     assert!(
         stage_starts.contains(&"Integration"),
@@ -7006,9 +7007,10 @@ fn extract_class_missing_name_reports_error() {
 fn stage_kind_all_is_exhaustive() {
     assert_eq!(
         StageKind::ALL.len(),
-        12,
-        "StageKind::ALL should list every variant (currently 12: 11 pipeline stages \
-         plus Simulation). Adding one means wiring it into every per-stage system — \
+        13,
+        "StageKind::ALL should list every variant (currently 13: 12 pipeline stages \
+         plus Simulation — Simplify joined 2026-11-26). Adding one means wiring it into \
+         every per-stage system — \
          stage-diff highlight, stage-file publishing and the notebook trace — which is \
          why this count is asserted rather than derived from the enum."
     );
@@ -7198,7 +7200,60 @@ fn output_capture_handles_large_write_without_deadlock() {
     std::thread::sleep(std::time::Duration::from_millis(100));
     let (out, _) = cap.drain();
     drop(cap);
-    assert_eq!(out.len(), 128 * 1024, "should capture all 128 KB");
+    // Counting this test's own bytes, not the total: fd 1 is the process's, so
+    // anything another thread writes during the window lands here too. libtest's
+    // own progress dot did, once (131,073 bytes, 2026-11-27).
+    assert_eq!(
+        out.bytes().filter(|b| *b == b'x').count(),
+        128 * 1024,
+        "should capture all 128 KB"
+    );
+}
+
+/// **Captures on two threads at once both finish, and each holds only its own
+/// output.** Fds 1 and 2 are process-wide, so without `OutputCapture`'s
+/// exclusive lock the second capture saves the first one's pipe as its
+/// "original" and later restores it, and the first capture's `Drop` waits for
+/// EOF forever. That hung `--test-threads=4` for hours on 2026-11-27. The
+/// deadline turns a hang into a failure that names the cause.
+#[test]
+#[allow(
+    unsafe_code,
+    reason = "calls write_to_fd, which must bypass cargo test's print capture"
+)]
+fn overlapping_captures_on_two_threads_both_finish_with_their_own_output() {
+    let (done_tx, done_rx) = std::sync::mpsc::channel();
+    for marker in ["capture-one-marker", "capture-two-marker"] {
+        let done_tx = done_tx.clone();
+        std::thread::spawn(move || {
+            let mut cap = OutputCapture::start().expect("start capture");
+            unsafe { write_to_fd(1, marker.as_bytes()) };
+            // Long enough that, unserialised, the other thread starts its
+            // capture while this one still owns fd 1.
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            let (out, _) = cap.drain();
+            drop(cap);
+            let _ = done_tx.send((marker, out));
+        });
+    }
+    drop(done_tx);
+    for _ in 0..2 {
+        let (marker, out) = done_rx
+            .recv_timeout(std::time::Duration::from_secs(20))
+            .expect(
+                "a capture never finished: two captures overlapped and one \
+                 restored the other's pipe onto fd 1",
+            );
+        assert!(
+            out.contains(marker),
+            "{marker} lost its own output: {out:?}"
+        );
+        assert_eq!(
+            out.matches("-marker").count(),
+            1,
+            "{marker} also caught the other thread's output: {out:?}",
+        );
+    }
 }
 
 /// `StageBundle::as_stage_pairs` names must stay in sync with
@@ -7880,8 +7935,8 @@ fn outcome_code(stage: &Stage) -> char {
 /// `.` no IR and not a failure — usually *not reached*, but also Flatten's
 /// "completed, no flat model retained" when DAE construction failed.
 /// Stage order is [`StageKind::COMPILATION`]: parse, resolve, instantiate,
-/// typecheck, flatten, dae, structural, index-reduction, initialization, events,
-/// solve-lowering.
+/// typecheck, flatten, dae, simplify, structural, index-reduction, initialization,
+/// events, solve-lowering.
 ///
 /// **Every row now carries at most one `X` or `!`, at the stage that actually
 /// stopped the pipeline.** That is the invariant the C20 fix established, and a
@@ -7901,7 +7956,7 @@ fn outcome_code(stage: &Stage) -> char {
 fn the_corpus_outcome_matrix_is_unchanged() {
     // Filled from this test's own failure output on 2026-08-25; see the doc
     // comment for what a character means. Stage order:
-    //   par res ins typ fla dae str idx ini evt sol
+    //   par res ins typ fla dae sim str idx ini evt sol
     //
     // **UPDATED WHOLESALE 2026-11-03 for the v0.10.0 rebase.** Twenty-four of
     // twenty-six rows moved, in exactly four classes — and the point of writing
@@ -7988,61 +8043,67 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     //    0.10.0 the holonomic lane **does** repair it — see
     //    `capacitor_loop_is_singular_and_the_holonomic_lane_rescues_it`, which was
     //    re-keyed to the opposite of what it used to assert.
+    //
+    // 7. **Every row gained column 7, Simplify, and one cell moved** (2026-11-27).
+    //    The tabs from Simplify to Solve lowering now read one observed run of solve
+    //    lowering instead of HRW's own calls on the raw DAE (`DECISIONS.md`,
+    //    2026-11-26), and Simplify is that run's first step, so it reads `O`
+    //    wherever a DAE was built. **The moved cell is `CartesianPendulum`'s
+    //    Initialization, `.` -> `O`**: lowering really runs on that model and
+    //    produces an initialization plan, which the old column could not show
+    //    because it read whether `prepare_for_solve` admitted the raw system. Notes
+    //    3 and 5 above describe that older column; `reconcile_reduction_with_lowering`,
+    //    which note 5 and the `CartesianPendulum` row once cited, is deleted.
     const MATRIX: &[(&str, &str)] = &[
         // Healthy: every phase produces IR.
-        ("ArrayFamily", "OOOOOOOOOOO"),
-        ("BouncingBall", "OOOOOOOOOOO"),
-        ("HarmonicOscillator", "OOOOOOOOOOO"),
-        ("LoopWithInertia", "OOOOOOOOOOO"),
-        ("MeasuredOscillator", "OOOOOOOOOOO"),
-        ("MixedLoop", "OOOOOOOOOOO"),
-        ("NonlinearLoop", "OOOOOOOOOOO"),
-        ("ProportionalLoop", "OOOOOOOOOOO"),
-        ("RcCircuit", "OOOOOOOOOOO"),
+        ("ArrayFamily", "OOOOOOOOOOOO"),
+        ("BouncingBall", "OOOOOOOOOOOO"),
+        ("HarmonicOscillator", "OOOOOOOOOOOO"),
+        ("LoopWithInertia", "OOOOOOOOOOOO"),
+        ("MeasuredOscillator", "OOOOOOOOOOOO"),
+        ("MixedLoop", "OOOOOOOOOOOO"),
+        ("NonlinearLoop", "OOOOOOOOOOOO"),
+        ("ProportionalLoop", "OOOOOOOOOOOO"),
+        ("RcCircuit", "OOOOOOOOOOOO"),
         // `connect`s at two hierarchy levels, and clean all the way through —
         // deliberately, since the point it makes is about how sets are BUILT and a
         // failure anywhere would give the reader something else to look at.
-        ("ScopedConnect", "OOOOOOOOOOO"),
-        ("SingleInertia", "OOOOOOOOOOO"),
-        ("StiffDecay", "OOOOOOOOOOO"),
+        ("ScopedConnect", "OOOOOOOOOOOO"),
+        ("SingleInertia", "OOOOOOOOOOOO"),
+        ("StiffDecay", "OOOOOOOOOOOO"),
         // Clean all the way through, and System Modeler still disagrees with its RUN
         // (`upstream-issues.md` D3) — the outcome matrix is about phases, not values.
-        ("ThresholdCounter", "OOOOOOOOOOO"),
-        ("TwoLoops", "OOOOOOOOOOO"),
+        ("ThresholdCounter", "OOOOOOOOOOOO"),
+        ("TwoLoops", "OOOOOOOOOOOO"),
         // Initialization relaxed something and said so.
-        ("OverInitRc", "OOOOOOOOOOO"),
-        ("RotationalInertia", "OOOOOOOOOOO"),
+        ("OverInitRc", "OOOOOOOOOOOO"),
+        ("RotationalInertia", "OOOOOOOOOOOO"),
         // Structurally sound and already index 1 — yet IC planning calls the same
         // system singular and cannot match `lambda`. The disagreement between two
         // phases about one system is `upstream-issues.md`'s 2026-09-24 entry, and
         // this row is what would change if it were fixed.
-        ("StabilizedPendulum", "OOOOOOOOOOO"),
+        ("StabilizedPendulum", "OOOOOOOOOOOO"),
         // High-index: structural flags a singular system, reduction fixes it,
         // initialization then reports its relaxation. Four models, one shape.
-        ("BenchActuator", "OOOOOOFOOOO"),
-        ("Drivetrain", "OOOOOOFOOOO"),
-        ("GearWithBrake", "OOOOOOFOOOO"),
-        ("MotorWithBrake", "OOOOOOFOOOO"),
-        // **Singular, and repaired by reduction since v0.10.0** — the holonomic lane
-        // differentiates `v = p.v - n.v` and admits the system, so column 8 reads
-        // `O`. It was grouped here as *"NOT repaired"* on 0.9.20, which is why the
-        // test asserting that was re-keyed rather than restored. Its counts do not
-        // move; one manifold constraint is what changed.
-        ("CapacitorLoop", "OOOOOOFOOOO"),
+        ("BenchActuator", "OOOOOOOFOOOO"),
+        ("Drivetrain", "OOOOOOOFOOOO"),
+        ("GearWithBrake", "OOOOOOOFOOOO"),
+        ("MotorWithBrake", "OOOOOOOFOOOO"),
+        // **Singular, and repaired by reduction** — in the real run by one
+        // Direct-lane demotion on `v = p.v - n.v`, after which it integrates no
+        // state (`capacitor_loop_is_singular_and_one_direct_demotion_sorts_it`).
+        // This said the holonomic lane did it until 2026-11-27, which was HRW's own
+        // reducer call on the raw DAE, not the run that simulates.
+        ("CapacitorLoop", "OOOOOOOFOOOO"),
         // Singular and NOT repaired — index reduction flags too, and neither
         // reaches solve lowering.
-        ("IncompatibleConnect", "OOOOOOFF.OX"),
-        ("TwiceDefined", "OOOOOOFF.OX"),
-        // The canonical index-3 DAE Rumoca does not reduce (`ideas.md` #83).
+        ("IncompatibleConnect", "OOOOOOOFF.OX"),
+        ("TwiceDefined", "OOOOOOOFF.OX"),
+        // The canonical index-3 DAE (`ideas.md` #83, closed by v0.10.4).
         //
-        // **Its row is identical to the two above, and the comment here claimed
-        // otherwise until 2026-11-03** — *"initialization is flagged as well,
-        // which the three above are not"*, which would require an `F` in the
-        // initialization column and there is a `.`. That was true of 0.9.20,
-        // where initialization produced its own report; on 0.10.0 the column
-        // records whether `prepare_for_solve` admitted the system, and it admits
-        // none of the three. **What distinguishes this specimen is not visible in
-        // this table**, so the pointer to #83 is the whole of what this row says.
+        // **Its row matched the two above until v0.10.4** — they are the three
+        // singular specimens — and differs now in exactly the cells that say the
+        // compiler carried it: Index reduction, Initialization and Solve lowering.
         //
         // **The final cell moved `X` -> `O` on v0.10.4, and it is the only cell in the
         // whole matrix that did.** Solve lowering used to fail here with "DAE structural
@@ -8050,15 +8111,13 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         // unknowns"; it now lowers the canonical index-3 pendulum on two independent
         // coordinates, and the model simulates with the rod constraint holding to 4.6e-12.
         //
-        // **Structural stays `F` and Index Reduction became `O` on 2026-11-05.**
-        //
-        // `prepare_for_solve`'s search still declines this model — the Holonomic lane
-        // finds the rod constraint, attempts it, and refuses with
-        // `would_create_vacuous_residual` — and the raw system still *is* singular, which
-        // is column 7. What changed is column 8: the compiler reduces this model, in
-        // `rumoca-phase-solve`'s state selection, and `reconcile_reduction_with_lowering`
-        // now reads the 2 coordinates solve lowering produced rather than letting one
-        // phase's refusal stand as the stage's outcome.
+        // **Structural is `F`, Index Reduction `O`, and since 2026-11-27 both come
+        // from one real run.** The reducer refuses this model — singular — and state
+        // selection recovers it via formal derivatives, integrating `[y, der(y)]`; the
+        // Index reduction tab shows both, in its `route`. Index reduction (column 9
+        // since Simplify joined) is `O` because lowering consumed a prepared system,
+        // and Initialization (column 10) is `O` because lowering then produced an
+        // initialization plan (note 7).
         //
         // **This row previously read `FF` and the comment called that "a phase failing
         // and the next one succeeding anyway, which is exactly what happens".** The
@@ -8068,21 +8127,21 @@ fn the_corpus_outcome_matrix_is_unchanged() {
         // wearing the shape of a verdict about one.
         //
         // The other two `singular` reductions keep their `F` — see `IncompatibleConnect`
-        // and `TwiceDefined` below, where solve lowering publishes no layout because
-        // nothing carried those models.
-        ("CartesianPendulum", "OOOOOOFO.OO"),
+        // and `TwiceDefined` above, where solve lowering fails because nothing carried
+        // those models.
+        ("CartesianPendulum", "OOOOOOOFOOOO"),
         // A flagged typecheck stops the pipeline; everything after is `.`.
-        ("DimensionMismatch", "OOOF......."),
+        ("DimensionMismatch", "OOOF........"),
         // Flatten and DAE fail with a payload, then nothing is reached.
-        ("OverDeterminedShaft", "OOOO.X....."),
-        ("UnbalancedShaft", "OOOO.X....."),
+        ("OverDeterminedShaft", "OOOO.X......"),
+        ("UnbalancedShaft", "OOOO.X......"),
         // No pipeline result at all. **These three rows interleave `.` and `!`
         // for one underlying condition** — recorded as `ui-findings.md` C20 and
         // deliberately not changed here, because which of the two a tab shows is
         // a pane claim and Doug's to rule on.
-        ("MissingComponentClass", "OX........."),
-        ("UndefinedRef", "OX........."),
-        ("UnclosedModel", "X.........."),
+        ("MissingComponentClass", "OX.........."),
+        ("UndefinedRef", "OX.........."),
+        ("UnclosedModel", "X..........."),
     ];
 
     let dir = PathBuf::from(crate::manifest_path!("specimens"));
@@ -8140,42 +8199,36 @@ fn the_corpus_outcome_matrix_is_unchanged() {
     );
 }
 
-/// **The initialization pane shows Rumoca's initial-value pins, with their roles.**
+/// **The initialization pane shows the plan Rumoca lowered, and tells three ways
+/// a state's initial value is set apart.**
 ///
-/// Re-modelled 2026-11-03, replacing the `ic_plan` solve sequence v0.10.0
-/// removed. The thing worth showing is the **role**: a `Definition` determines a
-/// state's initial value and stays an equation in the joint solve, while a
-/// `Check` stays a residual so the initialization instant answers it with
-/// numbers. The old pane could not express that distinction at all.
+/// Re-modelled 2026-11-27 onto rumoca-ir-solve's `InitializationSolveSystem`,
+/// the plan the simulation actually runs. It replaced HRW's own reading of
+/// `initial_pins` and a determinacy count HRW computed itself, neither of which
+/// came from the run that simulates (workspace `CLAUDE.md`, *every tab observes
+/// the run that simulates*).
 ///
-/// # Why this uses a scratch specimen rather than the corpus
+/// # Why this still uses a scratch specimen
 ///
-/// **No curated specimen declares `fixed = true`.** They state `start = …`,
-/// which is a *guess* the initialization solve may move, not an MLS 3.6 §8.6
-/// initial equation. So every corpus model reports zero pins — correctly — and a
-/// test over the corpus would assert nothing about the rendering.
-///
-/// That is a specimen gap rather than a bug, and it is recorded in
-/// `docs/tech-debt.md`. It also explains the shape of the initialization defect
-/// `upstream-issues.md` carries: with nothing pinned, those models' initial
-/// values come from the solve, which is exactly where 0.9.20 took the
-/// derivative-zero answer instead of the start.
+/// `specimens/MeasuredOscillator.mo` now covers a given state and a transferred
+/// value in the corpus (`docs/tech-debt.md`, closed 2026-11-08). The scratch model
+/// is kept because it puts all three cases, including the bare-`start` state, in
+/// one model small enough to read in the assertion messages.
 #[test]
 #[cfg_attr(
     not(feature = "slow-tests"),
     ignore = "compile-heavy; run with --features slow-tests"
 )]
-fn the_initialization_pane_shows_each_pin_and_its_role() {
-    // **Three states, determined three different ways** — which is what makes
-    // this able to tell the mechanisms apart rather than merely count them.
+fn the_initialization_pane_shows_rumocas_plan_for_three_kinds_of_state() {
+    // **Three states, set three different ways** — which is what makes this able
+    // to tell the mechanisms apart rather than merely count them.
     //
-    //   `a`  its own `fixed = true`              -> determined, and NO pin
-    //   `b`  a transferred value from `c`        -> determined BY a pin
-    //   `d`  a bare `start`                      -> only guessed
+    //   `a`  its own `fixed = true`              -> given: no row
+    //   `b`  a fixed value transferred from `c`  -> the plan SOLVES for it
+    //   `d`  a bare `start`                      -> neither given nor solved
     //
-    // The `a` row is the one a wrong design passes anyway: a pane that only
-    // listed pins would show `b` and silently omit `a`, reporting one
-    // determined state out of three when the answer is two.
+    // The `a` case is the one a wrong design passes anyway: a pane that only
+    // listed rows would show `b` and silently omit `a`.
     const SOURCE: &str = "\
 model InitProbe \"Three ways a state's initial value is or is not determined\"
   parameter Real tau = 0.5;
@@ -8201,52 +8254,50 @@ end InitProbe;
         .initialization
         .value
         .as_ref()
-        .expect("the Initialization stage publishes its pins");
-    let determinacy = &value["determinacy"];
+        .expect("the Initialization stage publishes Rumoca's plan");
 
     assert_eq!(
-        determinacy["state_scalars"].as_u64(),
-        Some(3),
-        "a, b and d are states; c is algebraic because `c = b` determines it: \
-         {determinacy}",
+        value["given_states"],
+        serde_json::json!(["a"]),
+        "`a` is fixed by its own declaration, so the plan takes it as given and \
+         spends no row on it: {value}",
     );
     assert_eq!(
-        determinacy["determined"].as_u64(),
-        Some(2),
-        "`a` by its own fixed start and `b` by the transfer from `c`. Counting \
-         only `fixed` STATES would say 1, and counting only pins would also say \
-         1 \u{2014} by leaving out the other one each time: {determinacy}",
-    );
-    assert_eq!(
-        determinacy["only_guessed"],
-        serde_json::json!(["d"]),
-        "`d` states a bare `start`, which the initialization solve may move. \
-         Naming it is the point: it is a state whose reported initial value came \
-         out of the solve rather than out of the model: {determinacy}",
+        value["unknowns"],
+        serde_json::json!(["b"]),
+        "`b` is the one value the plan must work out: {value}",
     );
 
-    let pins = value["pins"].as_array().expect("pins is an array");
+    let rows = value["rows"].as_array().expect("rows is an array");
+    assert_eq!(rows.len(), 1, "one row, for `b`: {rows:#?}");
+    let row = &rows[0];
     assert_eq!(
-        pins.len(),
-        1,
-        "only the transferred value needed proving. A state's own fixed start is \
-         seeded directly and produces no pin, which is why the determinacy count \
-         above cannot be read off this list: {pins:#?}",
+        row["role"], "Solved",
+        "the row determines an unknown: {row}"
     );
-    let pin = &pins[0];
-    assert_eq!(pin["role"], "definition", "it determines b: {pin}");
-    assert_eq!(pin["coordinate"], "b", "the pin is about the state: {pin}");
+    assert_eq!(row["solves"], "b", "and that unknown is b: {row}");
     assert_eq!(
-        pin["source"], "c",
-        "and the value came from c's declaration, not from b's \u{2014} this field \
-         is the whole reason the pin is worth showing: {pin}",
-    );
-    assert_eq!(pin["value"], "2", "rendered as the expression it is: {pin}");
-    assert_eq!(
-        pin["declared_at"]["line"].as_u64(),
+        row["at"]["line"].as_u64(),
         Some(5),
-        "pointing at `Real c(start = 2.0, fixed = true)`, the line that makes \
-         this value load-bearing: {pin}",
+        "pointing at `Real c(start = 2.0, fixed = true)` — the value came from c's \
+         declaration, not b's, which is the whole reason the location is worth \
+         showing: {row}",
+    );
+
+    // `d` is in neither list: its `start` is not a condition the plan has to meet.
+    for list in ["given_states", "unknowns"] {
+        assert!(
+            !value[list]
+                .as_array()
+                .is_some_and(|names| names.iter().any(|n| n == "d")),
+            "`d` states only a bare `start`, so the plan neither takes it as given \
+             nor solves for it; it appeared in `{list}`: {value}",
+        );
+    }
+    assert_eq!(
+        stages.initialization.note.as_deref(),
+        Some("1 initialization row(s), 0 surplus check(s)"),
+        "the tab note counts the same plan",
     );
 }
 
@@ -9157,6 +9208,13 @@ fn the_simulation_summary_distinguishes_a_flat_trajectory_from_a_moving_one() {
 /// `compile_target`** — it locates the specimen through the same helper and then runs
 /// its own pipeline — and because the worker loop handles one message at a time.
 ///
+/// **That covers one thread only.** Captures on *different* threads did overlap — the
+/// parallel test suite runs many `WorkerState`s — and that hung the slow suite on
+/// 2026-11-27. The cross-thread case is now excluded at runtime by `OutputCapture`'s
+/// exclusive lock and pinned by
+/// `overlapping_captures_on_two_threads_both_finish_with_their_own_output`; this scan
+/// still guards the same-thread case, where that lock would deadlock instead.
+///
 /// # What breaks it, which is what this fails on
 ///
 /// A third call site, or `simulate` gaining a call to `compile_target`. Either would
@@ -9634,119 +9692,5 @@ fn each_tolerance_source_has_its_own_words() {
     assert!(
         all.iter().all(|s| !s.describe().is_empty()),
         "a source with no words leaves the log saying only a number",
-    );
-}
-
-/// Build the two stages [`reconcile_reduction_with_lowering`] judges.
-///
-/// `kind` is the reduction outcome Rumoca reported; `lowered` is the
-/// `state_scalar_count` solve lowering published, or `None` for a stage that published
-/// no layout. Only the two keys the function reads are filled — a fuller fixture would
-/// suggest the judgement depends on more than it does.
-fn reduction_pair(kind: &str, lowered: Option<u64>) -> (Stage, Stage) {
-    let ir = Stage::recovered(
-        serde_json::json!({ "outcome": { "kind": kind } }),
-        "still singular after reduction",
-    );
-    let sl = match lowered {
-        Some(n) => Stage::ok(serde_json::json!({ "solve_layout": { "state_scalar_count": n } })),
-        None => Stage::info("not lowered"),
-    };
-    (ir, sl)
-}
-
-/// **A reduction the compiler carried downstream is not flagged** — `CartesianPendulum`,
-/// and the defect Doug reported on 2026-11-05.
-///
-/// `inspect_prepare_for_solve` refuses the canonical index-3 pendulum while the compiler
-/// lowers and simulates it on two coordinates. The stage reported
-/// [`Outcome::Flagged`] with *"still singular after reduction"*, so the tab was painted
-/// red and the committed trace carried the false note — while
-/// `report_sub_view::reduction_banner`, fixed a day earlier, said *Reduced by state
-/// selection* directly beneath it.
-///
-/// **The three cases are measured, not imagined.** Across the corpus exactly one
-/// specimen has a `singular` reduction and a lowered layout (`CartesianPendulum`, 2
-/// coordinates); two have a `singular` reduction and no layout (`IncompatibleConnect`,
-/// `TwiceDefined`) and must stay flagged, because nothing carried those models.
-#[test]
-fn a_reduction_the_compiler_carried_downstream_is_not_flagged() {
-    // The pendulum: refused here, lowered on 2 coordinates one stage over.
-    let (mut ir, sl) = reduction_pair("singular", Some(2));
-    assert_eq!(ir.outcome, Outcome::Flagged, "fixture must start flagged");
-    reconcile_reduction_with_lowering(&mut ir, &sl);
-    assert_eq!(
-        ir.outcome,
-        Outcome::Ok,
-        "the compiler reduced this model; one phase declining is not its verdict",
-    );
-    let note = ir.note.clone().expect("the upgrade must leave a note");
-    assert!(
-        note.contains('2'),
-        "the note must name the coordinate count solve lowering produced: {note:?}",
-    );
-    assert!(
-        !note.contains("still singular after reduction"),
-        "the falsified note must be gone, not appended to: {note:?}",
-    );
-
-    // Refused, and nothing downstream carried it. This is the majority case and the
-    // one an over-eager upgrade would corrupt.
-    let (mut ir, sl) = reduction_pair("singular", None);
-    reconcile_reduction_with_lowering(&mut ir, &sl);
-    assert_eq!(
-        ir.outcome,
-        Outcome::Flagged,
-        "with no lowered layout nothing carried the model, so the refusal stands",
-    );
-    assert_eq!(
-        ir.note.as_deref(),
-        Some("still singular after reduction"),
-        "an untouched stage keeps the note its own phase wrote",
-    );
-
-    // A reduction that admitted the system is not re-judged, whatever solve lowering
-    // published — `Ok` stages have already stated what happened.
-    let (mut ir, sl) = reduction_pair("sorted", Some(5));
-    let before = ir.note.clone();
-    reconcile_reduction_with_lowering(&mut ir, &sl);
-    assert_eq!(
-        ir.note, before,
-        "a non-singular reduction must be untouched"
-    );
-}
-
-/// **The upgraded note still contains `singular`, and that is load-bearing.**
-///
-/// `App::note_says_singular` decides sub-view availability by searching the note for the
-/// word, and this stage's payload is still the refusal report — Summary is where its
-/// rounds and residue live. So the note replacing the refusal's own wording may not
-/// quietly drop the word and take the Summary tab with it.
-///
-/// Pinned here rather than left as a comment because the coupling runs between two files
-/// and a rule beside the code it governs is read only by someone already in that file.
-///
-/// **The non-vacuity guard is the whole test, and it was added after a failure.**
-/// **Written without it, this test passed while the fix was disabled** — proved by
-/// stubbing `reconcile_reduction_with_lowering` to return immediately, which is the
-/// must-fire check `CLAUDE.md` requires of anything whose job is to report. The reason is
-/// exact: the note it falls back to is *"still singular after reduction"*, which contains
-/// the word too. **Asserting a substring of the replacement cannot tell a replacement
-/// from no replacement**, so the assertion has to pin that the note *changed* first.
-#[test]
-fn the_reconciled_note_still_offers_the_summary_view() {
-    let (mut ir, sl) = reduction_pair("singular", Some(2));
-    let before = ir.note.clone().expect("the fixture carries a note");
-    reconcile_reduction_with_lowering(&mut ir, &sl);
-    let note = ir.note.as_deref().expect("the upgrade must leave a note");
-    assert_ne!(
-        note, before,
-        "non-vacuity: the word below is only evidence if the upgrade actually ran, and \
-         the note it replaces contains that word as well",
-    );
-    assert!(
-        note.contains("singular"),
-        "`App::note_says_singular` gates the Summary sub-view on this word, and this \
-         stage's payload is still the refusal report: {note:?}",
     );
 }

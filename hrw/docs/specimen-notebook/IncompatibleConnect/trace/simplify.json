@@ -1,0 +1,92 @@
+{
+  "transforms": [
+    {
+      "transform": "fold_evaluable_parameters",
+      "what_it_does": "replaces reads of evaluable parameters by their settled values",
+      "changed": false,
+      "before": {
+        "states": 0,
+        "algebraics": 3,
+        "outputs": 0,
+        "parameters": 0,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 3,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "inline_annotated_calls",
+      "what_it_does": "inlines Inline / LateInline pure function calls before index reduction",
+      "changed": false,
+      "before": {
+        "states": 0,
+        "algebraics": 3,
+        "outputs": 0,
+        "parameters": 0,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 3,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "quotient_aliases",
+      "what_it_does": "merges copy and negation aliases (a = b, a = -b) onto one representative",
+      "changed": true,
+      "before": {
+        "states": 0,
+        "algebraics": 3,
+        "outputs": 0,
+        "parameters": 0,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 3,
+        "initialization_equations": 0
+      },
+      "after": {
+        "states": 0,
+        "algebraics": 3,
+        "outputs": 0,
+        "parameters": 0,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 3,
+        "initialization_equations": 0
+      }
+    },
+    {
+      "transform": "fold_constant_values",
+      "what_it_does": "evaluates constant pure calls and propagates literal algebraics",
+      "changed": false,
+      "before": {
+        "states": 0,
+        "algebraics": 3,
+        "outputs": 0,
+        "parameters": 0,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 3,
+        "initialization_equations": 0
+      },
+      "after": null
+    }
+  ],
+  "alias_quotients": [
+    {
+      "scope": "Source",
+      "eliminated": 1,
+      "classes": [
+        "Quotiented { representative: \"a.v\", eliminated: [AliasMemberReport { name: \"b.v\", negated: false }], retained_states: [] }"
+      ]
+    }
+  ],
+  "note": "solve lowering runs these four, in this order, on the DAE before any structural analysis; each reads the previous one's output"
+}

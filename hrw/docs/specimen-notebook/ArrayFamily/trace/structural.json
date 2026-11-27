@@ -126,5 +126,14 @@
         ]
       }
     ]
-  }
+  },
+  "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+  "analyses": [
+    {
+      "context": "Source",
+      "equations": 8,
+      "unknowns": 8,
+      "result": "sorted: 1 block(s), 0 coupled"
+    }
+  ]
 }

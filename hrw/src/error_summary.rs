@@ -246,42 +246,12 @@ pub(crate) fn generic_error_summary(
         }
     }
 
-    // Determinacy summary (initialization stage)
-    if let Some(det) = error.get("determinacy") {
-        ui.add_space(8.0);
-        ui.strong("Initial condition determinacy");
-        ui.add_space(2.0);
-        egui::Grid::new("determinacy_grid")
-            .num_columns(2)
-            .spacing([12.0, 4.0])
-            .show(ui, |ui| {
-                if let Some(n) = det["states"].as_u64() {
-                    ui.label("States");
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-                if let Some(n) = det["initial_equations"].as_u64() {
-                    ui.label("Initial equations");
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-                if let Some(n) = det["fixed_start_states"].as_u64() {
-                    ui.label("Fixed start states");
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-                if let Some(n) = det["explicit_initial_conditions"].as_u64() {
-                    ui.label("Explicit initial conditions");
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-                if let Some(v) = det.get("verdict").and_then(|v| v.as_str()) {
-                    ui.label("Verdict");
-                    ui.label(v);
-                    ui.end_row();
-                }
-            });
-    }
+    // **No determinacy block since 2026-11-26.** One read `determinacy.states`,
+    // `initial_equations`, `fixed_start_states`, `explicit_initial_conditions` and
+    // `verdict` — 0.9.20's IC-plan fields, which no stage had published since the
+    // v0.10.0 rebase — so it could never draw. The Initialization tab now carries
+    // Rumoca's lowered plan, row by row, and a failed initialization is reported by
+    // the run that evaluated it.
 
     // Guidance
     if let Some(guidance) = error.get("guidance").and_then(|g| g.as_str()) {

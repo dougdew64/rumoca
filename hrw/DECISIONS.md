@@ -5973,3 +5973,76 @@ in step, and `pwsh` is on neither machine.
 - **Two observable changes:** the process line's time is now UTC and says so (no time-zone
   dependency), and the seen-file key is `question_mtime_ms` — an old seen-file reads as unseen,
   costing one extra "waiting" reminder.
+
+## 2026-11-26 — The tabs show one real preparation: Simplify through Solve lowering are one observed Rumoca run
+
+**Doug: *"HRW's tabs should accurately report what Rumoca does. And then the labs should be
+based upon those tabs. It's clear that we need to fix those tabs to be accurate, and accurately
+ordered. And then we can fix the labs."*** He approved a five-step plan and then: *"Complete all
+five steps of your proposal."*
+
+**What was wrong, found while rewriting `the-pipeline.md`.** Only Resolve through DAE were
+observations of Rumoca's run. Structural and Index reduction were HRW calling
+`inspect_structural_report` / `inspect_prepare_for_solve` **on the DAE as built**;
+Initialization was HRW's own count over the reducer's pins, which never read `initial equation`
+sections (`OverInitRc`'s `C.v` showed as "only guessed"); Solve lowering was a separate
+`lower_solve_problem` whose result was discarded; and the simulation lowered a third time
+inside `rumoca-sim`. But Rumoca's solve path first **folds evaluable parameters, inlines
+annotated calls, quotients aliases and folds constants**, then analyses and reduces the
+result — so for any model those transforms change, the tabs showed an execution Rumoca never
+performs. `Drivetrain`'s "9 → 5" and `TwiceDefined`'s ten-frame displacement walk were both
+that; `reconcile_reduction_with_lowering` existed to patch the disagreement.
+
+**What replaced it.**
+
+- **Rumoca, additive and observation-only** (`07718fcb1`, upstreamable):
+  `rumoca_phase_structural::preparation_trace` records every structural analysis on the solve
+  path (why it ran, its report or typed error, its incidence, its search) and every reduction
+  record; `rumoca_phase_solve::preparation_trace` records each source transform, the
+  state-selection route and the integrated selection; `rumoca_sim::prepare_runtime_observed` +
+  `simulate_prepared_runtime_with_optional_step_records` split the `Auto` simulate entry so a
+  caller can inspect the lowering and integrate that artifact. (`75f844c42` documents
+  `InitializationSolveSystem`'s fields, for the Initialization tooltips.)
+- **HRW** (`worker/preparation.rs`): compile runs `prepare_runtime_observed` under both
+  scopes; every tab from **Simplify** (new) to Solve lowering reads that run; Initialization
+  shows the plan Rumoca lowered, row by row, in its own roles; Events adds the lowered
+  partition; Run integrates the retained runtime when the source is unchanged.
+- **Order**: Parse … Dae, **Simplify**, Structural, Index reduction, Initialization, Events,
+  Solve lowering, Simulation. Events stays a tab, not a phase, and its tooltip says so.
+
+**Findings the real run produced, which the labs must now absorb:** `CapacitorLoop` integrates
+**0** states; `Drivetrain` merges 53 aliases, then reduces to `mount.s_rel`, `L.i`, `mount.v_rel`;
+`TwiceDefined`'s matching gives up at once, because constant folding leaves `0 = 1 - time`
+mentioning no unknown — so **`matching-live`'s displacement walk is not on the real path** and
+that lab needs a different specimen. The lab audit is the next step and was not part of these
+five.
+
+**Kept deliberately.** `inspect_prepare_for_solve` and `inspect_structural_report` stay in
+Rumoca (other callers use them); HRW no longer calls them. The NaN-trace retry still re-runs
+`simulate_with_diagnostics` on a failure, and says so in the log. Run still compiles the model
+again to read its tolerance — that compile is shown in no tab.
+
+## 2026-11-27 — Two silent test-harness defects, and F2's oracle moved to the real run
+
+Found getting the slow suite green after the 11-26 change.
+
+- **`OutputCapture` could hang forever.** It redirects the process's fds 1 and 2, and two
+  captures on different threads interleaved like a stack popped out of order: one restored the
+  other's pipe onto fd 1, so the first one's `Drop` waited for EOF forever. The slow suite sat for
+  7 h on 44 s of CPU. A capture now holds a process-wide lock for its whole life
+  (`overlapping_captures_on_two_threads_both_finish_with_their_own_output`).
+- **Tracing could silently drop a Rumoca callsite for good — in the app too.** With only HRW's
+  dispatcher registered, tracing-core (0.1.36, `has_just_one`) computes a callsite's cached
+  interest from the *first-reaching thread's* default; a callsite first reached on a thread with no
+  subscriber is then `never` everywhere. A second, inert dispatcher stays registered
+  (`worker::TRACING_KEEPS_TWO`), reproduced by
+  `a_callsite_first_reached_on_another_thread_is_still_traced`.
+- **F2 compared the tabs against the wrong system.** Its oracle was `build_incidence` on the raw
+  DAE and HRW's own `prepare_for_solve` — not a run Rumoca makes — and reported 273 "violations"
+  once the tabs showed the real run. It now uses `fidelity::RealRunOracles`, from the same
+  `prepare_runtime_observed` call: 0 violations. The MSL sweep's size cap now skips F2 on both
+  subjects above it, not only the reduced one.
+
+Five tests that asserted HRW-computed facts were rewritten against the real run (InitProbe's plan,
+the pendulum's recovery route, three MSL classes solve lowering refuses, the simulate log's
+provenance, the corpus matrix's new Simplify column).

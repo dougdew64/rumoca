@@ -60,35 +60,32 @@
           25,
           35
         ],
-        "equation_text": "0 = emf.internalSupport.tau - -emf.tau"
+        "equation_text": "0 = emf.internalSupport.tau + emf.tau"
       },
       {
         "equation": "f_x[1] (0 = p.i + n.i)",
         "id": "f_x[1]",
         "unknowns": [
-          3,
           5
         ],
-        "equation_text": "0 = 0 - (src.p.i + src.n.i)"
+        "equation_text": "0 = src.n.i - L.i"
       },
       {
         "equation": "f_x[2] (i = p.i)",
         "id": "f_x[2]",
         "unknowns": [
-          0,
-          3
+          0
         ],
-        "equation_text": "0 = src.i - src.p.i"
+        "equation_text": "0 = src.i + L.i"
       },
       {
         "equation": "f_x[3] (v = p.v - n.v)",
         "id": "f_x[3]",
         "unknowns": [
           1,
-          2,
-          4
+          2
         ],
-        "equation_text": "0 = src.v - (src.p.v - src.n.v)"
+        "equation_text": "0 = src.v - (src.p.v - 0)"
       },
       {
         "equation": "f_x[4] (v = V)",
@@ -102,29 +99,27 @@
         "equation": "f_x[5] (0 = p.i + n.i)",
         "id": "f_x[5]",
         "unknowns": [
-          9,
-          11
+          9
         ],
-        "equation_text": "0 = 0 - (R.p.i + R.n.i)"
+        "equation_text": "0 = R.p.i - L.i"
       },
       {
         "equation": "f_x[6] (i = p.i)",
         "id": "f_x[6]",
         "unknowns": [
-          6,
-          9
+          6
         ],
-        "equation_text": "0 = R.i - R.p.i"
+        "equation_text": "0 = R.i - L.i"
       },
       {
         "equation": "f_x[7] (v = p.v - n.v)",
         "id": "f_x[7]",
         "unknowns": [
+          2,
           7,
-          8,
           10
         ],
-        "equation_text": "0 = R.v - (R.p.v - R.n.v)"
+        "equation_text": "0 = R.v - (src.p.v - R.n.v)"
       },
       {
         "equation": "f_x[8] (T_heatPort = T)",
@@ -147,30 +142,27 @@
         "equation": "f_x[10] (v = R_actual*i)",
         "id": "f_x[10]",
         "unknowns": [
-          6,
           7,
           14
         ],
-        "equation_text": "0 = R.v - R.R_actual*R.i"
+        "equation_text": "0 = R.v - R.R_actual*L.i"
       },
       {
         "equation": "f_x[11] (LossPower = v*i)",
         "id": "f_x[11]",
         "unknowns": [
-          6,
           7,
           12
         ],
-        "equation_text": "0 = R.LossPower - R.v*R.i"
+        "equation_text": "0 = R.LossPower - R.v*L.i"
       },
       {
         "equation": "f_x[12] (0 = p.i + n.i)",
         "id": "f_x[12]",
         "unknowns": [
-          18,
           20
         ],
-        "equation_text": "0 = 0 - (L.p.i + L.n.i)"
+        "equation_text": "0 = L.n.i + L.i"
       },
       {
         "equation": "f_x[13] (i = p.i)",
@@ -178,17 +170,17 @@
         "unknowns": [
           18
         ],
-        "equation_text": "0 = L.i - L.p.i"
+        "equation_text": "0 = L.p.i - L.i"
       },
       {
         "equation": "f_x[14] (v = p.v - n.v)",
         "id": "f_x[14]",
         "unknowns": [
+          10,
           16,
-          17,
           19
         ],
-        "equation_text": "0 = L.v - (L.p.v - L.n.v)"
+        "equation_text": "0 = L.v - (R.n.v - L.n.v)"
       },
       {
         "equation": "f_x[15] (L*der(i) = v)",
@@ -211,56 +203,52 @@
         "equation": "f_x[17] (flange.tau = tau)",
         "id": "f_x[17]",
         "unknowns": [
-          35,
+          25,
           38
         ],
-        "equation_text": "0 = emf.internalSupport.flange.tau - emf.internalSupport.tau"
+        "equation_text": "0 = emf.internalSupport.flange.tau + emf.tau"
       },
       {
         "equation": "f_x[18] (flange.phi = phi)",
         "id": "f_x[18]",
         "unknowns": [
-          36,
-          37
+          33,
+          36
         ],
-        "equation_text": "0 = emf.internalSupport.flange.phi - emf.internalSupport.phi"
+        "equation_text": "0 = emf.internalSupport.phi - emf.fixed.flange.phi"
       },
       {
         "equation": "f_x[19] (v = p.v - n.v)",
         "id": "f_x[19]",
         "unknowns": [
-          21,
-          27,
-          29
+          19,
+          21
         ],
-        "equation_text": "0 = emf.v - (emf.p.v - emf.n.v)"
+        "equation_text": "0 = emf.v - (L.n.v - 0)"
       },
       {
         "equation": "f_x[20] (0 = p.i + n.i)",
         "id": "f_x[20]",
         "unknowns": [
-          28,
           30
         ],
-        "equation_text": "0 = 0 - (emf.p.i + emf.n.i)"
+        "equation_text": "0 = emf.n.i + L.i"
       },
       {
         "equation": "f_x[21] (i = p.i)",
         "id": "f_x[21]",
         "unknowns": [
-          22,
-          28
+          22
         ],
-        "equation_text": "0 = emf.i - emf.p.i"
+        "equation_text": "0 = emf.i - L.i"
       },
       {
         "equation": "f_x[22] (phi = flange.phi - internalSupport.phi)",
         "id": "f_x[22]",
         "unknowns": [
-          31,
-          36
+          33
         ],
-        "equation_text": "0 = emf.phi - (emf.flange.phi - emf.internalSupport.phi)"
+        "equation_text": "0 = emf.phi - (load.phi - emf.fixed.flange.phi)"
       },
       {
         "equation": "f_x[23] (w = der(phi))",
@@ -284,10 +272,9 @@
         "equation": "f_x[25] (tau = -k*i)",
         "id": "f_x[25]",
         "unknowns": [
-          22,
           25
         ],
-        "equation_text": "0 = emf.tau - -(emf.k*emf.i)"
+        "equation_text": "0 = emf.tau - -(emf.k*L.i)"
       },
       {
         "equation": "f_x[26] (tauElectrical = -tau)",
@@ -296,7 +283,7 @@
           25,
           26
         ],
-        "equation_text": "0 = emf.tauElectrical - -emf.tau"
+        "equation_text": "0 = emf.tauElectrical + emf.tau"
       },
       {
         "equation": "f_x[27] (tau = flange.tau)",
@@ -305,15 +292,15 @@
           25,
           32
         ],
-        "equation_text": "0 = emf.tau - emf.flange.tau"
+        "equation_text": "0 = emf.flange.tau - emf.tau"
       },
       {
         "equation": "f_x[28] (p.v = 0)",
         "id": "f_x[28]",
         "unknowns": [
-          39
+          4
         ],
-        "equation_text": "0 = gnd.p.v - 0"
+        "equation_text": "0 = src.n.v - 0"
       },
       {
         "equation": "f_x[29] (phi = flange_a.phi)",
@@ -321,7 +308,7 @@
         "unknowns": [
           41
         ],
-        "equation_text": "0 = load.phi - load.flange_a.phi"
+        "equation_text": "0 = load.flange_a.phi - load.phi"
       },
       {
         "equation": "f_x[30] (phi = flange_b.phi)",
@@ -329,7 +316,7 @@
         "unknowns": [
           43
         ],
-        "equation_text": "0 = load.phi - load.flange_b.phi"
+        "equation_text": "0 = load.flange_b.phi - load.phi"
       },
       {
         "equation": "f_x[31] (w = der(phi))",
@@ -352,66 +339,61 @@
         "equation": "f_x[33] (J*a = flange_a.tau + flange_b.tau)",
         "id": "f_x[33]",
         "unknowns": [
-          42,
+          25,
           44,
           47
         ],
-        "equation_text": "0 = load.J*load.a - (load.flange_a.tau + load.flange_b.tau)"
+        "equation_text": "0 = load.J*load.a - (-emf.tau + load.flange_b.tau)"
       },
       {
         "equation": "f_x[34] (SI.Torque tau)",
         "id": "f_x[34]",
         "unknowns": [
-          34,
-          38
+          25,
+          34
         ],
-        "equation_text": "0 = emf.internalSupport.flange.tau + emf.fixed.flange.tau"
+        "equation_text": "0 = emf.fixed.flange.tau - emf.tau"
       },
       {
         "equation": "f_x[35] (SI.Current i)",
         "id": "f_x[35]",
         "unknowns": [
-          3,
-          9
+          3
         ],
-        "equation_text": "0 = src.p.i + R.p.i"
+        "equation_text": "0 = src.p.i + L.i"
       },
       {
         "equation": "f_x[36] (SI.Current i)",
         "id": "f_x[36]",
         "unknowns": [
-          11,
-          18
+          11
         ],
-        "equation_text": "0 = R.n.i + L.p.i"
+        "equation_text": "0 = R.n.i + L.i"
       },
       {
         "equation": "f_x[37] (SI.Current i)",
         "id": "f_x[37]",
         "unknowns": [
-          20,
           28
         ],
-        "equation_text": "0 = L.n.i + emf.p.i"
+        "equation_text": "0 = emf.p.i - L.i"
       },
       {
         "equation": "f_x[38] (SI.Current i)",
         "id": "f_x[38]",
         "unknowns": [
-          5,
-          30,
           40
         ],
-        "equation_text": "0 = emf.n.i + src.n.i + gnd.p.i"
+        "equation_text": "0 = -L.i + L.i + gnd.p.i"
       },
       {
         "equation": "f_x[39] (SI.Torque tau)",
         "id": "f_x[39]",
         "unknowns": [
-          32,
+          25,
           42
         ],
-        "equation_text": "0 = emf.flange.tau + load.flange_a.tau"
+        "equation_text": "0 = load.flange_a.tau + emf.tau"
       },
       {
         "equation": "f_x[40] (SI.Angle phi)",
@@ -429,7 +411,7 @@
           2,
           8
         ],
-        "equation_text": "0 = src.p.v - R.p.v"
+        "equation_text": "0 = R.p.v - src.p.v"
       },
       {
         "equation": "f_x[42] (SI.ElectricPotential v)",
@@ -438,7 +420,7 @@
           10,
           17
         ],
-        "equation_text": "0 = R.n.v - L.p.v"
+        "equation_text": "0 = L.p.v - R.n.v"
       },
       {
         "equation": "f_x[43] (SI.ElectricPotential v)",
@@ -447,34 +429,31 @@
           19,
           27
         ],
-        "equation_text": "0 = L.n.v - emf.p.v"
+        "equation_text": "0 = emf.p.v - L.n.v"
       },
       {
         "equation": "f_x[44] (SI.ElectricPotential v)",
         "id": "f_x[44]",
         "unknowns": [
-          4,
           29
         ],
-        "equation_text": "0 = emf.n.v - src.n.v"
+        "equation_text": "0 = emf.n.v - 0"
       },
       {
         "equation": "f_x[45] (SI.ElectricPotential v)",
         "id": "f_x[45]",
         "unknowns": [
-          4,
           39
         ],
-        "equation_text": "0 = src.n.v - gnd.p.v"
+        "equation_text": "0 = gnd.p.v - 0"
       },
       {
         "equation": "f_x[46] (SI.Angle phi)",
         "id": "f_x[46]",
         "unknowns": [
-          31,
-          41
+          31
         ],
-        "equation_text": "0 = emf.flange.phi - load.flange_a.phi"
+        "equation_text": "0 = emf.flange.phi - load.phi"
       },
       {
         "equation": "f_x[47] (SI.Torque tau)",
@@ -486,6 +465,21 @@
       }
     ]
   },
+  "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+  "analyses": [
+    {
+      "context": "Source",
+      "equations": 48,
+      "unknowns": 48,
+      "result": "structurally singular system: 47 matched out of 48 equations and 48 unknowns"
+    },
+    {
+      "context": "DirectCandidate",
+      "equations": 48,
+      "unknowns": 48,
+      "result": "sorted: 48 block(s), 0 coupled"
+    }
+  ],
   "matching": [
     {
       "equation": "f_x[0] (-tau)",
@@ -585,7 +579,7 @@
     {
       "equation": "f_x[19] (v = p.v - n.v)",
       "id": "f_x[19]",
-      "unknown": "emf.p.v"
+      "unknown": "emf.v"
     },
     {
       "equation": "f_x[20] (0 = p.i + n.i)",
@@ -598,11 +592,6 @@
       "unknown": "emf.i"
     },
     {
-      "equation": "f_x[22] (phi = flange.phi - internalSupport.phi)",
-      "id": "f_x[22]",
-      "unknown": "emf.flange.phi"
-    },
-    {
       "equation": "f_x[23] (w = der(phi))",
       "id": "f_x[23]",
       "unknown": "der(emf.phi)"
@@ -610,7 +599,7 @@
     {
       "equation": "f_x[24] (k*w = v)",
       "id": "f_x[24]",
-      "unknown": "emf.v"
+      "unknown": "emf.w"
     },
     {
       "equation": "f_x[25] (tau = -k*i)",
@@ -630,7 +619,7 @@
     {
       "equation": "f_x[28] (p.v = 0)",
       "id": "f_x[28]",
-      "unknown": "gnd.p.v"
+      "unknown": "src.n.v"
     },
     {
       "equation": "f_x[29] (phi = flange_a.phi)",
@@ -715,7 +704,12 @@
     {
       "equation": "f_x[45] (SI.ElectricPotential v)",
       "id": "f_x[45]",
-      "unknown": "src.n.v"
+      "unknown": "gnd.p.v"
+    },
+    {
+      "equation": "f_x[46] (SI.Angle phi)",
+      "id": "f_x[46]",
+      "unknown": "emf.flange.phi"
     },
     {
       "equation": "f_x[47] (SI.Torque tau)",
@@ -731,38 +725,34 @@
     "n_matched": 47,
     "rank_deficiency": 1,
     "unmatched_equations": [
-      "f_x[46] (SI.Angle phi)"
+      "f_x[22] (phi = flange.phi - internalSupport.phi)"
     ],
     "unmatched_equation_ids": [
-      "f_x[46]"
+      "f_x[22]"
     ],
     "unmatched_unknowns": [
-      "emf.w"
+      "emf.p.v"
     ],
     "unmatched_unknown_locations": [
       {
-        "unknown": "emf.w",
+        "unknown": "emf.p.v",
         "location": {
-          "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Basic/RotationalEMF.mo",
-          "line": 15,
+          "file": "hrw/vendor/msl/Modelica 4.1.0/Electrical/Analog/Interfaces/PositivePin.mo",
+          "line": 3,
           "column": 3,
-          "excerpt": "SI.AngularVelocity w",
-          "line_text": "  SI.AngularVelocity w \"Angular velocity of flange relative to support\";",
-          "byte_start": 610,
-          "byte_end": 630
+          "excerpt": "SI.ElectricPotential v",
+          "line_text": "  SI.ElectricPotential v \"Potential at the pin\" annotation (",
+          "byte_start": 112,
+          "byte_end": 134
         }
       }
     ],
     "over_determined_block": {
-      "equations": 6,
-      "unknowns": 5,
+      "equations": 2,
+      "unknowns": 1,
       "sample": [
         "f_x[16]",
-        "f_x[18]",
-        "f_x[22]",
-        "f_x[29]",
-        "f_x[40]",
-        "f_x[46]"
+        "f_x[22]"
       ]
     },
     "guidance": "The maximum matching could not pair every equation with a unique unknown. Each unmatched unknown is a variable no equation determines; `unmatched_unknown_locations` gives the source line that declares it. If the Index Reduction stage also reports singular, the model is genuinely ill-posed rather than merely high-index."

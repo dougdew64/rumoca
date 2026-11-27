@@ -144,5 +144,14 @@
         "equation_text": "0 = result - outputGain*measurement"
       }
     ]
-  }
+  },
+  "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+  "analyses": [
+    {
+      "context": "Source",
+      "equations": 5,
+      "unknowns": 5,
+      "result": "sorted: 3 block(s), 1 coupled"
+    }
+  ]
 }

@@ -5,9 +5,15 @@
     "kind": "borrowed",
     "admitted": true,
     "rounds": 0,
-    "meaning": "the raw system sorted and normalization left it unchanged: already index-1, nothing rebuilt"
+    "meaning": "the system the reducer was given (the Simplify tab's output) sorted and normalization left it unchanged: already index-1, nothing rebuilt"
   },
   "lanes": [],
+  "route": [
+    "reducer accepted the system",
+    "no manifold: StateSelect preferences decided"
+  ],
+  "integrated": [],
+  "alternate_charts": 0,
   "residue_definition": "(n_equations - n_matched) + (n_unknowns - n_matched): both deficits summed, so a square system's residue is twice its rank deficiency",
   "ordinals_note": "state_ordinal, rhs_ordinal, variable_ordinal and the holonomic ordinals index the rebuilt system of their own round, not the raw DAE. They are deliberately unnamed; resolve a candidate through declared_at, which is a span and stable across rebuilds",
   "before": {
@@ -155,6 +161,15 @@
         }
       ]
     },
+    "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+    "analyses": [
+      {
+        "context": "Source",
+        "equations": 4,
+        "unknowns": 4,
+        "result": "sorted: 2 block(s), 2 coupled"
+      }
+    ],
     "n_states": 0,
     "n_algebraics": 4
   },
@@ -254,8 +269,6 @@
         }
       }
     ],
-    "n_states": 0,
-    "n_algebraics": 4,
     "incidence": {
       "n_eq": 4,
       "n_var": 4,
@@ -305,7 +318,10 @@
         }
       ]
     },
-    "n_manifold_constraints": 0
+    "n_manifold_constraints": 0,
+    "n_states": 0,
+    "n_state_declarations": 0,
+    "n_algebraics": 4
   },
   "search": [
     {
@@ -314,6 +330,5 @@
         "kind": "borrowed"
       }
     }
-  ],
-  "stalled": null
+  ]
 }

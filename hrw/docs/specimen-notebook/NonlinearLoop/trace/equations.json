@@ -1,0 +1,93 @@
+{
+  "n_equations": 3,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 3,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = error - (reference - measurement)",
+          "origin": "source DAE object",
+          "source_lines": [
+            19
+          ]
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = command - controllerGain*error",
+          "origin": "source DAE object",
+          "source_lines": [
+            20
+          ]
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = measurement - plantGain*command*command",
+          "origin": "source DAE object",
+          "source_lines": [
+            21
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 0,
+    "algebraics": 3,
+    "parameters": 3,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "reference",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "controllerGain",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "10",
+      "unit": null
+    },
+    {
+      "id": "plantGain",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "2",
+      "unit": null
+    },
+    {
+      "id": "error",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "command",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "measurement",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

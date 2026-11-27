@@ -1,0 +1,132 @@
+{
+  "transforms": [
+    {
+      "transform": "fold_evaluable_parameters",
+      "what_it_does": "replaces reads of evaluable parameters by their settled values",
+      "changed": false,
+      "before": {
+        "states": 9,
+        "algebraics": 88,
+        "outputs": 0,
+        "parameters": 27,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 97,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "inline_annotated_calls",
+      "what_it_does": "inlines Inline / LateInline pure function calls before index reduction",
+      "changed": false,
+      "before": {
+        "states": 9,
+        "algebraics": 88,
+        "outputs": 0,
+        "parameters": 27,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 97,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "quotient_aliases",
+      "what_it_does": "merges copy and negation aliases (a = b, a = -b) onto one representative",
+      "changed": true,
+      "before": {
+        "states": 9,
+        "algebraics": 88,
+        "outputs": 0,
+        "parameters": 27,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 97,
+        "initialization_equations": 0
+      },
+      "after": {
+        "states": 9,
+        "algebraics": 88,
+        "outputs": 0,
+        "parameters": 27,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 97,
+        "initialization_equations": 0
+      }
+    },
+    {
+      "transform": "fold_constant_values",
+      "what_it_does": "evaluates constant pure calls and propagates literal algebraics",
+      "changed": true,
+      "before": {
+        "states": 9,
+        "algebraics": 88,
+        "outputs": 0,
+        "parameters": 27,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 97,
+        "initialization_equations": 0
+      },
+      "after": {
+        "states": 9,
+        "algebraics": 88,
+        "outputs": 0,
+        "parameters": 27,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 0,
+        "continuous_equations": 97,
+        "initialization_equations": 0
+      }
+    }
+  ],
+  "alias_quotients": [
+    {
+      "scope": "Source",
+      "eliminated": 53,
+      "classes": [
+        "Quotiented { representative: \"L.i\", eliminated: [AliasMemberReport { name: \"src.i\", negated: true }, AliasMemberReport { name: \"src.p.i\", negated: true }, AliasMemberReport { name: \"src.n.i\", negated: false }, AliasMemberReport { name: \"R.i\", negated: false }, AliasMemberReport { name: \"R.p.i\", negated: false }, AliasMemberReport { name: \"R.n.i\", negated: true }, AliasMemberReport { name: \"L.p.i\", negated: false }, AliasMemberReport { name: \"L.n.i\", negated: true }, AliasMemberReport { name: \"emf.i\", negated: false }, AliasMemberReport { name: \"emf.p.i\", negated: false }, AliasMemberReport { name: \"emf.n.i\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"src.p.v\", eliminated: [AliasMemberReport { name: \"R.p.v\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"src.n.v\", eliminated: [AliasMemberReport { name: \"emf.n.v\", negated: false }, AliasMemberReport { name: \"gnd.p.v\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"R.n.v\", eliminated: [AliasMemberReport { name: \"L.p.v\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"L.n.v\", eliminated: [AliasMemberReport { name: \"emf.p.v\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"emf.tau\", eliminated: [AliasMemberReport { name: \"emf.tauElectrical\", negated: true }, AliasMemberReport { name: \"emf.flange.tau\", negated: false }, AliasMemberReport { name: \"emf.fixed.flange.tau\", negated: false }, AliasMemberReport { name: \"emf.internalSupport.tau\", negated: true }, AliasMemberReport { name: \"emf.internalSupport.flange.tau\", negated: true }, AliasMemberReport { name: \"rotor.flange_a.tau\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"rotor.phi\", eliminated: [AliasMemberReport { name: \"emf.flange.phi\", negated: false }, AliasMemberReport { name: \"rotor.flange_a.phi\", negated: false }, AliasMemberReport { name: \"rotor.flange_b.phi\", negated: false }, AliasMemberReport { name: \"gear.flange_a.phi\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"emf.fixed.flange.phi\", eliminated: [AliasMemberReport { name: \"emf.internalSupport.phi\", negated: false }, AliasMemberReport { name: \"emf.internalSupport.flange.phi\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"rotor.flange_b.tau\", eliminated: [AliasMemberReport { name: \"gear.flange_a.tau\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"shaft.phi\", eliminated: [AliasMemberReport { name: \"gear.flange_b.phi\", negated: false }, AliasMemberReport { name: \"shaft.flange_a.phi\", negated: false }, AliasMemberReport { name: \"shaft.flange_b.phi\", negated: false }, AliasMemberReport { name: \"r2t.flangeR.phi\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"gear.flange_b.tau\", eliminated: [AliasMemberReport { name: \"shaft.flange_a.tau\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"shaft.flange_b.tau\", eliminated: [AliasMemberReport { name: \"r2t.flangeR.tau\", negated: true }, AliasMemberReport { name: \"r2t.internalSupportR.tau\", negated: false }, AliasMemberReport { name: \"r2t.internalSupportR.flange.tau\", negated: false }, AliasMemberReport { name: \"r2t.fixedR.flange.tau\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"r2t.flangeT.s\", eliminated: [AliasMemberReport { name: \"load.flange_a.s\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"r2t.flangeT.f\", eliminated: [AliasMemberReport { name: \"r2t.internalSupportT.f\", negated: true }, AliasMemberReport { name: \"r2t.internalSupportT.flange.f\", negated: true }, AliasMemberReport { name: \"r2t.fixedT.flange.f\", negated: false }, AliasMemberReport { name: \"load.flange_a.f\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"r2t.internalSupportR.phi\", eliminated: [AliasMemberReport { name: \"r2t.internalSupportR.flange.phi\", negated: false }, AliasMemberReport { name: \"r2t.fixedR.flange.phi\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"r2t.internalSupportT.s\", eliminated: [AliasMemberReport { name: \"r2t.internalSupportT.flange.s\", negated: false }, AliasMemberReport { name: \"r2t.fixedT.flange.s\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"load.flange_b.s\", eliminated: [AliasMemberReport { name: \"mount.flange_a.s\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"load.flange_b.f\", eliminated: [AliasMemberReport { name: \"mount.f\", negated: false }, AliasMemberReport { name: \"mount.flange_a.f\", negated: true }, AliasMemberReport { name: \"mount.flange_b.f\", negated: false }, AliasMemberReport { name: \"wall.flange.f\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"mount.flange_b.s\", eliminated: [AliasMemberReport { name: \"wall.flange.s\", negated: false }], retained_states: [] }"
+      ]
+    },
+    {
+      "scope": "FormalDerivatives",
+      "eliminated": 23,
+      "classes": [
+        "Quotiented { representative: \"emf.w\", eliminated: [AliasMemberReport { name: \"rotor.w\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.emf.phi\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.rotor.phi\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.gear.phi_a\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"rotor.a\", eliminated: [AliasMemberReport { name: \"$formal_derivative.2.rotor.phi\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.rotor.w\", negated: false }, AliasMemberReport { name: \"$formal_derivative.2.gear.phi_a\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"shaft.w\", eliminated: [AliasMemberReport { name: \"$formal_derivative.1.gear.phi_b\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.shaft.phi\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"shaft.a\", eliminated: [AliasMemberReport { name: \"$formal_derivative.2.gear.phi_b\", negated: false }, AliasMemberReport { name: \"$formal_derivative.2.shaft.phi\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.shaft.w\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"mount.v_rel\", eliminated: [AliasMemberReport { name: \"load.v\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.r2t.flangeT.s\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.load.s\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.load.flange_b.s\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.mount.s_rel\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"load.a\", eliminated: [AliasMemberReport { name: \"$formal_derivative.2.r2t.flangeT.s\", negated: false }, AliasMemberReport { name: \"$formal_derivative.2.load.s\", negated: false }, AliasMemberReport { name: \"$formal_derivative.2.load.flange_b.s\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.load.v\", negated: false }, AliasMemberReport { name: \"$formal_derivative.2.mount.s_rel\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.mount.v_rel\", negated: true }], retained_states: [] }"
+      ]
+    }
+  ],
+  "note": "solve lowering runs these four, in this order, on the DAE before any structural analysis; each reads the previous one's output"
+}

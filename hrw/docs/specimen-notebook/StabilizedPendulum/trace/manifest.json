@@ -2,7 +2,7 @@
   "model": "StabilizedPendulum",
   "specimen": "specimens/StabilizedPendulum.mo",
   "specimen_fnv1a": "4fbd1ba1ddce8be0",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -29,17 +29,21 @@
       "has_ir": true,
       "note": "4 state(s), 1 algebraic(s), 5 continuous equation(s)"
     },
+    "simplify": {
+      "has_ir": true,
+      "note": "0 of 4 transform(s) changed the system"
+    },
     "structural": {
       "has_ir": true,
       "note": null
     },
     "index_reduction": {
       "has_ir": true,
-      "note": "normalized without a reduction round (derivative aliases)"
+      "note": "normalized without a reduction round; no manifold: StateSelect preferences decided — integrates 4 state coordinate(s)"
     },
     "initialization": {
       "has_ir": true,
-      "note": null
+      "note": "0 initialization row(s), 0 surplus check(s)"
     },
     "events": {
       "has_ir": true,

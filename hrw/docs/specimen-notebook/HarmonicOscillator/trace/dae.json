@@ -5,7 +5,7 @@
     "registered_files": 2556,
     "files": [
       {
-        "source_id": 14933374180376213843,
+        "source_id": 4277597532225896893,
         "file": "hrw/specimens/HarmonicOscillator.mo",
         "content_bytes": 426
       }
@@ -35,7 +35,7 @@
       {
         "origin": "source",
         "span": {
-          "source": 14933374180376213843,
+          "source": 4277597532225896893,
           "start": 246,
           "end": 256
         }
@@ -43,7 +43,7 @@
       {
         "origin": "source",
         "span": {
-          "source": 14933374180376213843,
+          "source": 4277597532225896893,
           "start": 395,
           "end": 396
         }
@@ -58,7 +58,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 246,
             "end": 256
           }
@@ -67,7 +67,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 14933374180376213843,
+              "source": 4277597532225896893,
               "start": 246,
               "end": 256
             },
@@ -75,7 +75,7 @@
               {
                 "ident": "omega",
                 "span": {
-                  "source": 14933374180376213843,
+                  "source": 4277597532225896893,
                   "start": 246,
                   "end": 256
                 },
@@ -110,7 +110,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 286,
             "end": 292
           }
@@ -119,7 +119,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 14933374180376213843,
+              "source": 4277597532225896893,
               "start": 286,
               "end": 292
             },
@@ -127,7 +127,7 @@
               {
                 "ident": "x",
                 "span": {
-                  "source": 14933374180376213843,
+                  "source": 4277597532225896893,
                   "start": 286,
                   "end": 292
                 },
@@ -162,7 +162,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 320,
             "end": 326
           }
@@ -171,7 +171,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 14933374180376213843,
+              "source": 4277597532225896893,
               "start": 320,
               "end": 326
             },
@@ -179,7 +179,7 @@
               {
                 "ident": "v",
                 "span": {
-                  "source": 14933374180376213843,
+                  "source": 4277597532225896893,
                   "start": 320,
                   "end": 326
                 },
@@ -318,7 +318,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 259,
             "end": 262
           }
@@ -326,7 +326,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 259,
             "end": 262
           }
@@ -334,7 +334,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 301,
             "end": 304
           }
@@ -342,7 +342,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 335,
             "end": 338
           }
@@ -350,7 +350,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 363,
             "end": 369
           }
@@ -358,7 +358,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 372,
             "end": 373
           }
@@ -366,7 +366,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 363,
             "end": 369
           }
@@ -374,7 +374,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 377,
             "end": 383
           }
@@ -382,7 +382,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 387,
             "end": 392
           }
@@ -390,7 +390,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 395,
             "end": 396
           }
@@ -398,7 +398,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 387,
             "end": 396
           }
@@ -406,7 +406,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 399,
             "end": 400
           }
@@ -414,7 +414,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 387,
             "end": 400
           }
@@ -422,7 +422,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 386,
             "end": 400
           }
@@ -430,7 +430,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 14933374180376213843,
+            "source": 4277597532225896893,
             "start": 377,
             "end": 383
           }
@@ -446,7 +446,7 @@
           "provenance": {
             "origin": "source",
             "span": {
-              "source": 14933374180376213843,
+              "source": 4277597532225896893,
               "start": 363,
               "end": 373
             }
@@ -459,7 +459,7 @@
           "provenance": {
             "origin": "source",
             "span": {
-              "source": 14933374180376213843,
+              "source": 4277597532225896893,
               "start": 377,
               "end": 400
             }

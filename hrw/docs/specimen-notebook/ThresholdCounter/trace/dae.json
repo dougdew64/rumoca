@@ -5,7 +5,7 @@
     "registered_files": 2556,
     "files": [
       {
-        "source_id": 4654093078498546603,
+        "source_id": 7752468083646500013,
         "file": "hrw/specimens/ThresholdCounter.mo",
         "content_bytes": 2506
       }
@@ -42,7 +42,7 @@
       {
         "origin": "source",
         "span": {
-          "source": 4654093078498546603,
+          "source": 7752468083646500013,
           "start": 1742,
           "end": 1752
         }
@@ -50,7 +50,7 @@
       {
         "origin": "source",
         "span": {
-          "source": 4654093078498546603,
+          "source": 7752468083646500013,
           "start": 1948,
           "end": 1961
         }
@@ -58,7 +58,7 @@
       {
         "origin": "source",
         "span": {
-          "source": 4654093078498546603,
+          "source": 7752468083646500013,
           "start": 2003,
           "end": 2016
         }
@@ -73,7 +73,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1742,
             "end": 1752
           }
@@ -82,7 +82,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 1742,
               "end": 1752
             },
@@ -90,7 +90,7 @@
               {
                 "ident": "omega",
                 "span": {
-                  "source": 4654093078498546603,
+                  "source": 7752468083646500013,
                   "start": 1742,
                   "end": 1752
                 },
@@ -125,7 +125,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1791,
             "end": 1805
           }
@@ -134,7 +134,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 1791,
               "end": 1805
             },
@@ -142,7 +142,7 @@
               {
                 "ident": "threshold",
                 "span": {
-                  "source": 4654093078498546603,
+                  "source": 7752468083646500013,
                   "start": 1791,
                   "end": 1805
                 },
@@ -177,7 +177,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1856,
             "end": 1862
           }
@@ -186,7 +186,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 1856,
               "end": 1862
             },
@@ -194,7 +194,7 @@
               {
                 "ident": "x",
                 "span": {
-                  "source": 4654093078498546603,
+                  "source": 7752468083646500013,
                   "start": 1856,
                   "end": 1862
                 },
@@ -231,7 +231,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1902,
             "end": 1908
           }
@@ -240,7 +240,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 1902,
               "end": 1908
             },
@@ -248,7 +248,7 @@
               {
                 "ident": "v",
                 "span": {
-                  "source": 4654093078498546603,
+                  "source": 7752468083646500013,
                   "start": 1902,
                   "end": 1908
                 },
@@ -285,7 +285,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1948,
             "end": 1961
           }
@@ -294,7 +294,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 1948,
               "end": 1961
             },
@@ -302,7 +302,7 @@
               {
                 "ident": "above",
                 "span": {
-                  "source": 4654093078498546603,
+                  "source": 7752468083646500013,
                   "start": 1948,
                   "end": 1961
                 },
@@ -337,7 +337,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2003,
             "end": 2016
           }
@@ -346,7 +346,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 2003,
               "end": 2016
             },
@@ -354,7 +354,7 @@
               {
                 "ident": "rises",
                 "span": {
-                  "source": 4654093078498546603,
+                  "source": 7752468083646500013,
                   "start": 2003,
                   "end": 2016
                 },
@@ -391,7 +391,7 @@
         "declaration": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2083,
             "end": 2100
           }
@@ -400,7 +400,7 @@
           "component_ref": {
             "local": false,
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 2083,
               "end": 2100
             },
@@ -408,7 +408,7 @@
               {
                 "ident": "crossings",
                 "span": {
-                  "source": 4654093078498546603,
+                  "source": 7752468083646500013,
                   "start": 2083,
                   "end": 2100
                 },
@@ -686,7 +686,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1755,
             "end": 1757
           }
@@ -694,7 +694,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1755,
             "end": 1757
           }
@@ -702,7 +702,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1808,
             "end": 1811
           }
@@ -710,7 +710,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1808,
             "end": 1811
           }
@@ -718,7 +718,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1871,
             "end": 1872
           }
@@ -726,7 +726,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1917,
             "end": 1918
           }
@@ -734,7 +734,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 1948,
             "end": 1961
           }
@@ -742,7 +742,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2025,
             "end": 2026
           }
@@ -750,7 +750,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2109,
             "end": 2110
           }
@@ -758,7 +758,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2191,
             "end": 2197
           }
@@ -766,7 +766,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2200,
             "end": 2201
           }
@@ -774,7 +774,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2191,
             "end": 2197
           }
@@ -782,7 +782,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2205,
             "end": 2211
           }
@@ -790,7 +790,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2215,
             "end": 2220
           }
@@ -798,7 +798,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2223,
             "end": 2224
           }
@@ -806,7 +806,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2215,
             "end": 2224
           }
@@ -814,7 +814,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2227,
             "end": 2228
           }
@@ -822,7 +822,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2215,
             "end": 2228
           }
@@ -830,7 +830,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2214,
             "end": 2228
           }
@@ -838,7 +838,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2205,
             "end": 2211
           }
@@ -846,7 +846,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2240,
             "end": 2241
           }
@@ -854,7 +854,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2244,
             "end": 2253
           }
@@ -862,7 +862,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2240,
             "end": 2253
           }
@@ -870,7 +870,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2267,
             "end": 2272
           }
@@ -880,7 +880,7 @@
             "generated": "pre_value_lowering"
           },
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2262,
             "end": 2273
           }
@@ -890,7 +890,7 @@
             "generated": "pre_value_lowering"
           },
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2262,
             "end": 2273
           }
@@ -900,7 +900,7 @@
             "generated": "pre_value_lowering"
           },
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2262,
             "end": 2273
           }
@@ -908,7 +908,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2291,
             "end": 2301
           }
@@ -916,7 +916,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2304,
             "end": 2305
           }
@@ -924,7 +924,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2291,
             "end": 2305
           }
@@ -932,7 +932,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2333,
             "end": 2338
           }
@@ -942,7 +942,7 @@
             "generated": "pre_value_lowering"
           },
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2326,
             "end": 2339
           }
@@ -952,7 +952,7 @@
             "generated": "pre_value_lowering"
           },
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2326,
             "end": 2339
           }
@@ -960,7 +960,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2361,
             "end": 2375
           }
@@ -968,7 +968,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2378,
             "end": 2379
           }
@@ -976,7 +976,7 @@
         {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2361,
             "end": 2379
           }
@@ -992,7 +992,7 @@
           "provenance": {
             "origin": "source",
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 2191,
               "end": 2201
             }
@@ -1005,7 +1005,7 @@
           "provenance": {
             "origin": "source",
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 2205,
               "end": 2228
             }
@@ -1034,7 +1034,7 @@
                 "provenance": {
                   "origin": "source",
                   "span": {
-                    "source": 4654093078498546603,
+                    "source": 7752468083646500013,
                     "start": 2232,
                     "end": 2253
                   }
@@ -1044,7 +1044,7 @@
             "provenance": {
               "origin": "source",
               "span": {
-                "source": 4654093078498546603,
+                "source": 7752468083646500013,
                 "start": 2232,
                 "end": 2253
               }
@@ -1056,7 +1056,7 @@
         "provenance": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2232,
             "end": 2253
           }
@@ -1083,7 +1083,7 @@
                 "provenance": {
                   "origin": "source",
                   "span": {
-                    "source": 4654093078498546603,
+                    "source": 7752468083646500013,
                     "start": 2283,
                     "end": 2288
                   }
@@ -1093,7 +1093,7 @@
             "provenance": {
               "origin": "source",
               "span": {
-                "source": 4654093078498546603,
+                "source": 7752468083646500013,
                 "start": 2262,
                 "end": 2273
               }
@@ -1105,7 +1105,7 @@
         "provenance": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2262,
             "end": 2266
           }
@@ -1132,7 +1132,7 @@
                 "provenance": {
                   "origin": "source",
                   "span": {
-                    "source": 4654093078498546603,
+                    "source": 7752468083646500013,
                     "start": 2349,
                     "end": 2358
                   }
@@ -1142,7 +1142,7 @@
             "provenance": {
               "origin": "source",
               "span": {
-                "source": 4654093078498546603,
+                "source": 7752468083646500013,
                 "start": 2326,
                 "end": 2339
               }
@@ -1154,7 +1154,7 @@
         "provenance": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2326,
             "end": 2332
           }
@@ -1169,7 +1169,7 @@
           "provenance": {
             "origin": "source",
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 2240,
               "end": 2253
             }
@@ -1185,7 +1185,7 @@
         "provenance": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2240,
             "end": 2253
           }
@@ -1198,7 +1198,7 @@
         "provenance": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2262,
             "end": 2273
           }
@@ -1211,7 +1211,7 @@
         "provenance": {
           "origin": "source",
           "span": {
-            "source": 4654093078498546603,
+            "source": 7752468083646500013,
             "start": 2326,
             "end": 2339
           }
@@ -1226,7 +1226,7 @@
           "provenance": {
             "origin": "source",
             "span": {
-              "source": 4654093078498546603,
+              "source": 7752468083646500013,
               "start": 2240,
               "end": 2253
             }

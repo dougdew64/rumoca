@@ -316,7 +316,7 @@ A solver does not look variables up by name. It is handed arrays and a function:
   - `station-2-what-else-is-in-the-arrays` — Station 2 — What else is in the arrays
   - `station-3-the-same-mapping-at-scale` — Station 3 — The same mapping at scale
   - `what-this-lab-cannot-check` — What this lab cannot check
-  - `one-count-here-contradicts-the-index-reduction-lab` — One count here contradicts the index-reduction lab
+  - `the-state-count-agrees-across-the-tabs` — The state count agrees across the tabs
   - `what-comes-next-in-the-chain` — What comes next in the chain
 
 ## `structural-vs-numerical-rank`
@@ -377,13 +377,12 @@ A lab that leaves HRW to settle a question HRW cannot settle. Rumoca accepts a m
 
 Start here. This is the map for the labs of the compiler phases, in the order
 
+- **Specimens:** `HarmonicOscillator`
+- **Stages:** `Dae`, `Events`, `Flatten`, `IndexReduction`, `Initialization`, `Instantiate`, `Parse`, `Resolve`, `Simplify`, `Simulation`, `SolveLowering`, `Structural`, `Typecheck`
 - **Stations:**
   - `the-pipeline-a-week-s-run-through-the-compiler` — The pipeline — a week's run through the compiler
-  - `the-one-structural-idea-the-whole-pipeline-turns-on` — The one structural idea the whole pipeline turns on
-  - `three-graphs-three-classical-questions` — Three graphs, three classical questions
-  - `three-things-worth-knowing-before-you-start` — Three things worth knowing before you start
-  - `the-route` — The route
-  - `two-open-questions-you-may-hit` — Two open questions you may hit
+  - `one-model-through-every-tab` — One model, through every tab
+  - `a-question-you-may-hit` — A question you may hit
   - `after-the-run-the-four-numbers-that-should-agree` — After the run — the four numbers that should agree
   - `what-to-tell-me-afterwards` — What to tell me afterwards
 

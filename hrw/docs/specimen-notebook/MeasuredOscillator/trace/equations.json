@@ -1,0 +1,118 @@
+{
+  "n_equations": 4,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 4,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = der(x) - v",
+          "origin": "source DAE object",
+          "source_lines": [
+            25
+          ]
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = m*der(v) - -(k*x)",
+          "origin": "source DAE object",
+          "source_lines": [
+            26
+          ]
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = v_meas - v",
+          "origin": "source DAE object",
+          "source_lines": [
+            27
+          ]
+        },
+        {
+          "id": "f_x[3]",
+          "index": 3,
+          "text": "0 = T*der(v_filt) - (v_meas - v_filt)",
+          "origin": "source DAE object",
+          "source_lines": [
+            28
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 3,
+    "algebraics": 1,
+    "parameters": 3,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "m",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "k",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "4",
+      "unit": null
+    },
+    {
+      "id": "T",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "0.1",
+      "unit": null
+    },
+    {
+      "id": "x",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[0]",
+        "equation_text": "0 = der(x) - v"
+      },
+      "start": "0.5",
+      "unit": null
+    },
+    {
+      "id": "v",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[1]",
+        "equation_text": "0 = m*der(v) - -(k*x)"
+      },
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "v_meas",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "v_filt",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[3]",
+        "equation_text": "0 = T*der(v_filt) - (v_meas - v_filt)"
+      },
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

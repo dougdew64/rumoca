@@ -13,7 +13,9 @@ depends on the solution.
 That is genuinely hard, and it is worth being precise about why. The integrator advances in steps.
 If the bounce happens between two steps, integrating straight through it produces nonsense — the
 ball ends up below the floor, moving down. So the solver must detect the instant, stop there,
-apply the change, and restart. This phase finds what can change and what has to be watched.
+apply the change, and restart. The Events tab shows what can change and what has to be watched.
+It is not a phase of its own: DAE construction records all of it, and the tab reads that
+record. Solve lowering later turns it into code the solver runs.
 
 Run [initialization](hrw://lab/initialization) first. Every count below is read from a generated
 trace, so if one disagrees with your screen, the lab is wrong and I want to know.

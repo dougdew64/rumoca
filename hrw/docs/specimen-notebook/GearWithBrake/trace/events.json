@@ -57,5 +57,1140 @@
       "activation": "load.w < maxSpeed*0.5"
     }
   ],
-  "event_actions": []
+  "event_actions": [],
+  "lowered": {
+    "events": {
+      "root_conditions": {
+        "programs": [
+          [
+            {
+              "FunctionConditional": {
+                "dst_start": 0,
+                "capture_start": 0,
+                "program": {
+                  "owner": null,
+                  "capture_count": 0,
+                  "target_widths": [
+                    1
+                  ],
+                  "result_count": 1,
+                  "arms": [
+                    {
+                      "condition_register_count": 1,
+                      "result_register_count": 4,
+                      "condition": [
+                        {
+                          "LoadP": {
+                            "dst": 0,
+                            "index": 15
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 0
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "LoadY": {
+                            "dst": 0,
+                            "index": 30
+                          }
+                        },
+                        {
+                          "Unary": {
+                            "dst": 1,
+                            "op": "Neg",
+                            "arg": 0
+                          }
+                        },
+                        {
+                          "Const": {
+                            "dst": 2,
+                            "value": 0.0
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 3,
+                            "op": "Sub",
+                            "lhs": 2,
+                            "rhs": 1
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 3
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fallback_register_count": 1,
+                  "fallback": [
+                    {
+                      "Const": {
+                        "dst": 0,
+                        "value": 1.0
+                      }
+                    },
+                    {
+                      "StoreOutput": {
+                        "src": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 0
+              }
+            }
+          ],
+          [
+            {
+              "LoadY": {
+                "dst": 0,
+                "index": 30
+              }
+            },
+            {
+              "Unary": {
+                "dst": 1,
+                "op": "Neg",
+                "arg": 0
+              }
+            },
+            {
+              "LoadP": {
+                "dst": 2,
+                "index": 13
+              }
+            },
+            {
+              "Binary": {
+                "dst": 3,
+                "op": "Sub",
+                "lhs": 2,
+                "rhs": 1
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 3
+              }
+            }
+          ],
+          [
+            {
+              "LoadY": {
+                "dst": 0,
+                "index": 30
+              }
+            },
+            {
+              "Unary": {
+                "dst": 1,
+                "op": "Neg",
+                "arg": 0
+              }
+            },
+            {
+              "LoadP": {
+                "dst": 2,
+                "index": 13
+              }
+            },
+            {
+              "Const": {
+                "dst": 3,
+                "value": 0.5
+              }
+            },
+            {
+              "Binary": {
+                "dst": 4,
+                "op": "Mul",
+                "lhs": 2,
+                "rhs": 3
+              }
+            },
+            {
+              "Binary": {
+                "dst": 5,
+                "op": "Sub",
+                "lhs": 1,
+                "rhs": 4
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 5
+              }
+            }
+          ]
+        ],
+        "program_spans": [
+          {
+            "source": 2870916914346496452,
+            "start": 3287,
+            "end": 3297
+          },
+          {
+            "source": 2870916914346496452,
+            "start": 3072,
+            "end": 3089
+          },
+          {
+            "source": 2870916914346496452,
+            "start": 3126,
+            "end": 3149
+          }
+        ],
+        "output_placements": {
+          "Dense": {
+            "count": 3
+          }
+        }
+      },
+      "root_relation_memory_targets": [
+        {
+          "P": {
+            "index": 20,
+            "byte_offset": 160
+          }
+        },
+        {
+          "P": {
+            "index": 21,
+            "byte_offset": 168
+          }
+        },
+        {
+          "P": {
+            "index": 22,
+            "byte_offset": 176
+          }
+        }
+      ],
+      "root_zero_domains": [
+        "Positive",
+        "Positive",
+        "Positive"
+      ],
+      "root_relation_refresh_roles": [
+        "AlgebraicDependent",
+        "AlgebraicDependent",
+        "AlgebraicDependent"
+      ],
+      "condition_memory_parameter_indices": [
+        17,
+        18,
+        19
+      ],
+      "scheduled_root_conditions": [],
+      "scheduled_time_events": [],
+      "dynamic_time_event_names": [],
+      "dynamic_time_event_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "action_conditions": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "actions": [],
+      "has_terminal_event": false,
+      "delays": {
+        "source_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "delay_time_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "delay_max_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "value_parameter_indices": [],
+        "source_is_discrete": []
+      }
+    },
+    "discrete": {
+      "event_iteration_plan": {
+        "runs": [
+          {
+            "variable": 59,
+            "pre_binding_start": 0,
+            "owner": {
+              "GuardedAssignment": {
+                "program_index": 0,
+                "target_range_index": 0
+              }
+            }
+          }
+        ],
+        "partitions": [],
+        "schedule": {
+          "event_pass": [
+            "RelationOverrides",
+            "RuntimeAssignments",
+            "AlgebraicProjection",
+            "RuntimeAssignments",
+            "RelationRefresh",
+            "RelationSettle"
+          ],
+          "relation_pass": [
+            "DiscreteSettle",
+            "SettledIfRelationsUnchanged",
+            "AlgebraicProjection",
+            "RuntimeAssignments"
+          ],
+          "settle_pass": [
+            "DiscreteOwners",
+            "RuntimeAssignments",
+            "SettledIfUnchanged",
+            "AlgebraicProjection",
+            "RuntimeAssignments"
+          ],
+          "fixed_point_cap": 32,
+          "stalled_settle": {
+            "iteration_cap": 32,
+            "line_search_halvings": 16
+          },
+          "relation_surface_window": 8,
+          "mode_search_relations": 4
+        }
+      },
+      "runtime_assignment_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "runtime_assignment_targets": [],
+      "runtime_assignment_roles": [],
+      "post_commit_assignment_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "post_commit_assignment_targets": [],
+      "post_commit_assignment_runtime_rows": [],
+      "rhs": {
+        "programs": [
+          [
+            {
+              "FunctionConditional": {
+                "dst_start": 0,
+                "capture_start": 0,
+                "program": {
+                  "owner": null,
+                  "capture_count": 0,
+                  "target_widths": [
+                    1
+                  ],
+                  "result_count": 1,
+                  "arms": [
+                    {
+                      "condition_register_count": 1,
+                      "result_register_count": 1,
+                      "condition": [
+                        {
+                          "LoadP": {
+                            "dst": 0,
+                            "index": 15
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 0
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "FunctionConditional": {
+                            "dst_start": 0,
+                            "capture_start": 0,
+                            "program": {
+                              "owner": null,
+                              "capture_count": 0,
+                              "target_widths": [
+                                1
+                              ],
+                              "result_count": 1,
+                              "arms": [
+                                {
+                                  "condition_register_count": 1,
+                                  "result_register_count": 4,
+                                  "condition": [
+                                    {
+                                      "LoadP": {
+                                        "dst": 0,
+                                        "index": 23
+                                      }
+                                    },
+                                    {
+                                      "StoreOutput": {
+                                        "src": 0
+                                      }
+                                    }
+                                  ],
+                                  "result": [
+                                    {
+                                      "LoadY": {
+                                        "dst": 0,
+                                        "index": 30
+                                      }
+                                    },
+                                    {
+                                      "Unary": {
+                                        "dst": 1,
+                                        "op": "Neg",
+                                        "arg": 0
+                                      }
+                                    },
+                                    {
+                                      "Const": {
+                                        "dst": 2,
+                                        "value": 0.0
+                                      }
+                                    },
+                                    {
+                                      "Compare": {
+                                        "dst": 3,
+                                        "op": "Gt",
+                                        "lhs": 1,
+                                        "rhs": 2
+                                      }
+                                    },
+                                    {
+                                      "StoreOutput": {
+                                        "src": 3
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "fallback_register_count": 1,
+                              "fallback": [
+                                {
+                                  "LoadP": {
+                                    "dst": 0,
+                                    "index": 20
+                                  }
+                                },
+                                {
+                                  "StoreOutput": {
+                                    "src": 0
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 0
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fallback_register_count": 1,
+                  "fallback": [
+                    {
+                      "Const": {
+                        "dst": 0,
+                        "value": 0.0
+                      }
+                    },
+                    {
+                      "StoreOutput": {
+                        "src": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 0
+              }
+            }
+          ],
+          [
+            {
+              "FunctionConditional": {
+                "dst_start": 0,
+                "capture_start": 0,
+                "program": {
+                  "owner": null,
+                  "capture_count": 0,
+                  "target_widths": [
+                    1
+                  ],
+                  "result_count": 1,
+                  "arms": [
+                    {
+                      "condition_register_count": 1,
+                      "result_register_count": 4,
+                      "condition": [
+                        {
+                          "LoadP": {
+                            "dst": 0,
+                            "index": 23
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 0
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "LoadY": {
+                            "dst": 0,
+                            "index": 30
+                          }
+                        },
+                        {
+                          "Unary": {
+                            "dst": 1,
+                            "op": "Neg",
+                            "arg": 0
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 2,
+                            "index": 13
+                          }
+                        },
+                        {
+                          "Compare": {
+                            "dst": 3,
+                            "op": "Gt",
+                            "lhs": 1,
+                            "rhs": 2
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 3
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fallback_register_count": 1,
+                  "fallback": [
+                    {
+                      "LoadP": {
+                        "dst": 0,
+                        "index": 21
+                      }
+                    },
+                    {
+                      "StoreOutput": {
+                        "src": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 0
+              }
+            }
+          ],
+          [
+            {
+              "FunctionConditional": {
+                "dst_start": 0,
+                "capture_start": 0,
+                "program": {
+                  "owner": null,
+                  "capture_count": 0,
+                  "target_widths": [
+                    1
+                  ],
+                  "result_count": 1,
+                  "arms": [
+                    {
+                      "condition_register_count": 1,
+                      "result_register_count": 6,
+                      "condition": [
+                        {
+                          "LoadP": {
+                            "dst": 0,
+                            "index": 23
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 0
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "LoadY": {
+                            "dst": 0,
+                            "index": 30
+                          }
+                        },
+                        {
+                          "Unary": {
+                            "dst": 1,
+                            "op": "Neg",
+                            "arg": 0
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 2,
+                            "index": 13
+                          }
+                        },
+                        {
+                          "Const": {
+                            "dst": 3,
+                            "value": 0.5
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 4,
+                            "op": "Mul",
+                            "lhs": 2,
+                            "rhs": 3
+                          }
+                        },
+                        {
+                          "Compare": {
+                            "dst": 5,
+                            "op": "Lt",
+                            "lhs": 1,
+                            "rhs": 4
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 5
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fallback_register_count": 1,
+                  "fallback": [
+                    {
+                      "LoadP": {
+                        "dst": 0,
+                        "index": 22
+                      }
+                    },
+                    {
+                      "StoreOutput": {
+                        "src": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "StoreOutput": {
+                "src": 0
+              }
+            }
+          ]
+        ],
+        "program_spans": [
+          {
+            "source": 2870916914346496452,
+            "start": 3287,
+            "end": 3297
+          },
+          {
+            "source": 2870916914346496452,
+            "start": 3072,
+            "end": 3089
+          },
+          {
+            "source": 2870916914346496452,
+            "start": 3126,
+            "end": 3149
+          }
+        ],
+        "output_placements": {
+          "Dense": {
+            "count": 3
+          }
+        }
+      },
+      "update_targets": [
+        {
+          "P": {
+            "index": 17,
+            "byte_offset": 136
+          }
+        },
+        {
+          "P": {
+            "index": 18,
+            "byte_offset": 144
+          }
+        },
+        {
+          "P": {
+            "index": 19,
+            "byte_offset": 152
+          }
+        }
+      ],
+      "row_roles": [
+        "ConditionMemory",
+        "ConditionMemory",
+        "ConditionMemory"
+      ],
+      "pre_modes": [
+        "FollowCurrent",
+        "FollowCurrent",
+        "FollowCurrent"
+      ],
+      "observation_refresh": [
+        false,
+        false,
+        false
+      ],
+      "observation_refresh_reads_y": false,
+      "integrator_history_effects": [
+        "preserve",
+        "preserve",
+        "preserve"
+      ],
+      "clock_owners": [
+        null,
+        null,
+        null
+      ],
+      "guarded_assignments": [
+        {
+          "program": [
+            {
+              "FunctionConditional": {
+                "dst_start": 0,
+                "capture_start": 0,
+                "program": {
+                  "owner": null,
+                  "capture_count": 0,
+                  "target_widths": [
+                    1
+                  ],
+                  "result_count": 1,
+                  "arms": [
+                    {
+                      "condition_register_count": 5,
+                      "result_register_count": 1,
+                      "condition": [
+                        {
+                          "FunctionConditional": {
+                            "dst_start": 0,
+                            "capture_start": 0,
+                            "program": {
+                              "owner": null,
+                              "capture_count": 0,
+                              "target_widths": [
+                                1
+                              ],
+                              "result_count": 1,
+                              "arms": [
+                                {
+                                  "condition_register_count": 1,
+                                  "result_register_count": 4,
+                                  "condition": [
+                                    {
+                                      "LoadP": {
+                                        "dst": 0,
+                                        "index": 23
+                                      }
+                                    },
+                                    {
+                                      "StoreOutput": {
+                                        "src": 0
+                                      }
+                                    }
+                                  ],
+                                  "result": [
+                                    {
+                                      "LoadY": {
+                                        "dst": 0,
+                                        "index": 30
+                                      }
+                                    },
+                                    {
+                                      "Unary": {
+                                        "dst": 1,
+                                        "op": "Neg",
+                                        "arg": 0
+                                      }
+                                    },
+                                    {
+                                      "LoadP": {
+                                        "dst": 2,
+                                        "index": 13
+                                      }
+                                    },
+                                    {
+                                      "Compare": {
+                                        "dst": 3,
+                                        "op": "Gt",
+                                        "lhs": 1,
+                                        "rhs": 2
+                                      }
+                                    },
+                                    {
+                                      "StoreOutput": {
+                                        "src": 3
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "fallback_register_count": 1,
+                              "fallback": [
+                                {
+                                  "LoadP": {
+                                    "dst": 0,
+                                    "index": 21
+                                  }
+                                },
+                                {
+                                  "StoreOutput": {
+                                    "src": 0
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 1,
+                            "index": 18
+                          }
+                        },
+                        {
+                          "Unary": {
+                            "dst": 2,
+                            "op": "Not",
+                            "arg": 1
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 3,
+                            "op": "And",
+                            "lhs": 0,
+                            "rhs": 2
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 4,
+                            "op": "And",
+                            "lhs": 3,
+                            "rhs": 0
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 4
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "Const": {
+                            "dst": 0,
+                            "value": 1.0
+                          }
+                        },
+                        {
+                          "StoreOutputRange": {
+                            "start": 0,
+                            "count": 1,
+                            "stride": 1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "condition_register_count": 5,
+                      "result_register_count": 1,
+                      "condition": [
+                        {
+                          "FunctionConditional": {
+                            "dst_start": 0,
+                            "capture_start": 0,
+                            "program": {
+                              "owner": null,
+                              "capture_count": 0,
+                              "target_widths": [
+                                1
+                              ],
+                              "result_count": 1,
+                              "arms": [
+                                {
+                                  "condition_register_count": 1,
+                                  "result_register_count": 6,
+                                  "condition": [
+                                    {
+                                      "LoadP": {
+                                        "dst": 0,
+                                        "index": 23
+                                      }
+                                    },
+                                    {
+                                      "StoreOutput": {
+                                        "src": 0
+                                      }
+                                    }
+                                  ],
+                                  "result": [
+                                    {
+                                      "LoadY": {
+                                        "dst": 0,
+                                        "index": 30
+                                      }
+                                    },
+                                    {
+                                      "Unary": {
+                                        "dst": 1,
+                                        "op": "Neg",
+                                        "arg": 0
+                                      }
+                                    },
+                                    {
+                                      "LoadP": {
+                                        "dst": 2,
+                                        "index": 13
+                                      }
+                                    },
+                                    {
+                                      "Const": {
+                                        "dst": 3,
+                                        "value": 0.5
+                                      }
+                                    },
+                                    {
+                                      "Binary": {
+                                        "dst": 4,
+                                        "op": "Mul",
+                                        "lhs": 2,
+                                        "rhs": 3
+                                      }
+                                    },
+                                    {
+                                      "Compare": {
+                                        "dst": 5,
+                                        "op": "Lt",
+                                        "lhs": 1,
+                                        "rhs": 4
+                                      }
+                                    },
+                                    {
+                                      "StoreOutput": {
+                                        "src": 5
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "fallback_register_count": 1,
+                              "fallback": [
+                                {
+                                  "LoadP": {
+                                    "dst": 0,
+                                    "index": 22
+                                  }
+                                },
+                                {
+                                  "StoreOutput": {
+                                    "src": 0
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "LoadP": {
+                            "dst": 1,
+                            "index": 19
+                          }
+                        },
+                        {
+                          "Unary": {
+                            "dst": 2,
+                            "op": "Not",
+                            "arg": 1
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 3,
+                            "op": "And",
+                            "lhs": 0,
+                            "rhs": 2
+                          }
+                        },
+                        {
+                          "Binary": {
+                            "dst": 4,
+                            "op": "And",
+                            "lhs": 3,
+                            "rhs": 0
+                          }
+                        },
+                        {
+                          "StoreOutput": {
+                            "src": 4
+                          }
+                        }
+                      ],
+                      "result": [
+                        {
+                          "Const": {
+                            "dst": 0,
+                            "value": 0.0
+                          }
+                        },
+                        {
+                          "StoreOutputRange": {
+                            "start": 0,
+                            "count": 1,
+                            "stride": 1
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fallback_register_count": 1,
+                  "fallback": [
+                    {
+                      "TensorLoad": {
+                        "dst_start": 0,
+                        "input": "P",
+                        "input_start": 15,
+                        "count": 1,
+                        "seed_start": null,
+                        "lanes": 1
+                      }
+                    },
+                    {
+                      "StoreOutputRange": {
+                        "start": 0,
+                        "count": 1,
+                        "stride": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "StoreOutputRange": {
+                "start": 0,
+                "count": 1,
+                "stride": 1
+              }
+            }
+          ],
+          "span": {
+            "source": 2870916914346496452,
+            "start": 3099,
+            "end": 3106
+          },
+          "target_ranges": [
+            {
+              "base": {
+                "P": {
+                  "index": 15,
+                  "byte_offset": 120
+                }
+              },
+              "count": 1
+            }
+          ],
+          "role": "Equation",
+          "pre_mode": "FollowCurrent",
+          "observation_refresh": false,
+          "integrator_history_effect": "restart",
+          "clock_owner": null
+        }
+      ],
+      "event_transactions": [],
+      "structured_rhs": {
+        "nodes": []
+      },
+      "structured_updates": [],
+      "clock_partition_order": [],
+      "clock_partition_intermediates": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "clock_partition_intermediate_targets": [],
+      "clock_partition_intermediate_clocks": []
+    }
+  }
 }

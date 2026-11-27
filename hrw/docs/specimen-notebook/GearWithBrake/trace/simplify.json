@@ -1,0 +1,119 @@
+{
+  "transforms": [
+    {
+      "transform": "fold_evaluable_parameters",
+      "what_it_does": "replaces reads of evaluable parameters by their settled values",
+      "changed": false,
+      "before": {
+        "states": 7,
+        "algebraics": 37,
+        "outputs": 0,
+        "parameters": 15,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 1,
+        "continuous_equations": 44,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "inline_annotated_calls",
+      "what_it_does": "inlines Inline / LateInline pure function calls before index reduction",
+      "changed": false,
+      "before": {
+        "states": 7,
+        "algebraics": 37,
+        "outputs": 0,
+        "parameters": 15,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 1,
+        "continuous_equations": 44,
+        "initialization_equations": 0
+      },
+      "after": null
+    },
+    {
+      "transform": "quotient_aliases",
+      "what_it_does": "merges copy and negation aliases (a = b, a = -b) onto one representative",
+      "changed": true,
+      "before": {
+        "states": 7,
+        "algebraics": 37,
+        "outputs": 0,
+        "parameters": 15,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 1,
+        "continuous_equations": 44,
+        "initialization_equations": 0
+      },
+      "after": {
+        "states": 7,
+        "algebraics": 37,
+        "outputs": 0,
+        "parameters": 15,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 1,
+        "continuous_equations": 44,
+        "initialization_equations": 0
+      }
+    },
+    {
+      "transform": "fold_constant_values",
+      "what_it_does": "evaluates constant pure calls and propagates literal algebraics",
+      "changed": true,
+      "before": {
+        "states": 7,
+        "algebraics": 37,
+        "outputs": 0,
+        "parameters": 15,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 1,
+        "continuous_equations": 44,
+        "initialization_equations": 0
+      },
+      "after": {
+        "states": 7,
+        "algebraics": 37,
+        "outputs": 0,
+        "parameters": 15,
+        "constants": 0,
+        "inputs": 0,
+        "discrete": 1,
+        "continuous_equations": 44,
+        "initialization_equations": 0
+      }
+    }
+  ],
+  "alias_quotients": [
+    {
+      "scope": "Source",
+      "eliminated": 18,
+      "classes": [
+        "Quotiented { representative: \"rotor.phi\", eliminated: [AliasMemberReport { name: \"motor.flange.phi\", negated: false }, AliasMemberReport { name: \"rotor.flange_a.phi\", negated: false }, AliasMemberReport { name: \"rotor.flange_b.phi\", negated: false }, AliasMemberReport { name: \"gear.flange_a.phi\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"motor.flange.tau\", eliminated: [AliasMemberReport { name: \"motor.tau\", negated: true }, AliasMemberReport { name: \"rotor.flange_a.tau\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"rotor.flange_b.tau\", eliminated: [AliasMemberReport { name: \"gear.flange_a.tau\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"load.phi\", eliminated: [AliasMemberReport { name: \"gear.flange_b.phi\", negated: false }, AliasMemberReport { name: \"load.flange_a.phi\", negated: false }, AliasMemberReport { name: \"load.flange_b.phi\", negated: false }, AliasMemberReport { name: \"spring.flange_a.phi\", negated: false }, AliasMemberReport { name: \"brakeTorque.flange.phi\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"gear.flange_b.tau\", eliminated: [AliasMemberReport { name: \"load.flange_a.tau\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"spring.tau\", eliminated: [AliasMemberReport { name: \"spring.flange_a.tau\", negated: true }, AliasMemberReport { name: \"spring.flange_b.tau\", negated: false }, AliasMemberReport { name: \"frame.flange.tau\", negated: true }], retained_states: [] }",
+        "Quotiented { representative: \"spring.flange_b.phi\", eliminated: [AliasMemberReport { name: \"frame.flange.phi\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"brakeTorque.flange.tau\", eliminated: [AliasMemberReport { name: \"brakeTorque.tau\", negated: true }], retained_states: [] }"
+      ]
+    },
+    {
+      "scope": "FormalDerivatives",
+      "eliminated": 17,
+      "classes": [
+        "Quotiented { representative: \"motor.w\", eliminated: [AliasMemberReport { name: \"rotor.w\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.motor.phi\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.rotor.phi\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.gear.phi_a\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"rotor.a\", eliminated: [AliasMemberReport { name: \"$formal_derivative.2.rotor.phi\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.rotor.w\", negated: false }, AliasMemberReport { name: \"$formal_derivative.2.gear.phi_a\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"spring.w_rel\", eliminated: [AliasMemberReport { name: \"load.w\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.gear.phi_b\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.load.phi\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.spring.phi_rel\", negated: false }], retained_states: [] }",
+        "Quotiented { representative: \"load.a\", eliminated: [AliasMemberReport { name: \"spring.a_rel\", negated: true }, AliasMemberReport { name: \"$formal_derivative.2.gear.phi_b\", negated: false }, AliasMemberReport { name: \"$formal_derivative.2.load.phi\", negated: false }, AliasMemberReport { name: \"$formal_derivative.1.load.w\", negated: false }, AliasMemberReport { name: \"$formal_derivative.2.spring.phi_rel\", negated: true }, AliasMemberReport { name: \"$formal_derivative.1.spring.w_rel\", negated: true }], retained_states: [] }"
+      ]
+    }
+  ],
+  "note": "solve lowering runs these four, in this order, on the DAE before any structural analysis; each reads the previous one's output"
+}

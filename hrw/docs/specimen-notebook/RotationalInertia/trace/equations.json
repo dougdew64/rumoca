@@ -1,0 +1,245 @@
+{
+  "n_equations": 12,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 8,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = inertia.phi - inertia.flange_a.phi",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = inertia.phi - inertia.flange_b.phi",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = inertia.w - der(inertia.phi)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[3]",
+          "index": 3,
+          "text": "0 = inertia.a - der(inertia.w)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[4]",
+          "index": 4,
+          "text": "0 = inertia.J*inertia.a - (inertia.flange_a.tau + inertia.flange_b.tau)",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[5]",
+          "index": 5,
+          "text": "0 = torque.phi_support - 0",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[6]",
+          "index": 6,
+          "text": "0 = torque.flange.tau - -torque.tau",
+          "origin": "source DAE object",
+          "source_lines": []
+        },
+        {
+          "id": "f_x[7]",
+          "index": 7,
+          "text": "0 = tau.y - tau.k",
+          "origin": "source DAE object",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Potential equality",
+      "family": "Connector equations",
+      "description": "One connection set's potential variables made equal: n-1 equations for n connectors",
+      "n": 2,
+      "equations": [
+        {
+          "id": "f_x[9]",
+          "index": 9,
+          "text": "0 = tau.y - torque.tau",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": [
+            7
+          ]
+        },
+        {
+          "id": "f_x[10]",
+          "index": 10,
+          "text": "0 = torque.flange.phi - inertia.flange_a.phi",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Flow conservation",
+      "family": "Connector equations",
+      "description": "One connection set's flow variables summed to zero: exactly 1 equation per set",
+      "n": 1,
+      "equations": [
+        {
+          "id": "f_x[8]",
+          "index": 8,
+          "text": "0 = torque.flange.tau + inertia.flange_a.tau",
+          "origin": "generated DAE object (flow-balance equation)",
+          "source_lines": []
+        }
+      ]
+    },
+    {
+      "category": "Unconnected flow",
+      "family": "Connector equations",
+      "description": "A flow variable with no connection at all, set to zero (MLS 9.2)",
+      "n": 1,
+      "equations": [
+        {
+          "id": "f_x[11]",
+          "index": 11,
+          "text": "0 = inertia.flange_b.tau",
+          "origin": "generated DAE object (unconnected-flow equation)",
+          "source_lines": []
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 2,
+    "algebraics": 9,
+    "parameters": 3,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 1
+  },
+  "variables": [
+    {
+      "id": "inertia.flange_a.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "inertia.flange_a.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "inertia.flange_b.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "inertia.flange_b.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "inertia.J",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": "kg.m2"
+    },
+    {
+      "id": "inertia.phi",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[2]",
+        "equation_text": "0 = inertia.w - der(inertia.phi)"
+      },
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "inertia.w",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[3]",
+        "equation_text": "0 = inertia.a - der(inertia.w)"
+      },
+      "start": "0",
+      "unit": "rad/s"
+    },
+    {
+      "id": "inertia.a",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad/s2"
+    },
+    {
+      "id": "torque.useSupport",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "false",
+      "unit": null
+    },
+    {
+      "id": "torque.flange.phi",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "torque.flange.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "torque.phi_support",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "rad"
+    },
+    {
+      "id": "torque.tau",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": "N.m"
+    },
+    {
+      "id": "tau.y",
+      "kind": "output",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "tau.k",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "1",
+      "unit": null
+    }
+  ]
+}

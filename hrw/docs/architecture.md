@@ -113,23 +113,23 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**75 modules, 96,095 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**76 modules, 96,086 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `worker/tests.rs` | 9,752 |
-| `app.rs` | 8,746 |
-| `app/tests.rs` | 8,282 |
-| `worker.rs` | 7,965 |
-| `doc_citations.rs` | 6,357 |
-| `bridge.rs` | 5,659 |
-| `fidelity.rs` | 3,230 |
+| `worker/tests.rs` | 9,696 |
+| `app.rs` | 8,750 |
+| `app/tests.rs` | 8,285 |
+| `worker.rs` | 7,219 |
+| `doc_citations.rs` | 6,390 |
+| `bridge.rs` | 5,680 |
+| `fidelity.rs` | 3,313 |
 | `ui_tests.rs` | 2,981 |
 | `equation_sheet.rs` | 1,565 |
 | `diagnostics.rs` | 1,502 |
 | `lib.rs` | 1,498 |
 | `tree.rs` | 1,426 |
-| `report_sub_view.rs` | 1,334 |
+| `report_sub_view.rs` | 1,336 |
 | `matching_anim.rs` | 1,310 |
 | `incidence_view.rs` | 1,219 |
 | `question_bar.rs` | 1,203 |
@@ -138,8 +138,8 @@ showing 48 equations. They are derived now, and
 | `context_hook.rs` | 1,088 |
 | `reduction_view.rs` | 1,048 |
 | `tarjan_anim.rs` | 1,001 |
-| `matching_ledger.rs` | 928 |
-| `stage_tabs.rs` | 911 |
+| `matching_ledger.rs` | 942 |
+| `stage_tabs.rs` | 922 |
 | `lab_panel.rs` | 908 |
 | `dae_expr_format.rs` | 898 |
 | `tearing_anim.rs` | 879 |
@@ -151,10 +151,11 @@ showing 48 equations. They are derived now, and
 | `canvas.rs` | 793 |
 | `capture_suite.rs` | 779 |
 | `arch_doc.rs` | 758 |
-| `field_help.rs` | 724 |
-| `pantelides_ladder.rs` | 723 |
+| `pantelides_ladder.rs` | 740 |
+| `field_help.rs` | 704 |
 | `identifier_index.rs` | 688 |
 | `sub_view_rows.rs` | 659 |
+| `worker/preparation.rs` | 655 |
 | `expr_format.rs` | 645 |
 | `plot_labels.rs` | 600 |
 | `modelica_lex.rs` | 595 |
@@ -168,7 +169,7 @@ showing 48 equations. They are derived now, and
 | `nav_view.rs` | 491 |
 | `equation_sheet_view.rs` | 446 |
 | `promote.rs` | 444 |
-| `error_summary.rs` | 440 |
+| `error_summary.rs` | 410 |
 | `gate_policy.rs` | 408 |
 | `specimen_source.rs` | 397 |
 | `pointing.rs` | 389 |
@@ -192,7 +193,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 100 |
 | `doc_sizes.rs` | 78 |
 | `bin/hrw-context.rs` | 48 |
-| **total** | **96,095** |
+| **total** | **96,086** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -323,15 +324,29 @@ not fire).
    build — only a tab nobody had added, until 2026-08-03. Its note reports the balance
    (states, algebraics, continuous equations), because that is the claim DAE construction
    makes and the one everything downstream relies on.
-7. **Structural** — `build_structural_report()` on the raw (pre-reduction) DAE
-8. **Index reduction** — `inspect_prepare_for_solve()`: observe the reduction search the
-   compiler ran (rounds, candidates, attempts), with `before`/`after` reports
-9. **Initialization** — the same preparation's initial-value pins (Definition / Check)
-10. **Events** — read the DAE's condition algebra (`DaeView::conditions` and siblings)
-11. **Solve lowering** — `lower_solve_problem()` → `SolveProblem`
+Stages 7–12 are **one Rumoca call, observed** (2026-11-26):
+`rumoca_sim::prepare_runtime_observed`, the lowering half of the simulate entry, run under
+both preparation capture scopes (`rumoca_phase_structural::preparation_trace` and
+`rumoca_phase_solve::preparation_trace`). `worker/preparation.rs` builds every tab below
+from that one run, and Run integrates the runtime it returned.
 
-*(Stages 8–11 described 0.9.20 — a replicated funnel, `build_ic_plan`, hybrid partitions,
-`lower_dae_to_solve_model` — until the 2026-11-07 post-rebase sweep.)*
+7. **Simplify** — the four source transforms solve lowering runs first (evaluable
+   parameters, annotated calls, the alias quotient, constants), with the system's shape
+   before and after each
+8. **Structural** — the first structural analysis the solve path ran, on the simplified
+   system, plus the list of every analysis preparation ran and why
+9. **Index reduction** — the reducer's records from that run, state selection's route,
+   the integrated selection, and the prepared system lowering consumed
+10. **Initialization** — the initialization plan lowering lowered, row by row, in
+    Rumoca's own roles (`Solved`, `SurplusCheck`, …)
+11. **Events** — the DAE's condition algebra as DAE construction recorded it, plus the
+    lowered event partition
+12. **Solve lowering** — the lowered model's `SolveProblem`
+
+*(Until 2026-11-26 stages 8–12 were HRW's own calls — `inspect_structural_report` and
+`inspect_prepare_for_solve` on the unsimplified DAE, and a separate `lower_solve_problem` —
+none of which is the preparation Rumoca simulates. Stages 8–11 described 0.9.20 before the
+2026-11-07 post-rebase sweep.)*
 
 **Stage 6 is logged in its true position, and that took a correction.** Until
 2026-08-04 the DAE stage was built *after* solve lowering and never logged, so the log
@@ -341,7 +356,7 @@ rather than logged where it stood, because logging it in place would have report
 construction finishing *after* the five phases that consume its output: a second
 fiction in place of the first.
 
-Stages 5–11 depend on Rumoca's `PhaseResult`, which is either `Success(CompileResult)`
+Stages 5–12 depend on Rumoca's `PhaseResult`, which is either `Success(CompileResult)`
 (carrying the DAE + flat IR) or `Failed { phase, error }`. When a phase fails, later
 stages are skipped and show informational notes ("not reached — Flatten failed").
 
@@ -369,7 +384,7 @@ label `"Index reduction"` where the link grammar accepts only the slug
 the link built from it.
 
 <!-- BEGIN GENERATED pipeline-stages -->
-**12 stages, of which the first 11 are compilation phases.** `Simulation` is in the roster because it is a tab, but it is not a phase — `StageBundle::get()` panics on it, which is why `StageKind::COMPILATION` exists alongside `StageKind::ALL`.
+**13 stages, of which the first 12 are compilation phases.** `Simulation` is in the roster because it is a tab, but it is not a phase — `StageBundle::get()` panics on it, which is why `StageKind::COMPILATION` exists alongside `StageKind::ALL`.
 
 | # | variant | tab label | `hrw://stage/` slug | log name |
 |---|---|---|---|---|
@@ -379,12 +394,13 @@ the link built from it.
 | 4 | `Typecheck` | Typecheck | `Typecheck` | Typecheck |
 | 5 | `Flatten` | Flatten | `Flatten` | Flatten |
 | 6 | `Dae` | DAE | `Dae` | DAE construction |
-| 7 | `Structural` | Structural | `Structural` | Structural analysis |
-| 8 | `IndexReduction` | Index reduction | `IndexReduction` | Index reduction |
-| 9 | `Initialization` | Initialization | `Initialization` | Initialization |
-| 10 | `Events` | Events | `Events` | Events |
-| 11 | `SolveLowering` | Solve lowering | `SolveLowering` | Solve lowering |
-| 12 | `Simulation` | Simulation | `Simulation` | Simulation |
+| 7 | `Simplify` | Simplify | `Simplify` | Simplify |
+| 8 | `Structural` | Structural | `Structural` | Structural analysis |
+| 9 | `IndexReduction` | Index reduction | `IndexReduction` | Index reduction |
+| 10 | `Initialization` | Initialization | `Initialization` | Initialization |
+| 11 | `Events` | Events | `Events` | Events |
+| 12 | `SolveLowering` | Solve lowering | `SolveLowering` | Solve lowering |
+| 13 | `Simulation` | Simulation | `Simulation` | Simulation |
 <!-- END GENERATED pipeline-stages -->
 
 Both `compile()` and `simulate()` use `make_log(&t0, emit)` to build their timing-aware
@@ -1283,8 +1299,8 @@ and the hot reload below.
 A scrollable panel (not a canvas) reading the reduction **search** Rumoca ran, grouped
 into rounds: each round's lane (`Direct` or `Holonomic`), its residue, the candidates
 discovered per proof boundary, and each attempt's measured outcome (`Sorted`, `Reduced`,
-`Held`, `Raised`, or a refusal). It reads `worker::index_reduction_from_observation`'s
-payload and invents nothing. *(It described 0.9.20's ten-step funnel — demoted states,
+`Held`, `Raised`, or a refusal). It reads `worker::preparation::index_reduction_stage`'s
+payload — the records of the reduction solve lowering actually ran — and invents nothing. *(It described 0.9.20's ten-step funnel — demoted states,
 differentiated equations, trivial eliminations — until the 2026-11-07 sweep.)*
 
 
@@ -1706,10 +1722,11 @@ HRW depends on these Rumoca crates (all via path deps on `../crates/`):
 | `rumoca-ir-ast` | IR types (indirectly, via serde serialization) |
 | `rumoca-phase-instantiate` | `instantiate_model()` — InstanceOverlay |
 | `rumoca-phase-typecheck` | `typecheck_instanced()` — type assignment |
-| `rumoca-phase-structural` | `build_structural_report()` / `inspect_structural_report()`, `sort()` / `inspect_sort()`, `build_incidence()`, the `StructuralTrace` record types |
+| `rumoca-phase-structural` | `preparation_trace` (the real run's analyses and reduction records), `build_incidence()`, the `StructuralTrace` record types |
 | `rumoca-ir-dae` | `Dae` and `DaeView`, reached only through `dae.inspect(…)`; `Equation` types for expression formatting |
-| `rumoca-phase-solve` | `lower_solve_problem()` — SolveModel |
-| `rumoca-sim` | `simulate_with_diagnostics()` — simulation runner |
+| `rumoca-phase-solve` | `preparation_trace` (transforms, route, selection); `LoweredSolveModel` |
+| `rumoca-ir-solve` | the lowered `SolveProblem`'s typed initialization plan |
+| `rumoca-sim` | `prepare_runtime_observed()` and `simulate_prepared_runtime_with_optional_step_records()` |
 
 **Instrumentation discipline:** any modification to the Rumoca crates must be:
 

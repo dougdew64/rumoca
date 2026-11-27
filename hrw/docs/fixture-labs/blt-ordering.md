@@ -123,6 +123,27 @@ equations and whose edges follow the matching. An SCC *is* a simultaneous block,
 returns them in reverse topological order, which is the solve order for free. The animated
 stepper under Structural → Tarjan replays that search.
 
+**The edges are arrows, and the arrows are the information.** After matching, each equation
+computes one unknown; draw an arrow from A to B when B needs the value A computes:
+
+```text
+e1:  x = 1           needs nothing
+e2:  y = 2*x         needs x  (from e1)
+e3:  z = y + w       needs y  (from e2) and w (from e4)
+e4:  w = z / 2       needs z  (from e3)
+```
+
+The arrows run e1 → e2 → e3, and e3 ⇄ e4. A one-way arrow says e1 can be solved first, on its
+own. Equations belong together only when *each needs the other* — here e3 and e4. Tarjan returns
+`{e1} → {e2} → {e3, e4}`, and that *is* the evaluation order: solve x, then y, then z and w
+together.
+
+**This is why it is not union-find**, the algorithm [connect-expansion](hrw://lab/connect-expansion)
+groups with. Union-find ignores direction, so it would merge e1 with e2, e2 with e3, and report
+all four as one group: not false, but the order is gone, and three easy steps have become one
+coupled solve. A `connect` has no direction, so there union-find loses nothing; here the
+direction is the whole answer.
+
 ---
 
 ## What this lab cannot check

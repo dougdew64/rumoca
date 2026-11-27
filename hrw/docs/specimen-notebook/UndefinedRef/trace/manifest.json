@@ -2,7 +2,7 @@
   "model": "UndefinedRef",
   "specimen": "specimens/UndefinedRef.mo",
   "specimen_fnv1a": "2d1cfe08205c37da",
-  "rumoca_rev": "70f06a2f",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -26,6 +26,10 @@
       "note": "the reachable-closure pipeline produced no result for this model"
     },
     "dae": {
+      "has_ir": false,
+      "note": "the reachable-closure pipeline produced no result for this model"
+    },
+    "simplify": {
       "has_ir": false,
       "note": "the reachable-closure pipeline produced no result for this model"
     },

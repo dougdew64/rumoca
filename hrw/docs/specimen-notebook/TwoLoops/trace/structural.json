@@ -142,5 +142,14 @@
         "equation_text": "0 = commandB - gainB*errorB"
       }
     ]
-  }
+  },
+  "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+  "analyses": [
+    {
+      "context": "Source",
+      "equations": 4,
+      "unknowns": 4,
+      "result": "sorted: 2 block(s), 2 coupled"
+    }
+  ]
 }

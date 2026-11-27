@@ -71,6 +71,11 @@ It is a *heuristic*, and that word is doing real work: choosing the tear set tha
 iteration is NP-hard in general, so every Modelica compiler uses a greedy rule and none claims
 optimality. Station 5 is about what that costs.
 
+It is also the only heuristic you meet in these labs. Matching and Tarjan give exact answers:
+if every equation can be paired, matching finds a pairing, and Tarjan's blocks are the only ones
+that pairing allows. Tearing's choice can be beaten. But a worse tear still computes the same
+values. It only iterates on more unknowns than it had to.
+
 ---
 
 ## Station 3 — Two blocks, torn independently

@@ -525,6 +525,10 @@ telling them those count different things. That is the same cross-pane disagreem
 Reduction banner had on this date, and it is logged in
 [`tech-debt.md`](tech-debt.md) rather than here, because no part of it is upstream's.
 
+**Gone 2026-11-26, and the "5" was never Rumoca's.** It was HRW's own run of the reducer on the
+DAE before solve lowering's simplifications — solve lowering merges `Drivetrain`'s 53 aliases
+first, then reduces. The tabs now read one observed run, which integrates 3 everywhere.
+
 ---
 
 *The original entry, preserved:*

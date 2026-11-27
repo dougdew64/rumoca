@@ -123,7 +123,23 @@ The model over-determines the voltages and under-determines one current: connect
 in a loop made two potential equations say the same thing, and no equation is left to determine
 the ground pin's current. A rank deficiency of 1 means exactly one such pair.
 
-And note *where* this was caught: at matching, before anything was solved. Nothing numeric ran.
+And note *where* this was found: at matching, before anything was solved. Nothing numeric ran.
+
+**"Structurally singular" is a finding, not a verdict, and it can mean two opposite things.**
+`CapacitorLoop` is not a broken model. A capacitor straight across a voltage source is ordinary
+physics, and the leftover pair is the sign of a constraint the solver cannot use as written:
+the capacitor's voltage is a state, and the source already fixes it. Index reduction repairs that
+([index-reduction, Station 5](hrw://lab/index-reduction)), and the model then simulates.
+Compare `TwiceDefined`, which really is broken:
+
+```modelica
+a = 1.0;
+a = time;
+```
+
+Both equations define `a`, nothing defines `b`, and no later stage can fix that. Matching
+reports the two models the same way. **You find out which kind you have at index reduction**,
+which either repairs the system or reports *still singular after reduction*.
 
 ---
 
@@ -142,7 +158,10 @@ Falsified if: every row is paired.
 
 *What just happened.* The incidence matrix is the bipartite graph of equations against
 unknowns: a filled cell is an edge. A matching is a *maximum matching* on that graph, and a
-perfect one uses every row and every column exactly once.
+perfect one uses every row and every column exactly once. *(This is not the graph
+[connect-expansion](hrw://lab/connect-expansion) merges sets on. That one joins connector
+variables to each other; this one only ever joins an equation to an unknown, which is what
+"bipartite" means.)*
 
 So "structurally singular" means no perfect matching exists, and `rank_deficiency` is the
 gap. That is a graph-theory result, not a numerical one — it depends only on *which* variables

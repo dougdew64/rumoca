@@ -2,7 +2,7 @@
   "model": "DimensionMismatch",
   "specimen": "specimens/DimensionMismatch.mo",
   "specimen_fnv1a": "665d59a2f4f63dfb",
-  "rumoca_rev": "80faaf36",
+  "rumoca_rev": "75f844c42",
   "rumoca_version": "0.10.4",
   "stages": {
     "parse": {
@@ -26,6 +26,10 @@
       "note": "not reached (Typecheck failed earlier)"
     },
     "dae": {
+      "has_ir": false,
+      "note": "not reached (Typecheck failed earlier)"
+    },
+    "simplify": {
       "has_ir": false,
       "note": "not reached (Typecheck failed earlier)"
     },

@@ -1,10 +1,5 @@
 {
   "error": {
-    "kind": "Structural",
-    "message": "DAE structural proof failed: structurally singular system: 2 matched out of 3 equations and 3 unknowns",
-    "reason": "structurally singular system: 2 matched out of 3 equations and 3 unknowns",
-    "guidance": "Solve lowering could not order the system. The Structural stage shows the matching and blocks for the run that failed.",
-    "span_start": 1664,
-    "span_end": 1670
+    "message": "DAE structural proof failed: structurally singular system: 2 matched out of 3 equations and 3 unknowns"
   }
 }

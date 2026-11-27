@@ -606,6 +606,9 @@
       "rumoca-ir-flat": "User-defined functions used by this model (MLS §12).",
       "rumoca-ir-solve": "The block's functions as pure-call owners, which every method may call."
     },
+    "given_state_indices": {
+      "rumoca-ir-solve": "State indices whose initial value is given — a `fixed = true` start — and which nothing else writes."
+    },
     "global_scope": {
       "rumoca-ir-ast": "True if import uses global scope (leading dot: `import .A.B.{C, D};`)"
     },
@@ -635,7 +638,8 @@
     },
     "id": {
       "rumoca-ir-ast": "Unique identifier for this state machine.",
-      "rumoca-ir-flat": "Unique identifier within the base partition."
+      "rumoca-ir-flat": "Unique identifier within the base partition.",
+      "rumoca-phase-structural": "The bare equation reference, `f_x[i]`."
     },
     "ident": {
       "rumoca-ir-ast": "The literal identifier (e.g., 'U' or Red)"
@@ -657,6 +661,9 @@
     },
     "in_spanning_tree": {
       "rumoca-ir-flat": "Whether this edge is in the spanning tree."
+    },
+    "incidence": {
+      "rumoca-phase-structural": "The incidence the analysis matched over; `None` when building it failed, which is then the analysis's error."
     },
     "inconsistent": {
       "rumoca-phase-structural": "Classes whose edges contradict each other and prove nothing usable."
@@ -830,6 +837,9 @@
       "rumoca-ir-dae": "Which clocked coordinate role the owned variable was checked to have. Ownership is only ever minted after `own` rejects any other role, so the entry carries the outcome of that check rather than leaving a reader to re-derive it from the variable arena. The wire form omits it: replay re-issues the same checked operation and reproduces it.",
       "rumoca-ir-flat": "The structural use the read parameters fix."
     },
+    "label": {
+      "rumoca-phase-structural": "[`crate::equation_label`] of the row."
+    },
     "language": {
       "rumoca-ir-ast": "Language specification (e.g., \"C\", \"FORTRAN 77\"). Default is \"C\"."
     },
@@ -879,6 +889,9 @@
     },
     "manifold_residual": {
       "rumoca-ir-solve": "Lower-order holonomic and velocity residuals retained when structural index reduction replaces them with acceleration-level equations."
+    },
+    "manifold_row_count": {
+      "rumoca-ir-solve": "How many rows at the end of the residual are retained manifold rows."
     },
     "map": {
       "rumoca-ir-solve": "Program register to the segment register holding its value."
@@ -1047,6 +1060,9 @@
       "rumoca-ir-solve": "Zero-based checked IR origin.",
       "rumoca-phase-structural": "The formal value coordinate of the source declaration at order zero, of which `value` is the `order`-th formal derivative."
     },
+    "outcome": {
+      "rumoca-phase-structural": "The report on success; the analysis's own error otherwise."
+    },
     "outer": {
       "rumoca-ir-ast": "True if declared with 'outer' prefix (references an inner instance from enclosing scope)"
     },
@@ -1190,6 +1206,12 @@
     "programs": {
       "rumoca-ir-solve": "Multi-lane programs; empty when the plan evaluates one direction at a time through the JVP programs."
     },
+    "projection_plan": {
+      "rumoca-ir-solve": "The blocks of rows solved simultaneously, each pairing its rows with the unknowns they determine."
+    },
+    "projection_unknowns": {
+      "rumoca-ir-solve": "Every unknown the projection solves, in plan order; derived from the projection plan."
+    },
     "provenance": {
       "rumoca-phase-structural": "That variable's declaration."
     },
@@ -1310,7 +1332,8 @@
       "rumoca-ir-ast": "Whether the target state is reset when the transition fires. Default: true"
     },
     "residual": {
-      "rumoca-ir-flat": "The residual expression (equation is: 0 = residual)."
+      "rumoca-ir-flat": "The residual expression (equation is: 0 = residual).",
+      "rumoca-ir-solve": "The complete initialization residual, one scalar row per obligation; its last `manifold_row_count` rows are the retained manifold rows."
     },
     "residual_eq_local_indices": {
       "rumoca-phase-structural": "Indices of residual equations within the block's equation list. Same count as `tear_var_local_indices`."
@@ -1377,8 +1400,15 @@
     "row_count": {
       "rumoca-phase-structural": "Number of consecutive incidence rows the family occupies, from [`first_row`](Self::StructuredScalar::first_row)."
     },
+    "row_roles": {
+      "rumoca-ir-solve": "What each residual row does, in row order: solved for a projection unknown, or a check over values something else determined."
+    },
+    "row_targets": {
+      "rumoca-ir-solve": "The unknown each residual row is solved for, or `None` for a check row; derived from the projection plan."
+    },
     "rows": {
-      "rumoca-ir-solve": "Residual rows the projection plan solves."
+      "rumoca-ir-solve": "Residual rows the projection plan solves.",
+      "rumoca-phase-structural": "Every scalar row, in row order."
     },
     "runtime_assignment_jacobian_v": {
       "rumoca-ir-solve": "Row-aligned with [`DiscreteSolveSystem::runtime_assignment_rhs`]."
@@ -1415,7 +1445,7 @@
     },
     "scope": {
       "rumoca-ir-ast": "Scope where the connect statement was declared (flattened prefix). Used to determine the correct hierarchy level for flow sum equations. Empty string means root level.",
-      "rumoca-phase-structural": "Which application of the quotient left the class unchanged."
+      "rumoca-phase-structural": "`Source` before state selection, `FormalDerivatives` after it."
     },
     "scope_id": {
       "rumoca-ir-ast": "Scope created by this class for name lookup. None when first parsed, populated during name resolution."
@@ -1674,6 +1704,9 @@
     "tested": {
       "rumoca-phase-structural": "Every variable a recording map compared its target against; see [`AffineMap::recording`]."
     },
+    "text": {
+      "rumoca-phase-structural": "The installed renderer's text for the equation, if one is installed (see [`set_equation_renderer`])."
+    },
     "text_start": {
       "rumoca-ir-solve": "The literal start of each scalar of a `String` declaration."
     },
@@ -1691,6 +1724,9 @@
     },
     "top_level_output_components": {
       "rumoca-ir-flat": "Public top-level components declared with `output` causality. Their record fields inherit the public interface prefix under MLS §4.4.2.2, independently of their runtime role (SPEC_0040 DAE-C24)."
+    },
+    "trace": {
+      "rumoca-phase-structural": "Every matching, Tarjan and tearing step this analysis took."
     },
     "transitions": {
       "rumoca-ir-ast": "Transitions between states."
@@ -1753,7 +1789,7 @@
     },
     "unknowns": {
       "rumoca-ir-solve": "Initialization unknowns may reside in either solver Y storage or parameter P storage.  Time and constant slots are invalid here.",
-      "rumoca-phase-structural": "Unknown names coupled in the block."
+      "rumoca-phase-structural": "Column indices of the unknowns this row mentions, ascending."
     },
     "unlocalizable_guards": {
       "rumoca-ir-solve": "Projection blocks whose own unknowns a relation under `noEvent` switches, with no root to localize it (SPEC_0044 ME-EVENT-008, ES016). Construction warns about each; a projection of such a block that fails is a typed fold of the relation, never a generic failure."
@@ -1775,6 +1811,12 @@
     },
     "update_order": {
       "rumoca-ir-solve": "The dependency order of the parameter-binding programs."
+    },
+    "update_rhs": {
+      "rumoca-ir-solve": "Explicit assignments evaluated rather than solved."
+    },
+    "update_targets": {
+      "rumoca-ir-solve": "The coordinate each `update_rhs` program writes, in program order."
     },
     "updates": {
       "rumoca-ir-solve": "Ordered aggregate patches. Each patch is rank-sized regardless of the carried tensor extent."
@@ -2685,6 +2727,17 @@
         "structural": "Constructor-derived metadata; canonical Solve replay reconstructs it.",
         "update_jacobian_v": "Forward-mode JVP of the initialization update rows over `[solver-y | parameter]` seeds, row-aligned with `update_rhs`. It carries a seed through the bindings of the settled initialization view; `None` when a row has no derivative lowering."
       },
+      "InitializationSolveSystem": {
+        "given_state_indices": "State indices whose initial value is given — a `fixed = true` start — and which nothing else writes.",
+        "manifold_row_count": "How many rows at the end of the residual are retained manifold rows.",
+        "projection_plan": "The blocks of rows solved simultaneously, each pairing its rows with the unknowns they determine.",
+        "projection_unknowns": "Every unknown the projection solves, in plan order; derived from the projection plan.",
+        "residual": "The complete initialization residual, one scalar row per obligation; its last `manifold_row_count` rows are the retained manifold rows.",
+        "row_roles": "What each residual row does, in row order: solved for a projection unknown, or a check over values something else determined.",
+        "row_targets": "The unknown each residual row is solved for, or `None` for a check row; derived from the projection plan.",
+        "update_rhs": "Explicit assignments evaluated rather than solved.",
+        "update_targets": "The coordinate each `update_rhs` program writes, in program order."
+      },
       "JacobianStructure": {
         "column_rows": "The immutable pattern's rows per column, derived only when a consumer needs the coordinate view. Clone keeps the established owned-cache behavior: an initialized view is copied; an unused view stays unused.",
         "compact": "Compact storage layout shared by every matrix in this pattern."
@@ -2934,6 +2987,16 @@
       "BltBlock": {
         "tearing": "Greedy tearing of the loop, when one reduces the solve dimension. Local indices address `equations` and `unknowns` by position."
       },
+      "CapturedIncidence": {
+        "rows": "Every scalar row, in row order.",
+        "unknowns": "Every unknown, in column order."
+      },
+      "CapturedIncidenceRow": {
+        "id": "The bare equation reference, `f_x[i]`.",
+        "label": "[`crate::equation_label`] of the row.",
+        "text": "The installed renderer's text for the equation, if one is installed (see [`set_equation_renderer`]).",
+        "unknowns": "Column indices of the unknowns this row mentions, ascending."
+      },
       "ClockCoincidence": {
         "coincident_pairs": "Cross-identity pairs proved coincident, stored as `(low, high)`."
       },
@@ -3021,6 +3084,12 @@
       },
       "PreferredAdmission": {
         "raised_owners": "`(first canonical row, order before this admission)` per raised owner."
+      },
+      "PreparationEvent": {
+        "incidence": "The incidence the analysis matched over; `None` when building it failed, which is then the analysis's error.",
+        "outcome": "The report on success; the analysis's own error otherwise.",
+        "scope": "`Source` before state selection, `FormalDerivatives` after it.",
+        "trace": "Every matching, Tarjan and tearing step this analysis took."
       },
       "PreparedDae": {
         "manifold_redundant": "Redundancy classification parallel to `manifold`: `true` marks a row of a loop-closure constraint that must reduce, `false` a conserved first integral that may be retained.",

@@ -71,10 +71,7 @@ The lines a live lab sends you to. Each is located by what the line *says*, so m
 | 3 | `FoundFree { eq: 0, var: 0 }` | 795 | 1 |
 | 4 | `Assign { eq: 0, var: 0 }` | 901 | 1 |
 | 5 | `TryEquation(1)` | 195 | 0 |
-| 6 | `Explore { eq: 1, var: 0 }` | 859 | 1 |
-| 7 | `TryDisplace { eq: 1, var: 0, holder: 0 }` | 808 | 1 |
-| 8 | `DisplaceFail { eq: 1, var: 0 }` | 829 | 1 |
-| 9 | `EquationFailed(1)` | 207 | 0 |
+| 6 | `EquationFailed(1)` | 207 | 0 |
 
 **Depth is derived from the step sequence, not from a stack** — `TryDisplace` descends and `DisplaceOk`/`DisplaceFail` return. It is pinned against two real debugger runs by `matching_ledger`'s tests.
 

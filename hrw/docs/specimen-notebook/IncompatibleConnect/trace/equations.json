@@ -1,0 +1,80 @@
+{
+  "n_equations": 3,
+  "groups": [
+    {
+      "category": "Potential equality",
+      "family": "Connector equations",
+      "description": "One connection set's potential variables made equal: n-1 equations for n connectors",
+      "n": 1,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = a.v - b.v",
+          "origin": "generated DAE object (connection equation)",
+          "source_lines": [
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Unconnected flow",
+      "family": "Connector equations",
+      "description": "A flow variable with no connection at all, set to zero (MLS 9.2)",
+      "n": 2,
+      "equations": [
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = a.i",
+          "origin": "generated DAE object (unconnected-flow equation)",
+          "source_lines": [
+            28
+          ]
+        },
+        {
+          "id": "f_x[2]",
+          "index": 2,
+          "text": "0 = a.i",
+          "origin": "generated DAE object (unconnected-flow equation)",
+          "source_lines": [
+            28
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 0,
+    "algebraics": 3,
+    "parameters": 0,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "a.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "a.i",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "b.v",
+      "kind": "algebraic",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

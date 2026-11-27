@@ -1,0 +1,97 @@
+{
+  "n_equations": 2,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 2,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = der(x) - v",
+          "origin": "source DAE object",
+          "source_lines": [
+            32
+          ]
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = der(v) - -(omega^2*x)",
+          "origin": "source DAE object",
+          "source_lines": [
+            33
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 2,
+    "algebraics": 0,
+    "parameters": 2,
+    "constants": 0,
+    "discrete": 3,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "omega",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "10",
+      "unit": null
+    },
+    {
+      "id": "threshold",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "0.5",
+      "unit": null
+    },
+    {
+      "id": "x",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[0]",
+        "equation_text": "0 = der(x) - v"
+      },
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "v",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[1]",
+        "equation_text": "0 = der(v) - -(omega^2*x)"
+      },
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "above",
+      "kind": "discrete",
+      "derivative_evidence": null,
+      "start": "false",
+      "unit": null
+    },
+    {
+      "id": "rises",
+      "kind": "discrete",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    },
+    {
+      "id": "crossings",
+      "kind": "discrete",
+      "derivative_evidence": null,
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

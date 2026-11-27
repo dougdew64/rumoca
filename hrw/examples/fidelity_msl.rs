@@ -51,14 +51,14 @@
 //! **Never run this unbounded.** The cost of being wrong is not a slow run, it
 //! is someone's machine.
 //!
-//! `--max-reduce-eq` (default 800) caps the **reduced oracle**, restored 2026-11-07
-//! after being accepted and ignored since the v0.10.0 rebase. It mirrors the survey,
-//! for the same reason: reduction cost explodes on large systems. Above the cap the
-//! runner computes no reduced DAE, so F2 skips the `IndexReduction` subject — but
-//! F3, F4 and F5 still check it from the stage's own report, and a 10,175-equation
-//! model still contributes F2–F7 on its `Structural` subject rather than being
-//! dropped. **F8 explicitly wants the largest models**, so excluding them would cost
-//! the scale coverage that is most of the point.
+//! `--max-reduce-eq` (default 800) caps **F2's oracles**, which since 2026-11-27 come
+//! from a second run of the real preparation (`fidelity::RealRunOracles::of`). It
+//! mirrors the survey, for the same reason: preparation cost explodes on large
+//! systems. Above the cap the runner computes no oracle, so F2 skips both subjects —
+//! but F3, F4 and F5 still check them from the stages' own reports, and a
+//! 10,175-equation model still contributes F3–F7 rather than being dropped. **F8
+//! explicitly wants the largest models**, so excluding them would cost the scale
+//! coverage that is most of the point.
 //!
 //! ```text
 //! cargo run -p hrw --release --example fidelity_msl -- [--limit N] [--slice i/N]
@@ -101,8 +101,8 @@ fn main() {
         );
         std::process::exit(2);
     };
-    // `--max-reduce-eq` (default 800, the survey's): above it no reduced oracle is
-    // computed for F2. **Restored 2026-11-07**; it was accepted and ignored while index
+    // `--max-reduce-eq` (default 800, the survey's): above it no oracle is computed
+    // for F2. **Restored 2026-11-07**; it was accepted and ignored while index
     // reduction was not checked. 800 was measured on 0.9.20's reducer (5.9% of
     // reductions skipped, ~93% of the cost removed); on 0.10.4's it is unmeasured, and
     // the run's summary line reports how many models it skipped.
@@ -253,7 +253,7 @@ fn main() {
     let mut all: Vec<Violation> = Vec::new();
     let mut checked = 0usize;
     let mut no_dae = 0usize;
-    // Models above `--max-reduce-eq`, whose reduced subject got F3-F5 but not F2.
+    // Models above `--max-reduce-eq`, whose subjects got F3-F5 but not F2.
     let mut reduce_skipped = 0usize;
     let mut sizes: Vec<(usize, String)> = Vec::new();
     let mut cov = Coverage::default();
@@ -407,29 +407,25 @@ fn main() {
         // that means only "nothing was found".
         let mut engaged = hrw::fidelity::Engagement::default();
         if let Some(dae) = dae.as_ref() {
-            // **The reduced oracle for F2, under the cap** (restored 2026-11-07, the
-            // post-rebase sweep's open item 1). `prepare_for_solve` is the public entry
-            // point the compile itself uses; the worker's own `PreparedDae` cannot cross
-            // its channel. Above `--max-reduce-eq` no oracle is computed, and the
-            // `IndexReduction` subject is still checked by F3-F5 from the stage's own
-            // report — so the cap costs one check on the largest models rather than
-            // dropping their reduced system from the sweep.
+            // **F2's oracles, under the cap** — from the real preparation, the run
+            // that simulates (`RealRunOracles::of`; until 2026-11-27 a
+            // `prepare_for_solve` of the raw DAE, which is not that run). Above
+            // `--max-reduce-eq` none are computed, and every subject is still checked
+            // by F3-F5 from the stage's own report — so the cap costs one check on the
+            // largest models rather than dropping them from the sweep.
             // Scalar rows, the unit the cap was set in; the residual-arena count
             // misses structured families (`DaeCounts::continuous_scalar_rows`).
             let n_eq = hrw::dae_counts::DaeCounts::of(dae).continuous_scalar_rows;
-            let prepared =
-                (n_eq <= max_reduce_eq).then(|| rumoca_phase_structural::prepare_for_solve(dae));
-            if prepared.is_none() {
+            let oracles = if n_eq <= max_reduce_eq {
+                hrw::fidelity::RealRunOracles::of(dae)
+            } else {
                 reduce_skipped += 1;
-            }
-            let reduced = prepared
-                .as_ref()
-                .and_then(|p| p.as_ref().ok())
-                .map(|p| p.as_dae());
+                hrw::fidelity::RealRunOracles::default()
+            };
             (violations, engaged) = check_model(
                 &stages,
                 dae,
-                reduced,
+                &oracles,
                 equation_sheet.as_ref(),
                 identifier_index.as_ref(),
                 &mut cov,
@@ -509,8 +505,8 @@ fn main() {
     sizes.sort_by_key(|(b, _)| std::cmp::Reverse(*b));
     eprintln!(
         "\n[done] {} models in {:.0}s; {checked} with a DAE, {no_dae} without; \
-         {reduce_skipped} above --max-reduce-eq {max_reduce_eq} (reduced subject checked \
-         by F3-F5 only)",
+         {reduce_skipped} above --max-reduce-eq {max_reduce_eq} (subjects checked by F3-F5 \
+         only)",
         rows.len(),
         t_run.elapsed().as_secs_f64(),
     );

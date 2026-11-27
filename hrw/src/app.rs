@@ -2503,6 +2503,8 @@ impl App {
             // interesting comparison is not path-wise; it is the partition
             // itself, which is what the stage exists to show.
             StageKind::Dae => None,
+            // Transform records, not IR — no path-aligned prior.
+            StageKind::Simplify => None,
             // The structural report is a different shape from the flat model —
             // no path-aligned previous, so nothing to highlight.
             StageKind::Structural => None,
@@ -2545,6 +2547,8 @@ impl App {
             StageKind::IndexReduction
         } else if ok(&self.stages.structural) {
             StageKind::Structural
+        } else if ok(&self.stages.simplify) {
+            StageKind::Simplify
         } else if ok(&self.stages.flatten) {
             StageKind::Flatten
         } else if ok(&self.stages.typecheck) {

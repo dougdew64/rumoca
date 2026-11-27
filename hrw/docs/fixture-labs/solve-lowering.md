@@ -156,28 +156,23 @@ not shown anywhere in HRW.
 
 ---
 
-## One count here contradicts the index-reduction lab
+## The state count agrees across the tabs
 
-Do not run `Drivetrain` through this stage without knowing this. Index reduction demoted its
-nine states to three, and reports 3. This stage's `state_scalar_count` reads 9.
+Index reduction, this stage and the simulation are readings of one run of solve lowering, so
+they report the same number of integrated states:
 
-| specimen | `index_reduction` says | this stage says |
-|---|---|---|
-| `Drivetrain` | 3 | 9 |
-| `GearWithBrake` | 2 | 7 |
-| `BouncingBall` | 2 | 2 (nothing was demoted) |
+| specimen | Index reduction: integrates | `state_scalar_count` | simulation |
+|---|---|---|---|
+| `Drivetrain` | `mount.s_rel`, `L.i`, `mount.v_rel` | 3 | 3 |
+| `GearWithBrake` | `spring.phi_rel`, `spring.w_rel` | 2 | 2 |
+| `BouncingBall` | `h`, `v` | 2 | 2 |
 
-The two agree exactly when nothing is demoted, which is why it looks like demoted states are still
-counted here.
+*(Until 2026-11-26 this section explained a disagreement — the Index reduction tab said
+`Drivetrain` went from 9 states to 5 while this stage said 3. The 5 came from HRW running the
+reducer itself on the DAE before solve lowering's simplifications, which is not a run Rumoca
+makes. Before Rumoca 0.10.4 the gap ran the other way.)*
 
-It is not diagnosed and there are innocent readings — a dummy-derivative scheme keeps demoted
-states around as algebraic variables, so a *scalar* count of them may be correct and merely named
-confusingly. The investigation is in [`upstream-issues.md`](hrw://doc/upstream-issues.md).
-
-This lab deliberately used `BouncingBall` and `RcCircuit` for its stations, both of which demote
-nothing, so every number in Stations 1–3 is unaffected. That was a choice to keep the stations clean, and
-saying so is better than letting you discover the discrepancy on your own model and doubt the
-whole lab.
+This lab's stations use `BouncingBall` and `RcCircuit`, which reduce nothing.
 
 ---
 

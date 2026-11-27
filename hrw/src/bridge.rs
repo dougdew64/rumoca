@@ -906,6 +906,7 @@ pub const STAGE_FILE_NAMES: &[&str] = &[
     "typecheck.json",
     "flatten.json",
     "dae.json",
+    "simplify.json",
     "structural.json",
     "index_reduction.json",
     "initialization.json",
@@ -1713,22 +1714,38 @@ pub(crate) fn phase_source(stage: StageKind) -> Value {
             "crates/rumoca-phase-dae",
             "to_dae_with_evidence (run by the compile session, compile_support.rs)",
         ),
-        StageKind::Structural => ("crates/rumoca-phase-structural", "build_structural_report"),
+        // Simplify through Solve lowering are one Rumoca call since 2026-11-26 —
+        // `rumoca_sim::prepare_runtime_observed`, watched by both preparation
+        // capture scopes (`worker/preparation.rs`). Each entry names where in that
+        // call the stage's work happens.
+        StageKind::Simplify => (
+            "crates/rumoca-phase-solve",
+            "prepare_with_input_policy (state_selection.rs)",
+        ),
+        StageKind::Structural => (
+            "crates/rumoca-phase-structural",
+            "SourceStructuralAnalysis::of",
+        ),
         StageKind::IndexReduction => (
             "crates/rumoca-phase-structural",
-            "inspect_prepare_for_solve",
+            "prepare_for_solve_from_source (then rumoca-phase-solve's reduce_or_retain)",
         ),
-        // The same preparation Index reduction reports on: its prepared system's
-        // initial-value pins (`worker::initialization_from_initial_pins`).
+        // The plan solve lowering lowers into the SolveProblem, read back from it.
         StageKind::Initialization => (
-            "crates/rumoca-phase-structural",
-            "inspect_prepare_for_solve (the prepared system's pins)",
+            "crates/rumoca-phase-solve",
+            "lower_initialization (lower/initialization.rs)",
         ),
-        // Events are not produced by a phase call — the condition algebra is already
-        // in the DAE and HRW reads it out (`worker::events_from_condition_algebra`).
-        StageKind::Events => ("crates/rumoca-ir-dae", "DaeView::conditions"),
-        StageKind::SolveLowering => ("crates/rumoca-phase-solve", "lower_solve_problem"),
-        StageKind::Simulation => ("crates/rumoca-sim", "simulate_with_optional_step_records"),
+        // The condition algebra DAE construction recorded, plus what lowering made
+        // of it (`worker::events_from_condition_algebra`, then the lowered problem).
+        StageKind::Events => (
+            "crates/rumoca-phase-solve",
+            "lower_discrete_and_events (lower/events.rs)",
+        ),
+        StageKind::SolveLowering => ("crates/rumoca-sim", "prepare_runtime_observed"),
+        StageKind::Simulation => (
+            "crates/rumoca-sim",
+            "simulate_prepared_runtime_with_optional_step_records",
+        ),
     };
     json!({
         "note": "where this stage's algorithm lives in the Rumoca workspace — read \
@@ -4349,15 +4366,19 @@ mod tests {
             doc["view"]["animation"],
         );
 
-        assert_eq!(doc["phase_source"]["crate"], json!("crates/rumoca-ir-dae"));
-        // It asserted "discrete" — `Dae::discrete`, which 0.10.0 removed — until the
-        // 2026-11-07 sweep, so this test held the stale entry in place.
-        // `every_phase_source_names_a_defined_function` now checks existence for all.
+        // Events points at where the solve path lowers events (2026-11-26); it named
+        // the DAE's `DaeView::conditions` until the tab began carrying the lowered
+        // partition too. `every_phase_source_names_a_defined_function` checks
+        // existence for every entry.
+        assert_eq!(
+            doc["phase_source"]["crate"],
+            json!("crates/rumoca-phase-solve")
+        );
         assert!(
             doc["phase_source"]["entry"]
                 .as_str()
-                .is_some_and(|e| e.contains("DaeView::conditions")),
-            "Events reads the condition algebra: {}",
+                .is_some_and(|e| e.contains("lower_discrete_and_events")),
+            "Events names where lowering builds the event partition: {}",
             doc["phase_source"]["entry"],
         );
     }

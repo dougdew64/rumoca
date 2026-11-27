@@ -15,5 +15,168 @@
   "conditions": [],
   "relations": [],
   "roots": [],
-  "event_actions": []
+  "event_actions": [],
+  "lowered": {
+    "events": {
+      "root_conditions": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "root_relation_memory_targets": [],
+      "root_zero_domains": [],
+      "root_relation_refresh_roles": [],
+      "condition_memory_parameter_indices": [],
+      "scheduled_root_conditions": [],
+      "scheduled_time_events": [],
+      "dynamic_time_event_names": [],
+      "dynamic_time_event_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "action_conditions": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "actions": [],
+      "has_terminal_event": false,
+      "delays": {
+        "source_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "delay_time_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "delay_max_rhs": {
+          "programs": [],
+          "program_spans": [],
+          "output_placements": {
+            "Dense": {
+              "count": 0
+            }
+          }
+        },
+        "value_parameter_indices": [],
+        "source_is_discrete": []
+      }
+    },
+    "discrete": {
+      "event_iteration_plan": {
+        "runs": [],
+        "partitions": [],
+        "schedule": {
+          "event_pass": [
+            "RelationOverrides",
+            "RuntimeAssignments",
+            "AlgebraicProjection",
+            "RuntimeAssignments",
+            "RelationRefresh",
+            "RelationSettle"
+          ],
+          "relation_pass": [
+            "DiscreteSettle",
+            "SettledIfRelationsUnchanged",
+            "AlgebraicProjection",
+            "RuntimeAssignments"
+          ],
+          "settle_pass": [
+            "DiscreteOwners",
+            "RuntimeAssignments",
+            "SettledIfUnchanged",
+            "AlgebraicProjection",
+            "RuntimeAssignments"
+          ],
+          "fixed_point_cap": 32,
+          "stalled_settle": {
+            "iteration_cap": 32,
+            "line_search_halvings": 16
+          },
+          "relation_surface_window": 8,
+          "mode_search_relations": 4
+        }
+      },
+      "runtime_assignment_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "runtime_assignment_targets": [],
+      "runtime_assignment_roles": [],
+      "post_commit_assignment_rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "post_commit_assignment_targets": [],
+      "post_commit_assignment_runtime_rows": [],
+      "rhs": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "update_targets": [],
+      "row_roles": [],
+      "pre_modes": [],
+      "observation_refresh": [],
+      "observation_refresh_reads_y": false,
+      "integrator_history_effects": [],
+      "clock_owners": [],
+      "guarded_assignments": [],
+      "event_transactions": [],
+      "structured_rhs": {
+        "nodes": []
+      },
+      "structured_updates": [],
+      "clock_partition_order": [],
+      "clock_partition_intermediates": {
+        "programs": [],
+        "program_spans": [],
+        "output_placements": {
+          "Dense": {
+            "count": 0
+          }
+        }
+      },
+      "clock_partition_intermediate_targets": [],
+      "clock_partition_intermediate_clocks": []
+    }
+  }
 }

@@ -1,0 +1,76 @@
+{
+  "n_equations": 2,
+  "groups": [
+    {
+      "category": "Component equations",
+      "family": null,
+      "description": "Equations from component instances (their equation sections)",
+      "n": 2,
+      "equations": [
+        {
+          "id": "f_x[0]",
+          "index": 0,
+          "text": "0 = der(h) - v",
+          "origin": "source DAE object",
+          "source_lines": [
+            8
+          ]
+        },
+        {
+          "id": "f_x[1]",
+          "index": 1,
+          "text": "0 = der(v) - -g",
+          "origin": "source DAE object",
+          "source_lines": [
+            9
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "states": 2,
+    "algebraics": 0,
+    "parameters": 2,
+    "constants": 0,
+    "discrete": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  "variables": [
+    {
+      "id": "g",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "9.81",
+      "unit": null
+    },
+    {
+      "id": "e",
+      "kind": "parameter",
+      "derivative_evidence": null,
+      "start": "0.8",
+      "unit": null
+    },
+    {
+      "id": "h",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[0]",
+        "equation_text": "0 = der(h) - v"
+      },
+      "start": "1",
+      "unit": null
+    },
+    {
+      "id": "v",
+      "kind": "state",
+      "derivative_evidence": {
+        "equation_id": "f_x[1]",
+        "equation_text": "0 = der(v) - -g"
+      },
+      "start": "0",
+      "unit": null
+    }
+  ]
+}

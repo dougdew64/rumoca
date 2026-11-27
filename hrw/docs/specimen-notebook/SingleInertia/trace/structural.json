@@ -55,5 +55,14 @@
         "equation_text": "0 = J*der(w) - tau"
       }
     ]
-  }
+  },
+  "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+  "analyses": [
+    {
+      "context": "Source",
+      "equations": 2,
+      "unknowns": 2,
+      "result": "sorted: 2 block(s), 0 coupled"
+    }
+  ]
 }

@@ -52,6 +52,51 @@
       }
     ]
   },
+  "analysed_system": "the DAE after the Simplify tab's transforms: this is the analysis solve lowering ran first, and the one the reducer started from",
+  "analyses": [
+    {
+      "context": "Source",
+      "equations": 5,
+      "unknowns": 5,
+      "result": "structurally singular system: 4 matched out of 5 equations and 5 unknowns"
+    },
+    {
+      "context": "HolonomicRound",
+      "equations": 5,
+      "unknowns": 5,
+      "result": "structurally singular system: 4 matched out of 5 equations and 5 unknowns"
+    },
+    {
+      "context": "HolonomicPass",
+      "equations": 5,
+      "unknowns": 5,
+      "result": "structurally singular system: 4 matched out of 5 equations and 5 unknowns"
+    },
+    {
+      "context": "StateCandidate",
+      "equations": 13,
+      "unknowns": 13,
+      "result": "sorted: 8 block(s), 1 coupled"
+    },
+    {
+      "context": "StateCandidate",
+      "equations": 13,
+      "unknowns": 13,
+      "result": "sorted: 8 block(s), 1 coupled"
+    },
+    {
+      "context": "FormalAliasQuotient",
+      "equations": 13,
+      "unknowns": 13,
+      "result": "sorted: 10 block(s), 1 coupled"
+    },
+    {
+      "context": "FormalAliasQuotient",
+      "equations": 13,
+      "unknowns": 13,
+      "result": "sorted: 10 block(s), 1 coupled"
+    }
+  ],
   "matching": [
     {
       "equation": "f_x[0] (der(x) = vx)",
