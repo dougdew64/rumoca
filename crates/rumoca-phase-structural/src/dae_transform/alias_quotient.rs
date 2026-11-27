@@ -58,8 +58,19 @@ impl AliasPlan {
 /// Quotient the copy and negation aliases of `model`.
 ///
 /// Returns `None` when no class is eligible, leaving the source untouched.
+///
+/// This is the solve path's quotient: with a [`crate::preparation_trace`] scope
+/// open it records the classes it finds and every refusal.
 pub fn quotient_aliases(model: &dae::Dae) -> Result<Option<dae::Dae>, StructuralError> {
-    quotient_aliases_observed(model, &mut ())
+    if crate::preparation_trace::capturing() {
+        // `report_in` derives the classes with the same functions the plan
+        // below uses, on the same input; it is how this crate names a quotient.
+        crate::preparation_trace::emit(crate::preparation_trace::PreparationEvent::AliasQuotient {
+            scope: QuotientScope::Source,
+            report: report::report_in(model, QuotientScope::Source),
+        });
+    }
+    quotient_aliases_observed(model, &mut super::observation::AmbientReduction)
 }
 
 /// [`quotient_aliases`] paired with the owned records of every class it left
@@ -117,14 +128,28 @@ pub fn quotient_formal_aliases(
     else {
         return Ok(prepared);
     };
-    let plan =
-        dae.inspect(|view| derive_plan_observed(view, QuotientScope::FormalDerivatives, &mut ()));
+    if crate::preparation_trace::capturing() {
+        crate::preparation_trace::emit(crate::preparation_trace::PreparationEvent::AliasQuotient {
+            scope: QuotientScope::FormalDerivatives,
+            report: report::report_in(dae, QuotientScope::FormalDerivatives),
+        });
+    }
+    let plan = dae.inspect(|view| {
+        derive_plan_observed(
+            view,
+            QuotientScope::FormalDerivatives,
+            &mut super::observation::AmbientReduction,
+        )
+    });
     if plan.is_empty() {
         return Ok(prepared);
     }
     let (model, manifold) = super::reconstruction::rebuild_alias_quotient(dae, &plan, manifold)?;
     let manifold = super::ManifoldEntry::replayed(manifold, manifold_redundant);
-    let structural = super::structural_analysis(&model)?;
+    let structural = super::analyse_structure(
+        &model,
+        crate::preparation_trace::AnalysisContext::FormalAliasQuotient,
+    )?;
     super::transformed(model, manifold, structural, reduced.clone())
 }
 

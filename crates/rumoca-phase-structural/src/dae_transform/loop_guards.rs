@@ -24,7 +24,8 @@ use std::collections::BTreeSet;
 
 use rumoca_ir_dae as dae;
 
-use super::{ManifoldEntry, PreparedDae, PreparedSystem, structural_analysis, transformed};
+use super::{ManifoldEntry, PreparedDae, PreparedSystem, analyse_structure, transformed};
+use crate::preparation_trace::AnalysisContext;
 use crate::{BltBlock, StructuralError, UnknownId};
 
 /// Give every loop-guarded `smooth` relation of `prepared` an event owner.
@@ -55,7 +56,7 @@ pub fn own_loop_guarded_relations(
     let (model, ids) =
         super::reconstruction::rebuild_loop_guards(prepared.as_dae(), &guards, &ids)?;
     let manifold = ManifoldEntry::replayed(ids, &redundant);
-    let structural = structural_analysis(&model)?;
+    let structural = analyse_structure(&model, AnalysisContext::LoopGuards)?;
     transformed(model, manifold, structural, reduced)
 }
 

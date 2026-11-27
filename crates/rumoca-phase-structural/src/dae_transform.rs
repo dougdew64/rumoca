@@ -28,6 +28,8 @@ mod holonomic_attempt;
 mod loop_closures;
 #[cfg(test)]
 use holonomic_attempt::refused_holonomic_outcome;
+
+use crate::preparation_trace::AnalysisContext;
 use holonomic_attempt::{HolonomicAttempt, attempt_holonomic_candidate};
 mod source_analysis;
 pub use source_analysis::{SourceStructuralAnalysis, prepare_for_solve_from_source};
@@ -410,8 +412,58 @@ impl ErasedUnknown {
     }
 }
 
+/// One structural analysis of `model`, recorded under `context` when a
+/// [`crate::preparation_trace`] scope is open.
+///
+/// The captured branch builds the incidence and finishes through
+/// `sort_from_incidence_with_observer` with a recorder — exactly the two steps
+/// [`sort`] takes with `()` — so the two branches are one execution and the
+/// recorded steps describe the analysis whose result is returned.
+fn analyse_structure(
+    model: &dae::Dae,
+    context: crate::preparation_trace::AnalysisContext,
+) -> Result<PreparedStructuralAnalysis, StructuralError> {
+    if !crate::preparation_trace::capturing() {
+        return model.inspect(|view| sort(view).map(PreparedStructuralAnalysis::issue));
+    }
+    model.inspect(|view| {
+        let incidence = match crate::incidence::build_incidence(view) {
+            Ok(incidence) => incidence,
+            Err(error) => {
+                crate::preparation_trace::emit_failed_incidence(context, &error);
+                return Err(error);
+            }
+        };
+        let mut recorder = crate::observation::StructuralRecorder::default();
+        let sorted = crate::sort_from_incidence_with_observer(view, &incidence, &mut recorder);
+        crate::preparation_trace::emit_analysis(
+            context,
+            view,
+            &incidence,
+            &sorted,
+            recorder.finish(),
+        );
+        sorted.map(PreparedStructuralAnalysis::issue)
+    })
+}
+
+/// [`analyse_structure`] for tests, which observe no preparation scope.
+#[cfg(test)]
 fn structural_analysis(model: &dae::Dae) -> Result<PreparedStructuralAnalysis, StructuralError> {
-    model.inspect(|view| sort(view).map(PreparedStructuralAnalysis::issue))
+    analyse_structure(model, AnalysisContext::Source)
+}
+
+/// [`analyse_structure_capturing`] for tests, which observe no preparation scope.
+#[cfg(test)]
+fn structural_analysis_capturing(
+    model: &dae::Dae,
+    reuse: Option<&crate::incidence::ReusableIncidence>,
+    touched: Option<&[bool]>,
+) -> (
+    Result<PreparedStructuralAnalysis, StructuralError>,
+    Option<crate::incidence::ReusableIncidence>,
+) {
+    analyse_structure_capturing(model, reuse, touched, AnalysisContext::Source)
 }
 
 /// One direct-demotion round's structural analysis, retaining the incidence so
@@ -422,10 +474,14 @@ fn structural_analysis(model: &dae::Dae) -> Result<PreparedStructuralAnalysis, S
 /// [`ReusableIncidence`] is returned whenever the incidence built, even if the
 /// system is singular, because a singular-with-residue round is exactly the one
 /// whose incidence the next round reuses.
-fn structural_analysis_capturing(
+///
+/// Recorded under `context` when a [`crate::preparation_trace`] scope is open,
+/// exactly as [`analyse_structure`] is.
+fn analyse_structure_capturing(
     model: &dae::Dae,
     reuse: Option<&crate::incidence::ReusableIncidence>,
     touched: Option<&[bool]>,
+    context: crate::preparation_trace::AnalysisContext,
 ) -> (
     Result<PreparedStructuralAnalysis, StructuralError>,
     Option<crate::incidence::ReusableIncidence>,
@@ -441,11 +497,32 @@ fn structural_analysis_capturing(
         match incidence {
             Ok(incidence) => {
                 let reusable = crate::incidence::ReusableIncidence::from_incidence(&incidence);
-                let analysis = crate::sort_from_incidence(view, &incidence)
-                    .map(PreparedStructuralAnalysis::issue);
-                (analysis, Some(reusable))
+                let sorted = if crate::preparation_trace::capturing() {
+                    let mut recorder = crate::observation::StructuralRecorder::default();
+                    let sorted =
+                        crate::sort_from_incidence_with_observer(view, &incidence, &mut recorder);
+                    crate::preparation_trace::emit_analysis(
+                        context,
+                        view,
+                        &incidence,
+                        &sorted,
+                        recorder.finish(),
+                    );
+                    sorted
+                } else {
+                    crate::sort_from_incidence(view, &incidence)
+                };
+                (
+                    sorted.map(PreparedStructuralAnalysis::issue),
+                    Some(reusable),
+                )
             }
-            Err(error) => (Err(error), None),
+            Err(error) => {
+                // Recorded too, as `analyse_structure` records it: a failure to
+                // build the incidence is an analysis that ran and failed.
+                crate::preparation_trace::emit_failed_incidence(context, &error);
+                (Err(error), None)
+            }
         }
     })
 }
@@ -586,7 +663,7 @@ struct HolonomicDifferentiationProof {
 /// round therefore strictly decreases the lexicographic pair of unmatched
 /// residue and remaining eligible coordinates.
 pub fn prepare_for_solve(model: &dae::Dae) -> Result<PreparedDae<'_>, StructuralError> {
-    prepare_for_solve_with_observer(model, &mut ())
+    prepare_for_solve_with_observer(model, &mut observation::AmbientReduction)
 }
 
 /// The source system's first structural analysis and the incidence its next
@@ -664,8 +741,9 @@ fn prepare_with_source_round<'source>(
     let selected = match reconstruction::rebuild_requested_states(model) {
         Ok(Some(selected)) => selected,
         Ok(None) => {
-            let first =
-                source_round.unwrap_or_else(|| structural_analysis_capturing(model, None, None));
+            let first = source_round.unwrap_or_else(|| {
+                analyse_structure_capturing(model, None, None, AnalysisContext::Source)
+            });
             return reduce_from_first_round(model, first, observer);
         }
         Err(error) => return observed_failure(error, observer),
@@ -705,7 +783,7 @@ fn reduce_for_solve_with_observer<'source>(
 ) -> Result<PreparedDae<'source>, StructuralError> {
     reduce_from_first_round(
         model,
-        structural_analysis_capturing(model, None, None),
+        analyse_structure_capturing(model, None, None, AnalysisContext::RequestedStates),
         observer,
     )
 }
@@ -1154,7 +1232,9 @@ fn reconstruct_direct_candidate(
     // row of this round's incidence rather than reproject the whole system.
     let touched = (reuse.is_some() && prior_manifold.is_empty())
         .then(|| source.demotion_rows.touched_owners(candidate.state));
-    let (analysis, reusable) = structural_analysis_capturing(&rebuilt, reuse, touched.as_deref());
+    let context = AnalysisContext::DirectCandidate;
+    let (analysis, reusable) =
+        analyse_structure_capturing(&rebuilt, reuse, touched.as_deref(), context);
     let (next, retained_error, structural) = match analysis {
         Ok(structural) => (None, None, Some(structural)),
         Err(error) => match unmatched_residue(&error) {
@@ -1637,7 +1717,7 @@ fn reduce_holonomic_constraint_with_observer(
     mut perturb_enumeration: impl FnMut(&mut Vec<HolonomicConstraint>),
     observer: &mut impl ReductionObserver,
 ) -> Result<HolonomicRound, StructuralError> {
-    let mut outcome = structural_analysis(model);
+    let mut outcome = analyse_structure(model, AnalysisContext::HolonomicRound);
     let normalized = if matches!(outcome, Err(StructuralError::Singular { .. })) {
         derivative_aliases::normalize_tensors(model)?
     } else {
@@ -1645,7 +1725,8 @@ fn reduce_holonomic_constraint_with_observer(
     };
     let mut reusable = None;
     if let Some(normalized) = &normalized {
-        (outcome, reusable) = structural_analysis_capturing(normalized, None, None);
+        (outcome, reusable) =
+            analyse_structure_capturing(normalized, None, None, AnalysisContext::NormalizedTensors);
     }
     let (residue, current_error) = match outcome {
         Ok(structural) => {
@@ -1727,7 +1808,16 @@ fn select_dummy_states(
     StructuralError,
 > {
     loop {
-        let round = demote_direct_state_with_observer(&model, 0, &manifold, false, None, &mut ())?;
+        // A real demotion round, so an open preparation scope sees it; the
+        // standalone `inspect_prepare_for_solve` recorder never reached here.
+        let round = demote_direct_state_with_observer(
+            &model,
+            0,
+            &manifold,
+            false,
+            None,
+            &mut observation::AmbientReduction,
+        )?;
         match round.step {
             Some(DemotionStep::Sorted {
                 dae,
@@ -1844,7 +1934,7 @@ fn holonomic_pass_with_observer(
     let source = ReductionSource::new(model);
     let stated = model.inspect(stated_initial_variables);
     // The pass model's incidence, reused by every candidate's analysis.
-    let (_, base) = structural_analysis_capturing(model, None, None);
+    let (_, base) = analyse_structure_capturing(model, None, None, AnalysisContext::HolonomicPass);
     let candidates = holonomic_candidates(&source, differentiated_owners, perturb_enumeration)?;
     observer.observe(ReductionEvent::Candidates {
         lane: Lane::Holonomic,

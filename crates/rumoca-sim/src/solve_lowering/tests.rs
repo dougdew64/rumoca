@@ -39,6 +39,8 @@ mod ordinary_fmi_reads;
 #[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
 mod parameter_bindings;
 mod preferred_storage_coordinates;
+#[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
+mod prepared_runtime;
 mod probe_jacobian;
 #[cfg(feature = "solver-rk45")]
 mod quotient_root_capture;

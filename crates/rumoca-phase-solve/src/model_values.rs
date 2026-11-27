@@ -66,7 +66,15 @@ pub enum SolveModelLoweringStage {
     RuntimeValues,
 }
 
-impl LoweredSolveModel<'_> {
+impl<'source> LoweredSolveModel<'source> {
+    /// The structurally prepared system this executable root was lowered from,
+    /// with its manifold, pins and structural analysis — the value
+    /// [`Self::prepared_dae`] borrows its DAE from. Read-only, for inspection.
+    #[must_use]
+    pub fn prepared(&self) -> &rumoca_phase_structural::PreparedDae<'source> {
+        &self.prepared
+    }
+
     /// The exact structurally prepared DAE this executable root was lowered
     /// from. FMI metadata must inspect this value, never the pre-transform
     /// source root beside it.

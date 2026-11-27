@@ -54,7 +54,9 @@ pub use structure_report::{
 #[cfg(any(feature = "solver-diffsol", feature = "solver-rk45"))]
 pub(crate) use entry::lower_correlated_for_simulation_with_stage_timing_and_param_overrides;
 #[cfg(any(feature = "solver-diffsol", feature = "solver-rk45"))]
-pub(crate) use fmi::{finish_runtime_fmi_artifact, lower_runtime_fmi_artifact};
+pub(crate) use fmi::{
+    finish_runtime_fmi_artifact, lower_runtime_fmi_artifact, lower_runtime_fmi_artifact_observed,
+};
 #[cfg(any(feature = "solver-diffsol", feature = "solver-rk45"))]
 pub(crate) use overrides::{apply_correlated_simulation_overrides, tunable_param_overrides};
 pub use overrides::{

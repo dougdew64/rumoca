@@ -79,7 +79,10 @@ pub fn inline_formal_calls(
             redundant,
         })
         .collect();
-    let structural = super::structural_analysis(&model)?;
+    let structural = super::analyse_structure(
+        &model,
+        crate::preparation_trace::AnalysisContext::FormalInlinedCalls,
+    )?;
     super::transformed(model, manifold, structural, reduced.clone())
 }
 

@@ -22,6 +22,7 @@ use rumoca_phase_structural::{
 };
 
 use crate::lower::typed_functions::formal_stages::lower_state_selection_stages;
+use crate::preparation_trace::{self as trace, SelectionRoute};
 
 use evaluation::TrialPoint;
 use preferences::{executes_preferred_basis, integrates_preferred_value, prefer_or_retain};
@@ -82,15 +83,31 @@ pub(crate) fn prepare_with_input_policy<'source>(
     overrides: &HashMap<String, f64>,
     input_policy: dae::InputInitializationPolicy,
 ) -> Result<PreparedSelection<'source>, StructuralError> {
+    use trace::SourceTransform as T;
+    // Each transform reads the latest system any earlier one produced; the
+    // trace records what each was given and what it returned.
     let folded = fold_evaluable_parameters(model)?;
-    let inlined = inline_annotated_calls(folded.as_ref().unwrap_or(model))?.or(folded);
-    let quotient = quotient_aliases(inlined.as_ref().unwrap_or(model))?.or(inlined);
-    let selection = match fold_constant_values(quotient.as_ref().unwrap_or(model))?.or(quotient) {
+    trace::transform(T::FoldEvaluableParameters, model, folded.as_ref());
+    let input = folded.as_ref().unwrap_or(model);
+    let inlined = inline_annotated_calls(input)?;
+    trace::transform(T::InlineAnnotatedCalls, input, inlined.as_ref());
+    let inlined = inlined.or(folded);
+    let input = inlined.as_ref().unwrap_or(model);
+    let quotient = quotient_aliases(input)?;
+    trace::transform(T::QuotientAliases, input, quotient.as_ref());
+    let quotient = quotient.or(inlined);
+    let input = quotient.as_ref().unwrap_or(model);
+    let constants = fold_constant_values(input)?;
+    trace::transform(T::FoldConstantValues, input, constants.as_ref());
+    let selection = match constants.or(quotient) {
         None => prepare_source(model, overrides, input_policy)?,
         Some(transformed) => prepare_quotient(transformed, overrides, input_policy)?,
     };
     require_always_states(model, &selection)?;
-    own_selection_loop_guards(selection)
+    let selection = own_selection_loop_guards(selection)?;
+    let alternate_charts = selection.alternates.len();
+    trace::selected(|| selection.integrated_names().ok(), alternate_charts);
+    Ok(selection)
 }
 
 /// MLS 3.7 §3.7.3: "It is an error if the variable cannot be selected as a
@@ -211,10 +228,14 @@ fn prepare_source<'source>(
     // decision and the reducer's first round (SPEC_0053 §1).
     let source = SourceStructuralAnalysis::of(model);
     if let Some(reduced) = reduce_loop_closure(&source, overrides, input_policy)? {
+        trace::route(SelectionRoute::LoopClosureReduced);
         return Ok(reduced);
     }
     match prepare_for_solve_from_source(source) {
-        Ok(prepared) => reduce_or_retain(model, prepared, overrides, input_policy),
+        Ok(prepared) => {
+            trace::route(SelectionRoute::ReducerAccepted);
+            reduce_or_retain(model, prepared, overrides, input_policy)
+        }
         // The ordinary reducer cannot desingularize every constrained system: a
         // buried orientation lock (a quaternion body under a loop joint) leaves
         // an unmatched acceleration residual it reports as structurally
@@ -227,9 +248,14 @@ fn prepare_source<'source>(
         // again with those states declared algebraic before the formal path.
         Err(error) if matches!(error, StructuralError::Singular { .. }) => {
             if let Some(demoted) = demote_inert_states(model)? {
+                trace::route(SelectionRoute::InertStatesDemoted);
                 return prepare_quotient(demoted, overrides, input_policy);
             }
-            recover_singular_via_formal(model, overrides, input_policy)?.ok_or(error)
+            let recovered = recover_singular_via_formal(model, overrides, input_policy)?;
+            if recovered.is_some() {
+                trace::route(SelectionRoute::RecoveredViaFormal);
+            }
+            recovered.ok_or(error)
         }
         Err(error) => Err(error),
     }
@@ -264,9 +290,11 @@ fn reduce_or_retain<'source>(
     input_policy: dae::InputInitializationPolicy,
 ) -> Result<PreparedSelection<'source>, StructuralError> {
     if prepared.inspect(|system| system.manifold.is_empty()) {
+        trace::route(SelectionRoute::PreferencesDecided);
         return prefer_or_retain(model, prepared, overrides, input_policy);
     }
     let Some(formal) = formal_below_retained_dimension(model, &prepared)? else {
+        trace::route(SelectionRoute::RetainedNoSmallerBasis);
         return Ok(PreparedSelection::retained(prepared));
     };
     // Construct the reduced candidate first so an infeasible request (an
@@ -284,9 +312,14 @@ fn reduce_or_retain<'source>(
             .as_dae()
             .inspect(|view| integrates_preferred_value(model, &basis, view))
     {
+        trace::route(SelectionRoute::RetainedDefinitional);
         return Ok(PreparedSelection::retained(prepared));
     }
-    reduced.finish(&formal)
+    let finished = reduced.finish(&formal);
+    if finished.is_ok() {
+        trace::route(SelectionRoute::ReducedToFormalBasis);
+    }
+    finished
 }
 
 /// SPEC_0053 §1: decide reduction from the source when it holds a redundant

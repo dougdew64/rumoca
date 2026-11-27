@@ -298,15 +298,6 @@ pub fn simulate_with_optional_step_records(
     ),
     SimulationDiagnosticError,
 > {
-    use rumoca_solver::fmi_me::step_observation::MeStepRecorder;
-
-    let observed = |artifact, execution_backend| {
-        let mut recorder = MeStepRecorder::new();
-        diffsol::simulate_artifact_observed(artifact, opts, execution_backend, &mut recorder)
-            .map(|result| (result, Some(recorder.into_records())))
-            .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))
-    };
-
     match opts.solver_mode {
         SimSolverMode::Bdf => {
             let (result, records) = diffsol::simulate_with_step_records(dae_model, opts)?;
@@ -316,23 +307,86 @@ pub fn simulate_with_optional_step_records(
             simulate_with_rk45_diagnostics(dae_model, opts).map(|result| (result, None))
         }
         SimSolverMode::Auto => {
-            let (artifact, execution_backend) =
-                solve_lowering::lower_runtime_fmi_artifact(dae_model, opts)?;
-            match diffsol::select_auto_integrator(&artifact, opts, execution_backend.clone())
-                .map_err(|error| SimulationDiagnosticError::Solver(error.to_string()))?
-            {
-                diffsol::SelectedAutoIntegrator::Bdf(Some(prepared)) => {
-                    let mut recorder = MeStepRecorder::new();
-                    diffsol::simulate_probed_observed(&prepared, &mut recorder)
-                        .map(|result| (result, Some(recorder.into_records())))
-                        .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))
-                }
-                diffsol::SelectedAutoIntegrator::Bdf(None) => observed(artifact, execution_backend),
-                diffsol::SelectedAutoIntegrator::RkLike => {
-                    simulate_artifact_rk45(artifact, opts, execution_backend)
-                        .map(|result| (result, None))
-                }
-            }
+            let runtime = prepare_runtime_observed(dae_model, opts, |_| {})?;
+            simulate_prepared_runtime_with_optional_step_records(runtime, opts)
+        }
+    }
+}
+
+/// A model lowered for an `Auto` simulation and not yet integrated.
+///
+/// It is the runtime artifact [`simulate_with_optional_step_records`] builds
+/// and then integrates, held between the two so a caller can inspect the
+/// lowering (through [`prepare_runtime_observed`]'s observer) and then run
+/// **that same artifact** rather than lowering the model a second time.
+#[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
+pub struct PreparedRuntime {
+    artifact: rumoca_solver::fmi_me::MeModelArtifact,
+    execution_backend: Option<rumoca_solver::fmi_me::MeExecutionBackend>,
+}
+
+/// Lower `dae_model` for an `Auto` simulation, lending the lowered model to
+/// `observe` before it becomes the runtime artifact.
+///
+/// This is the lowering half of [`simulate_with_optional_step_records`]'s
+/// `Auto` arm, which is now exactly this call followed by
+/// [`simulate_prepared_runtime_with_optional_step_records`]. Observation-only:
+/// `observe` gets a shared borrow of the value the artifact is then built from.
+#[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
+pub fn prepare_runtime_observed(
+    dae_model: &dae::Dae,
+    opts: &SimOptions,
+    observe: impl FnMut(&rumoca_phase_solve::LoweredSolveModel<'_>),
+) -> Result<PreparedRuntime, SimulationDiagnosticError> {
+    let (artifact, execution_backend) =
+        solve_lowering::lower_runtime_fmi_artifact_observed(dae_model, opts, observe)?;
+    Ok(PreparedRuntime {
+        artifact,
+        execution_backend,
+    })
+}
+
+/// Integrate a [`PreparedRuntime`] under `Auto` integrator selection,
+/// reporting accepted steps when the backend that ran has them.
+///
+/// The integration half of [`simulate_with_optional_step_records`]'s `Auto`
+/// arm. `opts` should be the options the runtime was prepared with; the
+/// integrator choice is made here, from the artifact, exactly as the combined
+/// entry makes it.
+#[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
+pub fn simulate_prepared_runtime_with_optional_step_records(
+    runtime: PreparedRuntime,
+    opts: &SimOptions,
+) -> Result<
+    (
+        SimResult,
+        Option<Vec<rumoca_solver::fmi_me::step_observation::MeStepRecord>>,
+    ),
+    SimulationDiagnosticError,
+> {
+    use rumoca_solver::fmi_me::step_observation::MeStepRecorder;
+
+    let PreparedRuntime {
+        artifact,
+        execution_backend,
+    } = runtime;
+    match diffsol::select_auto_integrator(&artifact, opts, execution_backend.clone())
+        .map_err(|error| SimulationDiagnosticError::Solver(error.to_string()))?
+    {
+        diffsol::SelectedAutoIntegrator::Bdf(Some(prepared)) => {
+            let mut recorder = MeStepRecorder::new();
+            diffsol::simulate_probed_observed(&prepared, &mut recorder)
+                .map(|result| (result, Some(recorder.into_records())))
+                .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))
+        }
+        diffsol::SelectedAutoIntegrator::Bdf(None) => {
+            let mut recorder = MeStepRecorder::new();
+            diffsol::simulate_artifact_observed(artifact, opts, execution_backend, &mut recorder)
+                .map(|result| (result, Some(recorder.into_records())))
+                .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))
+        }
+        diffsol::SelectedAutoIntegrator::RkLike => {
+            simulate_artifact_rk45(artifact, opts, execution_backend).map(|result| (result, None))
         }
     }
 }

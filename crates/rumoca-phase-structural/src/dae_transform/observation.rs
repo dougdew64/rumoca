@@ -205,6 +205,25 @@ impl ReductionObserver for () {
     fn observe(&mut self, _event: ReductionEvent<'_>) {}
 }
 
+/// The production observer of the solve path: forwards each record to an open
+/// [`crate::preparation_trace`] scope and is `()` otherwise.
+///
+/// The record is built only when a scope is open, through the same
+/// `record_of` conversion every other recorder here uses. Like
+/// [`RecordForwarder`], it drops a stalled intermediate unchanged: that is a
+/// transfer of an owned DAE, not an observation.
+pub(super) struct AmbientReduction;
+
+impl ReductionObserver for AmbientReduction {
+    fn observe(&mut self, event: ReductionEvent<'_>) {
+        if crate::preparation_trace::capturing() {
+            crate::preparation_trace::emit(crate::preparation_trace::PreparationEvent::Reduction(
+                record_of(event),
+            ));
+        }
+    }
+}
+
 /// A coarse, presentation-only classification of one unmatched unknown name.
 ///
 /// Classified from the already-rendered [`StructuralError::Singular`] string

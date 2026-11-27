@@ -103,8 +103,19 @@ pub(super) fn holonomic_analysis(
         mask
     });
     match touched {
-        Some(touched) => structural_analysis_capturing(rebuilt, reuse, Some(&touched)).0,
-        None => structural_analysis(rebuilt),
+        Some(touched) => {
+            analyse_structure_capturing(
+                rebuilt,
+                reuse,
+                Some(&touched),
+                crate::preparation_trace::AnalysisContext::HolonomicCandidate,
+            )
+            .0
+        }
+        None => analyse_structure(
+            rebuilt,
+            crate::preparation_trace::AnalysisContext::HolonomicCandidate,
+        ),
     }
 }
 
