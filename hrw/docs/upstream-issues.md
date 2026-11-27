@@ -501,6 +501,13 @@ every outcome matched exactly.
 
 ### ⟶ GONE ON v0.10.4, AND THE SHAPE CHANGED — re-diagnosed 2026-11-04. DO NOT FILE.
 
+> **Correction, 2026-11-27: the re-diagnosis below is itself wrong about `Drivetrain`'s 9 → 5.**
+> That number was HRW running `prepare_for_solve` itself on the DAE before solve lowering's
+> simplifications, which is a run Rumoca never makes. The real run integrates **3**, and every tab
+> now says so (`DECISIONS.md`, 2026-11-26, *the tabs show one real preparation*). The account is
+> kept because it shows how a self-consistent explanation was built on HRW's own re-run. **Do not
+> cite its two-number reading as Rumoca's behaviour.**
+
 **The defect as stated is not reproducible.** It claimed solve lowering kept counting the
 *pre*-reduction states: `Drivetrain` demoted nine to three while lowering reported **9**.
 Lowering now reports **3**, and the simulation integrates 3.
