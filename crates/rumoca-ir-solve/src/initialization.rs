@@ -30,15 +30,30 @@ pub struct InitializationSystemInput {
 /// cannot be supplied independently of the checked projection plan.
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct InitializationSolveSystem {
+    /// The complete initialization residual, one scalar row per obligation; its
+    /// last `manifold_row_count` rows are the retained manifold rows.
     residual: ComputeBlock,
+    /// What each residual row does, in row order: solved for a projection
+    /// unknown, or a check over values something else determined.
     row_roles: Vec<InitializationRowRole>,
+    /// The blocks of rows solved simultaneously, each pairing its rows with the
+    /// unknowns they determine.
     projection_plan: InitializationProjectionPlan,
+    /// Explicit assignments evaluated rather than solved.
     update_rhs: ScalarProgramBlock,
+    /// The coordinate each `update_rhs` program writes, in program order.
     update_targets: Vec<ScalarSlot>,
+    /// How many rows at the end of the residual are retained manifold rows.
     manifold_row_count: usize,
+    /// State indices whose initial value is given — a `fixed = true` start — and
+    /// which nothing else writes.
     given_state_indices: Vec<usize>,
+    /// The unknown each residual row is solved for, or `None` for a check row;
+    /// derived from the projection plan.
     #[serde(skip)]
     row_targets: Vec<Option<ScalarSlot>>,
+    /// Every unknown the projection solves, in plan order; derived from the
+    /// projection plan.
     #[serde(skip)]
     projection_unknowns: Vec<ScalarSlot>,
 }
