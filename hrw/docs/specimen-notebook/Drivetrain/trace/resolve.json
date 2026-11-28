@@ -55,11 +55,11 @@
   ],
   "location": {
     "start_line": 1,
-    "start_column": 7,
+    "start_column": 1,
     "end_line": 45,
-    "end_column": 15,
-    "start": 6,
-    "end": 2369,
+    "end_column": 16,
+    "start": 0,
+    "end": 2370,
     "source": 3979184148414342824
   },
   "extends": [],
@@ -298,7 +298,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "R": {
       "def_id": 105,
@@ -532,7 +533,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "L": {
       "def_id": 106,
@@ -766,7 +768,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "emf": {
       "def_id": 107,
@@ -1000,7 +1003,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "gnd": {
       "def_id": 108,
@@ -1142,7 +1146,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "rotor": {
       "def_id": 109,
@@ -1376,7 +1381,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "gear": {
       "def_id": 110,
@@ -1610,7 +1616,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "shaft": {
       "def_id": 111,
@@ -1844,7 +1851,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "r2t": {
       "def_id": 112,
@@ -2078,7 +2086,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "load": {
       "def_id": 113,
@@ -2312,7 +2321,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "mount": {
       "def_id": 114,
@@ -2633,7 +2643,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "wall": {
       "def_id": 115,
@@ -2775,7 +2786,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     }
   },
   "equations": [

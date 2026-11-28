@@ -57,11 +57,11 @@
       ],
       "location": {
         "start_line": 1,
-        "start_column": 7,
+        "start_column": 1,
         "end_line": 42,
-        "end_column": 21,
-        "start": 6,
-        "end": 2504,
+        "end_column": 22,
+        "start": 0,
+        "end": 2505,
         "source": 7752468083646500013
       },
       "extends": [],
@@ -220,7 +220,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "threshold": {
           "def_id": null,
@@ -374,7 +375,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "x": {
           "def_id": null,
@@ -645,7 +647,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "v": {
           "def_id": null,
@@ -916,7 +919,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "above": {
           "def_id": null,
@@ -1032,7 +1036,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "rises": {
           "def_id": null,
@@ -1303,7 +1308,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "crossings": {
           "def_id": null,
@@ -1574,7 +1580,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         }
       },
       "equations": [

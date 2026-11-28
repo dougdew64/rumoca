@@ -1,5 +1,5 @@
 {
-  "schema_version": 89,
+  "schema_version": 93,
   "layout": {
     "bindings": {
       "errorA": {
@@ -225,6 +225,8 @@
     "initial_homotopy_parameter_index": null,
     "pre_param_bindings": []
   },
+  "cartesian_pairs": null,
+  "mechanical_step": null,
   "continuous": {
     "implicit_rhs": {
       "nodes": [

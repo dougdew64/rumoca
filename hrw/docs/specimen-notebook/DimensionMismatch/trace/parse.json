@@ -57,11 +57,11 @@
       ],
       "location": {
         "start_line": 1,
-        "start_column": 7,
+        "start_column": 1,
         "end_line": 13,
-        "end_column": 22,
-        "start": 6,
-        "end": 523,
+        "end_column": 23,
+        "start": 0,
+        "end": 524,
         "source": 4772140177513510410
       },
       "extends": [],
@@ -196,7 +196,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "big": {
           "def_id": null,
@@ -326,7 +327,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         }
       },
       "equations": [
@@ -502,8 +504,8 @@
                 "kind": "Array",
                 "span": {
                   "source": 4772140177513510410,
-                  "start": 486,
-                  "end": 499
+                  "start": 485,
+                  "end": 500
                 }
               }
             }

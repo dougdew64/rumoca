@@ -422,6 +422,30 @@ fn write_expr<'dae>(view: dae::DaeView<'dae>, id: dae::ExprId<'dae>, floor: u8, 
                 fold.ordinal()
             );
         }
+        // **New in 0.11.0: a function parameter that may arrive absent** (an
+        // optional argument). Modelica has no spelling for either node, so both
+        // are printed in the house `<…>` form under Rumoca's own names.
+        //
+        // `PassAssigned` forwards its operand's value *or its absence* to a call
+        // argument, unchecked; printing only the operand would hide that the
+        // absence travels with it.
+        dae::ExpressionOperation::PassAssigned { operand } => {
+            out.push_str("<pass-assigned ");
+            write_expr(view, operand, 0, out);
+            out.push('>');
+        }
+        // `checked` is the difference between reading the parameter (an absent
+        // one is an error) and forwarding it as it arrived. Both read the same
+        // parameter, so printing one form for both would merge two operations.
+        dae::ExpressionOperation::AssignedParameter { parameter, checked } => {
+            let form = if checked { "checked" } else { "forwarded" };
+            let _ = write!(
+                out,
+                "<function {} parameter {} assigned, {form}>",
+                parameter.function().index(),
+                parameter.ordinal()
+            );
+        }
         // **Two owner-local ordinals, not one.** A conditional's output is
         // identified by *which* conditional and *which* of its values, and both
         // are local to the same function, so printing either alone would read as

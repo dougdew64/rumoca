@@ -57,11 +57,11 @@
       ],
       "location": {
         "start_line": 1,
-        "start_column": 7,
+        "start_column": 1,
         "end_line": 17,
-        "end_column": 22,
-        "start": 6,
-        "end": 770,
+        "end_column": 23,
+        "start": 0,
+        "end": 771,
         "source": 14621390840147601926
       },
       "extends": [],
@@ -220,7 +220,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "m": {
           "def_id": null,
@@ -374,7 +375,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "g": {
           "def_id": null,
@@ -528,7 +530,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "x": {
           "def_id": null,
@@ -711,7 +714,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "y": {
           "def_id": null,
@@ -894,7 +898,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "vx": {
           "def_id": null,
@@ -1077,7 +1082,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "vy": {
           "def_id": null,
@@ -1260,7 +1266,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         },
         "lambda": {
           "def_id": null,
@@ -1376,7 +1383,8 @@
           "redeclared_by_modification": false,
           "has_unapplied_redeclare": false,
           "constrainedby": null,
-          "is_structural": false
+          "is_structural": false,
+          "constraining_modifications": []
         }
       },
       "equations": [

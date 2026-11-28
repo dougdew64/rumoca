@@ -130,7 +130,7 @@
         "equation_text": "0 = R.T_heatPort - R.T"
       },
       {
-        "equation": "f_x[9] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[9] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[9]",
         "unknowns": [
           13,
@@ -527,7 +527,7 @@
       "unknown": "R.T_heatPort"
     },
     {
-      "equation": "f_x[9] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+      "equation": "f_x[9] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
       "id": "f_x[9]",
       "unknown": "R.R_actual"
     },

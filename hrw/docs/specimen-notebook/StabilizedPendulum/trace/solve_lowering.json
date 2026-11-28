@@ -1,5 +1,5 @@
 {
-  "schema_version": 89,
+  "schema_version": 93,
   "layout": {
     "bindings": {
       "x": {
@@ -291,6 +291,20 @@
     "initial_homotopy_parameter_index": null,
     "pre_param_bindings": []
   },
+  "cartesian_pairs": {
+    "state_count": 4,
+    "pairs": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        3
+      ]
+    ]
+  },
+  "mechanical_step": null,
   "continuous": {
     "implicit_rhs": {
       "nodes": [
@@ -464,7 +478,7 @@
                 },
                 {
                   "Binary": {
-                    "dst": 4,
+                    "dst": 3,
                     "op": "Mul",
                     "lhs": 1,
                     "rhs": 1
@@ -472,77 +486,93 @@
                 },
                 {
                   "LoadY": {
-                    "dst": 5,
+                    "dst": 4,
                     "index": 3
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 6,
+                    "op": "Mul",
+                    "lhs": 4,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 7,
+                    "op": "Add",
+                    "lhs": 3,
+                    "rhs": 6
                   }
                 },
                 {
                   "Binary": {
                     "dst": 8,
                     "op": "Mul",
-                    "lhs": 5,
-                    "rhs": 5
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 9,
-                    "op": "Add",
-                    "lhs": 4,
-                    "rhs": 8
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 10,
-                    "op": "Mul",
                     "lhs": 0,
-                    "rhs": 9
+                    "rhs": 7
                   }
                 },
                 {
                   "Const": {
-                    "dst": 11,
+                    "dst": 9,
                     "value": 2.0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 12,
+                    "dst": 10,
                     "index": 0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 13,
+                    "dst": 11,
                     "index": 5
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 14,
+                    "dst": 12,
                     "op": "Mul",
-                    "lhs": 12,
-                    "rhs": 13
+                    "lhs": 10,
+                    "rhs": 11
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 15,
+                    "dst": 13,
                     "index": 1
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 16,
+                    "dst": 14,
                     "index": 6
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 15,
+                    "op": "Mul",
+                    "lhs": 13,
+                    "rhs": 14
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 16,
+                    "op": "Add",
+                    "lhs": 12,
+                    "rhs": 15
                   }
                 },
                 {
                   "Binary": {
                     "dst": 17,
                     "op": "Mul",
-                    "lhs": 15,
+                    "lhs": 9,
                     "rhs": 16
                   }
                 },
@@ -550,83 +580,83 @@
                   "Binary": {
                     "dst": 18,
                     "op": "Add",
-                    "lhs": 14,
+                    "lhs": 8,
                     "rhs": 17
                   }
                 },
                 {
-                  "Binary": {
-                    "dst": 19,
-                    "op": "Mul",
-                    "lhs": 11,
-                    "rhs": 18
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 20,
-                    "op": "Add",
-                    "lhs": 10,
-                    "rhs": 19
-                  }
-                },
-                {
                   "Const": {
-                    "dst": 21,
+                    "dst": 19,
                     "value": 4.0
                   }
                 },
                 {
                   "LoadP": {
-                    "dst": 22,
+                    "dst": 20,
                     "index": 3
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 23,
+                    "dst": 21,
                     "op": "Mul",
-                    "lhs": 21,
-                    "rhs": 22
+                    "lhs": 19,
+                    "rhs": 20
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 24,
+                    "dst": 22,
                     "index": 0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 25,
+                    "dst": 23,
                     "index": 2
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 26,
+                    "dst": 24,
                     "op": "Mul",
-                    "lhs": 24,
-                    "rhs": 25
+                    "lhs": 22,
+                    "rhs": 23
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 27,
+                    "dst": 25,
                     "index": 1
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 28,
+                    "dst": 26,
                     "index": 3
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 27,
+                    "op": "Mul",
+                    "lhs": 25,
+                    "rhs": 26
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 28,
+                    "op": "Add",
+                    "lhs": 24,
+                    "rhs": 27
                   }
                 },
                 {
                   "Binary": {
                     "dst": 29,
                     "op": "Mul",
-                    "lhs": 27,
+                    "lhs": 21,
                     "rhs": 28
                   }
                 },
@@ -634,63 +664,69 @@
                   "Binary": {
                     "dst": 30,
                     "op": "Add",
-                    "lhs": 26,
+                    "lhs": 18,
                     "rhs": 29
                   }
                 },
                 {
-                  "Binary": {
+                  "LoadP": {
                     "dst": 31,
-                    "op": "Mul",
-                    "lhs": 23,
-                    "rhs": 30
+                    "index": 4
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 32,
-                    "op": "Add",
-                    "lhs": 20,
+                    "dst": 33,
+                    "op": "Mul",
+                    "lhs": 31,
                     "rhs": 31
                   }
                 },
                 {
-                  "LoadP": {
-                    "dst": 33,
-                    "index": 4
+                  "LoadY": {
+                    "dst": 34,
+                    "index": 0
                   }
                 },
                 {
                   "Binary": {
                     "dst": 36,
                     "op": "Mul",
-                    "lhs": 33,
-                    "rhs": 33
+                    "lhs": 34,
+                    "rhs": 34
                   }
                 },
                 {
                   "LoadY": {
                     "dst": 37,
-                    "index": 0
+                    "index": 1
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 40,
+                    "dst": 39,
                     "op": "Mul",
                     "lhs": 37,
                     "rhs": 37
                   }
                 },
                 {
-                  "LoadY": {
+                  "Binary": {
+                    "dst": 40,
+                    "op": "Add",
+                    "lhs": 36,
+                    "rhs": 39
+                  }
+                },
+                {
+                  "LoadP": {
                     "dst": 41,
-                    "index": 1
+                    "index": 0
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 44,
+                    "dst": 43,
                     "op": "Mul",
                     "lhs": 41,
                     "rhs": 41
@@ -698,53 +734,31 @@
                 },
                 {
                   "Binary": {
-                    "dst": 45,
-                    "op": "Add",
+                    "dst": 44,
+                    "op": "Sub",
                     "lhs": 40,
+                    "rhs": 43
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 45,
+                    "op": "Mul",
+                    "lhs": 33,
                     "rhs": 44
                   }
                 },
                 {
-                  "LoadP": {
+                  "Binary": {
                     "dst": 46,
-                    "index": 0
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 49,
-                    "op": "Mul",
-                    "lhs": 46,
-                    "rhs": 46
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 50,
-                    "op": "Sub",
-                    "lhs": 45,
-                    "rhs": 49
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 51,
-                    "op": "Mul",
-                    "lhs": 36,
-                    "rhs": 50
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 52,
                     "op": "Add",
-                    "lhs": 32,
-                    "rhs": 51
+                    "lhs": 30,
+                    "rhs": 45
                   }
                 },
                 {
                   "StoreOutput": {
-                    "src": 52
+                    "src": 46
                   }
                 }
               ]
@@ -996,7 +1010,7 @@
                 },
                 {
                   "Binary": {
-                    "dst": 4,
+                    "dst": 3,
                     "op": "Mul",
                     "lhs": 1,
                     "rhs": 1
@@ -1004,77 +1018,93 @@
                 },
                 {
                   "LoadY": {
-                    "dst": 5,
+                    "dst": 4,
                     "index": 3
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 6,
+                    "op": "Mul",
+                    "lhs": 4,
+                    "rhs": 4
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 7,
+                    "op": "Add",
+                    "lhs": 3,
+                    "rhs": 6
                   }
                 },
                 {
                   "Binary": {
                     "dst": 8,
                     "op": "Mul",
-                    "lhs": 5,
-                    "rhs": 5
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 9,
-                    "op": "Add",
-                    "lhs": 4,
-                    "rhs": 8
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 10,
-                    "op": "Mul",
                     "lhs": 0,
-                    "rhs": 9
+                    "rhs": 7
                   }
                 },
                 {
                   "Const": {
-                    "dst": 11,
+                    "dst": 9,
                     "value": 2.0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 12,
+                    "dst": 10,
                     "index": 0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 13,
+                    "dst": 11,
                     "index": 5
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 14,
+                    "dst": 12,
                     "op": "Mul",
-                    "lhs": 12,
-                    "rhs": 13
+                    "lhs": 10,
+                    "rhs": 11
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 15,
+                    "dst": 13,
                     "index": 1
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 16,
+                    "dst": 14,
                     "index": 6
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 15,
+                    "op": "Mul",
+                    "lhs": 13,
+                    "rhs": 14
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 16,
+                    "op": "Add",
+                    "lhs": 12,
+                    "rhs": 15
                   }
                 },
                 {
                   "Binary": {
                     "dst": 17,
                     "op": "Mul",
-                    "lhs": 15,
+                    "lhs": 9,
                     "rhs": 16
                   }
                 },
@@ -1082,83 +1112,83 @@
                   "Binary": {
                     "dst": 18,
                     "op": "Add",
-                    "lhs": 14,
+                    "lhs": 8,
                     "rhs": 17
                   }
                 },
                 {
-                  "Binary": {
-                    "dst": 19,
-                    "op": "Mul",
-                    "lhs": 11,
-                    "rhs": 18
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 20,
-                    "op": "Add",
-                    "lhs": 10,
-                    "rhs": 19
-                  }
-                },
-                {
                   "Const": {
-                    "dst": 21,
+                    "dst": 19,
                     "value": 4.0
                   }
                 },
                 {
                   "LoadP": {
-                    "dst": 22,
+                    "dst": 20,
                     "index": 3
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 23,
+                    "dst": 21,
                     "op": "Mul",
-                    "lhs": 21,
-                    "rhs": 22
+                    "lhs": 19,
+                    "rhs": 20
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 24,
+                    "dst": 22,
                     "index": 0
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 25,
+                    "dst": 23,
                     "index": 2
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 26,
+                    "dst": 24,
                     "op": "Mul",
-                    "lhs": 24,
-                    "rhs": 25
+                    "lhs": 22,
+                    "rhs": 23
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 27,
+                    "dst": 25,
                     "index": 1
                   }
                 },
                 {
                   "LoadY": {
-                    "dst": 28,
+                    "dst": 26,
                     "index": 3
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 27,
+                    "op": "Mul",
+                    "lhs": 25,
+                    "rhs": 26
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 28,
+                    "op": "Add",
+                    "lhs": 24,
+                    "rhs": 27
                   }
                 },
                 {
                   "Binary": {
                     "dst": 29,
                     "op": "Mul",
-                    "lhs": 27,
+                    "lhs": 21,
                     "rhs": 28
                   }
                 },
@@ -1166,63 +1196,69 @@
                   "Binary": {
                     "dst": 30,
                     "op": "Add",
-                    "lhs": 26,
+                    "lhs": 18,
                     "rhs": 29
                   }
                 },
                 {
-                  "Binary": {
+                  "LoadP": {
                     "dst": 31,
-                    "op": "Mul",
-                    "lhs": 23,
-                    "rhs": 30
+                    "index": 4
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 32,
-                    "op": "Add",
-                    "lhs": 20,
+                    "dst": 33,
+                    "op": "Mul",
+                    "lhs": 31,
                     "rhs": 31
                   }
                 },
                 {
-                  "LoadP": {
-                    "dst": 33,
-                    "index": 4
+                  "LoadY": {
+                    "dst": 34,
+                    "index": 0
                   }
                 },
                 {
                   "Binary": {
                     "dst": 36,
                     "op": "Mul",
-                    "lhs": 33,
-                    "rhs": 33
+                    "lhs": 34,
+                    "rhs": 34
                   }
                 },
                 {
                   "LoadY": {
                     "dst": 37,
-                    "index": 0
+                    "index": 1
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 40,
+                    "dst": 39,
                     "op": "Mul",
                     "lhs": 37,
                     "rhs": 37
                   }
                 },
                 {
-                  "LoadY": {
+                  "Binary": {
+                    "dst": 40,
+                    "op": "Add",
+                    "lhs": 36,
+                    "rhs": 39
+                  }
+                },
+                {
+                  "LoadP": {
                     "dst": 41,
-                    "index": 1
+                    "index": 0
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 44,
+                    "dst": 43,
                     "op": "Mul",
                     "lhs": 41,
                     "rhs": 41
@@ -1230,53 +1266,31 @@
                 },
                 {
                   "Binary": {
-                    "dst": 45,
-                    "op": "Add",
+                    "dst": 44,
+                    "op": "Sub",
                     "lhs": 40,
+                    "rhs": 43
+                  }
+                },
+                {
+                  "Binary": {
+                    "dst": 45,
+                    "op": "Mul",
+                    "lhs": 33,
                     "rhs": 44
                   }
                 },
                 {
-                  "LoadP": {
+                  "Binary": {
                     "dst": 46,
-                    "index": 0
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 49,
-                    "op": "Mul",
-                    "lhs": 46,
-                    "rhs": 46
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 50,
-                    "op": "Sub",
-                    "lhs": 45,
-                    "rhs": 49
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 51,
-                    "op": "Mul",
-                    "lhs": 36,
-                    "rhs": 50
-                  }
-                },
-                {
-                  "Binary": {
-                    "dst": 52,
                     "op": "Add",
-                    "lhs": 32,
-                    "rhs": 51
+                    "lhs": 30,
+                    "rhs": 45
                   }
                 },
                 {
                   "StoreOutput": {
-                    "src": 52
+                    "src": 46
                   }
                 }
               ]
@@ -1587,22 +1601,22 @@
               "TensorAffine": {
                 "target_y_index": 5,
                 "projection": {
-                  "output": 52,
+                  "output": 46,
                   "steps": [
+                    [
+                      8,
+                      "Independent"
+                    ],
+                    [
+                      9,
+                      "Independent"
+                    ],
                     [
                       10,
                       "Independent"
                     ],
                     [
                       11,
-                      "Independent"
-                    ],
-                    [
-                      12,
-                      "Independent"
-                    ],
-                    [
-                      13,
                       {
                         "Target": {
                           "offset": 0
@@ -1610,65 +1624,65 @@
                       }
                     ],
                     [
-                      14,
+                      12,
                       "RightProduct"
                     ],
                     [
-                      17,
+                      15,
                       "Independent"
+                    ],
+                    [
+                      16,
+                      "Linear"
+                    ],
+                    [
+                      17,
+                      "RightProduct"
                     ],
                     [
                       18,
                       "Linear"
                     ],
                     [
-                      19,
-                      "RightProduct"
-                    ],
-                    [
-                      20,
-                      "Linear"
-                    ],
-                    [
-                      31,
+                      29,
                       "Independent"
                     ],
                     [
-                      32,
+                      30,
                       "Linear"
                     ],
                     [
-                      51,
+                      45,
                       "Independent"
                     ],
                     [
-                      52,
+                      46,
                       "Linear"
                     ]
                   ],
                   "independent_ranges": [
                     [
+                      8,
+                      1
+                    ],
+                    [
+                      9,
+                      1
+                    ],
+                    [
                       10,
                       1
                     ],
                     [
-                      11,
+                      15,
                       1
                     ],
                     [
-                      12,
+                      29,
                       1
                     ],
                     [
-                      17,
-                      1
-                    ],
-                    [
-                      31,
-                      1
-                    ],
-                    [
-                      51,
+                      45,
                       1
                     ]
                   ]
@@ -1898,22 +1912,22 @@
               "TensorAffine": {
                 "target_y_index": 5,
                 "projection": {
-                  "output": 52,
+                  "output": 46,
                   "steps": [
+                    [
+                      8,
+                      "Independent"
+                    ],
+                    [
+                      9,
+                      "Independent"
+                    ],
                     [
                       10,
                       "Independent"
                     ],
                     [
                       11,
-                      "Independent"
-                    ],
-                    [
-                      12,
-                      "Independent"
-                    ],
-                    [
-                      13,
                       {
                         "Target": {
                           "offset": 0
@@ -1921,65 +1935,65 @@
                       }
                     ],
                     [
-                      14,
+                      12,
                       "RightProduct"
                     ],
                     [
-                      17,
+                      15,
                       "Independent"
+                    ],
+                    [
+                      16,
+                      "Linear"
+                    ],
+                    [
+                      17,
+                      "RightProduct"
                     ],
                     [
                       18,
                       "Linear"
                     ],
                     [
-                      19,
-                      "RightProduct"
-                    ],
-                    [
-                      20,
-                      "Linear"
-                    ],
-                    [
-                      31,
+                      29,
                       "Independent"
                     ],
                     [
-                      32,
+                      30,
                       "Linear"
                     ],
                     [
-                      51,
+                      45,
                       "Independent"
                     ],
                     [
-                      52,
+                      46,
                       "Linear"
                     ]
                   ],
                   "independent_ranges": [
                     [
+                      8,
+                      1
+                    ],
+                    [
+                      9,
+                      1
+                    ],
+                    [
                       10,
                       1
                     ],
                     [
-                      11,
+                      15,
                       1
                     ],
                     [
-                      12,
+                      29,
                       1
                     ],
                     [
-                      17,
-                      1
-                    ],
-                    [
-                      31,
-                      1
-                    ],
-                    [
-                      51,
+                      45,
                       1
                     ]
                   ]

@@ -55,11 +55,11 @@
   ],
   "location": {
     "start_line": 1,
-    "start_column": 7,
+    "start_column": 1,
     "end_line": 29,
-    "end_column": 24,
-    "start": 6,
-    "end": 1625,
+    "end_column": 25,
+    "start": 0,
+    "end": 1626,
     "source": 15568178902979327691
   },
   "extends": [],
@@ -218,7 +218,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "tau": {
       "def_id": 105,
@@ -372,7 +373,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "phi": {
       "def_id": 106,
@@ -555,7 +557,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "w": {
       "def_id": 107,
@@ -738,7 +741,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     }
   },
   "equations": [

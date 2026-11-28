@@ -197,7 +197,7 @@
         "equation_text": "0 = R.T_heatPort - R.T"
       },
       {
-        "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[11]",
         "unknowns": [
           13,
@@ -550,7 +550,7 @@
         "equation_text": "0 = r2t.internalSupportT.s - r2t.fixedT.s0"
       },
       {
-        "equation": "f_x[52] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+        "equation": "f_x[52] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
         "id": "f_x[52]",
         "unknowns": [
           64,
@@ -648,7 +648,7 @@
         "equation_text": "0 = mount.f - load.flange_b.f"
       },
       {
-        "equation": "f_x[63] (f_c = c*(s_rel - s_rel0)",
+        "equation": "f_x[63] (f_c = c*(s_rel - s_rel0))",
         "id": "f_x[63]",
         "unknowns": [
           93
@@ -1131,7 +1131,7 @@
       "unknown": "R.T_heatPort"
     },
     {
-      "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+      "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
       "id": "f_x[11]",
       "unknown": "R.R_actual"
     },
@@ -1326,7 +1326,7 @@
       "unknown": "r2t.internalSupportT.s"
     },
     {
-      "equation": "f_x[52] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+      "equation": "f_x[52] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
       "id": "f_x[52]",
       "unknown": "r2t.flangeT.s"
     },
@@ -1376,7 +1376,7 @@
       "unknown": "mount.f"
     },
     {
-      "equation": "f_x[63] (f_c = c*(s_rel - s_rel0)",
+      "equation": "f_x[63] (f_c = c*(s_rel - s_rel0))",
       "id": "f_x[63]",
       "unknown": "mount.f_c"
     },

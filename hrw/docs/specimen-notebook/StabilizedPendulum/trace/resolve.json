@@ -55,11 +55,11 @@
   ],
   "location": {
     "start_line": 1,
-    "start_column": 7,
+    "start_column": 1,
     "end_line": 21,
-    "end_column": 23,
-    "start": 6,
-    "end": 1219,
+    "end_column": 24,
+    "start": 0,
+    "end": 1220,
     "source": 877892294844749049
   },
   "extends": [],
@@ -218,7 +218,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "m": {
       "def_id": 105,
@@ -372,7 +373,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "g": {
       "def_id": 106,
@@ -526,7 +528,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "alpha": {
       "def_id": 107,
@@ -680,7 +683,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "beta": {
       "def_id": 108,
@@ -834,7 +838,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "x": {
       "def_id": 109,
@@ -1017,7 +1022,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "y": {
       "def_id": 110,
@@ -1200,7 +1206,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "vx": {
       "def_id": 111,
@@ -1383,7 +1390,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "vy": {
       "def_id": 112,
@@ -1566,7 +1574,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "lambda": {
       "def_id": 113,
@@ -1682,7 +1691,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     }
   },
   "equations": [
@@ -2522,15 +2532,15 @@
                             },
                             "span": {
                               "source": 877892294844749049,
-                              "start": 1072,
-                              "end": 1087
+                              "start": 1071,
+                              "end": 1088
                             }
                           }
                         },
                         "span": {
                           "source": 877892294844749049,
                           "start": 1067,
-                          "end": 1087
+                          "end": 1088
                         }
                       }
                     },
@@ -2789,22 +2799,22 @@
                             },
                             "span": {
                               "source": 877892294844749049,
-                              "start": 1096,
-                              "end": 1121
+                              "start": 1095,
+                              "end": 1122
                             }
                           }
                         },
                         "span": {
                           "source": 877892294844749049,
                           "start": 1091,
-                          "end": 1121
+                          "end": 1122
                         }
                       }
                     },
                     "span": {
                       "source": 877892294844749049,
                       "start": 1067,
-                      "end": 1121
+                      "end": 1122
                     }
                   }
                 },
@@ -3024,22 +3034,22 @@
                         },
                         "span": {
                           "source": 877892294844749049,
-                          "start": 1138,
-                          "end": 1153
+                          "start": 1137,
+                          "end": 1154
                         }
                       }
                     },
                     "span": {
                       "source": 877892294844749049,
                       "start": 1125,
-                      "end": 1153
+                      "end": 1154
                     }
                   }
                 },
                 "span": {
                   "source": 877892294844749049,
                   "start": 1067,
-                  "end": 1153
+                  "end": 1154
                 }
               }
             },
@@ -3322,22 +3332,22 @@
                     },
                     "span": {
                       "source": 877892294844749049,
-                      "start": 1169,
-                      "end": 1190
+                      "start": 1168,
+                      "end": 1191
                     }
                   }
                 },
                 "span": {
                   "source": 877892294844749049,
                   "start": 1157,
-                  "end": 1190
+                  "end": 1191
                 }
               }
             },
             "span": {
               "source": 877892294844749049,
               "start": 1067,
-              "end": 1190
+              "end": 1191
             }
           }
         },

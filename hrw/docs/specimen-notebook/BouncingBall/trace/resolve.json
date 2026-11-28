@@ -55,11 +55,11 @@
   ],
   "location": {
     "start_line": 1,
-    "start_column": 7,
+    "start_column": 1,
     "end_line": 14,
-    "end_column": 17,
-    "start": 6,
-    "end": 589,
+    "end_column": 18,
+    "start": 0,
+    "end": 590,
     "source": 6119056528031846564
   },
   "extends": [],
@@ -218,7 +218,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "e": {
       "def_id": 105,
@@ -372,7 +373,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "h": {
       "def_id": 106,
@@ -555,7 +557,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "v": {
       "def_id": 107,
@@ -738,7 +741,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     }
   },
   "equations": [

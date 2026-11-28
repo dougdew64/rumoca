@@ -55,11 +55,11 @@
   ],
   "location": {
     "start_line": 1,
-    "start_column": 7,
+    "start_column": 1,
     "end_line": 9,
-    "end_column": 22,
-    "start": 6,
-    "end": 482,
+    "end_column": 23,
+    "start": 0,
+    "end": 483,
     "source": 880872813973583783
   },
   "extends": [],
@@ -298,7 +298,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "torque": {
       "def_id": 105,
@@ -440,7 +441,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "tau": {
       "def_id": 106,
@@ -660,7 +662,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     }
   },
   "equations": [

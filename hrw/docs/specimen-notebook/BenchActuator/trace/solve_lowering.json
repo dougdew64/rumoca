@@ -1,5 +1,5 @@
 {
-  "schema_version": 89,
+  "schema_version": 93,
   "layout": {
     "bindings": {
       "L.i": {
@@ -1327,6 +1327,8 @@
     "initial_homotopy_parameter_index": null,
     "pre_param_bindings": []
   },
+  "cartesian_pairs": null,
+  "mechanical_step": null,
   "continuous": {
     "implicit_rhs": {
       "nodes": [
@@ -2759,7 +2761,7 @@
               {
                 "source": 17867382465268392184,
                 "start": 724,
-                "end": 767
+                "end": 769
               },
               {
                 "source": 17867382465268392184,
@@ -3210,7 +3212,384 @@
                   }
                 }
               ]
-            }
+            },
+            "program_occurrences": [
+              null,
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 224,
+                    "end": 237
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 241,
+                    "end": 248
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 19,
+                  "span": {
+                    "source": 18390250018824270476,
+                    "start": 407,
+                    "end": 420
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 21,
+                  "span": {
+                    "source": 5054978072937110061,
+                    "start": 257,
+                    "end": 262
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 224,
+                    "end": 237
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 241,
+                    "end": 248
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 19,
+                  "span": {
+                    "source": 18390250018824270476,
+                    "start": 407,
+                    "end": 420
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 14,
+                  "span": {
+                    "source": 16961345721610102190,
+                    "start": 912,
+                    "end": 926
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 9,
+                  "span": {
+                    "source": 17867382465268392184,
+                    "start": 724,
+                    "end": 769
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 9,
+                  "span": {
+                    "source": 17867382465268392184,
+                    "start": 773,
+                    "end": 787
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 9,
+                  "span": {
+                    "source": 17867382465268392184,
+                    "start": 791,
+                    "end": 806
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 224,
+                    "end": 237
+                  }
+                },
+                "instance": 36,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 241,
+                    "end": 248
+                  }
+                },
+                "instance": 36,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 19,
+                  "span": {
+                    "source": 18390250018824270476,
+                    "start": 407,
+                    "end": 420
+                  }
+                },
+                "instance": 36,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 35,
+                  "span": {
+                    "source": 16206293870977540163,
+                    "start": 316,
+                    "end": 333
+                  }
+                },
+                "instance": 71,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 41,
+                  "span": {
+                    "source": 3391961103708391217,
+                    "start": 590,
+                    "end": 606
+                  }
+                },
+                "instance": 78,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 41,
+                  "span": {
+                    "source": 3391961103708391217,
+                    "start": 610,
+                    "end": 626
+                  }
+                },
+                "instance": 78,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1756,
+                    "end": 1769
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1773,
+                    "end": 1786
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1790,
+                    "end": 1797
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1802,
+                    "end": 1840
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1844,
+                    "end": 1856
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1860,
+                    "end": 1867
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1871,
+                    "end": 1881
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1885,
+                    "end": 1905
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1909,
+                    "end": 1925
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 36,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 881,
+                    "end": 899
+                  }
+                },
+                "instance": 86,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 36,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 903,
+                    "end": 921
+                  }
+                },
+                "instance": 86,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 36,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 955,
+                    "end": 988
+                  }
+                },
+                "instance": 86,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 7,
+                  "span": {
+                    "source": 2609301896917617192,
+                    "start": 222,
+                    "end": 229
+                  }
+                },
+                "instance": 101,
+                "view": 0
+              },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
           }
         }
       ]
@@ -5146,7 +5525,7 @@
               {
                 "source": 17867382465268392184,
                 "start": 724,
-                "end": 767
+                "end": 769
               },
               {
                 "source": 17867382465268392184,
@@ -5597,7 +5976,384 @@
                   }
                 }
               ]
-            }
+            },
+            "program_occurrences": [
+              null,
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 224,
+                    "end": 237
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 241,
+                    "end": 248
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 19,
+                  "span": {
+                    "source": 18390250018824270476,
+                    "start": 407,
+                    "end": 420
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 21,
+                  "span": {
+                    "source": 5054978072937110061,
+                    "start": 257,
+                    "end": 262
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 224,
+                    "end": 237
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 241,
+                    "end": 248
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 19,
+                  "span": {
+                    "source": 18390250018824270476,
+                    "start": 407,
+                    "end": 420
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 14,
+                  "span": {
+                    "source": 16961345721610102190,
+                    "start": 912,
+                    "end": 926
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 9,
+                  "span": {
+                    "source": 17867382465268392184,
+                    "start": 724,
+                    "end": 769
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 9,
+                  "span": {
+                    "source": 17867382465268392184,
+                    "start": 773,
+                    "end": 787
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 9,
+                  "span": {
+                    "source": 17867382465268392184,
+                    "start": 791,
+                    "end": 806
+                  }
+                },
+                "instance": 16,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 224,
+                    "end": 237
+                  }
+                },
+                "instance": 36,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 16,
+                  "span": {
+                    "source": 2769899009535713388,
+                    "start": 241,
+                    "end": 248
+                  }
+                },
+                "instance": 36,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 19,
+                  "span": {
+                    "source": 18390250018824270476,
+                    "start": 407,
+                    "end": 420
+                  }
+                },
+                "instance": 36,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 35,
+                  "span": {
+                    "source": 16206293870977540163,
+                    "start": 316,
+                    "end": 333
+                  }
+                },
+                "instance": 71,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 41,
+                  "span": {
+                    "source": 3391961103708391217,
+                    "start": 590,
+                    "end": 606
+                  }
+                },
+                "instance": 78,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 41,
+                  "span": {
+                    "source": 3391961103708391217,
+                    "start": 610,
+                    "end": 626
+                  }
+                },
+                "instance": 78,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1756,
+                    "end": 1769
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1773,
+                    "end": 1786
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1790,
+                    "end": 1797
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1802,
+                    "end": 1840
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1844,
+                    "end": 1856
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1860,
+                    "end": 1867
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1871,
+                    "end": 1881
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1885,
+                    "end": 1905
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 10,
+                  "span": {
+                    "source": 16793327652531069364,
+                    "start": 1909,
+                    "end": 1925
+                  }
+                },
+                "instance": 49,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 36,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 881,
+                    "end": 899
+                  }
+                },
+                "instance": 86,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 36,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 903,
+                    "end": 921
+                  }
+                },
+                "instance": 86,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 36,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 955,
+                    "end": 988
+                  }
+                },
+                "instance": 86,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 7,
+                  "span": {
+                    "source": 2609301896917617192,
+                    "start": 222,
+                    "end": 229
+                  }
+                },
+                "instance": 101,
+                "view": 0
+              },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
           }
         }
       ]
@@ -5738,7 +6494,45 @@
               "Dense": {
                 "count": 3
               }
-            }
+            },
+            "program_occurrences": [
+              {
+                "class_equation": {
+                  "scope": 8,
+                  "span": {
+                    "source": 4436312200615906667,
+                    "start": 196,
+                    "end": 208
+                  }
+                },
+                "instance": 36,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 36,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 925,
+                    "end": 937
+                  }
+                },
+                "instance": 86,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 36,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 941,
+                    "end": 951
+                  }
+                },
+                "instance": 86,
+                "view": 0
+              }
+            ]
           }
         }
       ]
@@ -8253,314 +9047,21 @@
     "post_commit_assignment_targets": [],
     "post_commit_assignment_runtime_rows": [],
     "rhs": {
-      "programs": [
-        [
-          {
-            "FunctionConditional": {
-              "dst_start": 0,
-              "capture_start": 0,
-              "program": {
-                "owner": null,
-                "capture_count": 0,
-                "target_widths": [
-                  1
-                ],
-                "result_count": 1,
-                "arms": [
-                  {
-                    "condition_register_count": 1,
-                    "result_register_count": 9,
-                    "condition": [
-                      {
-                        "LoadP": {
-                          "dst": 0,
-                          "index": 15
-                        }
-                      },
-                      {
-                        "StoreOutput": {
-                          "src": 0
-                        }
-                      }
-                    ],
-                    "result": [
-                      {
-                        "Const": {
-                          "dst": 0,
-                          "value": 1.0
-                        }
-                      },
-                      {
-                        "LoadP": {
-                          "dst": 1,
-                          "index": 5
-                        }
-                      },
-                      {
-                        "LoadY": {
-                          "dst": 2,
-                          "index": 16
-                        }
-                      },
-                      {
-                        "LoadP": {
-                          "dst": 3,
-                          "index": 4
-                        }
-                      },
-                      {
-                        "Binary": {
-                          "dst": 4,
-                          "op": "Sub",
-                          "lhs": 2,
-                          "rhs": 3
-                        }
-                      },
-                      {
-                        "Binary": {
-                          "dst": 5,
-                          "op": "Mul",
-                          "lhs": 1,
-                          "rhs": 4
-                        }
-                      },
-                      {
-                        "Binary": {
-                          "dst": 6,
-                          "op": "Add",
-                          "lhs": 0,
-                          "rhs": 5
-                        }
-                      },
-                      {
-                        "Const": {
-                          "dst": 7,
-                          "value": 2.220446049250313e-16
-                        }
-                      },
-                      {
-                        "Compare": {
-                          "dst": 8,
-                          "op": "Ge",
-                          "lhs": 6,
-                          "rhs": 7
-                        }
-                      },
-                      {
-                        "StoreOutput": {
-                          "src": 8
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "fallback_register_count": 1,
-                "fallback": [
-                  {
-                    "LoadP": {
-                      "dst": 0,
-                      "index": 14
-                    }
-                  },
-                  {
-                    "StoreOutput": {
-                      "src": 0
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          {
-            "StoreOutput": {
-              "src": 0
-            }
-          }
-        ],
-        [
-          {
-            "FunctionConditional": {
-              "dst_start": 0,
-              "capture_start": 0,
-              "program": {
-                "owner": null,
-                "capture_count": 0,
-                "target_widths": [
-                  1
-                ],
-                "result_count": 1,
-                "arms": [
-                  {
-                    "condition_register_count": 1,
-                    "result_register_count": 9,
-                    "condition": [
-                      {
-                        "LoadP": {
-                          "dst": 0,
-                          "index": 15
-                        }
-                      },
-                      {
-                        "StoreOutput": {
-                          "src": 0
-                        }
-                      }
-                    ],
-                    "result": [
-                      {
-                        "Const": {
-                          "dst": 0,
-                          "value": 1.0
-                        }
-                      },
-                      {
-                        "LoadP": {
-                          "dst": 1,
-                          "index": 5
-                        }
-                      },
-                      {
-                        "LoadY": {
-                          "dst": 2,
-                          "index": 16
-                        }
-                      },
-                      {
-                        "LoadP": {
-                          "dst": 3,
-                          "index": 4
-                        }
-                      },
-                      {
-                        "Binary": {
-                          "dst": 4,
-                          "op": "Sub",
-                          "lhs": 2,
-                          "rhs": 3
-                        }
-                      },
-                      {
-                        "Binary": {
-                          "dst": 5,
-                          "op": "Mul",
-                          "lhs": 1,
-                          "rhs": 4
-                        }
-                      },
-                      {
-                        "Binary": {
-                          "dst": 6,
-                          "op": "Add",
-                          "lhs": 0,
-                          "rhs": 5
-                        }
-                      },
-                      {
-                        "Const": {
-                          "dst": 7,
-                          "value": 2.220446049250313e-16
-                        }
-                      },
-                      {
-                        "Compare": {
-                          "dst": 8,
-                          "op": "Ge",
-                          "lhs": 6,
-                          "rhs": 7
-                        }
-                      },
-                      {
-                        "StoreOutput": {
-                          "src": 8
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "fallback_register_count": 1,
-                "fallback": [
-                  {
-                    "LoadP": {
-                      "dst": 0,
-                      "index": 14
-                    }
-                  },
-                  {
-                    "StoreOutput": {
-                      "src": 0
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          {
-            "Unary": {
-              "dst": 1,
-              "op": "Not",
-              "arg": 0
-            }
-          },
-          {
-            "StoreOutput": {
-              "src": 1
-            }
-          }
-        ]
-      ],
-      "program_spans": [
-        {
-          "source": 17867382465268392184,
-          "start": 619,
-          "end": 676
-        },
-        {
-          "source": 17867382465268392184,
-          "start": 611,
-          "end": 720
-        }
-      ],
+      "programs": [],
+      "program_spans": [],
       "output_placements": {
         "Dense": {
-          "count": 2
+          "count": 0
         }
       }
     },
-    "update_targets": [
-      {
-        "P": {
-          "index": 11,
-          "byte_offset": 88
-        }
-      },
-      {
-        "P": {
-          "index": 12,
-          "byte_offset": 96
-        }
-      }
-    ],
-    "row_roles": [
-      "ConditionMemory",
-      "ConditionMemory"
-    ],
-    "pre_modes": [
-      "FollowCurrent",
-      "FollowCurrent"
-    ],
-    "observation_refresh": [
-      false,
-      false
-    ],
+    "update_targets": [],
+    "row_roles": [],
+    "pre_modes": [],
+    "observation_refresh": [],
     "observation_refresh_reads_y": false,
-    "integrator_history_effects": [
-      "preserve",
-      "preserve"
-    ],
-    "clock_owners": [
-      null,
-      null
-    ],
+    "integrator_history_effects": [],
+    "clock_owners": [],
     "guarded_assignments": [],
     "event_transactions": [],
     "structured_rhs": {
@@ -8656,7 +9157,7 @@
       "program_spans": [
         {
           "source": 17867382465268392184,
-          "start": 619,
+          "start": 618,
           "end": 676
         }
       ],

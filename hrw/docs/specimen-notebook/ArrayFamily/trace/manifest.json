@@ -2,8 +2,8 @@
   "model": "ArrayFamily",
   "specimen": "specimens/ArrayFamily.mo",
   "specimen_fnv1a": "0b51cc23232cc784",
-  "rumoca_rev": "0ad078cef",
-  "rumoca_version": "0.10.4",
+  "rumoca_rev": "0eab8f5cd",
+  "rumoca_version": "0.11.0",
   "stages": {
     "parse": {
       "has_ir": true,

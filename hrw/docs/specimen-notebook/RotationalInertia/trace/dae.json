@@ -1,5 +1,5 @@
 {
-  "schema_version": 52,
+  "schema_version": 54,
   "source_map": {
     "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node carries every registered file's full text; this one carries the id-to-file index for the files this DAE's spans name, and no text. Names are workspace-relative, so source_id_for_name(file) does NOT equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) — resolve a span by its source_id, never by re-deriving one from the name.",
     "registered_files": 2556,
@@ -2086,6 +2086,18 @@
               "start": 881,
               "end": 899
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 20,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 881,
+                "end": 899
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2099,6 +2111,18 @@
               "start": 903,
               "end": 921
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 20,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 903,
+                "end": 921
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2112,6 +2136,18 @@
               "start": 925,
               "end": 937
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 20,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 925,
+                "end": 937
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2125,6 +2161,18 @@
               "start": 941,
               "end": 951
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 20,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 941,
+                "end": 951
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2138,6 +2186,18 @@
               "start": 955,
               "end": 988
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 20,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 955,
+                "end": 988
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2151,6 +2211,18 @@
               "start": 910,
               "end": 925
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 25,
+              "span": {
+                "source": 13844103839494831887,
+                "start": 910,
+                "end": 925
+              }
+            },
+            "instance": 18,
+            "view": 0
           }
         }
       },
@@ -2164,6 +2236,18 @@
               "start": 406,
               "end": 423
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 29,
+              "span": {
+                "source": 14877195194095120915,
+                "start": 406,
+                "end": 423
+              }
+            },
+            "instance": 18,
+            "view": 0
           }
         }
       },
@@ -2177,6 +2261,18 @@
               "start": 6893,
               "end": 6898
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 11,
+              "span": {
+                "source": 17884960713661238361,
+                "start": 6893,
+                "end": 6898
+              }
+            },
+            "instance": 27,
+            "view": 0
           }
         }
       },

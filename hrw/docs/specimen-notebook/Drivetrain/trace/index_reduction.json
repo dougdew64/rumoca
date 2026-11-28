@@ -222,7 +222,7 @@
           "equation_text": "0 = R.T_heatPort - R.T"
         },
         {
-          "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+          "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
           "id": "f_x[11]",
           "unknowns": [
             13,
@@ -575,7 +575,7 @@
           "equation_text": "0 = r2t.internalSupportT.s - r2t.fixedT.s0"
         },
         {
-          "equation": "f_x[52] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+          "equation": "f_x[52] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
           "id": "f_x[52]",
           "unknowns": [
             64,
@@ -673,7 +673,7 @@
           "equation_text": "0 = mount.f - load.flange_b.f"
         },
         {
-          "equation": "f_x[63] (f_c = c*(s_rel - s_rel0)",
+          "equation": "f_x[63] (f_c = c*(s_rel - s_rel0))",
           "id": "f_x[63]",
           "unknowns": [
             93
@@ -1156,7 +1156,7 @@
         "unknown": "R.T_heatPort"
       },
       {
-        "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[11]",
         "unknown": "R.R_actual"
       },
@@ -1351,7 +1351,7 @@
         "unknown": "r2t.internalSupportT.s"
       },
       {
-        "equation": "f_x[52] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+        "equation": "f_x[52] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
         "id": "f_x[52]",
         "unknown": "r2t.flangeT.s"
       },
@@ -1401,7 +1401,7 @@
         "unknown": "mount.f"
       },
       {
-        "equation": "f_x[63] (f_c = c*(s_rel - s_rel0)",
+        "equation": "f_x[63] (f_c = c*(s_rel - s_rel0))",
         "id": "f_x[63]",
         "unknown": "mount.f_c"
       },
@@ -1726,7 +1726,7 @@
         "unknown": "R.T_heatPort"
       },
       {
-        "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[11]",
         "unknown": "R.R_actual"
       },
@@ -1931,7 +1931,7 @@
         "unknown": "r2t.internalSupportT.s"
       },
       {
-        "equation": "f_x[52] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+        "equation": "f_x[52] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
         "id": "f_x[52]",
         "unknown": "shaft.phi"
       },
@@ -1986,7 +1986,7 @@
         "unknown": "mount.f"
       },
       {
-        "equation": "f_x[63] (f_c = c*(s_rel - s_rel0)",
+        "equation": "f_x[63] (f_c = c*(s_rel - s_rel0))",
         "id": "f_x[63]",
         "unknown": "mount.f_c"
       },
@@ -2201,12 +2201,12 @@
         "unknown": "$formal_derivative.2.shaft.phi"
       },
       {
-        "equation": "f_x[106] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+        "equation": "f_x[106] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
         "id": "f_x[106]",
         "unknown": "shaft.w"
       },
       {
-        "equation": "f_x[107] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+        "equation": "f_x[107] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
         "id": "f_x[107]",
         "unknown": "load.a"
       },
@@ -2313,7 +2313,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[63] (f_c = c*(s_rel - s_rel0)",
+        "equation": "f_x[63] (f_c = c*(s_rel - s_rel0))",
         "id": "f_x[63]",
         "unknown": "mount.f_c"
       },
@@ -2346,7 +2346,7 @@
           "f_x[40] (0 = ratio*flange_a.tau + flange_b.tau)",
           "f_x[35] (J*a = flange_a.tau + flange_b.tau)",
           "f_x[104] (phi_a = ratio*phi_b)",
-          "f_x[107] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+          "f_x[107] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
           "f_x[58] (m*a = flange_a.f + flange_b.f)",
           "f_x[53] (0 = ratio*flangeR.tau + flangeT.f)"
         ],
@@ -2385,7 +2385,7 @@
               "variable": "rotor.a"
             },
             {
-              "equation": "f_x[107] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+              "equation": "f_x[107] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
               "id": "f_x[107]",
               "variable": "load.a"
             },
@@ -2478,7 +2478,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[11]",
         "unknown": "R.R_actual"
       },
@@ -2520,7 +2520,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[106] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+        "equation": "f_x[106] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
         "id": "f_x[106]",
         "unknown": "shaft.w"
       },
@@ -2639,7 +2639,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[52] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+        "equation": "f_x[52] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
         "id": "f_x[52]",
         "unknown": "shaft.phi"
       },
@@ -3389,7 +3389,7 @@
           "equation_text": "0 = R.T_heatPort - R.T"
         },
         {
-          "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+          "equation": "f_x[11] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
           "id": "f_x[11]",
           "unknowns": [
             13,
@@ -3759,7 +3759,7 @@
           "equation_text": "0 = r2t.internalSupportT.s - r2t.fixedT.s0"
         },
         {
-          "equation": "f_x[52] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+          "equation": "f_x[52] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
           "id": "f_x[52]",
           "unknowns": [
             59,
@@ -3862,7 +3862,7 @@
           "equation_text": "0 = mount.f - load.flange_b.f"
         },
         {
-          "equation": "f_x[63] (f_c = c*(s_rel - s_rel0)",
+          "equation": "f_x[63] (f_c = c*(s_rel - s_rel0))",
           "id": "f_x[63]",
           "unknowns": [
             85,
@@ -4248,7 +4248,7 @@
           "equation_text": "0 = $formal_derivative.2.shaft.phi - shaft.a"
         },
         {
-          "equation": "f_x[106] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+          "equation": "f_x[106] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
           "id": "f_x[106]",
           "unknowns": [
             60,
@@ -4257,7 +4257,7 @@
           "equation_text": "0 = +(shaft.w - r2t.ratio*-mount.v_rel)"
         },
         {
-          "equation": "f_x[107] (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
+          "equation": "f_x[107] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
           "id": "f_x[107]",
           "unknowns": [
             61,
@@ -5008,11 +5008,11 @@
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGearR2T.mo",
           "line": 9,
-          "column": 4,
-          "excerpt": "flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s",
+          "column": 3,
+          "excerpt": "(flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
           "line_text": "  (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s);",
-          "byte_start": 323,
-          "byte_end": 402
+          "byte_start": 322,
+          "byte_end": 403
         },
         "anchored_state_ordinals": [
           73,
@@ -5035,11 +5035,11 @@
         "declared_at": {
           "file": "hrw/vendor/msl/Modelica 4.1.0/Mechanics/Rotational/Components/IdealGearR2T.mo",
           "line": 9,
-          "column": 4,
-          "excerpt": "flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s",
+          "column": 3,
+          "excerpt": "(flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s)",
           "line_text": "  (flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s);",
-          "byte_start": 323,
-          "byte_end": 402
+          "byte_start": 322,
+          "byte_end": 403
         },
         "anchored_state_ordinals": [
           73,

@@ -2,8 +2,8 @@
   "model": "GearWithBrake",
   "specimen": "specimens/GearWithBrake.mo",
   "specimen_fnv1a": "c654f7f73d16270d",
-  "rumoca_rev": "0ad078cef",
-  "rumoca_version": "0.10.4",
+  "rumoca_rev": "0eab8f5cd",
+  "rumoca_version": "0.11.0",
   "stages": {
     "parse": {
       "has_ir": true,

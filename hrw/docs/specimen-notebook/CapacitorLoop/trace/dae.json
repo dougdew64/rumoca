@@ -1,5 +1,5 @@
 {
-  "schema_version": 52,
+  "schema_version": 54,
   "source_map": {
     "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node carries every registered file's full text; this one carries the id-to-file index for the files this DAE's spans name, and no text. Names are workspace-relative, so source_id_for_name(file) does NOT equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) — resolve a span by its source_id, never by re-deriving one from the name.",
     "registered_files": 2556,
@@ -2355,6 +2355,18 @@
               "start": 224,
               "end": 237
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 12,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 224,
+                "end": 237
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2368,6 +2380,18 @@
               "start": 241,
               "end": 248
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 12,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 241,
+                "end": 248
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2381,6 +2405,18 @@
               "start": 407,
               "end": 420
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 15,
+              "span": {
+                "source": 18390250018824270476,
+                "start": 407,
+                "end": 420
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2394,6 +2430,18 @@
               "start": 257,
               "end": 262
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 17,
+              "span": {
+                "source": 5054978072937110061,
+                "start": 257,
+                "end": 262
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -2407,6 +2455,18 @@
               "start": 224,
               "end": 237
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 12,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 224,
+                "end": 237
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -2420,6 +2480,18 @@
               "start": 241,
               "end": 248
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 12,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 241,
+                "end": 248
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -2433,6 +2505,18 @@
               "start": 407,
               "end": 420
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 15,
+              "span": {
+                "source": 18390250018824270476,
+                "start": 407,
+                "end": 420
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -2446,6 +2530,18 @@
               "start": 200,
               "end": 212
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 6,
+              "span": {
+                "source": 16108588099749691911,
+                "start": 200,
+                "end": 212
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -2459,6 +2555,18 @@
               "start": 222,
               "end": 229
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 7,
+              "span": {
+                "source": 2609301896917617192,
+                "start": 222,
+                "end": 229
+              }
+            },
+            "instance": 29,
+            "view": 0
           }
         }
       },

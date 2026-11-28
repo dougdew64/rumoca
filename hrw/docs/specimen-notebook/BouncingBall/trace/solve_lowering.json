@@ -1,5 +1,5 @@
 {
-  "schema_version": 89,
+  "schema_version": 93,
   "layout": {
     "bindings": {
       "h": {
@@ -127,6 +127,16 @@
       }
     ]
   },
+  "cartesian_pairs": {
+    "state_count": 2,
+    "pairs": [
+      [
+        0,
+        1
+      ]
+    ]
+  },
+  "mechanical_step": null,
   "continuous": {
     "implicit_rhs": {
       "nodes": []

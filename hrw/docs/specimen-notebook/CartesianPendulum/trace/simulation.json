@@ -12,8 +12,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 1.0,
-      "final": 0.793583235296978,
-      "min": -0.9999999999977858,
+      "final": 0.7935727617380351,
+      "min": -0.999999999997477,
       "max": 1.0
     },
     {
@@ -21,8 +21,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -0.6084617068074011,
-      "min": -0.9999999810911333,
+      "final": -0.6084753666562581,
+      "min": -0.9999999828808156,
       "max": 0.0
     },
     {
@@ -30,99 +30,99 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 2.1023327234595715,
-      "min": -4.4294634917741496,
-      "max": 4.429479601467653
+      "final": 2.1023908529603537,
+      "min": -4.429459288776714,
+      "max": 4.429457428286027
     },
     {
       "name": "vy",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.741957276338266,
-      "min": -2.7480660612932293,
-      "max": 2.7480213187635156
+      "final": 2.74193534670903,
+      "min": -2.748055120882914,
+      "max": 2.7480253997901047
     },
     {
       "name": "lambda",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 17.907141929256376,
+      "final": 17.907400091041627,
       "min": 0.0,
-      "max": 29.430294134453582
+      "max": 29.43011009475168
     },
     {
       "name": "$formal_derivative.1.x",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 2.1023327234595715,
-      "min": -4.4294634917741496,
-      "max": 4.429479601467653
+      "final": 2.1023908529603537,
+      "min": -4.429459288776714,
+      "max": 4.429457428286027
     },
     {
       "name": "$formal_derivative.2.x",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -14.210807627141444,
-      "min": -14.715157435149747,
-      "max": 14.715228951819823
+      "final": -14.210824945795844,
+      "min": -14.715109375547593,
+      "max": 14.715110710029998
     },
     {
       "name": "$formal_derivative.1.y",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.741957276338266,
-      "min": -2.7480660612932293,
-      "max": 2.7480213187635156
+      "final": 2.74193534670903,
+      "min": -2.748055120882914,
+      "max": 2.7480253997901047
     },
     {
       "name": "$formal_derivative.2.y",
       "is_state": false,
       "state_coordinate": null,
       "initial": -9.81,
-      "final": 1.0858101423177118,
+      "final": 1.0862118362568631,
       "min": -9.81,
-      "max": 19.620289539863943
+      "max": 19.6201095909322
     },
     {
       "name": "$formal_derivative.1.vx",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -14.210807627141444,
-      "min": -14.715157435149747,
-      "max": 14.715228951819823
+      "final": -14.210824945795844,
+      "min": -14.715109375547593,
+      "max": 14.715110710029998
     },
     {
       "name": "$formal_derivative.1.vy",
       "is_state": false,
       "state_coordinate": null,
       "initial": -9.81,
-      "final": 1.0858101423177118,
+      "final": 1.0862118362568631,
       "min": -9.81,
-      "max": 19.620289539863943
+      "max": 19.6201095909322
     },
     {
       "name": "$state_coordinates[1]",
       "is_state": true,
       "state_coordinate": "y",
       "initial": 0.0,
-      "final": 0.793583235296978,
-      "min": -0.9093350722779957,
-      "max": 0.793583235296978
+      "final": 0.7935727617380351,
+      "min": -0.9187916688215915,
+      "max": 0.7935727617380351
     },
     {
       "name": "$state_coordinates[2]",
       "is_state": true,
       "state_coordinate": "der(y)",
       "initial": 0.0,
-      "final": 2.1023327234595715,
-      "min": -4.4294634917741496,
-      "max": 4.429479601467653
+      "final": 2.1023908529603537,
+      "min": -4.429459288776714,
+      "max": 4.429457428286027
     }
   ]
 }

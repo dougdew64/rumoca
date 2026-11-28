@@ -284,7 +284,7 @@
           "equation_text": "0 = spring.flange_a.tau + spring.tau"
         },
         {
-          "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+          "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0))",
           "id": "f_x[25]",
           "unknowns": [
             36
@@ -724,7 +724,7 @@
         "unknown": "spring.flange_a.tau"
       },
       {
-        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0))",
         "id": "f_x[25]",
         "unknown": "spring.tau_c"
       },
@@ -1023,7 +1023,7 @@
         "unknown": "spring.flange_a.tau"
       },
       {
-        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0))",
         "id": "f_x[25]",
         "unknown": "spring.tau_c"
       },
@@ -1309,7 +1309,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+        "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0))",
         "id": "f_x[25]",
         "unknown": "spring.tau_c"
       },
@@ -1929,7 +1929,7 @@
           "equation_text": "0 = spring.flange_a.tau + spring.tau"
         },
         {
-          "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0)",
+          "equation": "f_x[25] (tau_c = c*(phi_rel - phi_rel0))",
           "id": "f_x[25]",
           "unknowns": [
             27,

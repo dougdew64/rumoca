@@ -1,5 +1,5 @@
 {
-  "schema_version": 89,
+  "schema_version": 93,
   "layout": {
     "bindings": {
       "x": {
@@ -93,6 +93,16 @@
     "initial_homotopy_parameter_index": null,
     "pre_param_bindings": []
   },
+  "cartesian_pairs": {
+    "state_count": 2,
+    "pairs": [
+      [
+        0,
+        1
+      ]
+    ]
+  },
+  "mechanical_step": null,
   "continuous": {
     "implicit_rhs": {
       "nodes": []
@@ -137,7 +147,7 @@
                 },
                 {
                   "Binary": {
-                    "dst": 3,
+                    "dst": 2,
                     "op": "Mul",
                     "lhs": 0,
                     "rhs": 0
@@ -145,28 +155,28 @@
                 },
                 {
                   "LoadY": {
-                    "dst": 4,
+                    "dst": 3,
                     "index": 0
                   }
                 },
                 {
                   "Binary": {
-                    "dst": 5,
+                    "dst": 4,
                     "op": "Mul",
-                    "lhs": 3,
-                    "rhs": 4
+                    "lhs": 2,
+                    "rhs": 3
                   }
                 },
                 {
                   "Unary": {
-                    "dst": 6,
+                    "dst": 5,
                     "op": "Neg",
-                    "arg": 5
+                    "arg": 4
                   }
                 },
                 {
                   "StoreOutput": {
-                    "src": 6
+                    "src": 5
                   }
                 }
               ]

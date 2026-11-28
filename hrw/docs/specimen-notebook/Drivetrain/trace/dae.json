@@ -1,5 +1,5 @@
 {
-  "schema_version": 52,
+  "schema_version": 54,
   "source_map": {
     "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node carries every registered file's full text; this one carries the id-to-file index for the files this DAE's spans name, and no text. Names are workspace-relative, so source_id_for_name(file) does NOT equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) — resolve a span by its source_id, never by re-deriving one from the name.",
     "registered_files": 2556,
@@ -14634,7 +14634,7 @@
           "span": {
             "source": 17867382465268392184,
             "start": 742,
-            "end": 767
+            "end": 768
           }
         },
         {
@@ -14642,7 +14642,7 @@
           "span": {
             "source": 17867382465268392184,
             "start": 738,
-            "end": 767
+            "end": 768
           }
         },
         {
@@ -14650,7 +14650,7 @@
           "span": {
             "source": 17867382465268392184,
             "start": 735,
-            "end": 767
+            "end": 769
           }
         },
         {
@@ -16002,15 +16002,15 @@
           "span": {
             "source": 16062585138145076057,
             "start": 361,
-            "end": 402
+            "end": 403
           }
         },
         {
           "origin": "source",
           "span": {
             "source": 16062585138145076057,
-            "start": 323,
-            "end": 357
+            "start": 322,
+            "end": 358
           }
         },
         {
@@ -16450,7 +16450,7 @@
           "span": {
             "source": 2394632367292244608,
             "start": 629,
-            "end": 646
+            "end": 647
           }
         },
         {
@@ -17420,7 +17420,7 @@
           "span": {
             "source": 17867382465268392184,
             "start": 623,
-            "end": 648
+            "end": 649
           }
         },
         {
@@ -17428,7 +17428,7 @@
           "span": {
             "source": 17867382465268392184,
             "start": 619,
-            "end": 648
+            "end": 649
           }
         },
         {
@@ -17443,7 +17443,7 @@
           "origin": "source",
           "span": {
             "source": 17867382465268392184,
-            "start": 619,
+            "start": 618,
             "end": 676
           }
         },
@@ -17515,6 +17515,18 @@
               "start": 224,
               "end": 237
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 16,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 224,
+                "end": 237
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -17528,6 +17540,18 @@
               "start": 241,
               "end": 248
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 16,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 241,
+                "end": 248
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -17541,6 +17565,18 @@
               "start": 407,
               "end": 420
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 19,
+              "span": {
+                "source": 18390250018824270476,
+                "start": 407,
+                "end": 420
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -17554,6 +17590,18 @@
               "start": 257,
               "end": 262
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 21,
+              "span": {
+                "source": 5054978072937110061,
+                "start": 257,
+                "end": 262
+              }
+            },
+            "instance": 3,
+            "view": 0
           }
         }
       },
@@ -17567,6 +17615,18 @@
               "start": 224,
               "end": 237
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 16,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 224,
+                "end": 237
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -17580,6 +17640,18 @@
               "start": 241,
               "end": 248
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 16,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 241,
+                "end": 248
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -17593,6 +17665,18 @@
               "start": 407,
               "end": 420
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 19,
+              "span": {
+                "source": 18390250018824270476,
+                "start": 407,
+                "end": 420
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -17606,6 +17690,18 @@
               "start": 912,
               "end": 926
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 14,
+              "span": {
+                "source": 16961345721610102190,
+                "start": 912,
+                "end": 926
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -17617,8 +17713,20 @@
             "span": {
               "source": 17867382465268392184,
               "start": 724,
-              "end": 767
+              "end": 769
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 9,
+              "span": {
+                "source": 17867382465268392184,
+                "start": 724,
+                "end": 769
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -17632,6 +17740,18 @@
               "start": 773,
               "end": 787
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 9,
+              "span": {
+                "source": 17867382465268392184,
+                "start": 773,
+                "end": 787
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -17645,6 +17765,18 @@
               "start": 791,
               "end": 806
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 9,
+              "span": {
+                "source": 17867382465268392184,
+                "start": 791,
+                "end": 806
+              }
+            },
+            "instance": 16,
+            "view": 0
           }
         }
       },
@@ -17658,6 +17790,18 @@
               "start": 224,
               "end": 237
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 16,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 224,
+                "end": 237
+              }
+            },
+            "instance": 36,
+            "view": 0
           }
         }
       },
@@ -17671,6 +17815,18 @@
               "start": 241,
               "end": 248
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 16,
+              "span": {
+                "source": 2769899009535713388,
+                "start": 241,
+                "end": 248
+              }
+            },
+            "instance": 36,
+            "view": 0
           }
         }
       },
@@ -17684,6 +17840,18 @@
               "start": 407,
               "end": 420
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 19,
+              "span": {
+                "source": 18390250018824270476,
+                "start": 407,
+                "end": 420
+              }
+            },
+            "instance": 36,
+            "view": 0
           }
         }
       },
@@ -17697,6 +17865,18 @@
               "start": 196,
               "end": 208
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 8,
+              "span": {
+                "source": 4436312200615906667,
+                "start": 196,
+                "end": 208
+              }
+            },
+            "instance": 36,
+            "view": 0
           }
         }
       },
@@ -17710,6 +17890,18 @@
               "start": 316,
               "end": 333
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 35,
+              "span": {
+                "source": 16206293870977540163,
+                "start": 316,
+                "end": 333
+              }
+            },
+            "instance": 71,
+            "view": 0
           }
         }
       },
@@ -17723,6 +17915,18 @@
               "start": 590,
               "end": 606
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 45,
+              "span": {
+                "source": 3391961103708391217,
+                "start": 590,
+                "end": 606
+              }
+            },
+            "instance": 78,
+            "view": 0
           }
         }
       },
@@ -17736,6 +17940,18 @@
               "start": 610,
               "end": 626
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 45,
+              "span": {
+                "source": 3391961103708391217,
+                "start": 610,
+                "end": 626
+              }
+            },
+            "instance": 78,
+            "view": 0
           }
         }
       },
@@ -17749,6 +17965,18 @@
               "start": 1756,
               "end": 1769
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1756,
+                "end": 1769
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17762,6 +17990,18 @@
               "start": 1773,
               "end": 1786
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1773,
+                "end": 1786
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17775,6 +18015,18 @@
               "start": 1790,
               "end": 1797
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1790,
+                "end": 1797
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17788,6 +18040,18 @@
               "start": 1802,
               "end": 1840
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1802,
+                "end": 1840
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17801,6 +18065,18 @@
               "start": 1844,
               "end": 1856
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1844,
+                "end": 1856
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17814,6 +18090,18 @@
               "start": 1860,
               "end": 1867
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1860,
+                "end": 1867
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17827,6 +18115,18 @@
               "start": 1871,
               "end": 1881
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1871,
+                "end": 1881
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17840,6 +18140,18 @@
               "start": 1885,
               "end": 1905
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1885,
+                "end": 1905
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17853,6 +18165,18 @@
               "start": 1909,
               "end": 1925
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 10,
+              "span": {
+                "source": 16793327652531069364,
+                "start": 1909,
+                "end": 1925
+              }
+            },
+            "instance": 49,
+            "view": 0
           }
         }
       },
@@ -17866,6 +18190,18 @@
               "start": 222,
               "end": 229
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 7,
+              "span": {
+                "source": 2609301896917617192,
+                "start": 222,
+                "end": 229
+              }
+            },
+            "instance": 86,
+            "view": 0
           }
         }
       },
@@ -17879,6 +18215,18 @@
               "start": 881,
               "end": 899
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 881,
+                "end": 899
+              }
+            },
+            "instance": 92,
+            "view": 0
           }
         }
       },
@@ -17892,6 +18240,18 @@
               "start": 903,
               "end": 921
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 903,
+                "end": 921
+              }
+            },
+            "instance": 92,
+            "view": 0
           }
         }
       },
@@ -17905,6 +18265,18 @@
               "start": 925,
               "end": 937
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 925,
+                "end": 937
+              }
+            },
+            "instance": 92,
+            "view": 0
           }
         }
       },
@@ -17918,6 +18290,18 @@
               "start": 941,
               "end": 951
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 941,
+                "end": 951
+              }
+            },
+            "instance": 92,
+            "view": 0
           }
         }
       },
@@ -17931,6 +18315,18 @@
               "start": 955,
               "end": 988
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 955,
+                "end": 988
+              }
+            },
+            "instance": 92,
+            "view": 0
           }
         }
       },
@@ -17944,6 +18340,18 @@
               "start": 1054,
               "end": 1069
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 47,
+              "span": {
+                "source": 9204583512431594438,
+                "start": 1054,
+                "end": 1069
+              }
+            },
+            "instance": 107,
+            "view": 0
           }
         }
       },
@@ -17957,6 +18365,18 @@
               "start": 476,
               "end": 510
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 36,
+              "span": {
+                "source": 5181458756478690987,
+                "start": 476,
+                "end": 510
+              }
+            },
+            "instance": 107,
+            "view": 0
           }
         }
       },
@@ -17970,6 +18390,18 @@
               "start": 514,
               "end": 548
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 36,
+              "span": {
+                "source": 5181458756478690987,
+                "start": 514,
+                "end": 548
+              }
+            },
+            "instance": 107,
+            "view": 0
           }
         }
       },
@@ -17983,6 +18415,18 @@
               "start": 552,
               "end": 571
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 36,
+              "span": {
+                "source": 5181458756478690987,
+                "start": 552,
+                "end": 571
+              }
+            },
+            "instance": 107,
+            "view": 0
           }
         }
       },
@@ -17996,6 +18440,18 @@
               "start": 575,
               "end": 612
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 36,
+              "span": {
+                "source": 5181458756478690987,
+                "start": 575,
+                "end": 612
+              }
+            },
+            "instance": 107,
+            "view": 0
           }
         }
       },
@@ -18009,6 +18465,18 @@
               "start": 881,
               "end": 899
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 881,
+                "end": 899
+              }
+            },
+            "instance": 122,
+            "view": 0
           }
         }
       },
@@ -18022,6 +18490,18 @@
               "start": 903,
               "end": 921
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 903,
+                "end": 921
+              }
+            },
+            "instance": 122,
+            "view": 0
           }
         }
       },
@@ -18035,6 +18515,18 @@
               "start": 925,
               "end": 937
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 925,
+                "end": 937
+              }
+            },
+            "instance": 122,
+            "view": 0
           }
         }
       },
@@ -18048,6 +18540,18 @@
               "start": 941,
               "end": 951
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 941,
+                "end": 951
+              }
+            },
+            "instance": 122,
+            "view": 0
           }
         }
       },
@@ -18061,6 +18565,18 @@
               "start": 955,
               "end": 988
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 38,
+              "span": {
+                "source": 10383162805277989159,
+                "start": 955,
+                "end": 988
+              }
+            },
+            "instance": 122,
+            "view": 0
           }
         }
       },
@@ -18074,6 +18590,18 @@
               "start": 590,
               "end": 606
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 45,
+              "span": {
+                "source": 3391961103708391217,
+                "start": 590,
+                "end": 606
+              }
+            },
+            "instance": 149,
+            "view": 0
           }
         }
       },
@@ -18087,6 +18615,18 @@
               "start": 610,
               "end": 626
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 45,
+              "span": {
+                "source": 3391961103708391217,
+                "start": 610,
+                "end": 626
+              }
+            },
+            "instance": 149,
+            "view": 0
           }
         }
       },
@@ -18100,6 +18640,18 @@
               "start": 588,
               "end": 600
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 59,
+              "span": {
+                "source": 7387002580949812372,
+                "start": 588,
+                "end": 600
+              }
+            },
+            "instance": 157,
+            "view": 0
           }
         }
       },
@@ -18113,6 +18665,18 @@
               "start": 604,
               "end": 616
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 59,
+              "span": {
+                "source": 7387002580949812372,
+                "start": 604,
+                "end": 616
+              }
+            },
+            "instance": 157,
+            "view": 0
           }
         }
       },
@@ -18126,6 +18690,18 @@
               "start": 316,
               "end": 333
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 35,
+              "span": {
+                "source": 16206293870977540163,
+                "start": 316,
+                "end": 333
+              }
+            },
+            "instance": 165,
+            "view": 0
           }
         }
       },
@@ -18139,6 +18715,18 @@
               "start": 284,
               "end": 297
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 52,
+              "span": {
+                "source": 12075599700607277066,
+                "start": 284,
+                "end": 297
+              }
+            },
+            "instance": 172,
+            "view": 0
           }
         }
       },
@@ -18149,9 +18737,21 @@
             "origin": "source",
             "span": {
               "source": 16062585138145076057,
-              "start": 323,
-              "end": 402
+              "start": 322,
+              "end": 403
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 37,
+              "span": {
+                "source": 16062585138145076057,
+                "start": 322,
+                "end": 403
+              }
+            },
+            "instance": 137,
+            "view": 0
           }
         }
       },
@@ -18165,6 +18765,18 @@
               "start": 407,
               "end": 440
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 37,
+              "span": {
+                "source": 16062585138145076057,
+                "start": 407,
+                "end": 440
+              }
+            },
+            "instance": 137,
+            "view": 0
           }
         }
       },
@@ -18178,6 +18790,18 @@
               "start": 425,
               "end": 445
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 61,
+              "span": {
+                "source": 18105855596140353728,
+                "start": 425,
+                "end": 445
+              }
+            },
+            "instance": 180,
+            "view": 0
           }
         }
       },
@@ -18191,6 +18815,18 @@
               "start": 449,
               "end": 469
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 61,
+              "span": {
+                "source": 18105855596140353728,
+                "start": 449,
+                "end": 469
+              }
+            },
+            "instance": 180,
+            "view": 0
           }
         }
       },
@@ -18204,6 +18840,18 @@
               "start": 558,
               "end": 568
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 53,
+              "span": {
+                "source": 4305807040487721276,
+                "start": 558,
+                "end": 568
+              }
+            },
+            "instance": 180,
+            "view": 0
           }
         }
       },
@@ -18217,6 +18865,18 @@
               "start": 572,
               "end": 582
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 53,
+              "span": {
+                "source": 4305807040487721276,
+                "start": 572,
+                "end": 582
+              }
+            },
+            "instance": 180,
+            "view": 0
           }
         }
       },
@@ -18230,6 +18890,18 @@
               "start": 586,
               "end": 615
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 53,
+              "span": {
+                "source": 4305807040487721276,
+                "start": 586,
+                "end": 615
+              }
+            },
+            "instance": 180,
+            "view": 0
           }
         }
       },
@@ -18243,6 +18915,18 @@
               "start": 898,
               "end": 929
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 60,
+              "span": {
+                "source": 13454246743593215676,
+                "start": 898,
+                "end": 929
+              }
+            },
+            "instance": 196,
+            "view": 0
           }
         }
       },
@@ -18256,6 +18940,18 @@
               "start": 933,
               "end": 951
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 60,
+              "span": {
+                "source": 13454246743593215676,
+                "start": 933,
+                "end": 951
+              }
+            },
+            "instance": 196,
+            "view": 0
           }
         }
       },
@@ -18269,6 +18965,18 @@
               "start": 955,
               "end": 969
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 60,
+              "span": {
+                "source": 13454246743593215676,
+                "start": 955,
+                "end": 969
+              }
+            },
+            "instance": 196,
+            "view": 0
           }
         }
       },
@@ -18282,6 +18990,18 @@
               "start": 973,
               "end": 988
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 60,
+              "span": {
+                "source": 13454246743593215676,
+                "start": 973,
+                "end": 988
+              }
+            },
+            "instance": 196,
+            "view": 0
           }
         }
       },
@@ -18293,8 +19013,20 @@
             "span": {
               "source": 2394632367292244608,
               "start": 623,
-              "end": 646
+              "end": 647
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 54,
+              "span": {
+                "source": 2394632367292244608,
+                "start": 623,
+                "end": 647
+              }
+            },
+            "instance": 196,
+            "view": 0
           }
         }
       },
@@ -18308,6 +19040,18 @@
               "start": 651,
               "end": 664
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 54,
+              "span": {
+                "source": 2394632367292244608,
+                "start": 651,
+                "end": 664
+              }
+            },
+            "instance": 196,
+            "view": 0
           }
         }
       },
@@ -18321,6 +19065,18 @@
               "start": 668,
               "end": 681
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 54,
+              "span": {
+                "source": 2394632367292244608,
+                "start": 668,
+                "end": 681
+              }
+            },
+            "instance": 196,
+            "view": 0
           }
         }
       },
@@ -18334,6 +19090,18 @@
               "start": 685,
               "end": 706
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 54,
+              "span": {
+                "source": 2394632367292244608,
+                "start": 685,
+                "end": 706
+              }
+            },
+            "instance": 196,
+            "view": 0
           }
         }
       },
@@ -18347,6 +19115,18 @@
               "start": 284,
               "end": 297
             }
+          },
+          "occurrence": {
+            "class_equation": {
+              "scope": 52,
+              "span": {
+                "source": 12075599700607277066,
+                "start": 284,
+                "end": 297
+              }
+            },
+            "instance": 218,
+            "view": 0
           }
         }
       },
@@ -18800,7 +19580,7 @@
             "origin": "source",
             "span": {
               "source": 17867382465268392184,
-              "start": 619,
+              "start": 618,
               "end": 676
             }
           }
@@ -18816,7 +19596,7 @@
           "origin": "source",
           "span": {
             "source": 17867382465268392184,
-            "start": 619,
+            "start": 618,
             "end": 676
           }
         }
@@ -18861,7 +19641,7 @@
             },
             "span": {
               "source": 17867382465268392184,
-              "start": 619,
+              "start": 618,
               "end": 676
             }
           }

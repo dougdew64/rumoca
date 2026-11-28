@@ -1,5 +1,5 @@
 {
-  "schema_version": 52,
+  "schema_version": 54,
   "source_map": {
     "hrw_note": "Published by HRW, not by Rumoca's Serialize. Rumoca's node carries every registered file's full text; this one carries the id-to-file index for the files this DAE's spans name, and no text. Names are workspace-relative, so source_id_for_name(file) does NOT equal source_id the way Rumoca's own node requires (SPEC_0029 §3a) — resolve a span by its source_id, never by re-deriving one from the name.",
     "registered_files": 2556,
@@ -1587,7 +1587,7 @@
           "span": {
             "source": 877892294844749049,
             "start": 1067,
-            "end": 1087
+            "end": 1088
           }
         },
         {
@@ -1659,7 +1659,7 @@
           "span": {
             "source": 877892294844749049,
             "start": 1091,
-            "end": 1121
+            "end": 1122
           }
         },
         {
@@ -1667,7 +1667,7 @@
           "span": {
             "source": 877892294844749049,
             "start": 1067,
-            "end": 1121
+            "end": 1122
           }
         },
         {
@@ -1755,7 +1755,7 @@
           "span": {
             "source": 877892294844749049,
             "start": 1125,
-            "end": 1153
+            "end": 1154
           }
         },
         {
@@ -1763,7 +1763,7 @@
           "span": {
             "source": 877892294844749049,
             "start": 1067,
-            "end": 1153
+            "end": 1154
           }
         },
         {
@@ -1883,7 +1883,7 @@
           "span": {
             "source": 877892294844749049,
             "start": 1157,
-            "end": 1190
+            "end": 1191
           }
         },
         {
@@ -1891,7 +1891,7 @@
           "span": {
             "source": 877892294844749049,
             "start": 1067,
-            "end": 1190
+            "end": 1191
           }
         },
         {
@@ -1907,7 +1907,7 @@
           "span": {
             "source": 877892294844749049,
             "start": 1067,
-            "end": 1190
+            "end": 1191
           }
         }
       ],

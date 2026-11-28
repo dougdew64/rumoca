@@ -1,5 +1,5 @@
 {
-  "schema_version": 89,
+  "schema_version": 93,
   "layout": {
     "bindings": {
       "inertia.phi": {
@@ -357,6 +357,16 @@
     "initial_homotopy_parameter_index": null,
     "pre_param_bindings": []
   },
+  "cartesian_pairs": {
+    "state_count": 2,
+    "pairs": [
+      [
+        0,
+        1
+      ]
+    ]
+  },
+  "mechanical_step": null,
   "continuous": {
     "implicit_rhs": {
       "nodes": [
@@ -749,7 +759,85 @@
                   }
                 }
               ]
-            }
+            },
+            "program_occurrences": [
+              {
+                "class_equation": {
+                  "scope": 20,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 881,
+                    "end": 899
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 20,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 903,
+                    "end": 921
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 20,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 955,
+                    "end": 988
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 25,
+                  "span": {
+                    "source": 13844103839494831887,
+                    "start": 910,
+                    "end": 925
+                  }
+                },
+                "instance": 18,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 29,
+                  "span": {
+                    "source": 14877195194095120915,
+                    "start": 406,
+                    "end": 423
+                  }
+                },
+                "instance": 18,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 11,
+                  "span": {
+                    "source": 17884960713661238361,
+                    "start": 6893,
+                    "end": 6898
+                  }
+                },
+                "instance": 27,
+                "view": 0
+              },
+              null,
+              null,
+              null,
+              null
+            ]
           }
         }
       ]
@@ -1260,7 +1348,85 @@
                   }
                 }
               ]
-            }
+            },
+            "program_occurrences": [
+              {
+                "class_equation": {
+                  "scope": 20,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 881,
+                    "end": 899
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 20,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 903,
+                    "end": 921
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 20,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 955,
+                    "end": 988
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 25,
+                  "span": {
+                    "source": 13844103839494831887,
+                    "start": 910,
+                    "end": 925
+                  }
+                },
+                "instance": 18,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 29,
+                  "span": {
+                    "source": 14877195194095120915,
+                    "start": 406,
+                    "end": 423
+                  }
+                },
+                "instance": 18,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 11,
+                  "span": {
+                    "source": 17884960713661238361,
+                    "start": 6893,
+                    "end": 6898
+                  }
+                },
+                "instance": 27,
+                "view": 0
+              },
+              null,
+              null,
+              null,
+              null
+            ]
           }
         }
       ]
@@ -1319,7 +1485,33 @@
               "Dense": {
                 "count": 2
               }
-            }
+            },
+            "program_occurrences": [
+              {
+                "class_equation": {
+                  "scope": 20,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 925,
+                    "end": 937
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              },
+              {
+                "class_equation": {
+                  "scope": 20,
+                  "span": {
+                    "source": 10383162805277989159,
+                    "start": 941,
+                    "end": 951
+                  }
+                },
+                "instance": 3,
+                "view": 0
+              }
+            ]
           }
         }
       ]

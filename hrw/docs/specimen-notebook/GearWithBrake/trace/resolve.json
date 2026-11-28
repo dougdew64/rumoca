@@ -55,11 +55,11 @@
   ],
   "location": {
     "start_line": 1,
-    "start_column": 7,
+    "start_column": 1,
     "end_line": 69,
-    "end_column": 18,
-    "start": 6,
-    "end": 3461,
+    "end_column": 19,
+    "start": 0,
+    "end": 3462,
     "source": 2870916914346496452
   },
   "extends": [],
@@ -298,7 +298,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "rotor": {
       "def_id": 105,
@@ -532,7 +533,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "gear": {
       "def_id": 106,
@@ -766,7 +768,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "load": {
       "def_id": 107,
@@ -1000,7 +1003,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "spring": {
       "def_id": 108,
@@ -1321,7 +1325,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "frame": {
       "def_id": 109,
@@ -1463,7 +1468,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "brakeTorque": {
       "def_id": 110,
@@ -1605,7 +1611,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "maxSpeed": {
       "def_id": 111,
@@ -1759,7 +1766,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "brakeForce": {
       "def_id": 112,
@@ -1913,7 +1921,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     },
     "braking": {
       "def_id": 113,
@@ -2096,7 +2105,8 @@
       "redeclared_by_modification": false,
       "has_unapplied_redeclare": false,
       "constrainedby": null,
-      "is_structural": false
+      "is_structural": false,
+      "constraining_modifications": []
     }
   },
   "equations": [
@@ -3221,15 +3231,15 @@
                         },
                         "span": {
                           "source": 2870916914346496452,
-                          "start": 3297,
+                          "start": 3294,
                           "end": 3340
                         }
                       }
                     },
                     "span": {
                       "source": 2870916914346496452,
-                      "start": 3297,
-                      "end": 3340
+                      "start": 3293,
+                      "end": 3341
                     }
                   }
                 }
@@ -3261,7 +3271,7 @@
             },
             "span": {
               "source": 2870916914346496452,
-              "start": 3276,
+              "start": 3273,
               "end": 3350
             }
           }

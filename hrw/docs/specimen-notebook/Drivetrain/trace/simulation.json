@@ -12,9 +12,9 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -2.2798776723001355,
-      "min": -4.955450785540466,
-      "max": 3.15275723686825
+      "final": -2.2798767659868213,
+      "min": -4.955454822410264,
+      "max": 3.152777491296951
     },
     {
       "name": "src.v",
@@ -39,9 +39,9 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -2.2798776723001355,
-      "min": -4.955450785540466,
-      "max": 3.15275723686825
+      "final": -2.2798767659868213,
+      "min": -4.955454822410264,
+      "max": 3.152777491296951
     },
     {
       "name": "src.n.v",
@@ -57,27 +57,27 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.2798776723001355,
-      "min": -3.15275723686825,
-      "max": 4.955450785540466
+      "final": 2.2798767659868213,
+      "min": -3.152777491296951,
+      "max": 4.955454822410264
     },
     {
       "name": "R.i",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.2798776723001355,
-      "min": -3.15275723686825,
-      "max": 4.955450785540466
+      "final": 2.2798767659868213,
+      "min": -3.152777491296951,
+      "max": 4.955454822410264
     },
     {
       "name": "R.v",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 1.1399388361500677,
-      "min": -1.576378618434125,
-      "max": 2.477725392770233
+      "final": 1.1399383829934107,
+      "min": -1.5763887456484755,
+      "max": 2.477727411205132
     },
     {
       "name": "R.p.v",
@@ -93,36 +93,36 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.2798776723001355,
-      "min": -3.15275723686825,
-      "max": 4.955450785540466
+      "final": 2.2798767659868213,
+      "min": -3.152777491296951,
+      "max": 4.955454822410264
     },
     {
       "name": "R.n.v",
       "is_state": false,
       "state_coordinate": null,
       "initial": 12.0,
-      "final": 10.860061163849933,
-      "min": 9.522274607229766,
-      "max": 13.576378618434125
+      "final": 10.86006161700659,
+      "min": 9.522272588794868,
+      "max": 13.576388745648476
     },
     {
       "name": "R.n.i",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -2.2798776723001355,
-      "min": -4.955450785540466,
-      "max": 3.15275723686825
+      "final": -2.2798767659868213,
+      "min": -4.955454822410264,
+      "max": 3.152777491296951
     },
     {
       "name": "R.LossPower",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.598921100326342,
+      "final": 2.5989190340432637,
       "min": 0.0,
-      "max": 12.278246243956813
+      "max": 12.27826624847457
     },
     {
       "name": "R.T_heatPort",
@@ -147,17 +147,17 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.2798776723001355,
-      "min": -3.15275723686825,
-      "max": 4.955450785540466
+      "final": 2.2798767659868213,
+      "min": -3.152777491296951,
+      "max": 4.955454822410264
     },
     {
       "name": "L.v",
       "is_state": false,
       "state_coordinate": null,
       "initial": 12.0,
-      "final": 0.05433729436665935,
-      "min": -8.242498113860774,
+      "final": 0.0542908966644724,
+      "min": -8.242534989208039,
       "max": 12.0
     },
     {
@@ -165,108 +165,108 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 12.0,
-      "final": 10.860061163849933,
-      "min": 9.522274607229766,
-      "max": 13.576378618434125
+      "final": 10.86006161700659,
+      "min": 9.522272588794868,
+      "max": 13.576388745648476
     },
     {
       "name": "L.p.i",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.2798776723001355,
-      "min": -3.15275723686825,
-      "max": 4.955450785540466
+      "final": 2.2798767659868213,
+      "min": -3.152777491296951,
+      "max": 4.955454822410264
     },
     {
       "name": "L.n.v",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 10.805723869483273,
+      "final": 10.805770720342117,
       "min": -0.0,
-      "max": 19.911302690775877
+      "max": 19.911326906495617
     },
     {
       "name": "L.n.i",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -2.2798776723001355,
-      "min": -4.955450785540466,
-      "max": 3.15275723686825
+      "final": -2.2798767659868213,
+      "min": -4.955454822410264,
+      "max": 3.152777491296951
     },
     {
       "name": "emf.v",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 10.805723869483273,
+      "final": 10.805770720342117,
       "min": -0.0,
-      "max": 19.911302690775877
+      "max": 19.911326906495617
     },
     {
       "name": "emf.i",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.2798776723001355,
-      "min": -3.15275723686825,
-      "max": 4.955450785540466
+      "final": 2.2798767659868213,
+      "min": -3.152777491296951,
+      "max": 4.955454822410264
     },
     {
       "name": "emf.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 226.5009420150696,
+      "final": 226.50093962622884,
       "min": -0.0,
-      "max": 226.5009420150696
+      "max": 226.50093962622884
     },
     {
       "name": "emf.w",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 108.05723869483273,
+      "final": 108.05770720342116,
       "min": -0.0,
-      "max": 199.11302690775875
+      "max": 199.11326906495617
     },
     {
       "name": "emf.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -0.22798776723001357,
-      "min": -0.49554507855404667,
-      "max": 0.31527572368682505
+      "final": -0.22798767659868213,
+      "min": -0.4955454822410264,
+      "max": 0.31527774912969514
     },
     {
       "name": "emf.tauElectrical",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 0.22798776723001357,
-      "min": -0.31527572368682505,
-      "max": 0.49554507855404667
+      "final": 0.22798767659868213,
+      "min": -0.31527774912969514,
+      "max": 0.4955454822410264
     },
     {
       "name": "emf.p.v",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 10.805723869483273,
+      "final": 10.805770720342117,
       "min": -0.0,
-      "max": 19.911302690775877
+      "max": 19.911326906495617
     },
     {
       "name": "emf.p.i",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 2.2798776723001355,
-      "min": -3.15275723686825,
-      "max": 4.955450785540466
+      "final": 2.2798767659868213,
+      "min": -3.152777491296951,
+      "max": 4.955454822410264
     },
     {
       "name": "emf.n.v",
@@ -282,27 +282,27 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -2.2798776723001355,
-      "min": -4.955450785540466,
-      "max": 3.15275723686825
+      "final": -2.2798767659868213,
+      "min": -4.955454822410264,
+      "max": 3.152777491296951
     },
     {
       "name": "emf.flange.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 226.5009420150696,
+      "final": 226.50093962622884,
       "min": -0.0,
-      "max": 226.5009420150696
+      "max": 226.50093962622884
     },
     {
       "name": "emf.flange.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -0.22798776723001357,
-      "min": -0.49554507855404667,
-      "max": 0.31527572368682505
+      "final": -0.22798767659868213,
+      "min": -0.4955454822410264,
+      "max": 0.31527774912969514
     },
     {
       "name": "emf.fixed.flange.phi",
@@ -318,18 +318,18 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -0.22798776723001357,
-      "min": -0.49554507855404667,
-      "max": 0.31527572368682505
+      "final": -0.22798767659868213,
+      "min": -0.4955454822410264,
+      "max": 0.31527774912969514
     },
     {
       "name": "emf.internalSupport.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 0.22798776723001357,
-      "min": -0.31527572368682505,
-      "max": 0.49554507855404667
+      "final": 0.22798767659868213,
+      "min": -0.31527774912969514,
+      "max": 0.4955454822410264
     },
     {
       "name": "emf.internalSupport.phi",
@@ -354,9 +354,9 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 0.22798776723001357,
-      "min": -0.31527572368682505,
-      "max": 0.49554507855404667
+      "final": 0.22798767659868213,
+      "min": -0.31527774912969514,
+      "max": 0.4955454822410264
     },
     {
       "name": "gnd.p.v",
@@ -381,99 +381,99 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 226.5009420150696,
+      "final": 226.50093962622884,
       "min": -0.0,
-      "max": 226.5009420150696
+      "max": 226.50093962622884
     },
     {
       "name": "rotor.flange_a.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 0.22798776723001357,
-      "min": -0.31527572368682505,
-      "max": 0.49554507855404667
+      "final": 0.22798767659868213,
+      "min": -0.31527774912969514,
+      "max": 0.4955454822410264
     },
     {
       "name": "rotor.flange_b.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 226.5009420150696,
+      "final": 226.50093962622884,
       "min": -0.0,
-      "max": 226.5009420150696
+      "max": 226.50093962622884
     },
     {
       "name": "rotor.flange_b.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -0.2285404881799748,
-      "min": -0.2285404881799748,
-      "max": 0.04297986783889219
+      "final": -0.22854047755902243,
+      "min": -0.22854047755902243,
+      "max": 0.04298020818190446
     },
     {
       "name": "rotor.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 226.5009420150696,
+      "final": 226.50093962622884,
       "min": -0.0,
-      "max": 226.5009420150696
+      "max": 226.50093962622884
     },
     {
       "name": "rotor.w",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 108.05723869483273,
+      "final": 108.05770720342116,
       "min": -0.0,
-      "max": 199.11302690775875
+      "max": 199.11326906495617
     },
     {
       "name": "rotor.a",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -5.527209499612277,
-      "min": -2722.9585584793285,
-      "max": 4035.9454574480988
+      "final": -5.528009603403012,
+      "min": -2722.975409477907,
+      "max": 4035.948817758997
     },
     {
       "name": "gear.flange_a.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 226.5009420150696,
+      "final": 226.50093962622884,
       "min": -0.0,
-      "max": 226.5009420150696
+      "max": 226.50093962622884
     },
     {
       "name": "gear.flange_a.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.2285404881799748,
-      "min": -0.04297986783889219,
-      "max": 0.2285404881799748
+      "final": 0.22854047755902243,
+      "min": -0.04298020818190446,
+      "max": 0.22854047755902243
     },
     {
       "name": "gear.flange_b.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 45.30018840301392,
+      "final": 45.300187925245766,
       "min": -0.0,
-      "max": 45.30018840301392
+      "max": 45.300187925245766
     },
     {
       "name": "gear.flange_b.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -1.1427024408998738,
-      "min": -1.1427024408998738,
-      "max": 0.21489933919446097
+      "final": -1.1427023877951121,
+      "min": -1.1427023877951121,
+      "max": 0.21490104090952233
     },
     {
       "name": "gear.phi_support",
@@ -489,53 +489,53 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 226.5009420150696,
+      "final": 226.50093962622884,
       "min": -0.0,
-      "max": 226.5009420150696
+      "max": 226.50093962622884
     },
     {
       "name": "gear.phi_b",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 45.30018840301392,
+      "final": 45.300187925245766,
       "min": -0.0,
-      "max": 45.30018840301392
+      "max": 45.300187925245766
     },
     {
       "name": "shaft.flange_a.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 45.30018840301392,
+      "final": 45.300187925245766,
       "min": -0.0,
-      "max": 45.30018840301392
+      "max": 45.300187925245766
     },
     {
       "name": "shaft.flange_a.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 1.1427024408998738,
-      "min": -0.21489933919446097,
-      "max": 1.1427024408998738
+      "final": 1.1427023877951121,
+      "min": -0.21490104090952233,
+      "max": 1.1427023877951121
     },
     {
       "name": "shaft.flange_b.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 45.30018840301392,
+      "final": 45.300187925245766,
       "min": -0.0,
-      "max": 45.30018840301392
+      "max": 45.300187925245766
     },
     {
       "name": "shaft.flange_b.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -1.1432551618498352,
-      "min": -1.1432551618498352,
+      "final": -1.1432551887554523,
+      "min": -1.1432551887554523,
       "max": 0.0
     },
     {
@@ -543,62 +543,62 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 45.30018840301392,
+      "final": 45.300187925245766,
       "min": -0.0,
-      "max": 45.30018840301392
+      "max": 45.300187925245766
     },
     {
       "name": "shaft.w",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 21.611447738966547,
+      "final": 21.61154144068423,
       "min": -0.0,
-      "max": 39.82260538155175
+      "max": 39.822653812991234
     },
     {
       "name": "shaft.a",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -1.1054418999224553,
-      "min": -544.5917116958657,
-      "max": 807.1890914896197
+      "final": -1.1056019206806025,
+      "min": -544.5950818955814,
+      "max": 807.1897635517994
     },
     {
       "name": "r2t.flangeR.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 45.30018840301392,
+      "final": 45.300187925245766,
       "min": -0.0,
-      "max": 45.30018840301392
+      "max": 45.300187925245766
     },
     {
       "name": "r2t.flangeR.tau",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 1.1432551618498352,
+      "final": 1.1432551887554523,
       "min": -0.0,
-      "max": 1.1432551618498352
+      "max": 1.1432551887554523
     },
     {
       "name": "r2t.flangeT.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.2265009420150696,
+      "final": 0.22650093962622883,
       "min": -0.0,
-      "max": 0.2265009420150696
+      "max": 0.22650093962622883
     },
     {
       "name": "r2t.flangeT.f",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -228.65103236996703,
-      "min": -228.65103236996703,
+      "final": -228.65103775109046,
+      "min": -228.65103775109046,
       "max": 0.0
     },
     {
@@ -606,8 +606,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -1.1432551618498352,
-      "min": -1.1432551618498352,
+      "final": -1.1432551887554523,
+      "min": -1.1432551887554523,
       "max": 0.0
     },
     {
@@ -633,8 +633,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -1.1432551618498352,
-      "min": -1.1432551618498352,
+      "final": -1.1432551887554523,
+      "min": -1.1432551887554523,
       "max": 0.0
     },
     {
@@ -642,9 +642,9 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 228.65103236996703,
+      "final": 228.65103775109046,
       "min": -0.0,
-      "max": 228.65103236996703
+      "max": 228.65103775109046
     },
     {
       "name": "r2t.internalSupportT.s",
@@ -669,9 +669,9 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 228.65103236996703,
+      "final": 228.65103775109046,
       "min": -0.0,
-      "max": 228.65103236996703
+      "max": 228.65103775109046
     },
     {
       "name": "r2t.fixedR.flange.phi",
@@ -687,9 +687,9 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 1.1432551618498352,
+      "final": 1.1432551887554523,
       "min": -0.0,
-      "max": 1.1432551618498352
+      "max": 1.1432551887554523
     },
     {
       "name": "r2t.fixedT.flange.s",
@@ -705,8 +705,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -228.65103236996703,
-      "min": -228.65103236996703,
+      "final": -228.65103775109046,
+      "min": -228.65103775109046,
       "max": 0.0
     },
     {
@@ -714,44 +714,44 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.2265009420150696,
+      "final": 0.22650093962622883,
       "min": -0.0,
-      "max": 0.2265009420150696
+      "max": 0.22650093962622883
     },
     {
       "name": "load.flange_a.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.2265009420150696,
+      "final": 0.22650093962622883,
       "min": -0.0,
-      "max": 0.2265009420150696
+      "max": 0.22650093962622883
     },
     {
       "name": "load.flange_a.f",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 228.65103236996703,
+      "final": 228.65103775109046,
       "min": -0.0,
-      "max": 228.65103236996703
+      "max": 228.65103775109046
     },
     {
       "name": "load.flange_b.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.2265009420150696,
+      "final": 0.22650093962622883,
       "min": -0.0,
-      "max": 0.2265009420150696
+      "max": 0.22650093962622883
     },
     {
       "name": "load.flange_b.f",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -228.66208678896626,
-      "min": -228.66208678896626,
+      "final": -228.66209377029728,
+      "min": -228.66209377029728,
       "max": 0.0
     },
     {
@@ -759,26 +759,26 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.10805723869483273,
+      "final": 0.10805770720342116,
       "min": -0.0,
-      "max": 0.19911302690775876
+      "max": 0.1991132690649562
     },
     {
       "name": "load.a",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -0.005527209499612276,
-      "min": -2.7229585584793283,
-      "max": 4.035945457448099
+      "final": -0.005528009603403012,
+      "min": -2.722975409477907,
+      "max": 4.035948817758997
     },
     {
       "name": "mount.s_rel",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -0.2265009420150696,
-      "min": -0.2265009420150696,
+      "final": -0.22650093962622883,
+      "min": -0.22650093962622883,
       "max": 0.0
     },
     {
@@ -786,8 +786,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -0.10805723869483273,
-      "min": -0.19911302690775876,
+      "final": -0.10805770720342116,
+      "min": -0.1991132690649562,
       "max": 0.0
     },
     {
@@ -795,8 +795,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -228.66208678896626,
-      "min": -228.66208678896626,
+      "final": -228.66209377029728,
+      "min": -228.66209377029728,
       "max": 0.0
     },
     {
@@ -804,18 +804,18 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.2265009420150696,
+      "final": 0.22650093962622883,
       "min": -0.0,
-      "max": 0.2265009420150696
+      "max": 0.22650093962622883
     },
     {
       "name": "mount.flange_a.f",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 228.66208678896626,
+      "final": 228.66209377029728,
       "min": -0.0,
-      "max": 228.66208678896626
+      "max": 228.66209377029728
     },
     {
       "name": "mount.flange_b.s",
@@ -831,8 +831,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -228.66208678896626,
-      "min": -228.66208678896626,
+      "final": -228.66209377029728,
+      "min": -228.66209377029728,
       "max": 0.0
     },
     {
@@ -840,17 +840,17 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 0.23352733668704112,
+      "final": 0.23352936172120595,
       "min": 0.0,
-      "max": 0.7929199496873973
+      "max": 0.7929218783546728
     },
     {
       "name": "mount.f_c",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -226.5009420150696,
-      "min": -226.5009420150696,
+      "final": -226.50093962622884,
+      "min": -226.50093962622884,
       "max": 0.0
     },
     {
@@ -858,8 +858,8 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -2.1611447738966545,
-      "min": -3.9822605381551752,
+      "final": -2.161154144068423,
+      "min": -3.9822653812991238,
       "max": 0.0
     },
     {
@@ -876,17 +876,17 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 228.66208678896626,
+      "final": 228.66209377029728,
       "min": -0.0,
-      "max": 228.66208678896626
+      "max": 228.66209377029728
     },
     {
       "name": "$formal_derivative.1.L.i",
       "is_state": false,
       "state_coordinate": null,
       "initial": 240.0,
-      "final": 1.086745887333187,
-      "min": -164.84996227721547,
+      "final": 1.085817933289448,
+      "min": -164.85069978416078,
       "max": 240.0
     },
     {
@@ -894,170 +894,170 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 108.05723869483273,
+      "final": 108.05770720342116,
       "min": -0.0,
-      "max": 199.11302690775875
+      "max": 199.11326906495617
     },
     {
       "name": "$formal_derivative.1.rotor.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 108.05723869483273,
+      "final": 108.05770720342116,
       "min": -0.0,
-      "max": 199.11302690775875
+      "max": 199.11326906495617
     },
     {
       "name": "$formal_derivative.2.rotor.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -5.527209499612277,
-      "min": -2722.9585584793285,
-      "max": 4035.9454574480988
+      "final": -5.528009603403012,
+      "min": -2722.975409477907,
+      "max": 4035.948817758997
     },
     {
       "name": "$formal_derivative.1.rotor.w",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -5.527209499612277,
-      "min": -2722.9585584793285,
-      "max": 4035.9454574480988
+      "final": -5.528009603403012,
+      "min": -2722.975409477907,
+      "max": 4035.948817758997
     },
     {
       "name": "$formal_derivative.1.gear.phi_a",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 108.05723869483273,
+      "final": 108.05770720342116,
       "min": -0.0,
-      "max": 199.11302690775875
+      "max": 199.11326906495617
     },
     {
       "name": "$formal_derivative.2.gear.phi_a",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -5.527209499612277,
-      "min": -2722.9585584793285,
-      "max": 4035.9454574480988
+      "final": -5.528009603403012,
+      "min": -2722.975409477907,
+      "max": 4035.948817758997
     },
     {
       "name": "$formal_derivative.1.gear.phi_b",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 21.611447738966547,
+      "final": 21.61154144068423,
       "min": -0.0,
-      "max": 39.82260538155175
+      "max": 39.822653812991234
     },
     {
       "name": "$formal_derivative.2.gear.phi_b",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -1.1054418999224553,
-      "min": -544.5917116958657,
-      "max": 807.1890914896197
+      "final": -1.1056019206806025,
+      "min": -544.5950818955814,
+      "max": 807.1897635517994
     },
     {
       "name": "$formal_derivative.1.shaft.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 21.611447738966547,
+      "final": 21.61154144068423,
       "min": -0.0,
-      "max": 39.82260538155175
+      "max": 39.822653812991234
     },
     {
       "name": "$formal_derivative.2.shaft.phi",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -1.1054418999224553,
-      "min": -544.5917116958657,
-      "max": 807.1890914896197
+      "final": -1.1056019206806025,
+      "min": -544.5950818955814,
+      "max": 807.1897635517994
     },
     {
       "name": "$formal_derivative.1.shaft.w",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -1.1054418999224553,
-      "min": -544.5917116958657,
-      "max": 807.1890914896197
+      "final": -1.1056019206806025,
+      "min": -544.5950818955814,
+      "max": 807.1897635517994
     },
     {
       "name": "$formal_derivative.1.r2t.flangeT.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.10805723869483273,
+      "final": 0.10805770720342116,
       "min": -0.0,
-      "max": 0.19911302690775876
+      "max": 0.1991132690649562
     },
     {
       "name": "$formal_derivative.2.r2t.flangeT.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -0.005527209499612276,
-      "min": -2.7229585584793283,
-      "max": 4.035945457448099
+      "final": -0.005528009603403012,
+      "min": -2.722975409477907,
+      "max": 4.035948817758997
     },
     {
       "name": "$formal_derivative.1.load.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.10805723869483273,
+      "final": 0.10805770720342116,
       "min": -0.0,
-      "max": 0.19911302690775876
+      "max": 0.1991132690649562
     },
     {
       "name": "$formal_derivative.2.load.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -0.005527209499612276,
-      "min": -2.7229585584793283,
-      "max": 4.035945457448099
+      "final": -0.005528009603403012,
+      "min": -2.722975409477907,
+      "max": 4.035948817758997
     },
     {
       "name": "$formal_derivative.1.load.flange_b.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": 0.10805723869483273,
+      "final": 0.10805770720342116,
       "min": -0.0,
-      "max": 0.19911302690775876
+      "max": 0.1991132690649562
     },
     {
       "name": "$formal_derivative.2.load.flange_b.s",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -0.005527209499612276,
-      "min": -2.7229585584793283,
-      "max": 4.035945457448099
+      "final": -0.005528009603403012,
+      "min": -2.722975409477907,
+      "max": 4.035948817758997
     },
     {
       "name": "$formal_derivative.1.load.v",
       "is_state": false,
       "state_coordinate": null,
       "initial": -0.0,
-      "final": -0.005527209499612276,
-      "min": -2.7229585584793283,
-      "max": 4.035945457448099
+      "final": -0.005528009603403012,
+      "min": -2.722975409477907,
+      "max": 4.035948817758997
     },
     {
       "name": "$formal_derivative.1.mount.s_rel",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": -0.10805723869483273,
-      "min": -0.19911302690775876,
+      "final": -0.10805770720342116,
+      "min": -0.1991132690649562,
       "max": 0.0
     },
     {
@@ -1065,26 +1065,26 @@
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 0.005527209499612276,
-      "min": -4.035945457448099,
-      "max": 2.7229585584793283
+      "final": 0.005528009603403012,
+      "min": -4.035948817758997,
+      "max": 2.722975409477907
     },
     {
       "name": "$formal_derivative.1.mount.v_rel",
       "is_state": false,
       "state_coordinate": null,
       "initial": 0.0,
-      "final": 0.005527209499612276,
-      "min": -4.035945457448099,
-      "max": 2.7229585584793283
+      "final": 0.005528009603403012,
+      "min": -4.035948817758997,
+      "max": 2.722975409477907
     },
     {
       "name": "$state_coordinates[1]",
       "is_state": true,
       "state_coordinate": "mount.s_rel",
       "initial": 0.0,
-      "final": -0.2265009420150696,
-      "min": -0.2265009420150696,
+      "final": -0.22650093962622883,
+      "min": -0.22650093962622883,
       "max": 0.0
     },
     {
@@ -1092,17 +1092,17 @@
       "is_state": true,
       "state_coordinate": "L.i",
       "initial": 0.0,
-      "final": 2.2798776723001355,
-      "min": -3.15275723686825,
-      "max": 4.955450785540466
+      "final": 2.2798767659868213,
+      "min": -3.152777491296951,
+      "max": 4.955454822410264
     },
     {
       "name": "$state_coordinates[3]",
       "is_state": true,
       "state_coordinate": "mount.v_rel",
       "initial": 0.0,
-      "final": -0.10805723869483273,
-      "min": -0.19911302690775876,
+      "final": -0.10805770720342116,
+      "min": -0.1991132690649562,
       "max": 0.0
     }
   ]

@@ -62,7 +62,7 @@
         "unknown": "seg1.R.T_heatPort"
       },
       {
-        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[8]",
         "unknown": "seg1.R.R_actual"
       },
@@ -97,7 +97,7 @@
         "unknown": "seg2.R.T_heatPort"
       },
       {
-        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[15]",
         "unknown": "seg2.R.R_actual"
       },
@@ -217,7 +217,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[8]",
         "unknown": "seg1.R.R_actual"
       },
@@ -231,7 +231,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[15]",
         "unknown": "seg2.R.R_actual"
       },
@@ -566,7 +566,7 @@
           "equation_text": "0 = seg1.R.T_heatPort - seg1.R.T"
         },
         {
-          "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+          "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
           "id": "f_x[8]",
           "unknowns": [
             17,
@@ -630,7 +630,7 @@
           "equation_text": "0 = seg2.R.T_heatPort - seg2.R.T"
         },
         {
-          "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+          "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
           "id": "f_x[15]",
           "unknowns": [
             30,
@@ -858,7 +858,7 @@
         "unknown": "seg1.R.T_heatPort"
       },
       {
-        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[8]",
         "unknown": "seg1.R.R_actual"
       },
@@ -893,7 +893,7 @@
         "unknown": "seg2.R.T_heatPort"
       },
       {
-        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[15]",
         "unknown": "seg2.R.R_actual"
       },
@@ -1013,7 +1013,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[8]",
         "unknown": "seg1.R.R_actual"
       },
@@ -1027,7 +1027,7 @@
       {
         "kind": "scalar",
         "size": 1,
-        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+        "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
         "id": "f_x[15]",
         "unknown": "seg2.R.R_actual"
       },
@@ -1362,7 +1362,7 @@
           "equation_text": "0 = seg1.R.T_heatPort - seg1.R.T"
         },
         {
-          "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+          "equation": "f_x[8] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
           "id": "f_x[8]",
           "unknowns": [
             17,
@@ -1426,7 +1426,7 @@
           "equation_text": "0 = seg2.R.T_heatPort - seg2.R.T"
         },
         {
-          "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)",
+          "equation": "f_x[15] (R_actual = R*(1 + alpha*(T_heatPort - T_ref)))",
           "id": "f_x[15]",
           "unknowns": [
             30,
