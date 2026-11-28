@@ -75,6 +75,27 @@
               "variable": "commandA"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "errorA"
+          ],
+          "residual_equations": [
+            "f_x[0] (errorA = reference - plantA * commandA)"
+          ],
+          "residual_equation_ids": [
+            "f_x[0]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[1] (commandA = gainA * errorA)",
+              "id": "f_x[1]",
+              "variable": "commandA",
+              "coefficient": "Unit"
+            }
+          ],
+          "same_as_structural": true,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on"
         }
       },
       {
@@ -109,6 +130,27 @@
               "variable": "commandB"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "errorB"
+          ],
+          "residual_equations": [
+            "f_x[2] (errorB = commandA - plantB * commandB)"
+          ],
+          "residual_equation_ids": [
+            "f_x[2]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[3] (commandB = gainB * errorB)",
+              "id": "f_x[3]",
+              "variable": "commandB",
+              "coefficient": "Unit"
+            }
+          ],
+          "same_as_structural": true,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on"
         }
       }
     ],
@@ -232,6 +274,27 @@
               "variable": "commandA"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "errorA"
+          ],
+          "residual_equations": [
+            "f_x[0] (errorA = reference - plantA * commandA)"
+          ],
+          "residual_equation_ids": [
+            "f_x[0]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[1] (commandA = gainA * errorA)",
+              "id": "f_x[1]",
+              "variable": "commandA",
+              "coefficient": "Unit"
+            }
+          ],
+          "same_as_structural": true,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on"
         }
       },
       {
@@ -266,6 +329,27 @@
               "variable": "commandB"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "errorB"
+          ],
+          "residual_equations": [
+            "f_x[2] (errorB = commandA - plantB * commandB)"
+          ],
+          "residual_equation_ids": [
+            "f_x[2]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[3] (commandB = gainB * errorB)",
+              "id": "f_x[3]",
+              "variable": "commandB",
+              "coefficient": "Unit"
+            }
+          ],
+          "same_as_structural": true,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on"
         }
       }
     ],

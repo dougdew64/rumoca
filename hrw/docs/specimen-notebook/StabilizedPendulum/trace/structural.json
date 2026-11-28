@@ -157,5 +157,6 @@
       "unknowns": 7,
       "result": "sorted: 5 block(s), 1 coupled"
     }
-  ]
+  ],
+  "run_tearing": "the run's tearing belongs to the prepared system, which index reduction changed, so it is not paired with these blocks: see Index reduction's `after` blocks"
 }

@@ -2,7 +2,7 @@
   "model": "MissingComponentClass",
   "specimen": "specimens/MissingComponentClass.mo",
   "specimen_fnv1a": "3d0e276edae63e8f",
-  "rumoca_rev": "0eab8f5cd",
+  "rumoca_rev": "86d1b2ee0",
   "rumoca_version": "0.11.0",
   "stages": {
     "parse": {

@@ -35,6 +35,13 @@ Everything you just watched was decided from the pattern alone. Rumoca's structu
 captured from the run that simulates, not recomputed by HRW — never evaluated
 `controllerGain` or `plantGain`, and that is the claim the notebook tests.
 
+**And the run does not keep that plan, for exactly this reason.** A pattern cannot tell
+multiplying by `controllerGain` from dividing by it, and the structural plan divides by it. Solve
+lowering looks at the coefficients in one narrow way: it takes a causal step only if it can
+*prove* the divisor nonzero. So it re-tears the block on `error` (`tearing.md` Station 2, and the
+amber line under this replay). It still evaluates no value: a parameter has no proof whatever
+number it holds. That is why the next stations' conclusion survives. *(Added 2026-11-28.)*
+
 ## 🧮 Station 3 — Where the values go in
 
 [Open the notebook in Wolfram Desktop](hrw://notebook/structural-vs-numerical-rank.nb)

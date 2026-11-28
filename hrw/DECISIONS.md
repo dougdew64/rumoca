@@ -6171,8 +6171,21 @@ the version stamps. **The check also found three defects that predate this rebas
   nonzero. `ProportionalLoop`'s structural plan solves `error` from `command = controllerGain*error`,
   which divides by a parameter. So the run tears `error` with residual `f_x[2]`, where the tab shows
   `command` with residual `f_x[0]`. **This is the same class of defect as 11-26: a tab showing a
-  step the run then replaces.** It is not yet fixed, because how to show it is Doug's decision.
-  `tearing.md` and `structural-vs-numerical-rank.md` teach the structural plan as the answer.
+  step the run then replaces.** **Fixed the same day, by Doug's decision to show both plans.**
+  Each coupled block in the prepared system's report now carries `run_tearing`, read from the
+  plan while the lowered model is borrowed. It uses Rumoca's names: rows as `EquationRef`s
+  labelled by `equation_label`, and unknowns by `SolveProblem::solver_name`. The block is paired
+  by its exact set of equation references and says whether the run keeps the plan. The
+  Structural tab gets it only when its blocks are identical to the prepared system's; otherwise
+  it says the run's tearing is on Index reduction's `after`, because equation numbers are not
+  comparable across systems. The spy-plot tooltip shows the run's plan, and an amber line under
+  the Tearing animation says when the run does not iterate on the plan being animated. The test
+  `the_structural_tab_shows_the_runs_tearing_beside_the_structural_one` checks the run's tear
+  variable against the Solve lowering stage's own plan. **Across the corpus the run re-tears
+  ProportionalLoop, MixedLoop, NonlinearLoop and ScopedConnect, and on prepared systems
+  Drivetrain, GearWithBrake and both pendulums;** TwoLoops and LoopWithInertia keep the
+  structural plan. `tearing.md` gained a Station 2 on the proof rule, and
+  `structural-vs-numerical-rank.md` Station 2 now connects it to the pattern-only claim.
 - **Step 3c** re-tested the eleven open Rumoca entries; each one's note is in `upstream-issues.md`.
   **D3 is still present**, and `CLAUDE.md`'s "probably fixed" was wrong. **Entry 2 changed shape**:
   a `Pin`-to-`Flange` connect is now accepted silently by every stage.

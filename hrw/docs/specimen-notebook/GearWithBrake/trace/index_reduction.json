@@ -607,6 +607,7 @@
         "result": "sorted: 56 block(s), 1 coupled"
       }
     ],
+    "run_tearing": "the run's tearing belongs to the prepared system, which index reduction changed, so it is not paired with these blocks: see Index reduction's `after` blocks",
     "matching": [
       {
         "equation": "f_x[1] (phi_support = 0)",
@@ -1389,6 +1390,40 @@
               "variable": "load.a"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "load.a"
+          ],
+          "residual_equations": [
+            "f_x[14] (0 = ratio*flange_a.tau + flange_b.tau)"
+          ],
+          "residual_equation_ids": [
+            "f_x[14]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[19] (J*a = flange_a.tau + flange_b.tau)",
+              "id": "f_x[19]",
+              "variable": "gear.flange_b.tau",
+              "coefficient": "Literal"
+            },
+            {
+              "equation": "f_x[51] (phi_a = ratio*phi_b)",
+              "id": "f_x[51]",
+              "variable": "rotor.a",
+              "coefficient": "Unit"
+            },
+            {
+              "equation": "f_x[9] (J*a = flange_a.tau + flange_b.tau)",
+              "id": "f_x[9]",
+              "variable": "rotor.flange_b.tau",
+              "coefficient": "Literal"
+            }
+          ],
+          "same_as_structural": false,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on",
+          "note": "solve lowering re-tore this block (proven_tearing::retear_unproven_blocks): a causal step divides by the coefficient of the unknown it isolates, and Rumoca admits one only with a proof that the coefficient is nonzero (SPEC_0043 §4); of the structural plan's steps, the run's plan does not contain f_x[14] solving gear.flange_b.tau, f_x[9] solving rotor.a, f_x[19] solving load.a"
         }
       },
       {

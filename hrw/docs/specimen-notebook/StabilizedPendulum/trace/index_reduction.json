@@ -181,6 +181,7 @@
         "result": "sorted: 5 block(s), 1 coupled"
       }
     ],
+    "run_tearing": "the run's tearing belongs to the prepared system, which index reduction changed, so it is not paired with these blocks: see Index reduction's `after` blocks",
     "n_states": 4,
     "n_algebraics": 1
   },
@@ -280,6 +281,27 @@
               "variable": "lambda"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "$derivative.vy",
+            "$derivative.vx",
+            "lambda"
+          ],
+          "residual_equations": [
+            "f_x[2] (m * der(vx) = -lambda * x)",
+            "f_x[4] (2 * (vx ^ 2 + vy ^ 2) + 2 * (x * der(vx) + y * der(vy)) + 4 * alpha * (x * vx + y * vy) + beta ^ 2 * (x ^ 2 + y ^ 2 - L ^ 2) = 0)",
+            "f_x[3] (m * der(vy) = -lambda * y - m * g)"
+          ],
+          "residual_equation_ids": [
+            "f_x[2]",
+            "f_x[4]",
+            "f_x[3]"
+          ],
+          "causal_sequence": [],
+          "same_as_structural": false,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on",
+          "note": "solve lowering re-tore this block (proven_tearing::retear_unproven_blocks): a causal step divides by the coefficient of the unknown it isolates, and Rumoca admits one only with a proof that the coefficient is nonzero (SPEC_0043 §4); of the structural plan's steps, the run's plan does not contain f_x[4] solving $derivative.vx, f_x[3] solving lambda"
         }
       },
       {

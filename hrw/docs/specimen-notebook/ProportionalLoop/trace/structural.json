@@ -60,6 +60,34 @@
             "variable": "measurement"
           }
         ]
+      },
+      "run_tearing": {
+        "tear_vars": [
+          "error"
+        ],
+        "residual_equations": [
+          "f_x[2] (measurement = plantGain * command)"
+        ],
+        "residual_equation_ids": [
+          "f_x[2]"
+        ],
+        "causal_sequence": [
+          {
+            "equation": "f_x[1] (command = controllerGain * error)",
+            "id": "f_x[1]",
+            "variable": "command",
+            "coefficient": "Unit"
+          },
+          {
+            "equation": "f_x[0] (error = reference - measurement)",
+            "id": "f_x[0]",
+            "variable": "measurement",
+            "coefficient": "Literal"
+          }
+        ],
+        "same_as_structural": false,
+        "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on",
+        "note": "solve lowering re-tore this block (proven_tearing::retear_unproven_blocks): a causal step divides by the coefficient of the unknown it isolates, and Rumoca admits one only with a proof that the coefficient is nonzero (SPEC_0043 §4); of the structural plan's steps, the run's plan does not contain f_x[1] solving error, f_x[2] solving measurement"
       }
     }
   ],

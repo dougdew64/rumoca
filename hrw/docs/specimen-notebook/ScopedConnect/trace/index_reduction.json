@@ -283,6 +283,37 @@
               "variable": "seg2.R.v"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "seg1.n.v",
+            "src.i"
+          ],
+          "residual_equations": [
+            "f_x[9] (v = R_actual*i)",
+            "f_x[16] (v = R_actual*i)"
+          ],
+          "residual_equation_ids": [
+            "f_x[9]",
+            "f_x[16]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[6] (v = p.v - n.v)",
+              "id": "f_x[6]",
+              "variable": "seg1.R.v",
+              "coefficient": "Unit"
+            },
+            {
+              "equation": "f_x[13] (v = p.v - n.v)",
+              "id": "f_x[13]",
+              "variable": "seg2.R.v",
+              "coefficient": "Unit"
+            }
+          ],
+          "same_as_structural": false,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on",
+          "note": "solve lowering re-tore this block (proven_tearing::retear_unproven_blocks): a causal step divides by the coefficient of the unknown it isolates, and Rumoca admits one only with a proof that the coefficient is nonzero (SPEC_0043 §4); of the structural plan's steps, the run's plan does not contain f_x[6] solving seg1.n.v, f_x[9] solving src.i"
         }
       },
       {
@@ -1079,6 +1110,37 @@
               "variable": "seg2.R.v"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "seg1.n.v",
+            "src.i"
+          ],
+          "residual_equations": [
+            "f_x[9] (v = R_actual*i)",
+            "f_x[16] (v = R_actual*i)"
+          ],
+          "residual_equation_ids": [
+            "f_x[9]",
+            "f_x[16]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[6] (v = p.v - n.v)",
+              "id": "f_x[6]",
+              "variable": "seg1.R.v",
+              "coefficient": "Unit"
+            },
+            {
+              "equation": "f_x[13] (v = p.v - n.v)",
+              "id": "f_x[13]",
+              "variable": "seg2.R.v",
+              "coefficient": "Unit"
+            }
+          ],
+          "same_as_structural": false,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on",
+          "note": "solve lowering re-tore this block (proven_tearing::retear_unproven_blocks): a causal step divides by the coefficient of the unknown it isolates, and Rumoca admits one only with a proof that the coefficient is nonzero (SPEC_0043 §4); of the structural plan's steps, the run's plan does not contain f_x[6] solving seg1.n.v, f_x[9] solving src.i"
         }
       },
       {

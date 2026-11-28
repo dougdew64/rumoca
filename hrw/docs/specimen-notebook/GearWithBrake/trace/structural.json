@@ -584,6 +584,7 @@
       "result": "sorted: 56 block(s), 1 coupled"
     }
   ],
+  "run_tearing": "the run's tearing belongs to the prepared system, which index reduction changed, so it is not paired with these blocks: see Index reduction's `after` blocks",
   "matching": [
     {
       "equation": "f_x[1] (phi_support = 0)",

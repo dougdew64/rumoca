@@ -85,6 +85,33 @@
               "variable": "command"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "error"
+          ],
+          "residual_equations": [
+            "f_x[1] (measurement = w + sensorFeedthrough * command)"
+          ],
+          "residual_equation_ids": [
+            "f_x[1]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[2] (error = reference - measurement)",
+              "id": "f_x[2]",
+              "variable": "measurement",
+              "coefficient": "Literal"
+            },
+            {
+              "equation": "f_x[3] (command = controllerGain * error)",
+              "id": "f_x[3]",
+              "variable": "command",
+              "coefficient": "Unit"
+            }
+          ],
+          "same_as_structural": true,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on"
         }
       },
       {
@@ -222,6 +249,33 @@
               "variable": "command"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "error"
+          ],
+          "residual_equations": [
+            "f_x[1] (measurement = w + sensorFeedthrough * command)"
+          ],
+          "residual_equation_ids": [
+            "f_x[1]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[2] (error = reference - measurement)",
+              "id": "f_x[2]",
+              "variable": "measurement",
+              "coefficient": "Literal"
+            },
+            {
+              "equation": "f_x[3] (command = controllerGain * error)",
+              "id": "f_x[3]",
+              "variable": "command",
+              "coefficient": "Unit"
+            }
+          ],
+          "same_as_structural": true,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on"
         }
       },
       {

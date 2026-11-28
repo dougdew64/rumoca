@@ -345,10 +345,11 @@ A coupled block of size *n* means handing *n* equations in *n* unknowns to a num
 - **Stations:**
   - `fixture-lab-tearing-guess-one-number-get-the-rest-for-free` — Fixture lab — Tearing: guess one number, get the rest for free
   - `station-1-guess-one-number-and-the-rest-falls-out` — Station 1 — Guess one number and the rest falls out
-  - `station-2-watch-the-choice-being-made` — Station 2 — Watch the choice being made
-  - `station-3-two-blocks-torn-independently` — Station 3 — Two blocks, torn independently
-  - `station-4-all-three-kinds-of-block-in-one-model` — Station 4 — All three kinds of block in one model
-  - `station-5-what-it-costs-once-time-is-moving` — Station 5 — What it costs once time is moving
+  - `station-2-what-the-run-does-with-that-plan` — Station 2 — What the run does with that plan
+  - `station-3-watch-the-choice-being-made` — Station 3 — Watch the choice being made
+  - `station-4-two-blocks-torn-independently` — Station 4 — Two blocks, torn independently
+  - `station-5-all-three-kinds-of-block-in-one-model` — Station 5 — All three kinds of block in one model
+  - `station-6-what-it-costs-once-time-is-moving` — Station 6 — What it costs once time is moving
   - `what-this-lab-cannot-check` — What this lab cannot check
   - `what-comes-next-in-the-chain` — What comes next in the chain
 

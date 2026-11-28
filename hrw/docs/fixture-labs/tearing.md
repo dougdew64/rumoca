@@ -34,6 +34,8 @@ f_x[2]   0 = measurement - plantGain * command
 [Look — ProportionalLoop → Structural → Tearing](hrw://load/ProportionalLoop/Structural/TearingAnim)
 
 **Expected:** one — the tear variable is `command`, and the residual equation is `f_x[0]`.
+Below the animation, in amber, a line begins *"The run does not iterate on this plan. It tears
+error"* — leave that for Station 2.
 
 Falsified if: two or three tear variables are reported, or the residual is `f_x[1]` or
 `f_x[2]`.
@@ -48,12 +50,55 @@ Falsified if: two or three tear variables are reported, or the residual is `f_x[
 
 That is the order Rumoca records, in the block's `tearing.causal_sequence`.
 
-So the run-time problem is *"find the one number `command` that makes `f_x[0]` come out zero"* —
-one unknown, not three. The block is still coupled; it is just cheaper.
+So the structural phase's problem is *"find the one number `command` that makes `f_x[0]` come out
+zero"*: one unknown, not three. The block is still coupled; it is just cheaper. **But that is not
+the problem the simulation solves**, and the reason is in step 2.
 
 ---
 
-## Station 2 — Watch the choice being made
+## Station 2 — What the run does with that plan
+
+Step 2 above says `error = command / controllerGain`. That is a division by a parameter.
+
+> **Predict.** Is there any value of `controllerGain` for which step 2 cannot be done? And if a
+> compiler cannot rule that value out, what should it do?
+
+[Look — ProportionalLoop → Structural → Spy plot](hrw://load/ProportionalLoop/Structural/SpyPlot),
+then hover over the orange block.
+
+**Expected:** the block's tooltip lists the structural plan (tear `command`, residual `f_x[0]`), and
+then *"the run iterates on a different plan"*, with **run tear vars `error`** and **run residual
+equations `f_x[2]`**. A note begins *"solve lowering re-tore this block"*.
+
+Falsified if: the tooltip says *"the run iterates on this same plan"*, or the run's tear variable
+is `command`.
+
+*What just happened.* At `controllerGain = 0`, step 2 divides by zero. Nothing in the model forbids
+that value, and Rumoca's rule is to take a causal step only with a **proof** that the number it
+divides by is nonzero (`proven_tearing.rs`, SPEC_0043 §4). A parameter carries no such proof, so
+solve lowering throws the structural plan away and tears the block again. It keeps only steps it
+can prove:
+
+1. Guess `error`.
+2. `f_x[1]` gives `command = controllerGain * error`. This is a multiplication, and the unknown
+   enters with coefficient 1 (`Unit`).
+3. `f_x[0]` gives `measurement = reference - error`. The coefficient is −1 (`Literal`).
+4. `f_x[2]`, `measurement = plantGain * command`, is the residual.
+
+The run's plan is still one guess and one check, with the same size and cost as the structural
+plan. It is simply safe for every parameter value. The proofs are on screen: the Structural tree's
+`blocks[0].run_tearing.causal_sequence` names each step's `coefficient`, and those are the values
+the simulation's Newton uses. *(Solve lowering's own tab holds the same plan in its
+`continuous.algebraic_projection_plan`, as solver indices.)*
+
+**This is why the structural phase's answer is a proposal.** It works from the sparsity pattern
+alone (`structural-vs-numerical-rank` is about exactly that), and a pattern cannot tell
+multiplying by a parameter from dividing by one. Solve lowering can. *(Until 2026-11-28 this lab
+taught the structural plan as the run's, and HRW showed nothing else.)*
+
+---
+
+## Station 3 — Watch the choice being made
 
 The tear variable was not arbitrary. Step the animation rather than reading its result.
 
@@ -83,7 +128,8 @@ only by working the other two out yourself.
 
 It is a *heuristic*, and that word is doing real work: choosing the tear set that minimises
 iteration is NP-hard in general, so every Modelica compiler uses a greedy rule and none claims
-optimality. Station 5 is about what that costs.
+optimality. Station 6 is about what that costs. *(And Station 2 is a second reason the greedy
+answer is not final: the run keeps only the steps it can prove.)*
 
 It is also the only heuristic you meet in these labs. Matching and Tarjan give exact answers:
 if every equation can be paired, matching finds a pairing, and Tarjan's blocks are the only ones
@@ -92,7 +138,7 @@ values. It only iterates on more unknowns than it had to.
 
 ---
 
-## Station 3 — Two blocks, torn independently
+## Station 4 — Two blocks, torn independently
 
 `TwoLoops` gave you two coupled blocks of size 2 rather than one of size 4.
 
@@ -101,7 +147,7 @@ values. It only iterates on more unknowns than it had to.
 [Look — TwoLoops → Structural → Spy plot](hrw://load/TwoLoops/Structural/SpyPlot)
 
 **Expected:** two, one per block — `errorA` with residual `f_x[0]`, and `errorB` with residual
-`f_x[2]`.
+`f_x[2]`. Hover over either block: the tooltip says *"the run iterates on this same plan"*.
 
 Falsified if: one tear variable serves both blocks, or either block reports two.
 
@@ -109,12 +155,16 @@ Falsified if: one tear variable serves both blocks, or either block reports two.
 compose: BLT already established that these are two 2×2 problems, and tearing shrinks each to
 1×1 independently. Nothing about loop B's tear can affect loop A's.
 
+And here the run keeps both plans, for Station 2's reason. Each block tears `error` and computes
+`command = gain * error` causally, which is a multiplication with coefficient 1. There is nothing to
+prove, so nothing to replace.
+
 The run-time shape is now: iterate one number, then iterate one number. Compare that with the
 4×4 Newton solve a compiler without either phase would have produced.
 
 ---
 
-## Station 4 — All three kinds of block in one model
+## Station 5 — All three kinds of block in one model
 
 `MixedLoop` is 5 equations, and it is the most realistic model in this lab.
 
@@ -123,13 +173,15 @@ The run-time shape is now: iterate one number, then iterate one number. Compare 
 [Look — MixedLoop → Structural → Spy plot](hrw://load/MixedLoop/Structural/SpyPlot)
 
 **Expected:** three blocks — a scalar one, then a coupled block of 3 torn on `command`
-with residual `f_x[1]`, then another scalar one.
+with residual `f_x[1]`, then another scalar one. The coupled block's tooltip says the run
+iterates on a different plan: **`error`**, residual **`f_x[3]`**.
 
 Falsified if: the coupled block is a different size, or there are not exactly three blocks.
 
 *What just happened.* This is what a real compiled model looks like: a little straight-line work,
 a knot in the middle, a little more straight-line work. `f_x[0]` computes `setpoint` from the
-reference; the loop is solved; `f_x[4]` computes `result` from `measurement`.
+reference; the loop is solved; `f_x[4]` computes `result` from `measurement`. The knot is
+`ProportionalLoop`'s cycle again, so the run re-tears it for Station 2's reason.
 
 The knot is the only expensive part: one of the three blocks, holding three of the five
 equations. On a model this small the knot is most of it, and that ratio inverts with size — which
@@ -138,33 +190,36 @@ minority of the equations, and tearing shrinks them further.
 
 ---
 
-## Station 5 — What it costs once time is moving
+## Station 6 — What it costs once time is moving
 
 Every specimen so far is timeless — no states, so each block is solved once and the model is
 finished. That is a simplification, and it hides what the phase is really deciding.
 
 `LoopWithInertia` is `ProportionalLoop` with the inertia restored: the same cycle, plus a state.
 
-> **Predict.** The block is torn on one variable, as in Station 1. How many times will that torn block
+> **Predict.** The block is torn on one variable, as in Station 2. How many times will that torn block
 > be solved over a simulation?
 
 [Look — LoopWithInertia → Structural → Spy plot](hrw://load/LoopWithInertia/Structural/SpyPlot)
 
 **Expected:** two blocks — a coupled block of 3 torn on `error` with residual `f_x[1]`,
-and a scalar block holding `f_x[0]`, which is the equation containing `der(w)`.
+and a scalar block holding `f_x[0]`, which is the equation containing `der(w)`. The coupled
+block's tooltip says the run iterates on this same plan: both its causal steps already have a
+proof (`Literal` and `Unit`).
 
 Falsified if: no scalar block appears, or no variable in this model carries a derivative.
 
 *What just happened.* There is a state, so the integrator takes a step, and a step, and a step —
 and the torn block is re-solved between every pair of steps, for the whole run.
 
-That reframes Stations 1 to 4. Tearing is not a compile-time tidy-up whose benefit you count once. The
+That reframes Stations 1 to 5. Tearing is not a compile-time tidy-up whose benefit you count once. The
 choice of *which single variable to guess* is a decision about the innermost loop of the
 simulation, executed thousands of times. A greedy choice that is one variable worse than optimal
 is one extra unknown in every Newton iteration of every time step.
 
-Which is why the phase bothers, and why "heuristic" in Station 2 is uncomfortable rather than
-reassuring.
+Which is why the phase bothers, and why "heuristic" in Station 3 is uncomfortable rather than
+reassuring. It is also why Station 2's proof matters: a division by zero in that inner loop does
+not fail once, it fails at whatever instant the parameter lets it.
 
 ---
 
@@ -172,15 +227,20 @@ reassuring.
 
 Whether the tearing animation shows the choice as a choice. The tear frame carries the winner's
 `appearances`, and each causal frame its `competitors` (how many equations could have solved
-that variable), so Station 2 can ask *"why that variable?"* — but whether those numbers are
+that variable), so Station 3 can ask *"why that variable?"* — but whether those numbers are
 visible and legible on screen is the half no test reaches.
 
-Whether Station 4 is the right ending or the right beginning. `MixedLoop` is the most realistic
-model here and arguably the point; it is placed fourth because the machinery has to be understood
+Whether the amber line under the animation is noticed. It is drawn below the search, which is
+where Station 1 sends you, but a reader stepping frames may never scroll to it. And whether the
+run's re-tear deserves its own animation: the search Rumoca records is the structural phase's,
+and the re-tear has no recorded frames, so HRW can show its result but not its steps.
+
+Whether Station 5 is the right ending or the right beginning. `MixedLoop` is the most realistic
+model here and arguably the point; it is placed fifth because the machinery has to be understood
 first, and that ordering may be exactly backwards for a reader who wants to know what a compiled
 model looks like before learning how it got that way.
 
-Whether Station 5's claim about cost is believable without a measurement. It asserts thousands of
+Whether Station 6's claim about cost is believable without a measurement. It asserts thousands of
 re-solves and shows none. A profile would settle it and there is no profiler here.
 
 ---

@@ -1099,6 +1099,7 @@
         "result": "sorted: 116 block(s), 1 coupled"
       }
     ],
+    "run_tearing": "the run's tearing belongs to the prepared system, which index reduction changed, so it is not paired with these blocks: see Index reduction's `after` blocks",
     "matching": [
       {
         "equation": "f_x[0] (-tau)",
@@ -2410,6 +2411,58 @@
               "variable": "shaft.flange_b.tau"
             }
           ]
+        },
+        "run_tearing": {
+          "tear_vars": [
+            "load.a"
+          ],
+          "residual_equations": [
+            "f_x[53] (0 = ratio*flangeR.tau + flangeT.f)"
+          ],
+          "residual_equation_ids": [
+            "f_x[53]"
+          ],
+          "causal_sequence": [
+            {
+              "equation": "f_x[107] ((flangeR.phi - internalSupportR.phi) = ratio*(flangeT.s -\n    internalSupportT.s))",
+              "id": "f_x[107]",
+              "variable": "shaft.a",
+              "coefficient": "Unit"
+            },
+            {
+              "equation": "f_x[58] (m*a = flange_a.f + flange_b.f)",
+              "id": "f_x[58]",
+              "variable": "r2t.flangeT.f",
+              "coefficient": "Literal"
+            },
+            {
+              "equation": "f_x[104] (phi_a = ratio*phi_b)",
+              "id": "f_x[104]",
+              "variable": "rotor.a",
+              "coefficient": "Unit"
+            },
+            {
+              "equation": "f_x[35] (J*a = flange_a.tau + flange_b.tau)",
+              "id": "f_x[35]",
+              "variable": "rotor.flange_b.tau",
+              "coefficient": "Literal"
+            },
+            {
+              "equation": "f_x[40] (0 = ratio*flange_a.tau + flange_b.tau)",
+              "id": "f_x[40]",
+              "variable": "gear.flange_b.tau",
+              "coefficient": "Literal"
+            },
+            {
+              "equation": "f_x[45] (J*a = flange_a.tau + flange_b.tau)",
+              "id": "f_x[45]",
+              "variable": "shaft.flange_b.tau",
+              "coefficient": "Literal"
+            }
+          ],
+          "same_as_structural": false,
+          "source": "solve lowering's continuous.algebraic_projection_plan: the tearing the simulation's Newton iterates on",
+          "note": "solve lowering re-tore this block (proven_tearing::retear_unproven_blocks): a causal step divides by the coefficient of the unknown it isolates, and Rumoca admits one only with a proof that the coefficient is nonzero (SPEC_0043 §4); of the structural plan's steps, the run's plan does not contain f_x[107] solving load.a, f_x[53] solving shaft.flange_b.tau"
         }
       },
       {
