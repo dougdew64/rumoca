@@ -588,10 +588,12 @@ the next phase touches — is procedure and lives there.
 > **Base: `ddbece0d6`, the merge of release PR #755 (0.11.0), with no `v0.11.0` tag yet.**
 > Doug chose to start on the release commit rather than wait, on the condition that **the base is
 > checked against the tag once it exists**, and moved to the tag if they differ.
-> `pre-0.11.0-rebase` tags the old tip. Steps 0–5 and 3c/3d are done, and so is step 6's claim
-> check. **Steps 8 (smoke on screen, Doug's), 9, 10 (long suites) and 11 are open**, and so is a
-> decision on the tearing disagreement (`DECISIONS.md`, 2026-11-28). Progress is recorded there.
-> The `rumoca` CLI crate now needs `libudev` to build (`systemd-devel` on Fedora).
+> `pre-0.11.0-rebase` tags the old tip. Done: steps 0–7, 3c/3d and the tearing fix (Doug chose
+> to show both plans). Step 10 is done on Linux. **Still open: step 8 (the smoke test on
+> screen, Doug's), step 9, step 11, and the two Windows-only parts of step 10**, the MSL fidelity
+> sweep (`measure-fidelity.ps1`) and the System Modeler oracle. Progress is recorded in
+> `DECISIONS.md`, 2026-11-28. The `rumoca` CLI crate now needs `libudev` to build
+> (`systemd-devel` on Fedora).
 >
 > ### ⟶ `hrw-rebase-0.10.4` is the PREVIOUS branch — hopped 2026-11-04, same day as the 0.10.0 rebase
 >

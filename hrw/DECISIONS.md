@@ -6186,6 +6186,23 @@ the version stamps. **The check also found three defects that predate this rebas
   Drivetrain, GearWithBrake and both pendulums;** TwoLoops and LoopWithInertia keep the
   structural plan. `tearing.md` gained a Station 2 on the proof rule, and
   `structural-vs-numerical-rank.md` Station 2 now connects it to the pattern-only claim.
+
+**Step 10, on Linux, the night of 2026-11-27.**
+- **Passed:**
+  - clippy on the `rumoca` CLI crate, now that `libudev` is installed;
+  - `suite_core`'s step-observation tests;
+  - the full slow suite (1086);
+  - MSL resolve;
+  - the notebook check;
+  - the ignored set.
+- **The ignored set first failed on my own test:** `a_preparation_warning_reaches_the_log_inner`
+  is ignored so that only its outer test runs it. A plain `--ignored` run hit the harness's
+  `eprintln!` interception. It now checks only when the outer test's environment marker is set,
+  and the outer test fails if the child skipped. Its must-fire check was re-run: removing the
+  drain turns it red.
+- **Not run, and both need the Windows machine:** the MSL fidelity sweep (its driver and
+  memory watchdog are `measure-fidelity.ps1`, and this machine has no PowerShell) and the System
+  Modeler oracle (no `wolframscript`).
 - **Step 3c** re-tested the eleven open Rumoca entries; each one's note is in `upstream-issues.md`.
   **D3 is still present**, and `CLAUDE.md`'s "probably fixed" was wrong. **Entry 2 changed shape**:
   a `Pin`-to-`Flange` connect is now accepted silently by every stage.
