@@ -9827,9 +9827,15 @@ fn a_preparation_warning_reaches_the_log() {
             "--nocapture",
             "--test-threads=1",
         ])
+        .env(PREPARATION_WARNING_CHILD, "1")
         .output()
         .expect("run the test binary");
     let stdout = String::from_utf8_lossy(&output.stdout);
+    // A child that skipped its check would pass; that must not count.
+    assert!(
+        !stdout.contains("not checking"),
+        "the child did not run its check:\n{stdout}"
+    );
     assert!(
         output.status.success() && stdout.contains("1 passed"),
         "the inner check did not pass:\n{stdout}\n{}",
@@ -9837,9 +9843,26 @@ fn a_preparation_warning_reaches_the_log() {
     );
 }
 
+/// Set by [`a_preparation_warning_reaches_the_log`] in the child it starts.
+const PREPARATION_WARNING_CHILD: &str = "HRW_PREPARATION_WARNING_CHILD";
+
+/// The real check, meaningful only in the `--nocapture` child.
+///
+/// **A plain `--ignored` run must not fail it** (2026-11-28): the rebase
+/// procedure's step 10 runs every ignored test, and under the harness's
+/// interception this check fails for a reason that is not true of the app. So
+/// outside the child it says why it is not checking, and returns. Its outer test
+/// is what enforces it, and that one runs in every gate.
 #[test]
 #[ignore = "run only by a_preparation_warning_reaches_the_log, in a --nocapture child"]
 fn a_preparation_warning_reaches_the_log_inner() {
+    if std::env::var_os(PREPARATION_WARNING_CHILD).is_none() {
+        println!(
+            "not checking: this runs in a_preparation_warning_reaches_the_log's \
+             --nocapture child, which that test starts and checks"
+        );
+        return;
+    }
     let dir = std::env::temp_dir().join(format!("hrw-es017-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("a temp dir");
     let path = dir.join("Withheld.mo");
