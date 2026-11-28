@@ -1830,6 +1830,21 @@ something false).
 | 11 | The 0.11.0 re-test of `upstream-issues.md` P2 measured a prune at 0.3 s, but why it fell from ~21 s was not established. | `upstream-issues.md` P2 | measurement |
 | 12 | **The class that produced the most findings has no checker**: function and type names in backticks in prose, and present-tense claims about what HRW calls. `doc_citations` checks paths, links and `phase_source`, so it caught none of this sweep's ~25 stale passages. A checker that resolves backticked `snake_case` names against the workspace (with an allow-list for history sections) would have caught most of them. | the 2026-11-28 ledger row | medium; **the strongest proposal from this sweep** |
 
+### Rebase-procedure improvements, agreed 2026-11-28 — Doug: implement after he reaches Chicago
+
+Proposed after the 0.11.0 rebase; changes to `updating-rumoca.md` and two `hrw/` code changes
+(no `crates/` edit, so no MSL re-parse).
+
+| # | change | evidence | kind |
+|---|---|---|---|
+| R1 | **Step 3d's diff misses the crates the path calls.** Its command covers only `rumoca-compile/src/session` and `rumoca-sim/src`; list every workspace crate the path depends on (from `cargo tree`), excluding wasm, codegen and GPU. | Three of 0.11.0's four largest path changes were outside it: `1091f347d` (`rumoca-phase-solve`), `94de857b2` (`phase-solve`, `phase-structural`), `4b6059e31` (mostly `rumoca-eval-solve`); `188a1372a` also touched `rumoca-solver-diffsol`. The review agent read more widely than the step asked | doc |
+| R2 | **Make the MSL fidelity sweep runnable on Linux**: move `measure-fidelity.ps1`'s driver and memory watchdog into the Rust example or a portable script. Also check whether Wolfram's tools install on Fedora, for the oracle | The step that found F4 blind on 0.10.4 is the one 0.11.0 had to defer to the Windows machine | code |
+| R3 | **Every step 3d line naming a tab must be verified (V) before the rebase closes** | 0.11.0's entry has unverified lines (Flatten's medium aliases, Events' noEvent assertions) | doc |
+| R4 | **Test that every `bridge::phase_source` function is actually called**, not only defined | `every_phase_source_names_a_defined_function` passed three stale roster names on 0.11.0 | code |
+| R5 | **Write the tag check down as step 0b**: what to compare, and what to do if tag and base differ | It lived only in `CLAUDE.md` and `DECISIONS.md` | doc |
+
+Item 12 above, once built, should run in step 6.
+
 ---
 
 ## Measured 2026-08-01
