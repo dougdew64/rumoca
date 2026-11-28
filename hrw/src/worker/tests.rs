@@ -9797,6 +9797,83 @@ fn library_free_compile() -> (WorkerState, FromWorker) {
     (w, result)
 }
 
+/// **A warning Rumoca prints while preparing the simulation reaches HRW's log.**
+///
+/// Solve lowering prints ES017 to stderr when it does not honour a
+/// `StateSelect.prefer` (new in 0.11.0). The compile captures stderr, but until
+/// 2026-11-28 nothing drained the capture after the preparation, so the warning
+/// was dropped with it — the Log showed a run that had said nothing.
+///
+/// The model is upstream's own (`suite_core/state_select_priorities.rs`,
+/// `a_preference_whose_prolongation_is_not_differentiable_is_withheld`): `y`
+/// depends on an `Integer`, so its derivative does not exist and `prefer`
+/// cannot be honoured.
+///
+/// **Why the check runs in a child process.** The test harness intercepts
+/// `eprintln!` in-process, so under an ordinary `cargo test` the warning never
+/// reaches file descriptor 2, which is what `OutputCapture` reads — the check
+/// would fail for a reason that is not true of the app. `--nocapture` turns the
+/// interception off, and it can only be set for a whole run, so this test re-runs
+/// its own binary with it on and the real check, which is ignored on its own
+/// so that nothing runs it under the harness's interception.
+#[test]
+fn a_preparation_warning_reaches_the_log() {
+    let inner = "worker::tests::a_preparation_warning_reaches_the_log_inner";
+    let output = std::process::Command::new(std::env::current_exe().expect("the test binary"))
+        .args([
+            inner,
+            "--exact",
+            "--ignored",
+            "--nocapture",
+            "--test-threads=1",
+        ])
+        .output()
+        .expect("run the test binary");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success() && stdout.contains("1 passed"),
+        "the inner check did not pass:\n{stdout}\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+#[ignore = "run only by a_preparation_warning_reaches_the_log, in a --nocapture child"]
+fn a_preparation_warning_reaches_the_log_inner() {
+    let dir = std::env::temp_dir().join(format!("hrw-es017-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("a temp dir");
+    let path = dir.join("Withheld.mo");
+    std::fs::write(
+        &path,
+        "model Withheld
+  Real x(start = 1, fixed = true);
+  Real y(stateSelect = StateSelect.prefer);
+  Integer k;
+equation
+  der(x) = -x;
+  k = integer(3*x);
+  y = x + k;
+end Withheld;
+",
+    )
+    .expect("write the model");
+    let logs = std::sync::Mutex::new(Vec::new());
+    let mut w = WorkerState::new();
+    let _ = w.compile(&path, &|msg: FromWorker| {
+        if let FromWorker::Log(entry) = msg {
+            logs.lock().unwrap().push(entry);
+        }
+    });
+    let _ = std::fs::remove_dir_all(&dir);
+    let logs = logs.into_inner().unwrap();
+    let code = rumoca_phase_structural::diagnostic_codes::ES017_WITHHELD_STATE_PREFERENCE;
+    assert!(
+        logs.iter().any(|e| e.message.contains(code)),
+        "no log entry carries {code}: {:?}",
+        logs.iter().map(|e| e.message.as_str()).collect::<Vec<_>>()
+    );
+}
+
 /// **The Parse tab is the session's own parse — the AST the compile reads.**
 ///
 /// Until 2026-11-27 HRW parsed the file a second time itself, which differs from

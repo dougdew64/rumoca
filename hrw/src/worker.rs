@@ -3897,6 +3897,11 @@ impl WorkerState {
                         let opts = preparation_options(cr, None);
                         let real = preparation::observe(&cr.dae, &opts);
                         drain_traces(&log);
+                        // **Rumoca prints its preparation warnings to stderr** — 0.11.0's
+                        // ES017, a `StateSelect.prefer` the run does not honour, is one —
+                        // so drain them here. Until 2026-11-28 nothing drained the
+                        // capture after this call and they were dropped with it.
+                        drain_output(&mut output_capture, &log);
                         // The stage brackets that follow read this call's record
                         // into views; they do not run anything themselves, which is
                         // what the closing message says.
