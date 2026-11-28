@@ -116,6 +116,7 @@ pub struct CapturedIncidenceRow {
 pub enum PreparationEvent {
     /// One structural analysis — matching, BLT and tearing — and its result.
     StructuralAnalysis {
+        /// Which analysis of the preparation this was.
         context: AnalysisContext,
         /// The incidence the analysis matched over; `None` when building it
         /// failed, which is then the analysis's error.
@@ -132,6 +133,8 @@ pub enum PreparationEvent {
     AliasQuotient {
         /// `Source` before state selection, `FormalDerivatives` after it.
         scope: AliasQuotientScope,
+        /// Every class the quotient considered: those it collapsed, and those it
+        /// left unchanged with the reason.
         report: AliasQuotientReport,
     },
 }
@@ -207,7 +210,8 @@ pub enum LiveStep<'a> {
 pub type LiveListener = Box<dyn FnMut(LiveStep<'_>)>;
 
 thread_local! {
-    /// Optional live listener, called only while a capture scope is open.
+    /// Optional live listener. Its callers in the analyses notify only while a
+    /// capture scope is open; `notify` itself does not check.
     static LIVE: RefCell<Option<LiveListener>> = const { RefCell::new(None) };
 }
 

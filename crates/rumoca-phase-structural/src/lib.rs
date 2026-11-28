@@ -117,7 +117,7 @@ pub fn observe_sort<'dae>(
     sort_with_observer(view, &mut observation::StructuralStreamer::new(sink))
 }
 
-pub(crate) fn sort_with_observer<'dae>(
+fn sort_with_observer<'dae>(
     view: dae::DaeView<'dae>,
     observer: &mut impl observation::StructuralObserver,
 ) -> Result<SortedDae<'dae>, StructuralError> {
@@ -150,7 +150,7 @@ pub(crate) fn sort_from_incidence<'dae>(
 }
 
 /// [`sort_from_incidence`], reporting each search step to `observer`.
-pub(crate) fn sort_from_incidence_with_observer<'dae>(
+fn sort_from_incidence_with_observer<'dae>(
     view: dae::DaeView<'dae>,
     incidence: &Incidence<'dae>,
     observer: &mut impl observation::StructuralObserver,
@@ -309,7 +309,7 @@ pub fn inspect_structural_report(
     (report, recorder.finish())
 }
 
-pub(crate) fn structural_report_from_sorted<'dae>(
+fn structural_report_from_sorted<'dae>(
     view: dae::DaeView<'dae>,
     sorted: &SortedDae<'dae>,
 ) -> StructuralReport {

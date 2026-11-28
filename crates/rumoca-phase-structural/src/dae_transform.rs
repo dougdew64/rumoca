@@ -1808,8 +1808,7 @@ fn select_dummy_states(
     StructuralError,
 > {
     loop {
-        // A real demotion round, so an open preparation scope sees it; the
-        // standalone `inspect_prepare_for_solve` recorder never reached here.
+        // A real demotion round, so an open preparation scope sees it.
         let round = demote_direct_state_with_observer(
             &model,
             0,
