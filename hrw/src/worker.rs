@@ -2621,48 +2621,6 @@ impl WorkerState {
         Ok(total)
     }
 
-    /// Run the full compilation pipeline on a specimen, extracting the user
-    /// model's IR at each stage and streaming progress to the UI.
-    ///
-    /// This is the most complex method in the worker — it orchestrates the
-    /// entire Rumoca pipeline and produces the `FromWorker::Compiled` result
-    /// that populates every compilation stage tab in the UI.
-    ///
-    /// # Pipeline stages (in order), and the ONE Rumoca call each reads
-    ///
-    /// HRW runs no phase itself. Two calls produce every tab, and the simulation
-    /// integrates what the second returns:
-    ///
-    /// - **`Session::compile_model_strict_reachable_uncached_with_recovery`** —
-    ///   Parse (the session's own parsed document), Resolve (the strict-compile
-    ///   tree the compile uses), Instantiate and Typecheck (`rumoca_compile::observe`
-    ///   capture), Flatten and DAE construction (the result).
-    /// - **`rumoca_sim::prepare_runtime_observed`** on that DAE — Simplify,
-    ///   Structural, Index reduction, Initialization, Events' lowered half and Solve
-    ///   lowering, through the two preparation capture scopes
-    ///   (`worker::preparation`).
-    ///
-    /// `bridge::phase_source` is the per-tab roster, and
-    /// `no_tab_is_built_from_a_phase_hrw_runs_itself` keeps `src/` honest to it.
-    ///
-    /// # Progressive streaming pattern
-    ///
-    /// After each stage, the method sends a `CompileProgress` message with all
-    /// stages computed so far (the rest are `Stage::default()` — neutral). This
-    /// lets the UI colour tabs green/red as each stage lands, giving real-time
-    /// progress feedback during a multi-second compile.
-    ///
-    /// # Two-phase compilation
-    ///
-    /// Stages 1-4 (Parse through Typecheck) are run independently with direct
-    /// Rumoca API calls. Stages 5-10 come from a single Rumoca pipeline
-    /// invocation (`compile_model_strict_reachable_with_recovery`), and the
-    /// stage-extraction functions (`flatten_stage`, `structural_stage`, etc.)
-    /// pull out individual stages from the combined `PhaseResult`.
-    ///
-    /// Typecheck is deferred: a clean, model-scoped typecheck needs
-    /// instantiation; the pre-instantiation whole-tree typecheck fails
-    /// on the full MSL.
     /// Find the document declaring `qualified`, and hand back its source.
     ///
     /// **`ClassDef::location.file_name` is the document URI**, not a bare
@@ -2841,6 +2799,41 @@ impl WorkerState {
         self.compile_target(CompileTarget::Library(qualified), emit)
     }
 
+    /// Run the full compilation pipeline on a specimen, extracting the user
+    /// model's IR at each stage and streaming progress to the UI.
+    ///
+    /// This is the most complex method in the worker — it orchestrates the
+    /// entire Rumoca pipeline and produces the `FromWorker::Compiled` result
+    /// that populates every compilation stage tab in the UI.
+    ///
+    /// *(This comment sat above `locate_library_model` until 2026-11-28, so it
+    /// documented the wrong function, and its "two-phase compilation" section
+    /// still described stages HRW once ran itself.)*
+    ///
+    /// # Pipeline stages (in order), and the ONE Rumoca call each reads
+    ///
+    /// HRW runs no phase itself. Two calls produce every tab, and the simulation
+    /// integrates what the second returns:
+    ///
+    /// - **`Session::compile_model_strict_reachable_uncached_with_recovery`** —
+    ///   Parse (the session's own parsed document), Resolve (the strict-compile
+    ///   tree the compile uses), Instantiate and Typecheck (`rumoca_compile::observe`
+    ///   capture), Flatten and DAE construction (the result).
+    /// - **`rumoca_sim::prepare_runtime_observed`** on that DAE — Simplify,
+    ///   Structural, Index reduction, Initialization, Events' lowered half and Solve
+    ///   lowering, through the two preparation capture scopes
+    ///   (`worker::preparation`).
+    ///
+    /// `bridge::phase_source` is the per-tab roster, and
+    /// `no_tab_is_built_from_a_phase_hrw_runs_itself` keeps `src/` honest to it.
+    /// The `*_stage()` functions only read those two calls' results into views.
+    ///
+    /// # Progressive streaming pattern
+    ///
+    /// After each stage, the method sends a `CompileProgress` message with all
+    /// stages computed so far (the rest are `Stage::default()` — neutral). This
+    /// lets the UI colour tabs green/red as each stage lands, giving real-time
+    /// progress feedback during a multi-second compile.
     fn compile_target(
         &mut self,
         target: CompileTarget<'_>,
@@ -3412,10 +3405,12 @@ impl WorkerState {
         // Stages 5-11: Flatten → DAE construction → Solve lowering
         // =====================================================================
         // **Flatten and DAE construction happen inside one Rumoca call**
-        // (`compile_model_strict_reachable_with_recovery`); their `*_stage()`
-        // functions only *extract* the results from the returned `PhaseResult`.
-        // Structural analysis, index reduction, initialization, events and solve
-        // lowering are run here, so their timings are real work.
+        // (`compile_model_strict_reachable_uncached_with_recovery`); their
+        // `*_stage()` functions only *extract* the results from the returned
+        // `PhaseResult`. Simplify through Solve lowering are the second Rumoca
+        // call, `rumoca_sim::prepare_runtime_observed`, bracketed as "Rumoca solve
+        // lowering" below — its timing is real work; the stage brackets after it
+        // only read its record.
         //
         // That difference is why the call is bracketed separately in the log. It
         // used to be bracketed as a "DAE pipeline" spanning flatten → solve

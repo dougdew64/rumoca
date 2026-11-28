@@ -1699,7 +1699,11 @@ pub(crate) fn phase_source(stage: StageKind) -> Value {
         StageKind::Parse => ("crates/rumoca-compile", "Session::update_document"),
         // Resolution is driven through the compile session rather than a free
         // function, so the entry named here is the session method.
-        StageKind::Resolve => ("crates/rumoca-compile", "Session::resolved"),
+        // The strict-compile tree, which is the one the compile resolves against
+        // (`the_resolve_tab_reads_the_tree_the_compile_uses`). It named
+        // `Session::resolved` until 2026-11-28 — the Standard-mode build the
+        // worker deliberately avoids.
+        StageKind::Resolve => ("crates/rumoca-compile", "Session::strict_compile_resolved"),
         StageKind::Instantiate => ("crates/rumoca-phase-instantiate", "instantiate_model"),
         StageKind::Typecheck => ("crates/rumoca-phase-typecheck", "typecheck_instanced"),
         // Flatten has no standalone entry point: it is extracted from the
@@ -1707,14 +1711,14 @@ pub(crate) fn phase_source(stage: StageKind) -> Value {
         // naming a function that does not exist.
         StageKind::Flatten => (
             "crates/rumoca-compile",
-            "Session::compile_model_strict_reachable_with_recovery",
+            "Session::compile_model_strict_reachable_uncached_with_recovery",
         ),
         // DAE construction runs inside the same reachable-closure pipeline as
         // Flatten, and the DAE comes back in its result; the construction record
         // (pre() lowering included) is read from that DAE, not from a second call.
         StageKind::Dae => (
             "crates/rumoca-phase-dae",
-            "to_dae_with_evidence (run by the compile session, compile_support.rs)",
+            "to_dae_with_options (run by the compile session, compile_support.rs)",
         ),
         // Simplify through Solve lowering are one Rumoca call since 2026-11-26 —
         // `rumoca_sim::prepare_runtime_observed`, watched by both preparation
