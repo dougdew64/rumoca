@@ -639,7 +639,7 @@ names alone would be a claim this refresh did not check.
 
 | File | Purpose |
 |------|---------|
-| `rumoca-phase-structural/src/dae_transform.rs` | The entry points — `prepare_for_solve`, `inspect_prepare_for_solve`, `watch_prepare_for_solve` — and `reduce_from_first_round`, the Direct-then-Holonomic fixed point |
+| `rumoca-phase-structural/src/dae_transform.rs` | The entry points — `prepare_for_solve`, `inspect_prepare_for_solve` — and `reduce_from_first_round`, the Direct-then-Holonomic fixed point |
 | `rumoca-phase-structural/src/dae_transform/differentiation.rs` | Symbolic time differentiator: `differentiate`, `differentiate_order`, `differentiate_holonomic` |
 | `rumoca-phase-structural/src/dae_transform/holonomic_attempt.rs` | The Holonomic lane's attempt, including the `WouldCreateVacuousResidual` refusal |
 | `rumoca-phase-structural/src/dae_transform/observation.rs` | The observation vocabulary: `AttemptOutcome`, `StoppedOutcome`, `Lane`, `CandidateGroup` |

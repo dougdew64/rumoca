@@ -20,8 +20,17 @@ compiler find it, and what does every tab after that point say?
 [Load UndefinedRef → Resolve](hrw://load/UndefinedRef/Resolve)
 
 **Expected:** Resolve has **Failed** (red), and its note reads
-`Resolve errors: unresolved component reference: 'missingGain'`. There is no tree — only the
-error panel, whose diagnostic `ER002` points at line 9, `y = missingGain * time;`.
+`Resolve errors: unresolved component reference: 'missingGain'`. The error panel comes first,
+and its diagnostic `ER002` points at line 9, `y = missingGain * time;`. Below it is a tree:
+the class `UndefinedRef` as Rumoca resolved it.
+
+**Why there is a tree at all, when Resolve failed.** The compile resolves in a *recovery* mode:
+it keeps going past an error like this one, so the rest of the class still resolves, and it
+reports the error rather than throwing the work away. The tree is that recovered class, from
+the same resolve the compile makes. It is still a failure: the compile stops here, which is why
+the tab is red and not amber. *(Until 2026-11-28 this station said there was no tree. HRW had
+been trying to show one from a different resolve mode, which never existed in its session, so
+the tab showed the error alone.)*
 
 Rumoca found the problem, wrote it down with its location, and went no further. Compare
 `UnclosedModel`, where Parse had nothing to hand on: here Parse succeeded, and Resolve is where

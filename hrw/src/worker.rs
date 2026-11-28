@@ -723,6 +723,30 @@ impl Stage {
         }
     }
 
+    /// A **failure** that still produced an artifact: the IR, with the error payload
+    /// under its `"error"` key, and the outcome `Failed`.
+    ///
+    /// Distinct from [`Stage::recovered`], which is `Flagged`: a flag says the compile
+    /// went on, and a failed Resolve stops it. Added 2026-11-28 so a failed Resolve can
+    /// show the tree the strict run recovered (Doug's decision) without its tab
+    /// claiming the compile continued.
+    pub(crate) fn failed_with_artifact(
+        mut value: serde_json::Value,
+        error: serde_json::Value,
+        note: impl Into<String>,
+    ) -> Self {
+        if let Some(obj) = value.as_object_mut() {
+            obj.insert("error".to_owned(), error);
+        }
+        Stage {
+            value: Some(value),
+            note: Some(note.into()),
+            outcome: Outcome::Failed,
+            provenance: Provenance::Compiler,
+            rendered: crate::equation_text::Rendered::default(),
+        }
+    }
+
     /// Did Rumoca report something about this stage? True for **both** abnormal
     /// outcomes — it does not say whether the pipeline stopped.
     ///
@@ -3382,14 +3406,22 @@ impl WorkerState {
                              `diagnostics.warnings` are library-level and almost never the \
                              cause.",
                         });
-                        // **No tree is shown, though the strict run recovered one.** A
-                        // branch here once showed `resolved_cached()` beside the error,
+                        // **The strict run's recovered tree, beside the error** (Doug,
+                        // 2026-11-28). A branch here once showed `resolved_cached()`,
                         // but that reads the `Standard` build, which nothing in HRW
                         // builds since the worker resolves strictly — so it was always
-                        // `None`, and dead. Whether to show the strict run's recovered
-                        // tree instead is open (`docs/tech-debt.md`, the 2026-11-28
-                        // sweep): it would make this stage `Flagged`, not `Failed`.
-                        Stage::err_with_details(resolve_err, note)
+                        // `None`, and the tab showed no tree. The tree now comes from the
+                        // resolve the compile made, and the stage stays `Failed`: the
+                        // compile stops here, so it is not a flag.
+                        let recovered = strict_failure.as_ref().and_then(|(tree, _)| {
+                            let value = extract_class(tree.tree(), &qualified).value?;
+                            def_index = build_def_index(tree.tree(), &value, &names);
+                            Some(value)
+                        });
+                        match recovered {
+                            Some(value) => Stage::failed_with_artifact(value, resolve_err, note),
+                            None => Stage::err_with_details(resolve_err, note),
+                        }
                     }
                 }
             }

@@ -771,7 +771,7 @@ mod tests_animated_contract {
     /// `connection_anim` did it first, and the fix carries a comment recording what Doug
     /// saw. **`reduction_anim` did it again on 2026-11-04, the day its live path was
     /// built** — and Doug found it the same way, from the running app, with the
-    /// breakpoint stopped inside `watch_prepare_for_solve`. A rule written beside the
+    /// breakpoint stopped inside `watch_prepare_for_solve` (removed 2026-11-28). A rule written beside the
     /// code it governs is only read by someone already in that file.
     ///
     /// Paired with [`Self::live_state`] delegation by the test below: that one asks

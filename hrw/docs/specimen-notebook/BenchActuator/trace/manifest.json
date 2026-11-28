@@ -2,7 +2,7 @@
   "model": "BenchActuator",
   "specimen": "specimens/BenchActuator.mo",
   "specimen_fnv1a": "716b198fefef781d",
-  "rumoca_rev": "4c0c24e30",
+  "rumoca_rev": "97908cf50",
   "rumoca_version": "0.11.0",
   "stages": {
     "parse": {

@@ -501,7 +501,7 @@ it chose.
 | the entry point | `prepare_for_solve` in `crates/rumoca-phase-structural/src/dae_transform.rs` |
 | what HRW reads | `preparation_trace` in `rumoca-phase-structural` (and in `rumoca-phase-solve`): capture scopes **this fork added**, open during `rumoca_sim::prepare_runtime_observed`, so they record the reduction of the DAE solve lowering has already simplified |
 | the observed twin | `inspect_prepare_for_solve` — returns an owned `ReductionReport`, but called on its own it reduces the DAE **before** simplification, so it is not the run that simulates |
-| the live-steppable twin | `watch_prepare_for_solve` — this fork's earlier seam, with the same limitation; HRW stopped using it on 2026-11-27 |
+| the live seam | `preparation_trace::set_live_listener`, inside the same run. *(This fork's earlier `watch_prepare_for_solve` had the same limitation as the observed twin; HRW stopped using it on 2026-11-27, and it was removed on 2026-11-28.)* |
 | the fixed point | `reduce_from_first_round`, same file |
 | the Holonomic attempt | `dae_transform/holonomic_attempt.rs` |
 | symbolic differentiation | `dae_transform/differentiation.rs` — `differentiate`, `differentiate_order`, `differentiate_holonomic` |

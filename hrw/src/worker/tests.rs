@@ -10071,6 +10071,28 @@ fn a_resolve_failure_reports_the_strict_runs_diagnostics() {
         value["error"]["diagnostics"], expected,
         "the Resolve tab's diagnostics are not the strict run's",
     );
+    // **And the tree the strict run recovered, beside them** (Doug, 2026-11-28),
+    // still a failure: the compile stops at Resolve, so the tab must not read as a flag.
+    let mut recovered = super::extract_class(strict.tree(), "UndefinedRef")
+        .value
+        .expect("the strict run recovered the class");
+    recovered
+        .as_object_mut()
+        .expect("a class")
+        .insert("error".to_owned(), value["error"].clone());
+    assert_eq!(
+        *value, recovered,
+        "the Resolve tab must show the strict run's recovered class beside the error",
+    );
+    assert!(
+        crate::artifact_pane::has_content_beside_the_error(&stages.resolve),
+        "the pane must draw the tree, not the error alone",
+    );
+    assert_eq!(
+        stages.resolve.outcome,
+        super::Outcome::Failed,
+        "a Resolve the compile stops at is a failure, not a flag",
+    );
     let errors = value["error"]["diagnostics"]["errors"]
         .as_array()
         .expect("errors array");

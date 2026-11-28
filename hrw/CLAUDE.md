@@ -723,7 +723,8 @@ the next phase touches — is procedure and lives there.
 > makes live reduction stepping a real session rather than a recording wearing a live label.
 > *(Superseded 2026-11-27: that seam reduced the raw DAE, not the simplified one solve lowering
 > reduces. Live stepping now uses `preparation_trace::set_live_listener` inside the real
-> `prepare_runtime_observed` run. `watch_prepare_for_solve` still exists; nothing in HRW calls it.)*
+> `prepare_runtime_observed` run. `watch_prepare_for_solve` and `ReductionWatcher` were removed from the fork on 2026-11-28, Doug's
+> decision, so an upstream PR offers one live seam, not two.)*
 >
 > #### The question the old boxes below were gated on is ANSWERED: the rebase bought the plots
 >
