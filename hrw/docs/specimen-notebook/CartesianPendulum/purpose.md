@@ -28,7 +28,8 @@ your own arithmetic, which `Drivetrain` at 97 equations is not.
 
 ## What actually happens — one phase declines and the next succeeds
 
-**Measured on v0.10.4, 2026-11-04.** Through v0.10.0 this section read *"Rumoca does not reduce
+**Measured on v0.10.4, 2026-11-04; re-measured on v0.11.0, 2026-11-28**, with the same route and
+counts. Through v0.10.0 this section read *"Rumoca does not reduce
 it"*, and that was true: the model failed solve lowering and did not run. It runs now, and the
 route is worth following, because **two different components give two different answers and both
 are correct.**
@@ -82,10 +83,21 @@ x, y, vx, vy, lambda   Algebraic                <- all reconstructed from the ch
 $formal_derivative.2.x, $formal_derivative.2.y  <- the constraint, differentiated twice
 ```
 
-**The chart is `{y, der(y)}`** — read from the solver's own `state_coordinate` metadata, not
-inferred. System Modeler selects `$dynState` sets over `{y}` and `{vy}`, which is the same pair
-under the other tool's spelling. **Two independent implementations, given a nonlinear constraint
-and no hint, pick the same two coordinates.**
+**The chart starts as `{y, der(y)}`, and it does not stay there** *(corrected 2026-11-28)*. The
+solver's `state_coordinate` metadata names `y` and `der(y)`, and that is the chart at *t* = 0. But
+the run **switches charts as the pendulum swings**. A chart on `y` alone fails where the rod is
+vertical (`x = 0`, where `y` stops determining `x`), so Rumoca hands over to `x` near there and back
+again. Measured on v0.11.0 with Rumoca's own `simulate_with_diagnostics`, `$state_coordinates[1]`
+follows `y` from 0 s, `x` from 0.495 s, `y` from 0.878 s and `x` from 1.683 s. You can see it in
+this trace: its `final` is `0.79357`, which is `x`'s final value, not `y`'s (`-0.60848`). **The
+label names the starting chart only**, which is Rumoca's metadata and not something HRW chose.
+*(Until this date the page said the chart **is** `{y, der(y)}`. That was the label read as a
+description of the whole run.)*
+
+System Modeler selects `$dynState` sets over `{y}` and `{vy}`. The `dyn` is the point: its states
+are **dynamic** too, re-chosen during the run. **Two independent implementations, given a
+nonlinear constraint and no hint, both start on the same coordinates and both switch.** Whether
+they switch at the same instants has not been compared.
 
 **Read that table slowly, because it is the answer to "what is index reduction".** The solver does
 not integrate `x` and `y` at all. It integrates two abstract coordinates on the circle of radius
@@ -93,8 +105,9 @@ not integrate `x` and `y` at all. It integrates two abstract coordinates on the 
 order-**2** formal derivatives are the constraint differentiated twice — the step that takes index
 3 to index 1, visible in the lowered layout.
 
-**And it is exact, not stabilized.** `x² + y² = L²` holds to **4.6e-12** at the final sample after
-a full swing, and `lambda` peaks at **29.4303**, against the hand-computed rod tension
+**And it is exact, not stabilized.** `x² + y² = L²` holds to round-off (`0.0` in double
+precision, from the trace's final `x` and `y`; it was **4.6e-12** on v0.10.4) at the final sample
+after a full swing, and `lambda` peaks at **29.4301**, against the hand-computed rod tension
 *m*(*g* + *v*²/*L*) = 3*mg* = **29.43** for a mass released from horizontal.
 
 ## What this teaches, and it is not "Rumoca is broken"
@@ -134,16 +147,20 @@ it at all.
 ## Provenance
 
 Counts read from `trace/index_reduction.json`, `trace/solve_lowering.json` and
-`trace/simulation.json`, regenerated against **v0.10.4** on 2026-11-04. The lowered roles come from
+`trace/simulation.json`, regenerated against **v0.11.0** on 2026-11-28 (first against v0.10.4 on
+2026-11-04). The chart switches come from a separate run of Rumoca's `simulate_with_diagnostics`
+to *t* = 2 s, comparing `$state_coordinates[1]` with `x` and `y` at every sample, because the trace
+keeps only four values per variable. The lowered roles come from
 `solve_layout.variable_declarations`; the constraint residual and the `lambda` peak from the
 simulation's own samples.
 
 **Round-tripped through System Modeler 2026-08-22, and the two tools now AGREE.** Wolfram System
 Modeler **15.0** loads this file unmodified, simulates it 0 → 10 s cleanly, and reduces it to
 **two** states by dynamic state selection (`$dynState` sets over `{vy}` and `{y}`). A planar
-pendulum has one degree of freedom, so two is the right answer — and v0.10.4 reaches the same two,
-by the same kind of route **and on the same coordinates**: its chart is `{y, der(y)}`, against
-System Modeler's `{y}` and `{vy}`.
+pendulum has one degree of freedom, so two is the right answer — and Rumoca reaches the same two,
+by the same kind of route and **starting on the same coordinates**: its chart starts as
+`{y, der(y)}`, against System Modeler's `{y}` and `{vy}`, and both tools re-choose it during the
+run (see above).
 
 *(Through v0.10.0 this paragraph ended "against Rumoca's four". That was the disagreement this
 specimen was authored to hold, and it is closed.)*

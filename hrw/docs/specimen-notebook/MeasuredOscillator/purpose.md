@@ -40,7 +40,7 @@ The **Initialization** tab — the initialization plan Rumoca lowered for the ru
 ```text
 given_states: [x]
 unknowns:     [v]
-rows:         row 0  Solved  solves v   at MeasuredOscillator.mo:22
+rows:         row 0  Solved  solves v   at MeasuredOscillator.mo:20
                                         Real v_meas(start = 1.0, fixed = true)
 note:         1 initialization row(s), 0 surplus check(s)
 ```

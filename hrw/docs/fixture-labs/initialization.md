@@ -64,7 +64,7 @@ Real v_filt(start = 0.0);                 // a bare start: only a guess
 
 **Expected:** the note reads *1 initialization row(s), 0 surplus check(s)*. In the tree,
 `given_states` is `["x"]` and `unknowns` is `["v"]`, and `rows` holds one row: role `Solved`,
-`solves` `v`, and `at` pointing at line 22 — `Real v_meas(start = 1.0, fixed = true)`.
+`solves` `v`, and `at` pointing at line 20 — `Real v_meas(start = 1.0, fixed = true)`.
 
 Falsified if: `v` is listed under `given_states`, or the one row's `at` points at `v`'s own
 declaration.

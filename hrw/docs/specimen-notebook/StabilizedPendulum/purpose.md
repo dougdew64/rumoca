@@ -57,23 +57,29 @@ at index 4 — which is `lambda`, the fifth variable.
 ### ⟶ IT RUNS ON v0.10.4 — measured 2026-11-04, and the comparison is now the point
 
 **Both walls are down.** Initialization produces its plan, solve lowering produces a problem, and
-the model simulates 501 samples to t = 2 s on **4 states**, with `lambda` peaking at **29.4301**
+the model simulates 501 samples to t = 2 s on **4 states**, with `lambda` peaking at **29.4300**
+(29.4301 on v0.10.4)
 against the hand-computed rod tension 3*mg* = 29.43.
 
 **And `CartesianPendulum` runs too**, which this file was written assuming would not happen: v0.10.4
 reduces the *unstabilized* model to **2** states. Its reducer still refuses; state selection then
 takes the route Rumoca names *singular system recovered via formal derivatives* — it differentiates
-the system formally and selects an independent basis, `{y, der(y)}` (`$state_coordinates[1..2]` in
-the run). `x`, `vx`, `vy` and `lambda` are algebraics reconstructed each step, not integrated.
-So the corpus holds the same physics solved two ways, and the numbers separate them cleanly:
+the system formally and selects an independent basis, `$state_coordinates[1..2]` in the run. It
+starts as `{y, der(y)}` and **is re-chosen as the pendulum swings**, switching to `x` where a chart
+on `y` fails (see `CartesianPendulum`'s purpose, corrected 2026-11-28). Everything else is an
+algebraic reconstructed each step from the current chart, not integrated. So the corpus holds the
+same physics solved two ways, and the numbers separate them cleanly:
 
 | | this model — Baumgarte, by hand | `CartesianPendulum` — formal-derivative basis |
 |---|---|---|
 | integrated states | 4 | **2** |
-| `\|x² + y² − L²\|`, final sample | 2.9e-06 | **4.6e-12** |
-| `lambda` peak | 29.4301 | 29.4303 |
+| `\|x² + y² − L²\|`, final sample | 1.3e-06 | **round-off** (`0.0`) |
+| `lambda` peak | 29.4300 | 29.4301 |
 
-**Six orders of magnitude, and both get the physics right.** Damping a constraint violation keeps
+*(Re-measured on v0.11.0, 2026-11-28, from each trace's final `x` and `y` and `lambda.max`. On
+v0.10.4 the rows read 2.9e-06 / 4.6e-12 and 29.4301 / 29.4303.)*
+
+**Many orders of magnitude, and both get the physics right.** Damping a constraint violation keeps
 it small; integrating only two independent coordinates and reconstructing the rest leaves the
 position constraint nothing to drift on. That is
 the clearest statement of what index reduction buys that this corpus can make, and it needs both

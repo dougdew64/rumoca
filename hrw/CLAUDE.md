@@ -583,9 +583,19 @@ the next phase touches — is procedure and lives there.
 > earliest, and Doug's *"fine for now"* on Stage A settled its *ordering within the programme*,
 > not its position in this queue.
 >
-> ### ⟶ YOU ARE ON `hrw-rebase-0.10.4` NOW — hopped 2026-11-04, same day as the 0.10.0 rebase
+> ### ⟶ THE 0.11.0 REBASE IS IN PROGRESS, on `hrw-rebase-0.11.0` — started 2026-11-28
 >
-> **`hrw-rebase-0.10.0` is the PREVIOUS branch and is behind.** This one sits on
+> **Base: `ddbece0d6`, the merge of release PR #755 (0.11.0), with no `v0.11.0` tag yet.**
+> Doug chose to start on the release commit rather than wait, on the condition that **the base is
+> checked against the tag once it exists**, and moved to the tag if they differ.
+> `pre-0.11.0-rebase` tags the old tip. Steps 0–5 and 3c/3d are done, and so is step 6's claim
+> check. **Steps 8 (smoke on screen, Doug's), 9, 10 (long suites) and 11 are open**, and so is a
+> decision on the tearing disagreement (`DECISIONS.md`, 2026-11-28). Progress is recorded there.
+> The `rumoca` CLI crate now needs `libudev` to build (`systemd-devel` on Fedora).
+>
+> ### ⟶ `hrw-rebase-0.10.4` is the PREVIOUS branch — hopped 2026-11-04, same day as the 0.10.0 rebase
+>
+> **`hrw-rebase-0.10.0` is older still.** `hrw-rebase-0.10.4` sits on
 > `upstream/main@590ac739` (version 0.10.4); `pre-0.10.4-rebase` tags the pre-hop tip. The hop
 > itself is in [`DECISIONS.md`](DECISIONS.md).
 >
@@ -600,13 +610,14 @@ the next phase touches — is procedure and lives there.
 > `upstream/main` was **116** commits past our base, and **8 crate files** were changed on both
 > sides. Waiting is not free.
 >
-> **THE 11-27 BACKSTOP IS DEFERRED FOR v0.11.0 — Doug's decision, 2026-11-26.** Step 0 ran that
+> **THE 11-27 BACKSTOP WAS DEFERRED FOR v0.11.0 — Doug's decision, 2026-11-26, superseded 11-28
+> by starting on the release commit (above).** Step 0 ran that
 > day: no tag, `upstream/main` **285** commits past our base, **17** crate files changed on both
 > sides — but release PR **#755 (0.11.0)** was open, blocked only on review and 5 failing checks.
 > So: **wait for the `v0.11.0` release and rebase onto its tag** — Doug: *"We will wait for the
 > v0.11.0 release."* **No fallback date**; do not invent one, and never rebase onto the unmerged
-> `release/0.11.0` branch. **D3 is probably fixed upstream** — #746, already on
-> `main`, per the release's `95490bafe` — unverified until step 3c re-runs our reproduction.
+> `release/0.11.0` branch. *(D3 was expected fixed by #746; step 3c re-ran the reproduction on
+> 2026-11-28 and it is **still present**, with numbers identical to v0.10.4.)*
 >
 > **No commit mixes `crates/` with `hrw/`, and it must stay true** — that is what keeps the
 > instrumentation a clean cherry-pick. *(Do not spell the commit count here; it rots.)*

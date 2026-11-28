@@ -6104,3 +6104,80 @@ corrects; adds to step 8 that the rebase is not closed while two tabs disagree; 
 rule of thumb's "green build + sane diffs is in good shape" with explicit closing conditions.
 Also corrected: `hrw/CLAUDE.md`'s open question on Drivetrain's state count, and the
 `upstream-issues.md` re-diagnosis that read HRW's 9 → 5 as Rumoca's.
+
+## 2026-11-28 — The 0.11.0 rebase (in progress): what upstream changed on the path that simulates
+
+**Target.** `ddbece0d6`, the merge of release PR #755 (0.11.0), with no `v0.11.0` tag yet. Doug
+chose it on 11-28, with the condition that the base is re-checked against the tag before the costly
+steps. `pre-0.11.0-rebase` tags the old tip. The rebase is 287 upstream commits and 217 of ours,
+with 26 crate files changed on both sides. The replay needed three hand resolutions: the solver's
+session construction and `rumoca-phase-structural`'s export list, twice. It also needed one
+crates-only fix-up, `rebase(sim)`, so the step-observed entries validate, dispatch `FixedStep` and
+convert errors exactly as upstream's unobserved run does.
+
+**Step 3d: one line per change on the path.** Most entries come from a read-only review. **(V)**
+means I verified it in code; the rest are the review's reading.
+
+- **Parse:** source ranges are fuller (488d6d5f2). This is visible in the traces as equation labels
+  gaining their last character. **(V)**
+- **Resolve, Typecheck, Instantiate:** acceptance fixes and new errors on bad models. No specimen
+  changed outcome. **(V, from the traces)**
+- **Flatten:** package constants through medium aliases, enum literal identity, and a new
+  component-occurrence field. These matter for MSL medium models; plain ones only gain the field.
+- **DAE construction:** the session now calls `to_dae_with_options` (793765e2b), which is identical
+  to `to_dae_with_evidence` under default options. **(V)** `bridge::phase_source` still names the
+  old function and needs correcting. Also new: function-body definedness and carried record-field
+  states.
+- **Simplify and Index reduction:** the state-selection priority rule changed (1091f347d), so a
+  nonzero unfixed `start` now beats a default guess. `prefer` is honoured through min/max/smooth
+  (94de857b2), and a refusal now prints **ES017**. **HRW dropped that warning**, because the
+  capture after the preparation was never drained. It is fixed with a must-fire test,
+  `a_preparation_warning_reaches_the_log`. **(V)**
+- **Structural / Solve lowering:** a new post-BLT step,
+  `order_algebraic_projection_by_execution_reads` (4b6059e31), at `phase-solve/src/lib.rs:306`.
+  **(V)** The run may execute algebraic blocks in a different valid order than the Structural
+  tab's BLT. `blt-ordering.md`'s "that *is* the evaluation order" needs softening.
+- **Events:** condition memories for conditions that cannot change during a run are no longer
+  lowered. `RcCircuit` lost two (`P[7]`, `P[8]`), and the summary counts are unchanged. **(V)**
+  Also new: noEvent assertions are checked at accepted steps, so a run can now fail where it
+  passed.
+- **Run:** the BDF Newton Jacobian now comes from the compiled model Jacobian (188a1372a), and
+  NDF-order error control and a midpoint defect check were added. diffsol moved from `vendor/` to
+  a git dependency. The traces move within solver noise; `CartesianPendulum`'s state minimum moved
+  1%. **(V, from the traces)** Also new: an opt-in `SettingsCollector` that HRW does not use yet,
+  and `FixedStep`, which `Auto` never selects.
+- **Unaffected:** the wasm, codegen, GPU and trace-compare work.
+
+**What no tab changed:** every specimen halts or simulates where it did on 0.10.4. The 31 manifests
+differ only in version stamps and one sample count.
+
+**Step 6, the claim check, run for the first time under the new procedure.** Two reviewers checked
+22 labs and their purpose pages against the new traces, and every finding was re-verified before
+any edit. The rebase itself changed four facts: the pendulum residuals (4.6e-12 became round-off,
+2.9e-06 became 1.3e-06), the two `lambda` peaks, `blt-ordering.md`'s "*the* evaluation order", and
+the version stamps. **The check also found three defects that predate this rebase:**
+
+- **`CartesianPendulum`'s chart is not `{y, der(y)}`. The run switches charts**, between `y` and
+  `x`, at 0.495, 0.878 and 1.683 s to *t* = 2. This was measured by probing Rumoca's own
+  `simulate_with_diagnostics`, sample by sample. Rumoca's `state_coordinate` metadata names only
+  the starting chart, and HRW passed it through faithfully; **the lab and two purpose pages read
+  that label as the whole run.** The trace gave it away: the chart's `final` is `x`'s value. All
+  three are corrected.
+- **`MeasuredOscillator`'s row is at line 20, not 22.** My comment edit to the specimen on 11-27
+  moved it, and I did not update the two places citing it.
+- **The Structural tab's tearing is not the tearing the run iterates on, for `ProportionalLoop` and
+  `MixedLoop`.** Solve lowering's `proven_tearing::retear_unproven_blocks` (upstream `d91ce4069`,
+  before 0.10.4) re-tears any block whose causal step divides by a coefficient with no proof it is
+  nonzero. `ProportionalLoop`'s structural plan solves `error` from `command = controllerGain*error`,
+  which divides by a parameter. So the run tears `error` with residual `f_x[2]`, where the tab shows
+  `command` with residual `f_x[0]`. **This is the same class of defect as 11-26: a tab showing a
+  step the run then replaces.** It is not yet fixed, because how to show it is Doug's decision.
+  `tearing.md` and `structural-vs-numerical-rank.md` teach the structural plan as the answer.
+- **Step 3c** re-tested the eleven open Rumoca entries; each one's note is in `upstream-issues.md`.
+  **D3 is still present**, and `CLAUDE.md`'s "probably fixed" was wrong. **Entry 2 changed shape**:
+  a `Pin`-to-`Flange` connect is now accepted silently by every stage.
+- **The roster had three stale names:** Resolve (`Session::resolved`, a mode the worker avoids),
+  Flatten (the cached compile) and DAE. `every_phase_source_names_a_defined_function` checks that
+  a name *exists*, not that it is the one called, so none of the three failed it. The pipeline doc
+  comment was also attached to the wrong function, `locate_library_model`, and has moved to
+  `compile_target`.

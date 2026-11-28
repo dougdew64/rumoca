@@ -30,8 +30,13 @@ disagrees with your screen, the lab is wrong and I want to know.
 Falsified if: any block has size greater than 1.
 
 *What just happened.* A block of size 1 is one equation determining one unknown from values
-already known. Twenty-three of them in a row is forward substitution — the solver runs the
-list once, evaluating, and never iterates.
+already known. Twenty-three of them in a row is forward substitution: each is evaluated once,
+from values already known, and nothing iterates.
+
+*(The run does not hand all 23 to the same place. Solve lowering's
+`continuous.algebraic_projection_plan` holds **22** of them; the 23rd, `f_x[14]`
+(`i = C*der(v)`), determines `der(C.v)` — the state's derivative — which is what the integrator is
+given rather than an algebraic value it evaluates along the way.)*
 
 On the spy plot this is the diagonal: every marked cell on or below it, nothing above. That shape
 is why the phase is named as it is, and Station 4 comes back to it.
@@ -123,8 +128,10 @@ is to solve.
 The algorithm is Tarjan's strongly-connected-components, on the graph whose vertices are
 equations and whose edges follow the matching. An SCC *is* a simultaneous block. Rumoca draws
 each edge from an equation to the equations it *needs* (`blt.rs`), and on that graph Tarjan's
-output — reverse topological order — puts every dependency first, which is the solve order for
-free. The animated stepper under Structural → Tarjan replays that search.
+output — reverse topological order — puts every dependency first, which gives *a* valid solve
+order for free. Since Rumoca 0.11.0 solve lowering may then reorder the algebraic blocks by what
+each one reads (`order_algebraic_projection_by_execution_reads`), so the run can execute a
+different order — always one that still puts every dependency first. The animated stepper under Structural → Tarjan replays that search.
 
 **The edges are arrows, and the arrows are the information.** After matching, each equation
 computes one unknown. For reading, draw the arrows the way values flow — from A to B when B needs
@@ -140,8 +147,9 @@ e4:  w = z / 2       needs z  (from e3)
 
 The arrows run e1 → e2 → e3, and e3 ⇄ e4. A one-way arrow says e1 can be solved first, on its
 own. Equations belong together only when *each needs the other* — here e3 and e4. Tarjan returns
-`{e1} → {e2} → {e3, e4}`, and that *is* the evaluation order: solve x, then y, then z and w
-together.
+`{e1} → {e2} → {e3, e4}`, and that is a valid evaluation order: solve x, then y, then z and w
+together. Any order the run uses must keep those three dependencies; it need not be this exact
+list.
 
 **This is why it is not union-find**, the algorithm [connect-expansion](hrw://lab/connect-expansion)
 groups with. Union-find ignores direction, so it would merge e1 with e2, e2 with e3, and report

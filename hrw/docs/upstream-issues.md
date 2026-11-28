@@ -282,6 +282,13 @@ the regression test `a_broken_specimen_does_not_poison_the_next_compile`.
 
 ## 2. `validate_type_compatibility` does not fire for connectors with differing member sets
 
+> **Re-tested on v0.11.0, 2026-11-28: still present, and one case changed shape.**
+> `IncompatibleConnect` still passes Flatten and is flagged singular at Structural, and the
+> same-names-different-quantity case is still refused. **`ConnectAcrossDomains` (a `Pin` to a
+> `Flange`) no longer fails with "empty system".** Flatten still writes no `Connection` equation,
+> but every stage now reports `Ok`, so the wrong wiring is accepted silently all the way through.
+> It was not simulated. Re-diagnose before filing.
+
 **Severity:** medium. An invalid model is accepted, and the resulting failure is reported
 at the wrong phase with a misleading diagnosis.
 
@@ -424,6 +431,13 @@ connectors are the same type before their members are paired.
 ---
 
 ## 3. Cyclic-dependency diagnostics are nondeterministic across runs
+
+> **Re-tested on v0.11.0, 2026-11-28: changed shape, and probably already on v0.10.4.** All five
+> models (wrapped with `extends`, three separate-process runs each) now fail identically at DAE
+> construction, with `'stateGraphRoot.subgraphStatePort.suspend' has more than one semantic
+> definition owner`, and none mentions a cycle. The committed `msl-survey.csv` of 2026-11-07 shows
+> the same message, so the change predates 0.11.0; that is an inference from the CSV. Fifteen
+> identical runs do not prove determinism. Do not file as written.
 
 **Severity:** low for a user, **real for CI**. A diagnostic whose text changes between
 identical runs breaks golden-file tests and makes log diffs noisy.
@@ -1008,6 +1022,12 @@ gate turned out to be 72 compiles and 10 MSL loads.
 
 ## P1. A workspace-document change invalidates resolution of durable external source roots
 
+> **Re-tested on v0.11.0, 2026-11-28: still present.** MSL loaded as durable external, then
+> `strict_compile_resolved` was timed six times. Cold it took 0.949 s, and unchanged it took 0 s.
+> After adding one workspace document it took **0.854 s**, and after removing and re-adding
+> byte-identical text, **0.915 s**. `invalidate_resolved_state` still clears the whole map
+> (`session_impl_queries.rs:82`).
+
 **The question:** should adding, changing or removing one workspace document discard the
 resolved tree of a `DurableExternal` source root that did not change?
 
@@ -1055,6 +1075,13 @@ keystroke-batch. HRW pays it 72 times per test run.
 
 ## P2. An artifact-cache miss costs ~21 s of pruning regardless of the input
 
+> **Re-tested on v0.11.0, 2026-11-28: changed shape, largely mitigated upstream.** 0.11.0's
+> `cache.rs` adds `auto_prune_was_checked_recently`, with a 10-minute interval and a
+> `.rumoca-prune-checked` marker, so the prune runs at most once per 10 minutes rather than on
+> every miss. Three fresh misses against the 556 MB cache took 303 ms, 0 ms and 0 ms. Still true:
+> no `prune_ms` field, and about 240 ms of the first miss is unattributed. Why one prune now costs
+> 0.3 s rather than ~21 s was not established.
+
 **The question:** should `maybe_prune_cache_after_write` run on every cache miss, synchronously,
 when its cost is a function of the whole cache rather than of what was just written?
 
@@ -1101,6 +1128,10 @@ is how it was found.
 ---
 
 ## 5. An unconnected flow variable at root scope gets `f = 0` **twice**
+
+> **Re-tested on v0.11.0, 2026-11-28: still present.** `IncompatibleConnect`'s Flatten IR still
+> holds `UnconnectedFlow { variable: "a.i" }` twice. The functions this entry cites have moved,
+> and now sit at lines 1117, 1431 and 1479; the "root scope has no parent" clause is at 1492.
 
 **Found 2026-08-31**, while auditing which claims in `connect-expansion.md` had no stop to
 test them. **Not adjudicated** — Doug: *"I don't know enough yet to make a call on that."*
@@ -2007,6 +2038,10 @@ way the field worked from 1972 until 1988 — still cannot simulate. See
 
 ## W1. **Rumoca** — `.cargo/config.toml` pins `PYO3_PYTHON` to a Linux absolute path, so `rumoca-bind-python` cannot build off a fresh clone anywhere else
 
+> **Re-checked on v0.11.0, 2026-11-28, by inspection: still present.** The pin is unchanged (line
+> 6). Upstream CI still overrides it, and that override now sits at `ci.yml:3083`. This cannot be
+> observed on a Linux machine that has `/usr/bin/python3`.
+
 **Baseline:** `v0.10.0`, found on the `hrw-rebase-0.10.0` branch, 2026-11-03.
 
 > **RE-CONFIRMED ON v0.10.4, 2026-11-04**, against **upstream's own tree** rather than this
@@ -2105,6 +2140,10 @@ jobs". So the workspace gate never builds this crate, and the dedicated job sets
 
 ## W2. **Rumoca** — a `rumoca-bind-wasm` test compares a native path against a `/`-separated literal, so it fails on Windows
 
+> **Re-checked on v0.11.0, 2026-11-28, by inspection: still present.** The assertion is unchanged
+> (`scenario_config_tests.rs:161`), and production still emits `path.to_string_lossy()`
+> (`scenario_config_api.rs:273`). It cannot be observed on Linux; re-run on Windows before filing.
+
 **Baseline:** `v0.10.0`, found on the `hrw-rebase-0.10.0` branch, 2026-11-03.
 **Severity:** low. A test-only defect, but it makes `cargo test -p rumoca-bind-wasm` red on
 Windows for a reason unrelated to anything the test is about.
@@ -2160,6 +2199,11 @@ failing test in that file on Windows was not investigated.
 ---
 
 ## E3. **Rumoca** — `DaeProvenance` records *that* an equation came from source, not *which component instance* brought it in
+
+> **Re-checked on v0.11.0, 2026-11-28, by inspection: still present.** `provenance.rs` is
+> unchanged since 0.10.4. 0.11.0 does add a separate component-*occurrence* field to flat and DAE
+> equations. It was not checked whether that supplies what this entry asks for, and it should be
+> before filing.
 
 **Not a bug — a capability request, and the smallest one this project has found.** Raised
 2026-11-03 while rebasing onto v0.10.0. **Not filed.**
@@ -2298,6 +2342,13 @@ for *enhancement*. This entry is egui, so it takes `E4` by the older sense. Renu
 break any citation of `E3`, so this is recorded rather than fixed — **Doug's call.**
 
 ## D1. **Rumoca** — DAE construction `.expect()`s on a condition it has just diagnosed, so two stock MSL models abort the process instead of being reported
+
+> **Re-checked on v0.11.0, 2026-11-28: still present upstream, hidden here by this fork's fix.**
+> `ddbece0d6`'s `construction/expression/temporal.rs` keeps all four `.expect`s (lines 12, 15,
+> 35 and 38). This branch carries `4a38f5469` ("report a missing temporal certificate instead of
+> asserting one"), so both models fail cleanly here with `history operator 'der' has no matching
+> checked occurrence certificate`. The abort was not re-observed on unpatched upstream. That fix is
+> this entry's natural PR.
 
 **Project:** Rumoca, [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca).
 **Baseline:** `0.10.4`, branch `hrw-rebase-0.10.4` at `f1468a6a`. Reproduced 2026-11-06.
@@ -2471,6 +2522,13 @@ rather than asserted away.
 
 ## D2. **Rumoca** — an over-determined, inconsistent `initial equation` system is accepted with every stage reporting `Ok`
 
+> **Re-tested on v0.11.0, 2026-11-28: changed shape; the compile half is still present.** Every
+> stage of `OverInitRc` still reports `Ok`, and Initialization reads `2 initialization row(s),
+> 1 surplus check(s)`. **The run refuses it**, though: the surplus check fails at t = 0 with
+> `value=5.000000e1`, and `over_init_rc_is_answered` passes. That test dates from 2026-11-03, so
+> the runtime refusal probably existed on 0.10.4 already (an inference). What remains is a missing
+> compile-time diagnostic, not acceptance; re-scope before filing.
+
 **Project:** Rumoca, [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca).
 **Baseline:** `0.10.4`, branch `hrw-rebase-0.10.4`. Reproduced 2026-11-06.
 **Adjudicated against System Modeler 15.0.1** — and this is the first entry in this file that
@@ -2569,6 +2627,11 @@ STRUCTURAL ANALYSIS … the specimen that shows why counting is not enough"*, an
 `Structural: singular` is the intended diagnosis.
 
 ## D3. **Rumoca** — a `when` over a Boolean variable fires at the initial instant when that Boolean's `start` differs from its initialized value
+
+> **Re-tested on v0.11.0, 2026-11-28: still present.** `PreAtInitialInstant` to t = 2 gives
+> `n_rel` 0 → 3 (correct), `n_above` **1 → 4** and `n_below` **1 → 8**, which are exactly the
+> v0.10.4 numbers. **`CLAUDE.md`'s "D3 is probably fixed upstream (#746)" is therefore wrong;** the
+> fix it named did not reach this reproducer.
 
 **Project:** Rumoca, [CogniPilot/rumoca](https://github.com/CogniPilot/rumoca).
 **Baseline:** `0.10.4`, branch `hrw-rebase-0.10.4`. Reproduced 2026-11-08.

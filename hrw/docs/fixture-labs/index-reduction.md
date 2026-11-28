@@ -425,15 +425,22 @@ call, and state selection took its refusal and routed the model through **formal
 it keeps the system's equations, appends differentiated copies of them as new rows and unknowns,
 and then picks an independent set of coordinates among the result. That is the after row's 13
 equations. The rod says the point has one degree of freedom, so one coordinate and its rate
-suffice, and the chart it takes is `{y, der(y)}` — the same pair System Modeler selects.
+suffice. The chart starts as `{y, der(y)}`, the same pair System Modeler starts on, and then
+**the run changes it**. A chart on `y` fails where the rod is vertical, so Rumoca switches to `x`
+there and back again as the pendulum swings. `$state_coordinates[1]` follows `y`, then `x` from
+0.495 s, `y` from 0.878 s and `x` from 1.683 s, which is why its final value in the trace is
+`x`'s. *(Measured 2026-11-28 on v0.11.0. Until then this lab said the chart **is** `{y, der(y)}`,
+reading the solver's label, which names only the starting chart, as a description of the whole
+run.)*
 
 **Substituting the differentiated constraint in place and keeping it beside its derivatives are
 two routes to index 1, and this model separates them cleanly.** Differentiate-and-substitute is
 the textbook route and it is the one that goes vacuous here. The formal-derivative route keeps the
 original constraint `x² + y² = L²` in the system rather than replacing it. Compare the two in the
-corpus and the rod length holds to **4.6e-12** here against **2.9e-06** for
-`StabilizedPendulum`, which damps a twice-differentiated constraint by hand — six orders of
-magnitude, same physics, both right. *(That keeping the constraint is why the drift is so small is
+corpus and the rod length holds to round-off here (`0.0` at the final sample) against
+**1.3e-06** for `StabilizedPendulum`, which damps a twice-differentiated constraint by hand. That
+is many orders of magnitude, with the same physics, and both are right. *(On v0.10.4 the two read
+4.6e-12 and 2.9e-06.)* *(That keeping the constraint is why the drift is so small is
 a reading of the code's structure; the trace shows the two numbers, not the cause.)*
 
 ### The thing to carry out of this station
