@@ -72,6 +72,11 @@ pub struct BlockNames {
     pub equations: Vec<String>,
     /// Unknown names, in block-local order.
     pub unknowns: Vec<String>,
+    /// **When the run does not iterate on the plan being animated**, one sentence
+    /// saying what it iterates on instead and Rumoca's reason; `None` when the run
+    /// keeps this plan or the report does not say (2026-11-28). The animation is the
+    /// structural phase's search, and solve lowering may re-tear its result.
+    pub run_plan: Option<String>,
 }
 
 /// One frame, tagged with the coupled block it belongs to.
@@ -134,9 +139,43 @@ fn block_names_from_report(report: &serde_json::Value) -> Option<Vec<BlockNames>
             Some(BlockNames {
                 equations: names(b, "equations")?,
                 unknowns: names(b, "unknowns")?,
+                run_plan: run_plan_sentence(b.get("run_tearing")),
             })
         })
         .collect()
+}
+
+/// The sentence for [`BlockNames::run_plan`], from a block's `run_tearing`.
+///
+/// Only a plan the run does **not** keep produces one: a matching plan needs no
+/// warning, and an absent `run_tearing` makes no claim either way.
+fn run_plan_sentence(run: Option<&serde_json::Value>) -> Option<String> {
+    let run = run.filter(|run| run.is_object())?;
+    if run
+        .get("same_as_structural")
+        .and_then(serde_json::Value::as_bool)
+        == Some(true)
+    {
+        return None;
+    }
+    let note = run
+        .get("note")
+        .or_else(|| run.get("absent"))
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default();
+    let tears: Vec<&str> = run
+        .get("tear_vars")
+        .and_then(serde_json::Value::as_array)
+        .map(|tears| tears.iter().filter_map(serde_json::Value::as_str).collect())
+        .unwrap_or_default();
+    Some(if tears.is_empty() {
+        format!("The run does not iterate on this plan: {note}.")
+    } else {
+        format!(
+            "The run does not iterate on this plan. It tears {}: {note}.",
+            tears.join(", ")
+        )
+    })
 }
 
 impl TearingAnimation {
@@ -318,6 +357,12 @@ impl TearingAnimation {
             render_step(ui, bf, &names);
             ui.add_space(8.0);
             render_running_state(ui, bf, &names);
+            // The search above is the structural phase's; say so when the run
+            // replaced its result (see `BlockNames::run_plan`).
+            if let Some(sentence) = &names.run_plan {
+                ui.add_space(8.0);
+                ui.label(egui::RichText::new(sentence).color(ui.visuals().warn_fg_color));
+            }
         }
 
         debug_clicked
@@ -581,7 +626,31 @@ mod tests {
         BlockNames {
             equations: vec!["f_x[0]".into(), "f_x[1]".into(), "f_x[2]".into()],
             unknowns: vec!["command".into(), "error".into(), "measurement".into()],
+            run_plan: None,
         }
+    }
+
+    /// **A re-torn block carries its sentence; a kept or unreported one does not.**
+    #[test]
+    fn the_run_plan_sentence_appears_only_when_the_run_replaces_the_plan() {
+        let report = serde_json::json!({ "blocks": [
+            { "kind": "coupled", "equations": ["e0"], "unknowns": ["u0"],
+              "run_tearing": { "tear_vars": ["error"], "same_as_structural": false,
+                               "note": "solve lowering re-tore this block" } },
+            { "kind": "coupled", "equations": ["e1"], "unknowns": ["u1"],
+              "run_tearing": { "tear_vars": ["u1"], "same_as_structural": true } },
+            { "kind": "coupled", "equations": ["e2"], "unknowns": ["u2"] },
+        ]});
+        let blocks = block_names_from_report(&report).expect("names");
+        assert_eq!(
+            blocks[0].run_plan.as_deref(),
+            Some(
+                "The run does not iterate on this plan. It tears error: solve lowering \
+                 re-tore this block."
+            )
+        );
+        assert_eq!(blocks[1].run_plan, None);
+        assert_eq!(blocks[2].run_plan, None);
     }
 
     fn bf(step: TearingStep, tears: &[usize], causal: &[(usize, usize)]) -> BlockFrame {

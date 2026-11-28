@@ -68,6 +68,71 @@ struct Block {
     // smaller nonlinear system by selecting some variables to iterate on.
     // `None` if the block is scalar or untorn.
     tearing: Option<(Vec<String>, Vec<String>)>,
+    // What the *run* does with this block, which can differ from `tearing`
+    // above: solve lowering re-tears a block whose structural plan divides by
+    // something it cannot prove nonzero. Read from the report's `run_tearing`.
+    run_tearing: RunTearing,
+}
+
+// The run's tearing of one block, as the panel shows it. A plain enum (like a
+// C++ `std::variant`) so the paint code below only chooses which labels to draw.
+#[derive(Debug, PartialEq)]
+enum RunTearing {
+    // The report carried no `run_tearing` — a scalar block, or a report from
+    // before 2026-11-28.
+    NotReported,
+    // The run iterates on exactly the structural plan.
+    Same,
+    // The run iterates on a different plan: its tear variables, its residual
+    // equations, and Rumoca's reason.
+    Differs {
+        tear_vars: Vec<String>,
+        residuals: Vec<String>,
+        note: String,
+    },
+    // The run does not tear this block, or the plan has no such block; the
+    // text says which.
+    Untorn(String),
+}
+
+impl RunTearing {
+    // Read `block["run_tearing"]`. Called while the plot is built, never while
+    // it is painted.
+    fn from_json(run: Option<&Value>) -> Self {
+        let Some(run) = run.filter(|run| run.is_object()) else {
+            return Self::NotReported;
+        };
+        if let Some(absent) = run.get("absent").and_then(Value::as_str) {
+            return Self::Untorn(absent.to_owned());
+        }
+        let note = run
+            .get("note")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
+        if run.get("dense").is_some() {
+            return Self::Untorn(note);
+        }
+        if run.get("same_as_structural").and_then(Value::as_bool) == Some(true) {
+            return Self::Same;
+        }
+        let strings = |key: &str| -> Vec<String> {
+            run.get(key)
+                .and_then(Value::as_array)
+                .map(|items| {
+                    items
+                        .iter()
+                        .filter_map(|item| item.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        Self::Differs {
+            tear_vars: strings("tear_vars"),
+            residuals: strings("residual_equations"),
+            note,
+        }
+    }
 }
 
 /// A parsed, drawable BLT structure ready for rendering.
@@ -183,6 +248,7 @@ impl Plot {
                 equations,
                 unknowns,
                 tearing,
+                run_tearing: RunTearing::from_json(b.get("run_tearing")),
             });
             pos += size;
         }
@@ -426,6 +492,33 @@ fn block_tooltip(ui: &mut egui::Ui, block: &Block) {
         list(ui, "tear (iteration) vars", tear_vars);
         list(ui, "residual equations", residuals);
     }
+    // What the run does with the block (the tooltip `tearing.md` Station 2
+    // reads). Only labels are chosen here; the
+    // reading happened in `RunTearing::from_json`.
+    match &block.run_tearing {
+        RunTearing::NotReported => {}
+        RunTearing::Same => {
+            ui.add_space(4.0);
+            ui.weak("the run iterates on this same plan");
+        }
+        RunTearing::Differs {
+            tear_vars,
+            residuals,
+            note,
+        } => {
+            ui.add_space(4.0);
+            ui.separator();
+            ui.strong("the run iterates on a different plan");
+            list(ui, "run tear vars", tear_vars);
+            list(ui, "run residual equations", residuals);
+            ui.label(egui::RichText::new(note).weak());
+        }
+        RunTearing::Untorn(text) => {
+            ui.add_space(4.0);
+            ui.separator();
+            ui.label(egui::RichText::new(text).weak());
+        }
+    }
     ui.add_space(4.0);
     ui.weak("click to point at this block, then ask in the chat");
 }
@@ -537,6 +630,57 @@ mod tests {
             plot.problems().is_empty(),
             "a clean report: {:?}",
             plot.problems()
+        );
+    }
+
+    /// **The block panel carries what the run iterates on, when it differs.**
+    ///
+    /// The paint code cannot be reached by a UI test, so this pins the data it
+    /// draws from: a re-torn block must come out as `Differs` with the run's tear
+    /// variables, an agreeing one as `Same`, and a block with no `run_tearing` as
+    /// `NotReported` rather than as either claim.
+    #[test]
+    fn the_runs_tearing_is_parsed_beside_the_structural_one() {
+        let report = json!({
+            "blocks": [
+                {
+                    "kind": "coupled",
+                    "equations": ["e0", "e1"],
+                    "unknowns": ["u0", "u1"],
+                    "tearing": { "tear_vars": ["u0"], "residual_equations": ["e0"] },
+                    "run_tearing": {
+                        "tear_vars": ["u1"],
+                        "residual_equations": ["e1"],
+                        "same_as_structural": false,
+                        "note": "solve lowering re-tore this block"
+                    }
+                },
+                {
+                    "kind": "coupled",
+                    "equations": ["e2", "e3"],
+                    "unknowns": ["u2", "u3"],
+                    "tearing": { "tear_vars": ["u2"], "residual_equations": ["e2"] },
+                    "run_tearing": { "tear_vars": ["u2"], "same_as_structural": true }
+                },
+                { "kind": "scalar", "equation": "e4", "unknown": "u4" }
+            ]
+        });
+        let plot = Plot::from_report(&report).unwrap();
+        assert_eq!(
+            plot.block_at(0, 0).expect("first block").run_tearing,
+            RunTearing::Differs {
+                tear_vars: vec!["u1".to_owned()],
+                residuals: vec!["e1".to_owned()],
+                note: "solve lowering re-tore this block".to_owned(),
+            }
+        );
+        assert_eq!(
+            plot.block_at(2, 2).expect("second block").run_tearing,
+            RunTearing::Same
+        );
+        assert_eq!(
+            plot.block_at(4, 4).expect("scalar block").run_tearing,
+            RunTearing::NotReported
         );
     }
 

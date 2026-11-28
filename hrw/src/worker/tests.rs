@@ -9874,6 +9874,90 @@ end Withheld;
     );
 }
 
+/// Compile a library-free specimen and return its stages.
+fn library_free_stages(model: &str) -> StageBundle {
+    let mut w = WorkerState::new();
+    let path = PathBuf::from(format!(
+        "{}/specimens/{model}.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    match w.compile(&path, &|_: FromWorker| {}) {
+        FromWorker::Compiled { stages, .. } => stages,
+        _ => panic!("{model} did not compile"),
+    }
+}
+
+/// **The Structural tab shows the tearing the run iterates on, beside the one the
+/// structural phase proposed** (2026-11-28).
+///
+/// `ProportionalLoop`'s structural plan tears `command` and solves `error` from
+/// `command = controllerGain*error` — dividing by a parameter with no proof it is
+/// nonzero — so solve lowering re-tears it and iterates on `error`. Until this
+/// date the tab showed only the first plan.
+///
+/// The run's side is checked against the Solve lowering stage's own plan, so
+/// the test reaches the real run rather than agreeing with itself: the tear
+/// variable must be the name of the `Y` slot the plan tears.
+#[test]
+fn the_structural_tab_shows_the_runs_tearing_beside_the_structural_one() {
+    let stages = library_free_stages("ProportionalLoop");
+    let structural = stages.structural.value.expect("a Structural value");
+    let block = &structural["blocks"][0];
+    assert_eq!(
+        block["tearing"]["tear_vars"],
+        serde_json::json!(["command"])
+    );
+    let run = &block["run_tearing"];
+    assert_eq!(run["tear_vars"], serde_json::json!(["error"]), "{run}");
+    assert_eq!(run["same_as_structural"], false, "{run}");
+    let note = run["note"].as_str().unwrap_or_default();
+    assert!(note.contains("re-tore"), "{note}");
+    assert!(
+        note.contains("does not contain f_x[1] solving error"),
+        "{note}"
+    );
+
+    // The real run's plan, from the Solve lowering stage.
+    let lowering = stages.solve_lowering.value.expect("a Solve lowering value");
+    let plan_tear = lowering["continuous"]["algebraic_projection_plan"]["blocks"][0]["Explicit"]
+        ["tearing"]["tear_y_indices"][0]
+        .as_u64()
+        .expect("the run's plan tears one slot");
+    let bindings = lowering["layout"]["bindings"]
+        .as_object()
+        .expect("bindings");
+    let slot_name = bindings
+        .iter()
+        .find(|(_, slot)| slot["Y"]["index"].as_u64() == Some(plan_tear))
+        .map(|(name, _)| name.as_str());
+    assert_eq!(
+        slot_name,
+        Some("error"),
+        "the run's plan tears Y[{plan_tear}]"
+    );
+}
+
+/// And where the run keeps the structural plan, the tab says the two agree.
+#[test]
+fn a_block_the_run_keeps_reads_as_the_same_tearing() {
+    let stages = library_free_stages("TwoLoops");
+    let structural = stages.structural.value.expect("a Structural value");
+    let coupled: Vec<&serde_json::Value> = structural["blocks"]
+        .as_array()
+        .expect("blocks")
+        .iter()
+        .filter(|block| block["kind"] == "coupled")
+        .collect();
+    assert!(!coupled.is_empty(), "TwoLoops has coupled blocks");
+    for block in coupled {
+        assert_eq!(
+            block["run_tearing"]["same_as_structural"], true,
+            "{}",
+            block["run_tearing"]
+        );
+    }
+}
+
 /// **The Parse tab is the session's own parse — the AST the compile reads.**
 ///
 /// Until 2026-11-27 HRW parsed the file a second time itself, which differs from

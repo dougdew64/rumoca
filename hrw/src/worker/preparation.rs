@@ -53,6 +53,33 @@ pub(super) struct LoweredFacts {
     pub after: serde_json::Value,
     /// The initialization plan Rumoca lowered, row by row.
     pub initialization: serde_json::Value,
+    /// `after["blocks"]` before the run's tearing was attached to it, so the
+    /// Structural tab can tell whether its own blocks are the same system.
+    pub after_blocks_bare: serde_json::Value,
+    /// Every multi-row block of the run's algebraic projection plan.
+    pub run_tearings: Vec<RunTearing>,
+}
+
+/// One coupled block **as the run solves it**: a block of solve lowering's
+/// `algebraic_projection_plan`, the plan the simulation's Newton iterates on.
+///
+/// **Why the Structural tab's tearing is not enough** (2026-11-28). The
+/// structural phase proposes a tearing, and solve lowering re-tears any block
+/// whose causal steps it cannot prove safe (`proven_tearing::retear_unproven_blocks`).
+/// `ProportionalLoop`'s structural plan solves `error` from
+/// `command = controllerGain*error`, which divides by a parameter, so the run
+/// tears `error` instead of `command`. Showing only the structural plan taught
+/// a tearing the simulation never uses.
+///
+/// Everything here is Rumoca's own: rows are `EquationRef`s labelled by
+/// `equation_label` on the prepared system the plan was lowered from, and
+/// unknowns are named by `SolveProblem::solver_name`.
+#[derive(Clone)]
+pub(super) struct RunTearing {
+    /// The block's rows as `EquationRef` displays (`f_x[k]`), sorted — the key a
+    /// report block is paired by, exactly and never by label text.
+    ids: Vec<String>,
+    json: serde_json::Value,
 }
 
 /// Run Rumoca's real simulation preparation of `dae` under both capture scopes.
@@ -88,11 +115,176 @@ fn lowered_facts(
     source_map: &rumoca_core::SourceMap,
 ) -> LoweredFacts {
     let problem = &model.model().problem;
+    let mut after = prepared_system_json(model.prepared(), model.model().state_scalar_count());
+    let after_blocks_bare = after["blocks"].clone();
+    let run_tearings = run_tearings(model);
+    attach_run_tearing(&mut after["blocks"], &run_tearings);
     LoweredFacts {
         problem: serde_json::to_value(problem).map_err(|error| error.to_string()),
-        after: prepared_system_json(model.prepared(), model.model().state_scalar_count()),
+        after,
         initialization: initialization_plan_json(problem, source_map),
+        after_blocks_bare,
+        run_tearings,
     }
+}
+
+/// Read every multi-row block of the run's algebraic projection plan.
+fn run_tearings(model: &rumoca_phase_solve::LoweredSolveModel<'_>) -> Vec<RunTearing> {
+    use rumoca_phase_structural::{EquationRef, equation_label};
+    let problem = &model.model().problem;
+    // A private slot has no display name; say which slot rather than invent one.
+    let name = |y: usize| {
+        problem
+            .solver_name(y)
+            .unwrap_or_else(|| format!("<solver Y[{y}], unnamed>"))
+    };
+    model.prepared().inspect(|system| {
+        let view = system.view;
+        let label = |row: usize| equation_label(view, &EquationRef(row));
+        let id = |row: usize| EquationRef(row).to_string();
+        problem
+            .continuous
+            .algebraic_projection_plan
+            .blocks
+            .explicit_blocks()
+            .filter(|block| block.rows.len() > 1)
+            .map(|block| {
+                let mut ids: Vec<String> = block.rows.iter().map(|&row| id(row)).collect();
+                ids.sort();
+                let json = match &block.tearing {
+                    Some(tearing) => serde_json::json!({
+                        "tear_vars": tearing.tear_y_indices.iter().map(|&y| name(y)).collect::<Vec<_>>(),
+                        "residual_equations": tearing.residual_rows.iter().map(|&r| label(r)).collect::<Vec<_>>(),
+                        "residual_equation_ids": tearing.residual_rows.iter().map(|&r| id(r)).collect::<Vec<_>>(),
+                        "causal_sequence": tearing.causal_steps.iter().map(|step| serde_json::json!({
+                            "equation": label(step.row),
+                            "id": id(step.row),
+                            "variable": name(step.y_index),
+                            // Rumoca's proof that the step's divisor is nonzero:
+                            // `Unit`, `Literal`, or `Unproven` (no proof).
+                            "coefficient": format!("{:?}", step.coefficient),
+                        })).collect::<Vec<_>>(),
+                    }),
+                    None => serde_json::json!({ "dense": true }),
+                };
+                RunTearing { ids, json }
+            })
+            .collect()
+    })
+}
+
+/// Pair each coupled report block with the run's block of exactly the same
+/// equations, and say whether the run tears it the way the report does.
+///
+/// Paired by the sorted set of `EquationRef`s, which is an identity; a block
+/// the plan has no exact match for says so rather than borrowing a near one.
+fn attach_run_tearing(blocks: &mut serde_json::Value, runs: &[RunTearing]) {
+    let Some(blocks) = blocks.as_array_mut() else {
+        return;
+    };
+    for block in blocks.iter_mut().filter(|block| block["kind"] == "coupled") {
+        let mut ids: Vec<String> = block["ids"]
+            .as_array()
+            .map(|ids| {
+                ids.iter()
+                    .filter_map(|id| id.as_str().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default();
+        ids.sort();
+        let Some(run) = runs.iter().find(|run| run.ids == ids) else {
+            block["run_tearing"] = serde_json::json!({
+                "absent": "no block of solve lowering's algebraic projection plan has exactly \
+                           these equations, so the run does not solve them as this one loop",
+            });
+            continue;
+        };
+        let mut json = run.json.clone();
+        let same = plans_agree(&block["tearing"], &json);
+        json["same_as_structural"] = serde_json::json!(same);
+        json["source"] = serde_json::json!(
+            "solve lowering's continuous.algebraic_projection_plan: the tearing the \
+             simulation's Newton iterates on"
+        );
+        if !same {
+            json["note"] = serde_json::json!(run_tearing_note(&block["tearing"], &json));
+        }
+        block["run_tearing"] = json;
+    }
+}
+
+/// The two plans agree when they tear the same unknowns against the same
+/// residuals and take the same causal steps, in order.
+fn plans_agree(structural: &serde_json::Value, run: &serde_json::Value) -> bool {
+    let steps = |plan: &serde_json::Value| -> Vec<(serde_json::Value, serde_json::Value)> {
+        plan["causal_sequence"]
+            .as_array()
+            .map(|steps| {
+                steps
+                    .iter()
+                    .map(|step| (step["id"].clone(), step["variable"].clone()))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    run.get("dense").is_none()
+        && structural.is_object()
+        && structural["tear_vars"] == run["tear_vars"]
+        && structural["residual_equation_ids"] == run["residual_equation_ids"]
+        && steps(structural) == steps(run)
+}
+
+/// Why the run's plan differs, in Rumoca's documented terms, plus the
+/// structural steps the run does not take (a comparison, not an inference).
+fn run_tearing_note(structural: &serde_json::Value, run: &serde_json::Value) -> String {
+    if run.get("dense").is_some() {
+        return "the run solves this block by a dense Newton over every unknown: its \
+                projection plan carries no tearing"
+            .to_owned();
+    }
+    let run_steps: Vec<(&serde_json::Value, &serde_json::Value)> = run["causal_sequence"]
+        .as_array()
+        .map(|steps| steps.iter().map(|s| (&s["id"], &s["variable"])).collect())
+        .unwrap_or_default();
+    let dropped: Vec<String> = structural["causal_sequence"]
+        .as_array()
+        .map(|steps| {
+            steps
+                .iter()
+                .filter(|s| !run_steps.contains(&(&s["id"], &s["variable"])))
+                .map(|s| {
+                    format!(
+                        "{} solving {}",
+                        s["id"].as_str().unwrap_or("?"),
+                        s["variable"].as_str().unwrap_or("?")
+                    )
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut note = "solve lowering re-tore this block (proven_tearing::retear_unproven_blocks): \
+                    a causal step divides by the coefficient of the unknown it isolates, and \
+                    Rumoca admits one only with a proof that the coefficient is nonzero \
+                    (SPEC_0043 §4)"
+        .to_owned();
+    if !dropped.is_empty() {
+        // A comparison of the two plans, not a list of the steps that lacked a
+        // proof: once one step is replaced, the rest of the plan can change too.
+        note.push_str(&format!(
+            "; of the structural plan's steps, the run's plan does not contain {}",
+            dropped.join(", ")
+        ));
+    }
+    let any_unproven = run["causal_sequence"]
+        .as_array()
+        .is_some_and(|steps| steps.iter().any(|s| s["coefficient"] == "Unproven"));
+    if any_unproven {
+        note.push_str(
+            "; a step still marked Unproven is promoted to a tear when the refresh plan \
+             is built (proven_tearing.rs)",
+        );
+    }
+    note
 }
 
 /// The prepared system, in the same shape as the Structural report so one reader
@@ -352,6 +544,22 @@ pub(super) fn structural_stage(
          lowering ran first, and the one the reducer started from"
     );
     json["analyses"] = analyses_json(prep);
+    // **The run's tearing, but only where it is provably this system's.** The
+    // plan was lowered from the *prepared* system, whose equation numbering is
+    // its own once index reduction changed anything. Its blocks being identical
+    // to this report's is the proof that they are the same equations; otherwise
+    // the run's tearing is shown where it belongs, on Index reduction's `after`.
+    if let Some(lowered) = &prep.lowered {
+        if json["blocks"] == lowered.after_blocks_bare {
+            attach_run_tearing(&mut json["blocks"], &lowered.run_tearings);
+        } else {
+            json["run_tearing"] = serde_json::json!(
+                "the run's tearing belongs to the prepared system, which index reduction \
+                 changed, so it is not paired with these blocks: see Index reduction's \
+                 `after` blocks"
+            );
+        }
+    }
     let stage = match outcome {
         Ok(_) => Stage::ok(json),
         Err(error) => {
