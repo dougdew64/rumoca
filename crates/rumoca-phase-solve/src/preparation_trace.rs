@@ -41,16 +41,30 @@ pub enum SourceTransform {
 }
 
 /// The size of one DAE, by variable role and equation partition.
+///
+/// The variable counts are **declarations**, not scalar elements: an array
+/// variable counts once.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct DaeShape {
+    /// Declarations with the `State` role.
     pub states: usize,
+    /// Declarations with the `Algebraic` role.
     pub algebraics: usize,
+    /// Declarations with the `Output` role.
     pub outputs: usize,
+    /// Declarations with the `Parameter` role.
     pub parameters: usize,
+    /// Declarations with the `Constant` role.
     pub constants: usize,
+    /// Declarations with the `Input` role.
     pub inputs: usize,
+    /// Declarations with a discrete role, `DiscreteReal` or `DiscreteValue`.
     pub discrete: usize,
+    /// Entries in the continuous residual arena
+    /// (`continuous_equation_count`). A structured equation family is not
+    /// counted here, so this is not the number of scalar rows.
     pub continuous_equations: usize,
+    /// Entries in the initialization equation partition.
     pub initialization_equations: usize,
 }
 
@@ -118,16 +132,27 @@ pub enum SolvePreparationEvent {
     /// One source transform ran on a system of shape `before`; `after` is the
     /// shape it produced, or `None` when it changed nothing.
     Transform {
+        /// Which transform ran.
         transform: SourceTransform,
+        /// The shape of the system it was given.
         before: DaeShape,
+        /// The shape of the system it returned; `None` when it returned none,
+        /// leaving its input as the next transform's input.
         after: Option<DaeShape>,
     },
-    /// A routing decision, in the order it was made.
+    /// A routing decision, in the order it was made. A route that names a
+    /// decision (`PreferencesDecided`, `InertStatesDemoted`) is recorded when
+    /// the branch is taken, so a later failure inside that branch is reported by
+    /// the preparation's error, not here; a route that names an outcome
+    /// (`RecoveredViaFormal`, `ReducedToFormalBasis`) is recorded only once that
+    /// outcome succeeded.
     Route(SelectionRoute),
     /// What the finished selection integrates: the primary chart's integrated
     /// scalar names, and how many alternate charts were prepared beside it.
     Selected {
+        /// The primary chart's integrated scalar names.
         integrated: Vec<String>,
+        /// How many alternate charts were prepared beside the primary one.
         alternate_charts: usize,
     },
 }
