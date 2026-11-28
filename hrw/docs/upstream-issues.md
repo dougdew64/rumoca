@@ -734,13 +734,18 @@ a candidate / attempt / selection search over two lanes.
 
 **And the thing the entry complained about — HRW cloning the DAE and re-running the funnel by hand
 — is gone too**, which matters more than the rename. That was a re-execution presented as the
-compile, the fiction this repository has removed twice. HRW reads `inspect_prepare_for_solve`'s
-observation of the run the compiler actually performed.
+compile, the fiction this repository has removed twice. HRW reads the preparation capture
+(`rumoca_phase_structural::preparation_trace`, `rumoca_phase_solve::preparation_trace`) recorded
+inside `rumoca_sim::prepare_runtime_observed`, the run that simulates. *(Corrected 2026-11-28:
+this said `inspect_prepare_for_solve`, which observes a real reduction of the wrong input, the DAE
+before solve lowering simplifies it. HRW stopped reading it on 2026-11-26.)*
 
-**The ask was built, and partly by us.** `watch_prepare_for_solve` and the `ReductionWatcher`
-trait in `rumoca-phase-structural` are this fork's own additive seam, committed separately for a
-clean cherry-pick, and they are what make live reduction stepping a real session rather than a
-recording wearing a live label.
+**The ask was built, and partly by us.** This fork's additive seam is the preparation capture
+above, with `preparation_trace::set_live_listener` for live stepping, committed separately for a
+clean cherry-pick. It is what makes live reduction stepping a real session rather than a
+recording wearing a live label. *(Its predecessor, `watch_prepare_for_solve` with the
+`ReductionWatcher` trait, still exists in the fork but reduced the raw DAE; it was replaced on
+2026-11-27.)*
 
 **The request has an heir rather than a conclusion.** v0.10.4 moved the reduction that matters
 into `rumoca-phase-solve`'s **state selection**, which is a private module — so its process is

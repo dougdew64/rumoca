@@ -37,12 +37,12 @@ is what to install.**
 ```powershell
 git clone https://github.com/dougdew64/rumoca.git
 cd rumoca
-git checkout hrw-rebase-0.10.4
+git checkout hrw-rebase-0.11.0
 ```
 
-**The working branch is `hrw-rebase-0.10.4`, not `hrw`** *(corrected 2026-11-16)*. `hrw` is frozen
-at 2026-09-25, before the 0.10.4 rebase, and checking it out gives two-month-old code on the old
-Rumoca. See [Switching machines](#switching-machines) for what a pull does not bring.
+**The working branch is `hrw-rebase-0.11.0`, not `hrw`** *(corrected 2026-11-16, and again
+2026-11-28 for the 0.11.0 rebase)*. `hrw` is frozen at 2026-09-25, before the 0.10.4 rebase, and
+checking it out gives old code on an old Rumoca. `hrw-rebase-0.10.4` is the previous branch. See [Switching machines](#switching-machines) for what a pull does not bring.
 
 **Line endings are handled for you, but check if tests fail oddly.**
 [`../.gitattributes`](../.gitattributes) pins `eol=lf` for everything under `hrw/`, because
@@ -340,7 +340,10 @@ files there need `git add -f` to be tracked.
 
 ## Switching machines
 
-**The routine: `git pull` (on `hrw-rebase-0.10.4`), then `cargo run -p hrw --example check_machine`.**
+**The routine: `git pull` (on `hrw-rebase-0.11.0`), then `cargo run -p hrw --example check_machine`.**
+**After a rebase the branch name changes, and a pull does not follow it:** a clone still on
+`hrw-rebase-0.10.4` needs `git fetch` then `git checkout hrw-rebase-0.11.0` once, before the
+routine applies. *(Added 2026-11-28.)*
 The checker verifies what a pull does not bring — the context hook's settings, a locked binary,
 the parsed-MSL cache, sleep settings — and session state travels in `CLAUDE.md`'s handoff box.
 

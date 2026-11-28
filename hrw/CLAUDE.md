@@ -630,7 +630,9 @@ the next phase touches — is procedure and lives there.
 > exactly the opening that now exists. **F1 — the formatting fix — was the lead candidate and is
 > DEAD**; 0.10.4 is `cargo fmt --check` clean. The strongest candidate now is instrumenting
 > `rumoca-phase-solve::state_selection`, which is private, exactly as `prepare_for_solve` was
-> before `watch_prepare_for_solve`.
+> before `watch_prepare_for_solve`. *(Partly done 2026-11-26: `rumoca_phase_solve::preparation_trace`
+> now records state selection's route and the states it selected. The search inside it still has
+> no seam.)*
 >
 > ### ⟶ THE 0.10.4 REBASE IS COMPLETE — closed 2026-11-06, all ten steps
 >
@@ -717,6 +719,9 @@ the next phase touches — is procedure and lives there.
 > **There is a new upstream seam and it is ours.** `watch_prepare_for_solve` + `ReductionWatcher`
 > in `rumoca-phase-structural`, committed separately from `hrw/` for a clean cherry-pick. It is what
 > makes live reduction stepping a real session rather than a recording wearing a live label.
+> *(Superseded 2026-11-27: that seam reduced the raw DAE, not the simplified one solve lowering
+> reduces. Live stepping now uses `preparation_trace::set_live_listener` inside the real
+> `prepare_runtime_observed` run. `watch_prepare_for_solve` still exists; nothing in HRW calls it.)*
 >
 > #### The question the old boxes below were gated on is ANSWERED: the rebase bought the plots
 >

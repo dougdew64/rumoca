@@ -359,9 +359,12 @@ have been read as fact.
 - **Spans** — each generated equation carries the originating `connect()` span (SPEC_0008), enforced
   by `crates/rumoca/tests/architecture_hardening/.../source_named_spans.rs`.
 
-**Consequence for HRW:** `worker::record_connection_frames` must **re-run** instantiate + typecheck
-+ flatten with an observer to show this graph, because the frames exist only while the pass runs.
-A labelled derived view, permitted precisely because it is labelled.
+**Consequence for HRW:** the frames exist only while the pass runs, so HRW opens a capture scope
+(`rumoca_phase_flatten::connections::trace::start_capture`) around the compile itself and takes
+the frames as soon as it returns (`worker.rs`, the Flatten section). The Connections view shows
+the compilation, not a second run. *(Corrected 2026-11-28: this said
+`worker::record_connection_frames` re-ran instantiate, typecheck and flatten as a labelled
+derived view. That replay was removed when the capture scopes landed on 2026-08-04.)*
 
 **2. The overconstrained-connector graph (MLS §9.4) — its inputs outlive Flatten; its check no
 longer does.**

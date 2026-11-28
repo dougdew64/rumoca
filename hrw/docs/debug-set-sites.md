@@ -101,16 +101,24 @@ focus and generate `--condition '<int expr>'`:
 
 | Captured item | Best in-scope discriminator | Site · condition |
 |---|---|---|
-| A **coupled block** (tearing) | block **size** `n` (a plain `usize` local) | `tearing.rs` · `tear_algebraic_loop` · `--condition 'n == <size>'` |
-| A coupled block, when several share that size | its **global equation index** (`EquationRef(pub usize)`) | one frame up in `lib.rs` · `tear_loop`, on the `tear_algebraic_loop(…)` call, condition on the block's equation index, then *step into* the tearing |
+| A **coupled block** (tearing) | block **size** `n` (a plain `usize` local) | `tearing.rs` · `tear_algebraic_loop_with_observer` · `--condition 'n == <size>'` |
+| A coupled block, when several share that size | its **global equation index** (`EquationRef(pub usize)`) | one frame up in `blt.rs` · `tear_scc`, on the `tear_algebraic_loop_with_observer(…)` call, condition on an index in `scc`, then *step into* the tearing |
 | A component's `type_def_id` | the enclosing component/class name or its `def_id` | `contents.rs` — condition on the id integer when available |
 
 **Worked example — the `ProportionalLoop` coupled block (size 3).** Its focus subtree gives
 `size: 3` and equations `f_x[2] / f_x[1] / f_x[0]` (the `f_x[N]` label *is* the global equation
 index, via `EquationRef`'s `Display`). Armed condition: `--condition 'n == 3'` at
-`tearing.rs` (`tear_algebraic_loop`). For this specimen that's already unique (its only loop);
-in a system with other size-3 loops, escalate the site to `tear_loop` and condition on an equation
-index (e.g. the residual `f_x[0]` → index `0`).
+`tearing.rs` (`tear_algebraic_loop_with_observer`). For this specimen that's already unique (its only loop);
+in a system with other size-3 loops, escalate the site to `blt.rs` · `tear_scc` and condition on an
+equation index (e.g. the residual `f_x[0]` → index `0`). *(Corrected 2026-11-28: this named a
+`tear_loop` in `lib.rs`, which does not exist, and put the site on `tear_algebraic_loop`, a
+public wrapper nothing in the structural analysis calls. The analysis calls
+`tear_algebraic_loop_with_observer`, from `blt.rs` · `tear_scc` and from `observation.rs`.
+**Solve lowering's re-tear reaches the same function**, through
+`proven_tearing::retear_block` → `tear_algebraic_loop_with_causal_candidates`, so for
+`ProportionalLoop` the `n == 3` condition should stop in both the structural tearing and the
+re-tear the run iterates on (read from the code, not yet run under the debugger) (`fixture-labs/tearing.md`, Station 2). In the re-tear the
+observer is `()`, so no HRW frame accompanies that stop.)*
 
 **Reliability note.** Conditions on a *plain scalar local* (`n`, an `usize`) are the dependable
 form and what Claude arms by default. Conditions that must reach into a Rust slice/newtype
@@ -134,11 +142,11 @@ animation view updates in lockstep, showing each algorithmic decision as it happ
 
 ### Architecture
 
-Each traced algorithm (`maximum_matching_with_trace`, `tarjan_scc_with_trace`,
-`reduce_constrained_dummy_derivatives_with_trace`,
-`index_reduce_missing_state_derivatives_with_trace`) accepts an optional
-`&LiveTrace<Frame>` — the producer half of an `mpsc` channel. When present, every frame
-push sends through the channel. The animation struct holds the `Receiver<Frame>` and
+No algorithm takes a `LiveTrace` *(corrected 2026-11-28: this named four `*_with_trace`
+functions that no longer exist)*. Rumoca calls an observation seam, and HRW's callback pushes
+each frame into a `LiveTrace<Frame>`, the producer half of an `mpsc` channel. Matching, tearing
+and reduction use `rumoca_phase_structural::preparation_trace::set_live_listener` during the
+real `prepare_runtime_observed` run; connections use the flatten trace. The animation struct holds the `Receiver<Frame>` and
 drains it via `try_iter()` each UI frame, auto-advancing the cursor to the latest frame.
 
 The producer and consumer share no application-level lock — the `Sender` and `Receiver`
@@ -197,8 +205,11 @@ frame from `emit` lands in the real algorithm: `next_augment_step` or `run_augme
 matching, `strongconnect` and its `enter`/`descend`/`pop_scc` helpers for Tarjan, `tear_with_priority`
 for tearing.
 
-**Index reduction has no row, and that is current rather than an omission.** Its HRW pane is
-disabled on this rebase pending a re-model (`playback::DISABLED_VIEWS`).
+**Index reduction has no row yet, and that is now an omission** *(corrected 2026-11-28: this
+said the pane was disabled; it is live, and `playback::DISABLED_VIEWS` is empty)*. Its live
+session is `live_trace::spawn_reduction_live`, fed by `preparation_trace::set_live_listener`
+during the real run. Nobody has yet picked a condition variable for it, so the paragraphs below
+are history, not a recipe.
 
 *Corrected 2026-11-03:* this paragraph said the upstream seam was unreachable because
 `ReductionObserver` and `ReductionEvent` are `pub(super)`. They are — and that is the design, as

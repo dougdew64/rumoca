@@ -283,6 +283,14 @@ expect the rest to resolve with it.
 
 ### F1. Re-derivation matches the report  *(the centrepiece)*
 
+> **RETIRED at the v0.10.0 port** *(recorded 2026-11-28)*. The animations no longer
+> re-derive anything: their frames are captured from the compile and, since 2026-11-27,
+> from the preparation of the run that simulates (`preparation_trace`). With one answer
+> there is nothing to compare, so the three checks and `F1_MODELS` were deleted
+> (`de7017ff6`), and the helpers they called (`final_matching`, `reported_matching`,
+> `final_sccs`, `reported_blocks`, `tear_variable_names`) on 2026-11-28. What follows is
+> the record of what F1 was and found.
+
 For every model with a coupled block: run `tearing_anim::walk_blocks` and compare its
 result against the `tearing` field of the structural report — same tear variables, same
 residual equations, same causal sequence, in the same order.

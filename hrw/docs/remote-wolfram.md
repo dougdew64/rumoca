@@ -66,7 +66,7 @@ machines** (Tailscale is the usual low-effort choice) rather than exposing SSH t
 ### Files: Wolfram sees only the main machine's disk
 
 Any path in a Wolfram call is a **main-machine path**. Before a System Modeler run, bring the main
-machine's clone up to date over SSH (`git pull` on `hrw-rebase-0.10.4`) so it holds the specimen
+machine's clone up to date over SSH (`git pull` on `hrw-rebase-0.11.0`) so it holds the specimen
 being checked — or pass the model text in the call rather than a path.
 
 ## Open questions — decide before relying on it
@@ -82,9 +82,11 @@ being checked — or pass the model text in the call rather than a path.
 
 ## What this does not solve
 
-**HRW has never been built or run on Linux.** That is the first job on the XPS and is separate
-work: the context hook needs `powershell` (Microsoft's `pwsh`), the memory folder is named after
-the Linux path, and the corpus sweep scripts are Windows-only. Claude's memory does not travel with
+**HRW builds and runs on Linux** *(corrected 2026-11-28; this said it never had)*. Since
+2026-11-26 the context hook is a Rust binary (`hrw-context`), not PowerShell, and the full test
+gate and step 10's Linux parts have passed on Fedora. What is still Windows-only: the corpus
+fidelity sweep (`scripts/measure-fidelity.ps1`), and Claude's memory folder is named after the
+machine's path. Claude's memory does not travel with
 the repository; `setup-windows.md` → *Switching machines*.
 
 ## Estimated effort

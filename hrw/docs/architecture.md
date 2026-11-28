@@ -113,33 +113,33 @@ showing 48 equations. They are derived now, and
 `arch_doc::tests::architecture_regions_are_current` fails when they drift.
 
 <!-- BEGIN GENERATED module-sizes -->
-**76 modules, 97,375 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
+**76 modules, 97,422 lines**, largest first. Every `.rs` file under `src/` at any depth, including the test-only ones (`ui_tests.rs`, `test_support.rs`); a module in a subdirectory is keyed by its path relative to `src/`.
 
 | module | lines |
 |---|---:|
-| `worker/tests.rs` | 10,312 |
-| `app.rs` | 8,751 |
+| `worker/tests.rs` | 10,433 |
+| `app.rs` | 8,756 |
 | `app/tests.rs` | 8,285 |
-| `worker.rs` | 7,238 |
+| `worker.rs` | 7,234 |
 | `doc_citations.rs` | 6,390 |
-| `bridge.rs` | 5,687 |
-| `fidelity.rs` | 3,313 |
+| `bridge.rs` | 5,693 |
+| `fidelity.rs` | 3,317 |
 | `ui_tests.rs` | 2,981 |
 | `equation_sheet.rs` | 1,565 |
 | `diagnostics.rs` | 1,502 |
 | `lib.rs` | 1,498 |
 | `tree.rs` | 1,426 |
 | `report_sub_view.rs` | 1,361 |
-| `matching_anim.rs` | 1,311 |
-| `incidence_view.rs` | 1,220 |
+| `matching_anim.rs` | 1,292 |
 | `question_bar.rs` | 1,203 |
+| `incidence_view.rs` | 1,195 |
 | `playback.rs` | 1,135 |
 | `connection_anim.rs` | 1,106 |
 | `context_hook.rs` | 1,088 |
 | `reduction_view.rs` | 1,056 |
-| `tarjan_anim.rs` | 1,001 |
+| `tarjan_anim.rs` | 975 |
 | `matching_ledger.rs` | 954 |
-| `tearing_anim.rs` | 949 |
+| `tearing_anim.rs` | 931 |
 | `dae_expr_format.rs` | 922 |
 | `stage_tabs.rs` | 922 |
 | `lab_panel.rs` | 908 |
@@ -157,7 +157,7 @@ showing 48 equations. They are derived now, and
 | `field_help.rs` | 704 |
 | `identifier_index.rs` | 688 |
 | `sub_view_rows.rs` | 659 |
-| `live_trace.rs` | 646 |
+| `live_trace.rs` | 649 |
 | `expr_format.rs` | 645 |
 | `plot_labels.rs` | 600 |
 | `modelica_lex.rs` | 595 |
@@ -193,7 +193,7 @@ showing 48 equations. They are derived now, and
 | `compile_caches.rs` | 100 |
 | `doc_sizes.rs` | 78 |
 | `bin/hrw-context.rs` | 48 |
-| **total** | **97,375** |
+| **total** | **97,422** |
 <!-- END GENERATED module-sizes -->
 
 
@@ -569,7 +569,8 @@ Three groups need more than a title:
 - **Cached structural views** are `Option<Option<T>>`: the outer layer is cache state,
   the inner one the parse result. They exist to keep structural-report JSON out of the
   per-frame path, and are invalidated on `Compiled` and when switching between
-  Structural and IndexReduction (tracked by `cached_report_stage`).
+  Structural and IndexReduction (tracked by `StageViewCaches::built_for`, in
+  `stage_caches.rs`).
 - **Deferred live debug spawn** is the breakpoint ack handshake, described in full under
   [§7](#algorithm-animation-steppers) — four cooperating layers, none of them optional.
 
@@ -915,11 +916,12 @@ reads from the `Receiver` via `try_iter()`. The animation structs use
 This design eliminates all explicit locks from the live debug path — the only
 synchronization is atomics and the `mpsc` channel's internal state.
 
-The traced algorithms (`maximum_matching_with_trace`, `tarjan_scc_with_trace`,
-`reduce_constrained_dummy_derivatives_with_trace`,
-`index_reduce_missing_state_derivatives_with_trace`) accept an optional
-`&LiveTrace<Frame>` — when present, each frame is pushed to both the local vec
-(returned in the result) and the channel (drained by the UI).
+The algorithms do not take a `LiveTrace` (corrected 2026-11-28: this named four
+`*_with_trace` functions that no longer exist). Rumoca calls back into HRW through an
+observation seam, and HRW's callback pushes each frame to the channel the UI drains. A
+live connection session uses the flatten trace; matching, tearing and reduction use
+`rumoca_phase_structural::preparation_trace::set_live_listener`, which fires during the
+real `rumoca_sim::prepare_runtime_observed` run (`live_trace::watch_real_preparation`).
 Live mode uses `LiveTrace::new()` + `.with_frame_delay(crate::live_frame_delay(armed))`,
 which adds a sleep after each push (so the UI thread can render before the
 debugger pauses all threads) and calls `live_trace_breakpoint` — a dedicated
@@ -1326,24 +1328,17 @@ incidence matrix and auto-switches to the Structural / Incidence view (cross-lin
 via `App::highlighted_eq_row`).
 
 **Source-to-equation traceability** (#28): when the specimen source is available,
-each equation is linked to its originating source line(s) via a three-layer
-matching strategy:
+each equation is linked to its originating source line by its **span** alone: the
+equation's `DaeProvenance` span names a `SourceId` and a byte offset, and when that
+source is the specimen file (not an MSL library file) the offset is converted to a line.
+An equation whose span points elsewhere has no line.
 
-1. **Span-based** (`SourceId` + byte offset): direct specimen equations whose
-   `span` points to the specimen file (not an MSL library file).
-2. **Origin-based** (connect matching): connection/flow equations are matched to
-   their `connect()` statements by parsing the origin string and comparing
-   connector paths against `scan_connect_statements()` results.
-3. **Text search**: component equations matched to declaration lines, bindings
-   matched to variable declarations.
-
-An equation can map to **multiple source lines** when it arises from the
-interaction of several `connect()` statements. Modelica `connect` creates
-equivalence classes: when `connect(A, B)` and `connect(C, A)` share a node, the
-compiler generates a transitive equality `B.phi = C.phi` and a multi-connector
-flow sum `A.tau + B.tau + C.tau = 0` — both are consequences of *both* connect
-statements, and the source map links them to both lines. Direct equalities
-(both connectors from one connect) map to a single line.
+*(Corrected 2026-11-28. This said a three-layer strategy, with two text-matching
+fallbacks that linked a connect-generated equation to **every** `connect()` line it
+came from. Both fallbacks read names out of the origin string, which v0.10.0 replaced
+with a typed provenance, and they were deleted as dead; the reasoning is at the
+`equation_sheet::build` loop. So each equation now maps to at most one line, though
+`source_lines` is still a `Vec`.)*
 
 The "Source Map" sub-tab shows a split pane: Modelica source on the left (with
 category color bars in the gutter for lines that produced equations) and the flat
@@ -2182,9 +2177,16 @@ could agree with the real one or not with nothing to say which.
 functions the reference documents named are gone from the tree. There is nothing left to call
 in an order of HRW's choosing.
 
-**The current state is an honest absence.** The reduction pane is listed in
-`playback::DISABLED_VIEWS` and shows a placeholder, and `worker.rs` carries no reduced-DAE
-stage.
+**The current state** *(rewritten 2026-11-28; this said the pane was disabled)*: the
+reduction pane is live and `playback::DISABLED_VIEWS` is empty. It reads the run that
+simulates: `rumoca_phase_structural::preparation_trace` and
+`rumoca_phase_solve::preparation_trace` are capture scopes inside
+`rumoca_sim::prepare_runtime_observed`, and `worker/preparation.rs` builds the Index
+reduction stage from what they record. The history below is kept because it is what led
+there: `inspect_prepare_for_solve` was real Rumoca on the **wrong input** (the DAE before
+solve lowering simplifies it), so the paragraph's conclusion that the re-model "needs
+nothing from upstream" turned out false. It needed the capture scopes. See
+`DECISIONS.md`, 2026-11-26.
 
 **There is no upstream ask here, and a note in this file said there was** *(corrected
 2026-11-03)*. It read that `ReductionObserver` and `ReductionEvent` are `pub(super)` and

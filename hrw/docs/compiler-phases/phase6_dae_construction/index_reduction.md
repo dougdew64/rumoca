@@ -488,17 +488,20 @@ independent coordinates on the constraint manifold rather than differentiating a
 says the point has one degree of freedom; one coordinate and its rate suffice.
 
 **So this phase's report is not the compiler's verdict on index**, and reading it as one is a
-mistake HRW made twice — see `docs/tech-debt.md`. State selection is a private module with no
-observation seam, so nothing here can show its search.
+mistake HRW made twice — see `docs/tech-debt.md`. State selection is a private module, and
+since 2026-11-26 this fork's `rumoca_phase_solve::preparation_trace` records which route it took
+and which states it selected. **Its search is still unobserved**, so nothing here can show how
+it chose.
 <!-- unbuilt: rumoca_phase_solve::watch_state_selection -->
 
-### Where the code lives on v0.10.4
+### Where the code lives on v0.11.0
 
 | what | where |
 |---|---|
 | the entry point | `prepare_for_solve` in `crates/rumoca-phase-structural/src/dae_transform.rs` |
-| the observed twin | `inspect_prepare_for_solve` — same run, returns an owned `ReductionReport` |
-| the live-steppable twin | `watch_prepare_for_solve` — **HRW's own upstream seam**, additive and observation-only |
+| what HRW reads | `preparation_trace` in `rumoca-phase-structural` (and in `rumoca-phase-solve`): capture scopes **this fork added**, open during `rumoca_sim::prepare_runtime_observed`, so they record the reduction of the DAE solve lowering has already simplified |
+| the observed twin | `inspect_prepare_for_solve` — returns an owned `ReductionReport`, but called on its own it reduces the DAE **before** simplification, so it is not the run that simulates |
+| the live-steppable twin | `watch_prepare_for_solve` — this fork's earlier seam, with the same limitation; HRW stopped using it on 2026-11-27 |
 | the fixed point | `reduce_from_first_round`, same file |
 | the Holonomic attempt | `dae_transform/holonomic_attempt.rs` |
 | symbolic differentiation | `dae_transform/differentiation.rs` — `differentiate`, `differentiate_order`, `differentiate_holonomic` |
