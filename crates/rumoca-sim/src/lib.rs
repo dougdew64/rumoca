@@ -285,8 +285,9 @@ pub fn simulate_with_step_records(
 /// false one.
 ///
 /// This is the entry a caller wants when it does not choose the backend.
-/// `Auto` resolves through the same `select_auto_integrator` the unobserved
-/// path uses, so observation never changes which integrator runs.
+/// `Auto` resolves through `select_auto_integrator`, which is the unobserved
+/// path's `select_auto_integrator_with_observation` with no settings
+/// collector, so observation never changes which integrator runs.
 #[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
 pub fn simulate_with_optional_step_records(
     dae_model: &dae::Dae,
@@ -339,6 +340,11 @@ pub struct PreparedRuntime {
 /// Options are validated first, as [`simulate_with_diagnostics`] validates them
 /// before it lowers, so a caller that prepares and then integrates is refused
 /// exactly where a caller of the combined entry would be.
+///
+/// **`opts.solver_mode` is not consulted.** This always lowers as `Auto` does;
+/// the `Bdf` path lowers differently (its overrides are applied separately), so
+/// a caller passing another mode would observe a run that mode never makes. Use
+/// [`simulate_with_optional_step_records`] to run a chosen mode.
 #[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
 pub fn prepare_runtime_observed(
     dae_model: &dae::Dae,
@@ -360,7 +366,8 @@ pub fn prepare_runtime_observed(
 /// The integration half of [`simulate_with_optional_step_records`]'s `Auto`
 /// arm. `opts` should be the options the runtime was prepared with; the
 /// integrator choice is made here, from the artifact, exactly as the combined
-/// entry makes it.
+/// entry makes it, and `opts.solver_mode` is not consulted (see
+/// [`prepare_runtime_observed`]).
 #[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
 pub fn simulate_prepared_runtime_with_optional_step_records(
     runtime: PreparedRuntime,

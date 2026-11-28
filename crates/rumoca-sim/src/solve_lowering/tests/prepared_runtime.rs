@@ -52,6 +52,44 @@ fn a_prepared_runtime_integrates_exactly_as_the_combined_entry() {
     );
 }
 
+/// The split entry against the **unobserved** run, `simulate_with_diagnostics`.
+///
+/// [`a_prepared_runtime_integrates_exactly_as_the_combined_entry`] compares the
+/// split entry with `simulate_with_optional_step_records`, whose `Auto` arm *is*
+/// the split entry, so it cannot see the split drift from what an ordinary
+/// caller gets. This compares it with the entry no observation touches.
+///
+/// Both models take `Auto`'s BDF path. The RK-like fallback (an unavailable
+/// initial BDF linearization) is not exercised: two models built to trigger it
+/// (a kink at the start value, a singular algebraic sensitivity) still selected
+/// BDF, and the suites reach the RK-like host only by requesting it.
+#[test]
+fn the_split_entry_integrates_exactly_as_the_unobserved_run() {
+    let mut paths = Vec::new();
+    for (source, name) in [
+        (OSCILLATOR, "PreparedOscillator"),
+        (ALIASED_DECAY, "AliasedDecay"),
+    ] {
+        let model = compile(source, name);
+        let opts = auto_options();
+        let unobserved = crate::simulate_with_diagnostics(&model, &opts).unwrap();
+        let runtime = crate::prepare_runtime_observed(&model, &opts, |_| {}).unwrap();
+        let (split, steps) =
+            crate::simulate_prepared_runtime_with_optional_step_records(runtime, &opts).unwrap();
+        assert_eq!(split.names, unobserved.names, "{name}");
+        assert_eq!(split.times, unobserved.times, "{name}: different sample times");
+        assert_eq!(split.data, unobserved.data, "{name}: integrated differently");
+        paths.push((name, steps.is_some()));
+    }
+    // Non-vacuity: step records exist only on the BDF path (the RK-like host
+    // reports none), so this pins which path was compared.
+    assert_eq!(
+        paths,
+        vec![("PreparedOscillator", true), ("AliasedDecay", true)],
+        "each model must take the BDF path",
+    );
+}
+
 const ALIASED_DECAY: &str = r#"
 model AliasedDecay
   Real x(start = 1.0);
