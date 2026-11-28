@@ -590,9 +590,11 @@ the next phase touches — is procedure and lives there.
 > checked against the tag once it exists**, and moved to the tag if they differ.
 > `pre-0.11.0-rebase` tags the old tip. Done: steps 0–7, 3c/3d and the tearing fix (Doug chose
 > to show both plans). Step 10 is done on Linux; steps 8 (Doug's smoke test) and 9 (About reads
-> 0.11.0) are done. **Still open: step 11, the tech-debt sweep (agreed, not started), and the two
-> Windows-only parts of step 10**, the MSL fidelity sweep (`measure-fidelity.ps1`) and the System
-> Modeler oracle. Progress is recorded in
+> 0.11.0) are done, and step 11's tech-debt sweep ran on 2026-11-28 (its open items, two of them
+> Doug's decisions, are in `docs/tech-debt.md` under *Open items the 2026-11-28 post-rebase
+> sweep found*). **Still open: the two Windows-only parts of step 10**, the MSL fidelity sweep
+> (`measure-fidelity.ps1`) and the System Modeler oracle, **and the check of the base against
+> the `v0.11.0` tag.** Progress is recorded in
 > `DECISIONS.md`, 2026-11-28. The `rumoca` CLI crate now needs `libudev` to build
 > (`systemd-devel` on Fedora).
 >

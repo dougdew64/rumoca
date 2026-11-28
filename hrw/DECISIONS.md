@@ -6216,3 +6216,13 @@ the version stamps. **The check also found three defects that predate this rebas
 About reads 0.11.0. **Still open:** the two Windows-only parts of step 10, which wait for the
 Windows machine in Chicago; the check of the base against the `v0.11.0` tag once it exists; and
 step 11. Doug agreed to the post-rebase tech-debt sweep, which has not started.
+
+**Step 11, the post-rebase sweep, 2026-11-28 morning.** Three review agents read the rebase's
+diff and the 11-26/27 rewire (crates, HRW code, prose); every finding was checked before it was
+fixed. **No divergence from upstream in what runs.** Fixed: a Resolve failure now reports the
+strict run's diagnostics (it asked a `Standard`-mode query; equal on every specimen), and the
+roster guard sees session queries; Simplify's tooltips are `DaeShape`'s own (they borrowed other
+types' docs); a test pins the `Auto` split against `simulate_with_diagnostics`; about 25 stale
+passages. **Two open items are Doug's**: whether a failed Resolve should show the recovered tree,
+and whether to drop the fork's unused `watch_prepare_for_solve`. The full list is in
+`docs/tech-debt.md`. The `crates/` commits cost one MSL re-parse on the next launch.
