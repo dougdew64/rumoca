@@ -298,13 +298,16 @@ pub fn simulate_with_optional_step_records(
     ),
     SimulationDiagnosticError,
 > {
+    // The same option check, and the same dispatch, as `simulate_with_observation`:
+    // an observed run must refuse what the unobserved one refuses.
+    backend_options::validate(opts)?;
     match opts.solver_mode {
         SimSolverMode::Bdf => {
             let (result, records) = diffsol::simulate_with_step_records(dae_model, opts)?;
             Ok((result, Some(records)))
         }
-        SimSolverMode::RkLike | SimSolverMode::VelImplicit => {
-            simulate_with_rk45_diagnostics(dae_model, opts).map(|result| (result, None))
+        SimSolverMode::RkLike | SimSolverMode::VelImplicit | SimSolverMode::FixedStep => {
+            simulate_with_rk45_diagnostics(dae_model, opts, None).map(|result| (result, None))
         }
         SimSolverMode::Auto => {
             let runtime = prepare_runtime_observed(dae_model, opts, |_| {})?;
@@ -332,12 +335,17 @@ pub struct PreparedRuntime {
 /// `Auto` arm, which is now exactly this call followed by
 /// [`simulate_prepared_runtime_with_optional_step_records`]. Observation-only:
 /// `observe` gets a shared borrow of the value the artifact is then built from.
+///
+/// Options are validated first, as [`simulate_with_diagnostics`] validates them
+/// before it lowers, so a caller that prepares and then integrates is refused
+/// exactly where a caller of the combined entry would be.
 #[cfg(all(feature = "solver-diffsol", feature = "solver-rk45"))]
 pub fn prepare_runtime_observed(
     dae_model: &dae::Dae,
     opts: &SimOptions,
     observe: impl FnMut(&rumoca_phase_solve::LoweredSolveModel<'_>),
 ) -> Result<PreparedRuntime, SimulationDiagnosticError> {
+    backend_options::validate(opts)?;
     let (artifact, execution_backend) =
         solve_lowering::lower_runtime_fmi_artifact_observed(dae_model, opts, observe)?;
     Ok(PreparedRuntime {
@@ -371,22 +379,25 @@ pub fn simulate_prepared_runtime_with_optional_step_records(
         execution_backend,
     } = runtime;
     match diffsol::select_auto_integrator(&artifact, opts, execution_backend.clone())
-        .map_err(|error| SimulationDiagnosticError::Solver(error.to_string()))?
+        // Converted as `simulate_artifact_auto` converts, so a failure here reads
+        // as the same error the unobserved run reports.
+        .map_err(SimulationDiagnosticError::from)?
     {
         diffsol::SelectedAutoIntegrator::Bdf(Some(prepared)) => {
             let mut recorder = MeStepRecorder::new();
             diffsol::simulate_probed_observed(&prepared, &mut recorder)
                 .map(|result| (result, Some(recorder.into_records())))
-                .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))
+                .map_err(SimulationDiagnosticError::from)
         }
         diffsol::SelectedAutoIntegrator::Bdf(None) => {
             let mut recorder = MeStepRecorder::new();
             diffsol::simulate_artifact_observed(artifact, opts, execution_backend, &mut recorder)
                 .map(|result| (result, Some(recorder.into_records())))
-                .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))
+                .map_err(SimulationDiagnosticError::from)
         }
         diffsol::SelectedAutoIntegrator::RkLike => {
-            simulate_artifact_rk45(artifact, opts, execution_backend).map(|result| (result, None))
+            simulate_artifact_rk45(artifact, opts, execution_backend, None)
+                .map(|result| (result, None))
         }
     }
 }

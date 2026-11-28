@@ -15,7 +15,9 @@ use rumoca_solver::fmi_me::numerical_observation::{ConstructionPurpose, Settings
 scheduled_executor_items! {
     use crate::SimulationSessionApi;
 }
-use crate::me_backend::{BackendSimulationSession, instance_config};
+use crate::me_backend::{
+    BackendSimulationSession, batch_options, instance_config, plugin_for_host,
+};
 use crate::simulation_session::SessionState;
 
 const BDF_INTEGRATOR: crate::me_backend::IntegratorFactory = crate::me_backend::IntegratorFactory {
@@ -402,11 +404,12 @@ pub(crate) fn simulate_with_step_records(
     dae_model: &dae::Dae,
     opts: &rumoca_solver::SimOptions,
 ) -> Result<(rumoca_solver::SimResult, Vec<MeStepRecord>), SimulationDiagnosticError> {
-    let prepared = build_simulation(dae_model, opts)
-        .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))?;
+    // Errors convert exactly as `simulate_with_diagnostics`'s do, so an observed
+    // run that fails reports the same error the unobserved one would.
+    let prepared = build_simulation(dae_model, opts).map_err(SimulationDiagnosticError::from)?;
     let mut recorder = MeStepRecorder::new();
     let result = simulate_prepared_observed(&prepared, &mut recorder)
-        .map_err(|err| SimulationDiagnosticError::Solver(err.to_string()))?;
+        .map_err(SimulationDiagnosticError::from)?;
     Ok((result, recorder.into_records()))
 }
 
