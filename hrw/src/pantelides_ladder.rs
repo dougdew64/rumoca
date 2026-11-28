@@ -248,7 +248,7 @@ mod tests {
     /// Reduction's own verdict is a separate claim and now worth asserting beside
     /// it: `outcome.kind == "singular"` with `residue == 2`. Two numbers for one
     /// deficiency, and they are not inconsistent —
-    /// `worker::index_reduction_from_observation` publishes the definition:
+    /// `worker::preparation::index_reduction_stage` publishes the definition:
     /// residue sums **both** deficits, so a square system's residue is twice its
     /// rank deficiency.
     ///

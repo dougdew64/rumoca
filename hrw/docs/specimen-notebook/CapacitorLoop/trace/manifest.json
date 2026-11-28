@@ -2,7 +2,7 @@
   "model": "CapacitorLoop",
   "specimen": "specimens/CapacitorLoop.mo",
   "specimen_fnv1a": "85d851eb99b13a47",
-  "rumoca_rev": "86d1b2ee0",
+  "rumoca_rev": "4c0c24e30",
   "rumoca_version": "0.11.0",
   "stages": {
     "parse": {

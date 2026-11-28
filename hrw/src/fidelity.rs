@@ -1,8 +1,10 @@
 //! **Does HRW faithfully represent Rumoca?** — the F2–F5 invariant harness.
 //!
 //! `docs/fidelity-plan.md` in one sentence: *HRW must invent nothing and omit
-//! nothing.* F1 lives in `worker.rs` because it compares a re-derivation against
-//! a report; the checks here are different in kind and cheaper to trust.
+//! nothing.* F1 compared HRW's re-derivations against a report and was retired at
+//! the v0.10.0 port, when the animations stopped re-deriving: their frames are
+//! captured from the compile, so there is no second answer to compare. The checks
+//! here are different in kind and cheaper to trust.
 //!
 //! # Invariants, not expected answers
 //!
@@ -51,9 +53,11 @@
 //! **Each check guards one link.** F2 guards the incidence (everything indexes
 //! into it); F5 guards the matching (a pair whose equation does not *contain*
 //! its unknown is not a matching at all); F4 guards the BLT partition; F3
-//! guards the counts across all of it; and **F1 guards the re-derivation** —
-//! the animations re-run these algorithms, so F1 is what stops an animation
-//! teaching a decision Rumoca never made.
+//! guards the counts across all of it. **F1 guarded the re-derivation** while the
+//! animations re-ran these algorithms; they now play frames captured from the run
+//! (`rumoca_phase_structural::preparation_trace`), and that capture is what stops
+//! an animation teaching a decision Rumoca never made. *(Corrected 2026-11-28:
+//! this described F1 as live.)*
 //!
 //! F6, F7, F8 and F9 sit outside the chain, guarding the derived views, the
 //! capture vocabulary, scale, and failure reporting.

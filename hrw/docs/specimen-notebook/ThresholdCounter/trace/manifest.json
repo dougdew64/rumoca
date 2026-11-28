@@ -2,7 +2,7 @@
   "model": "ThresholdCounter",
   "specimen": "specimens/ThresholdCounter.mo",
   "specimen_fnv1a": "2528c4020944765f",
-  "rumoca_rev": "86d1b2ee0",
+  "rumoca_rev": "4c0c24e30",
   "rumoca_version": "0.11.0",
   "stages": {
     "parse": {

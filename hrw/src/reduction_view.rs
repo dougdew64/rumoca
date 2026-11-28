@@ -26,7 +26,7 @@
 //! - **An attempt rebuilds and re-sorts the whole system**, so its outcome is a
 //!   *measurement*: `Sorted`, `Reduced`, `Held`, `Raised`, or one of four refusals.
 //!
-//! So the panel is a reader for `worker::index_reduction_from_observation`'s payload,
+//! So the panel is a reader for `worker::preparation::index_reduction_stage`'s payload,
 //! grouped back into rounds. It invents nothing: the residue definition and the
 //! arena-local-ordinal warning are **read out of the payload** rather than restated
 //! here, so there is one copy of each.
@@ -704,7 +704,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    /// A payload shaped like `worker::index_reduction_from_observation`'s.
+    /// A payload shaped like `worker::preparation::index_reduction_stage`'s.
     fn report(search: Value, after: Value) -> Value {
         json!({
             "rounds": 1,
@@ -878,7 +878,7 @@ mod tests {
     /// **The panel reads a real compile, with nothing it could not place.**
     ///
     /// Every test above builds its own payload, so every one of them would still pass
-    /// if `worker::index_reduction_from_observation` published a different shape
+    /// if `worker::preparation::index_reduction_stage` published a different shape
     /// tomorrow — they agree with each other and with nothing else. This is the only
     /// check here that compares the reader against the writer.
     ///

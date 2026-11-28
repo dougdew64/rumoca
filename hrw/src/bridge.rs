@@ -1682,8 +1682,11 @@ impl View<'_> {
 /// the phase source is readable, and this closes the last gap — knowing which
 /// file to open.
 ///
-/// These are facts about the build (HRW calls exactly these functions from
-/// `worker.rs`), not an interpretation of what the phases do.
+/// These are facts about the build, not an interpretation of what the phases do.
+/// **Most are not calls HRW makes** *(corrected 2026-11-28; this said HRW calls
+/// exactly these from `worker.rs`)*. HRW calls three things: the session compile,
+/// `rumoca_sim::prepare_runtime_observed`, and the integration. Each entry names
+/// where *inside* those calls the stage's work happens.
 ///
 /// **Six of the twelve named functions that no longer existed**, from the v0.10.0
 /// rebase until the 2026-11-07 sweep: `to_dae_with_options_traced`, two `dae_prepare`
@@ -1692,7 +1695,7 @@ impl View<'_> {
 /// `every_phase_source_names_a_defined_function` now checks each entry's function
 /// against the workspace.
 pub(crate) fn phase_source(stage: StageKind) -> Value {
-    // (crate directory, the entry point HRW actually calls)
+    // (crate directory, where this stage's work happens on the run that simulates)
     let (krate, entry) = match stage {
         // The session's own parse of the document — the one the compile reads,
         // after `expanded_document_source` — not a second parse by HRW.
@@ -1756,8 +1759,11 @@ pub(crate) fn phase_source(stage: StageKind) -> Value {
     json!({
         "note": "where this stage's algorithm lives in the Rumoca workspace — read \
                  the code rather than inferring the algorithm from its output. \
-                 Paths are relative to the repository root; HRW calls these from \
-                 hrw/src/worker.rs.",
+                 Paths are relative to the repository root. HRW does not call most of \
+                 these itself: it calls the session compile, \
+                 rumoca_sim::prepare_runtime_observed and the integration \
+                 (hrw/src/worker.rs, hrw/src/worker/preparation.rs), and this names \
+                 where inside those calls the stage's work happens.",
         "crate": krate,
         "entry": entry,
     })

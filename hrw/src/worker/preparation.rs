@@ -311,7 +311,7 @@ fn prepared_system_json(
         // A projection of the prepared system, not a second analysis: the
         // incidence is the first step of an analysis and changes nothing.
         if let Ok(incidence) = rumoca_phase_structural::build_incidence(system.view) {
-            json["incidence"] = super::incidence_to_json(&incidence, Some(system.view));
+            json["incidence"] = super::incidence_to_json(&incidence, system.view);
         }
         json["n_manifold_constraints"] = serde_json::json!(system.manifold.len());
     });

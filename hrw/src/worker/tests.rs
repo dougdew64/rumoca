@@ -1500,7 +1500,7 @@ fn a_normalized_system_is_not_called_index_1() {
 /// **The reduction search log is the compile's own run, and every record kind of it
 /// reaches the payload.**
 ///
-/// The must-fire test for `worker::index_reduction_from_observation`. Its job is to
+/// The must-fire test for `worker::preparation::index_reduction_stage`. Its job is to
 /// *report* a search, so silence has to be a failure — and silence here is cheap to
 /// produce: an empty `search` array, a `Round` arm that drops its unmatched lists, or
 /// an `Attempt` whose outcome serializes to `{}` would all leave a pane that renders
@@ -2016,8 +2016,9 @@ fn a_library_compile_leaves_the_session_usable_for_specimens() {
 // deleted `dae_prepare`, made `Dae` immutable and non-`Clone`, and reduces in
 // two fixed-point lanes through a candidate/attempt/selection protocol. Not one
 // name they referenced survives. `docs/tech-debt.md`'s
-// `index_reduction_from_observation` recruits their replacements, which should
-// read `inspect_prepare_for_solve` — strictly richer than these frames were.
+// `index_reduction_from_observation` recruited their replacements (since
+// 2026-11-27 `preparation::index_reduction_stage`, reading the preparation capture
+// of the run that simulates, not `inspect_prepare_for_solve`).
 //
 // `the_reduced_system_has_its_own_captured_frames` pinned the raw/reduced split
 // that `StructuralFrames` kept apart (97 equations against 20 on `Drivetrain`),
@@ -2073,8 +2074,9 @@ fn a_library_compile_leaves_the_session_usable_for_specimens() {
 ///    which ~38 were MSL deprecation warnings, the model's real error last. The
 ///    signal was the final 2% of a 2000-character string.
 ///
-/// The fix uses `compile_model_diagnostics` for structured, model-scoped diagnostics
-/// and partitions them by **severity** — so nothing is pattern-matched out of message
+/// The fix used `compile_model_diagnostics` for structured, model-scoped diagnostics
+/// (since 2026-11-28, the strict resolve's own; see
+/// `a_resolve_failure_reports_the_strict_runs_diagnostics`) and partitions them by **severity** — so nothing is pattern-matched out of message
 /// text and no real error can be filtered away by a wording change.
 #[test]
 #[cfg_attr(
@@ -10031,6 +10033,62 @@ fn the_resolve_tab_reads_the_tree_the_compile_uses() {
     );
 }
 
+/// **A Resolve failure reports the strict run's diagnostics, the ones the compile
+/// itself resolved with** (2026-11-28).
+///
+/// The success path reads `strict_compile_resolved()`. Until this date the failure
+/// path reported `compile_model_diagnostics()` instead, a separate query in
+/// `SemanticDiagnosticsMode::Standard` that no compile or simulation makes. The
+/// check reaches the real call: the payload must equal what
+/// `strict_compile_resolved()` returns on the same session, rendered the same way.
+#[test]
+fn a_resolve_failure_reports_the_strict_runs_diagnostics() {
+    let mut w = WorkerState::new();
+    let path = PathBuf::from(format!(
+        "{}/specimens/UndefinedRef.mo",
+        env!("CARGO_MANIFEST_DIR")
+    ));
+    let source = std::fs::read_to_string(&path).expect("specimen");
+    let FromWorker::Compiled { stages, .. } = w.compile(&path, &|_: FromWorker| {}) else {
+        panic!("expected Compiled");
+    };
+    let value = stages.resolve.value.as_ref().expect("a structured payload");
+    let uri: String = w
+        .session
+        .document_uris()
+        .into_iter()
+        .find(|u| u.ends_with("UndefinedRef.mo"))
+        .expect("the specimen is loaded")
+        .to_owned();
+    let (strict, diags) = w.session.strict_compile_resolved().expect("recovers");
+    let expected = super::model_diagnostics_to_json(
+        &diags.iter().cloned().collect::<Vec<_>>(),
+        Some(&strict.tree().source_map),
+        &source,
+        &uri,
+    );
+    assert_eq!(
+        value["error"]["diagnostics"], expected,
+        "the Resolve tab's diagnostics are not the strict run's",
+    );
+    let errors = value["error"]["diagnostics"]["errors"]
+        .as_array()
+        .expect("errors array");
+    assert_eq!(errors.len(), 1, "{errors:?}");
+    assert!(
+        errors[0]["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("missingGain")),
+        "{}",
+        errors[0]["message"],
+    );
+    assert_eq!(errors[0]["labels"][0]["location"]["line"], 9);
+    assert_eq!(
+        value["error"]["diagnostics_from"], "Session::strict_compile_resolved",
+        "the payload names the call its diagnostics came from",
+    );
+}
+
 /// **Run integrates the preparation the tabs show, and that preparation started
 /// from the DAE tab's system.**
 ///
@@ -10189,6 +10247,17 @@ fn no_tab_is_built_from_a_phase_hrw_runs_itself() {
             "rumoca_phase_structural::build_incidence(",
             "F2's oracle, on the prepared system",
         ),
+        (
+            "src/worker.rs",
+            "session.strict_compile_resolved(",
+            "the Resolve tab: the strict-recovery resolve the compile itself uses, and on \
+             a failure its diagnostics",
+        ),
+        (
+            "src/diagnostics.rs",
+            "session.flatten(",
+            "not a Session: `Option::flatten` on a local named `session`",
+        ),
     ];
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut found: Vec<(String, String)> = Vec::new();
@@ -10246,19 +10315,37 @@ fn no_tab_is_built_from_a_phase_hrw_runs_itself() {
 }
 
 /// Every call in `line` into a Rumoca phase crate or `rumoca-sim`
-/// (`rumoca_phase_x::path::f(`, `rumoca_sim::f(`), and every uncached session
-/// compile (`.compile_model_…_uncached…(`), spelled as written up to the `(`.
-/// A path not followed by `(` is a type or an import, not a call, and is skipped.
+/// (`rumoca_phase_x::path::f(`, `rumoca_sim::f(`), every uncached session
+/// compile (`.compile_model_…_uncached…(`), and every other **session query**
+/// (`session.f(`), spelled as written up to the `(`. A path not followed by `(`
+/// is a type or an import, not a call, and is skipped.
+///
+/// **Session queries were invisible until 2026-11-28.** The Resolve failure path
+/// asked `session.compile_model_diagnostics`, a `Standard`-mode query no compile
+/// makes, and `session.resolved_cached`, and this scan saw neither. A session
+/// method that only manages documents is exempt, by name, in
+/// [`SESSION_BOOKKEEPING`]: it runs no phase whose result a tab could show.
 fn phase_calls(line: &str) -> Vec<String> {
     let mut calls = Vec::new();
-    for prefix in ["rumoca_phase_", "rumoca_sim::", ".compile_model_"] {
+    for prefix in [
+        "rumoca_phase_",
+        "rumoca_sim::",
+        ".compile_model_",
+        "session.",
+    ] {
         let mut from = 0;
         while let Some(offset) = line[from..].find(prefix) {
             let start = from + offset;
             let rest = &line[start..];
+            // The `.` in `session.` is the prefix's own, so the name starts after it.
+            let skip = if prefix == "session." {
+                prefix.len()
+            } else {
+                1
+            };
             let len = rest
                 .char_indices()
-                .find(|(i, c)| *i > 0 && !(c.is_ascii_alphanumeric() || *c == '_' || *c == ':'))
+                .find(|(i, c)| *i >= skip && !(c.is_ascii_alphanumeric() || *c == '_' || *c == ':'))
                 .map_or(rest.len(), |(i, _)| i);
             let path = &rest[..len];
             let is_call = rest[len..].starts_with('(');
@@ -10269,7 +10356,28 @@ fn phase_calls(line: &str) -> Vec<String> {
                 .split("::")
                 .any(|segment| segment.starts_with(|c: char| c.is_ascii_uppercase()));
             let is_label = path.ends_with("::equation_label") || path.ends_with("::unknown_label");
-            if is_call && is_uncached_compile && !is_type_path && !is_label && !path.ends_with("::")
+            // `session.` scans what the other prefixes do not: an uncached compile
+            // is the `.compile_model_` prefix's, and bookkeeping runs no phase. A
+            // *cached* compile or a diagnostics query (`compile_model_diagnostics`)
+            // is a query, and is caught here. The match must start a word, so
+            // `self.session.f(` counts and `my_session.f(` does not.
+            let is_session_query = prefix != "session." || {
+                let method = &path["session.".len()..];
+                let starts_word = start == 0
+                    || !line[..start]
+                        .chars()
+                        .next_back()
+                        .is_some_and(|c| c.is_ascii_alphanumeric() || c == '_');
+                starts_word
+                    && !(method.starts_with("compile_model_") && method.contains("_uncached"))
+                    && !SESSION_BOOKKEEPING.contains(&method)
+            };
+            if is_call
+                && is_uncached_compile
+                && is_session_query
+                && !is_type_path
+                && !is_label
+                && !path.ends_with("::")
             {
                 calls.push(format!("{path}("));
             }
@@ -10278,6 +10386,19 @@ fn phase_calls(line: &str) -> Vec<String> {
     }
     calls
 }
+
+/// Session methods that manage the loaded documents and run no phase, so a tab
+/// cannot be showing their result. Anything else HRW asks a `Session` is a
+/// query, and goes on [`no_tab_is_built_from_a_phase_hrw_runs_itself`]'s roster.
+const SESSION_BOOKKEEPING: &[&str] = &[
+    "qualify_model_name",
+    "document_uris",
+    "update_document",
+    "remove_document",
+    "get_document",
+    "document_source_text",
+    "replace_parsed_source_set",
+];
 
 /// The lines of `text` that are production code: comment lines and every
 /// `#[cfg(test)] mod … { … }` block are dropped.

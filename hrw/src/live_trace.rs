@@ -191,8 +191,11 @@ pub fn live_trace_breakpoint(frame_index: usize) {
 /// each step to `on_step` **as it happens**.
 ///
 /// This is the call the compile observes for the Simplify through Solve
-/// lowering tabs (`worker::preparation::observe`), on the same DAE with the
-/// same options that reach lowering, under
+/// lowering tabs (`worker::preparation::observe`), on the same DAE, under
+/// options that lower identically. Those are `SimOptions::default()` here and
+/// `worker::preparation_options` there, which differ only in `t_end` and the
+/// tolerances, and lowering reads neither (`worker::retained_key` says which
+/// fields it does read). All of it runs under
 /// `rumoca_phase_structural::preparation_trace`'s live listener. So a live
 /// session steps through exactly the analyses the recorded frames came from.
 ///

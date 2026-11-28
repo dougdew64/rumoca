@@ -14,7 +14,7 @@
 //! ## What kind of animation this is, and the one it is not
 //!
 //! **A replay of a recorded search, not a re-derivation.** The frames are
-//! `worker::index_reduction_from_observation`'s published records, which came from
+//! `worker::preparation::index_reduction_stage`'s published records, which came from
 //! Rumoca's own observation of the one reduction this compile performed. Stepping moves
 //! a cursor over them; nothing is recomputed, and there is no second implementation that
 //! could drift from the first.
@@ -748,7 +748,7 @@ mod tests {
     /// **The stepper reads a real compile**, with every frame describing itself.
     ///
     /// Every test above builds its own log, so all of them would pass against a shape
-    /// `worker::index_reduction_from_observation` no longer publishes. This is the only
+    /// `worker::preparation::index_reduction_stage` no longer publishes. This is the only
     /// one that compares the reader against the writer.
     #[test]
     #[cfg_attr(

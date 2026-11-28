@@ -1437,9 +1437,10 @@ pub enum FromWorker {
         /// `inspect`, which borrows.
         ///
         /// *(The old comment said "for live-debug replay of index reduction".
-        /// That consumer is gone — see `index_reduction_stage` — but the field
-        /// is not: `app::tearing_dae` and the simulation path both still read
-        /// it.)*
+        /// That consumer is gone — see `preparation::index_reduction_stage` — but
+        /// the field is not: `app::tearing_dae` hands it to the live sessions,
+        /// which run the real preparation on it. *(Corrected 2026-11-28: this also
+        /// said the simulation path reads it; `ToWorker::Simulate` carries no DAE.)*
         dae: Option<std::sync::Arc<rumoca_ir_dae::Dae>>,
         /// Connection-expansion frames (MLS §9), **captured during the compile
         /// above**; empty for a model with no `connect()`. *(Comment corrected
@@ -1958,6 +1959,9 @@ pub fn disable_parsed_source_root_memo() {
 /// 2026-08-21 on a five-line model whose actual parse was 2 ms. A must-fire test
 /// for a cache must be able to *miss*, so testing this against the real parser
 /// would have put a 40 s test into a suite this whole item exists to shorten.
+/// *(Since 0.11.0 the prune runs at most once per 10 minutes, and a miss measured
+/// 0.3 s on 2026-11-28 — `upstream-issues.md` P2. The split stays, since
+/// testing the bookkeeping needs no parser.)*
 ///
 /// What is left here is the part HRW actually wrote: compare the fingerprint,
 /// serve the stored value only on an exact match, re-parse otherwise. The real
@@ -2337,16 +2341,23 @@ impl WorkerState {
         let n_states = counts.states;
         // Scalar rows: `continuous_equations` misses structured families.
         let n_eq = counts.continuous_scalar_rows;
+        // **Named as the compiled DAE's** (2026-11-28). These are the counts before
+        // solve lowering simplifies and reduces the system, so they are not what
+        // the solver integrates (that is Index reduction's `integrated`, and
+        // `Drivetrain` integrates 3). Unlabelled, this line read as the run's size.
         log(
             LogLevel::Info,
-            format!("{n_eq} equations, {n_states} states, hybrid={has_discontinuities}"),
+            format!(
+                "compiled DAE (before solve lowering): {n_eq} equations, {n_states} states, \
+                 hybrid={has_discontinuities}"
+            ),
         );
 
         // --- Phase 3: Integrate (run the ODE/DAE solver) ---
-        // Rumoca API: `simulate_solve_model` runs the solver (Auto = BDF for
-        // stiff / RK45 otherwise) from t=0 to t_end, returning time series.
-        // `..Default::default()` fills the remaining `SimOptions` fields
-        // (max steps, output points) with sensible defaults.
+        // Rumoca API: `simulate_prepared_runtime_with_optional_step_records`
+        // integrates the runtime the preparation above produced (Auto picks BDF or
+        // the RK-like solver, as the unobserved run does) from t=0 to t_end. The
+        // options are `preparation_options`'s, the same ones lowering received.
         //
         // **The model's `experiment(Tolerance = …)` is honored — added 2026-09-24.**
         //
@@ -2400,9 +2411,11 @@ impl WorkerState {
         // *"turning an opaque 'step size too small' into an actionable diagnostic"*.
         // HRW called the plain entry point and got the opaque half — so the learning
         // instrument had the worse diagnostic of the two. This is that pattern, not
-        // that function: the diagnostics wrappers take a `&Dae` and HRW simulates a
-        // lowered `SolveModel`, but `nan_trace` is publicly re-exported and the retry
-        // is four lines.
+        // that function: the diagnostics wrappers take a `&Dae` and HRW integrates an
+        // already-prepared `PreparedRuntime`, but `nan_trace` is publicly re-exported
+        // and the retry is four lines. **The retry re-prepares**: it calls
+        // `simulate_with_diagnostics` on the DAE, so it is a second preparation, and
+        // the log says it is a re-run.
         //
         // **The capture is what makes it useful.** `nan_trace` reports through
         // `eprintln!`, and unlike `compile_target` this function holds no
@@ -3227,23 +3240,33 @@ impl WorkerState {
                 // the URI index and that borrow do not overlap.
                 let names = source_names(&self.session.document_uris());
                 let strict = self.session.strict_compile_resolved();
+                // **The failure path's diagnostics are the strict run's own**, kept
+                // here when this model did not resolve (2026-11-28). They used to
+                // be dropped, and the failure path asked `compile_model_diagnostics`,
+                // a separate `SemanticDiagnosticsMode::Standard` query that no
+                // compile makes. `None` when the strict resolve failed outright.
+                let mut strict_failure: Option<(
+                    rumoca_compile::compile::StrictCompileTree,
+                    rumoca_core::Diagnostics,
+                )> = None;
                 let strict = match strict {
                     Ok((rt, diags)) if resolve_diagnostics_indicate_failure(&diags, &uri) => {
                         // Recovered a tree, but this model did not resolve. Take the
                         // failure path, exactly as `tree()`'s `Err` used to.
-                        let _ = rt;
                         // **The note lists this model's errors only.** It used to join
                         // every error in the session, so a one-line mistake in a
                         // specimen arrived buried in ~75 MSL diagnostics about friction
                         // state machines the reader never mentioned.
-                        Err(anyhow::anyhow!(
+                        let error = anyhow::anyhow!(
                             "Resolve errors: {}",
                             model_resolve_errors(&diags, &uri)
                                 .iter()
                                 .map(|d| d.message.as_str())
                                 .collect::<Vec<_>>()
                                 .join("; "),
-                        ))
+                        );
+                        strict_failure = Some((rt, diags));
+                        Err(error)
                     }
                     Ok((rt, _)) => Ok(rt),
                     Err(e) => Err(e),
@@ -3312,73 +3335,56 @@ impl WorkerState {
                                 t_stage.elapsed().as_secs_f64() * 1000.0
                             ),
                         );
-                        // Resolution failed. Show the error, but try to show a
-                        // best-effort tree from the cache if one exists (e.g.
-                        // from a previous successful compile). `resolved_cached()`
-                        // returns the last good result without re-resolving.
                         let note = format!("{e:#}");
                         // Model-scoped, structured diagnostics rather than only the
-                        // concatenated anyhow chain. `compile_model_diagnostics` returns
-                        // real `Diagnostic`s with severities and labels, so the model's
-                        // own error can be separated from the library warnings that
-                        // otherwise bury it — see `model_diagnostics_to_json`.
+                        // concatenated anyhow chain: real `Diagnostic`s with severities
+                        // and labels, so the model's own error can be separated from the
+                        // library warnings that otherwise bury it — see
+                        // `model_diagnostics_to_json`. `note` is still emitted verbatim
+                        // as `message`: never lossy. The tree's `source_map` lets a
+                        // library label resolve in its own file.
                         //
-                        // `note` is still emitted verbatim as `message`: never lossy.
-                        // Kept whole: its `source_map` lets a library label resolve
-                        // in its own file (see `diagnostics_to_json`).
-                        let model_diags = self.session.compile_model_diagnostics(&qualified);
-                        let diag = model_diagnostics_to_json(
-                            &model_diags.diagnostics,
-                            model_diags.source_map.as_ref(),
-                            &source,
-                            &uri,
-                        );
-                        let resolve_err = |note: &str| {
-                            serde_json::json!({
-                                "kind": "resolve",
-                                "message": note,
-                                "diagnostics": diag,
-                                "guidance": "Name resolution binds every reference to a definition. \
-                                 Read `diagnostics.errors` first: those are this model's problems, \
-                                 each with the source location of the reference that failed. \
-                                 `diagnostics.warnings` are library-level and almost never the \
-                                 cause.",
-                            })
+                        // **From the strict run, the resolve the compile makes**
+                        // (2026-11-28). This was `compile_model_diagnostics`, a
+                        // `SemanticDiagnosticsMode::Standard` query; on the specimens the
+                        // two agree, which is why nothing showed it. When the strict
+                        // resolve failed outright there are no structured diagnostics to
+                        // show, only `note`, and the payload says so rather than asking
+                        // a different query for some.
+                        let (diag, diagnostics_from) = match &strict_failure {
+                            Some((tree, diags)) => (
+                                model_diagnostics_to_json(
+                                    &diags.iter().cloned().collect::<Vec<_>>(),
+                                    Some(&tree.tree().source_map),
+                                    &source,
+                                    &uri,
+                                ),
+                                "Session::strict_compile_resolved",
+                            ),
+                            None => (
+                                serde_json::Value::Null,
+                                "none: the strict resolve failed outright; see message",
+                            ),
                         };
-                        match self.session.resolved_cached() {
-                            Some(rt) => match extract_class(rt.inner(), &qualified) {
-                                Stage {
-                                    value: Some(mut v), ..
-                                } => {
-                                    def_index = build_def_index(
-                                        rt.inner(),
-                                        &v,
-                                        &source_names(&self.session.document_uris()),
-                                    );
-                                    // **Both the recovered tree and the error.**
-                                    //
-                                    // This branch used to return `Stage::recovered(v,
-                                    // note)`, dropping the structured diagnostics —
-                                    // and it was almost never taken, because a failed
-                                    // `Standard` resolve usually left no cached tree
-                                    // to recover from. Under `StrictCompileRecovery`
-                                    // it is the *normal* branch: recovery succeeds, so
-                                    // the class extracts fine, so the diagnostics
-                                    // vanished and the Resolve tab went quiet on a
-                                    // real failure.
-                                    //
-                                    // Caught by `a_resolve_failure_names_the_reference_and_its_line`
-                                    // — the second of the two tests that defeated the
-                                    // first attempt at this change.
-                                    if let Some(obj) = v.as_object_mut() {
-                                        obj.insert("error".to_owned(), resolve_err(&note));
-                                    }
-                                    Stage::recovered(v, note)
-                                }
-                                _ => Stage::err_with_details(resolve_err(&note), note),
-                            },
-                            None => Stage::err_with_details(resolve_err(&note), note),
-                        }
+                        let resolve_err = serde_json::json!({
+                            "kind": "resolve",
+                            "message": &note,
+                            "diagnostics": diag,
+                            "diagnostics_from": diagnostics_from,
+                            "guidance": "Name resolution binds every reference to a definition. \
+                             Read `diagnostics.errors` first: those are this model's problems, \
+                             each with the source location of the reference that failed. \
+                             `diagnostics.warnings` are library-level and almost never the \
+                             cause.",
+                        });
+                        // **No tree is shown, though the strict run recovered one.** A
+                        // branch here once showed `resolved_cached()` beside the error,
+                        // but that reads the `Standard` build, which nothing in HRW
+                        // builds since the worker resolves strictly — so it was always
+                        // `None`, and dead. Whether to show the strict run's recovered
+                        // tree instead is open (`docs/tech-debt.md`, the 2026-11-28
+                        // sweep): it would make this stage `Flagged`, not `Failed`.
+                        Stage::err_with_details(resolve_err, note)
                     }
                 }
             }
@@ -3499,9 +3505,9 @@ impl WorkerState {
                 // **Named for everything it runs, not just what HRW wants from it.**
                 // The traces inside this bracket include resolve, instantiate and
                 // typecheck, because `compile_model_strict_reachable_uncached_with_recovery`
-                // re-runs the whole pipeline — HRW ran those phases itself earlier to
-                // populate their tabs, and this call does them again on its way to the
-                // flat model and the DAE. Calling it "flatten and DAE construction"
+                // runs the whole pipeline, and since 2026-08-04 the Instantiate and
+                // Typecheck tabs are captured from this very call
+                // (`start_typed_model_capture` below). Calling it "flatten and DAE construction"
                 // described what HRW *takes* from the call rather than what the call
                 // *does*, which is the same species of inaccuracy as the replay
                 // brackets.
@@ -4370,7 +4376,7 @@ pub(crate) const AWAITING_REMODEL_MARKER: &str = "HRW cannot display it yet";
 /// shape, which is the opposite of what the roster is for.
 ///
 /// *Index reduction left it on 2026-11-04*, re-modelled onto the observed reduction
-/// — see [`index_reduction_from_observation`] — and emptied it. Of its eight blocked
+/// — now [`preparation::index_reduction_stage`] — and emptied it. Of its eight blocked
 /// tests, **four were restored, one was re-keyed to the opposite claim, and three
 /// were retired**; the re-keyed one is the finding, because 0.10.0's holonomic lane
 /// *does* now rescue `CapacitorLoop`, so a body asserting that reduction cannot was
@@ -5361,8 +5367,10 @@ fn reduction_attempt_outcome_to_json(
             "kind": "reduced",
             "residue": residue,
         }),
-        // **Accepted in the Direct lane, and it is progress.** See
-        // `index_reduction_from_observation` for the Drivetrain round that proves it.
+        // **Accepted in the Direct lane, and it is progress.** The Drivetrain round
+        // that proves it was documented on `index_reduction_from_observation`, which
+        // the 2026-11-27 rewire replaced with `preparation::index_reduction_stage`
+        // (`git show 08d6addf3`).
         ReductionOutcome::Held { residue } => serde_json::json!({
             "kind": "held",
             "residue": residue,
@@ -5866,12 +5874,11 @@ fn structural_to_json(rep: &rumoca_phase_structural::StructuralReport) -> serde_
 /// Each row says which unknowns appear in that equation — the raw data the
 /// spy-plot view renders as dots in a matrix.
 ///
-/// When `equations` is provided (the DAE's continuous equation list), each row
-/// also carries an `"equation_text"` field with the pretty-printed Modelica
+/// Each row also carries an `"equation_text"` field with the pretty-printed Modelica
 /// expression (e.g. `der(w) - tau / J`), for human-readable labels.
 fn incidence_to_json<'dae>(
     inc: &rumoca_phase_structural::Incidence<'dae>,
-    view: Option<rumoca_ir_dae::DaeView<'dae>>,
+    view: rumoca_ir_dae::DaeView<'dae>,
 ) -> serde_json::Value {
     // **No short form any more, and that is faithful rather than lazy.**
     // This used `expr_format::equation_labels`, which rendered each equation in
@@ -5879,18 +5886,17 @@ fn incidence_to_json<'dae>(
     // the equation had been solved for `x`. A 0.10.0 equation *is* a residual
     // and records no solved-for variable, so there are no longer two forms to
     // choose between; every row reads `0 = …`.
-    let eq_texts: Vec<String> = view
-        .map(|view| {
-            (0..view.continuous_equation_count())
-                .map(|index| {
-                    view.continuous_equation(index).map_or_else(
-                        || format!("f_x[{index}]"),
-                        |equation| crate::dae_expr_format::format_equation(view, equation),
-                    )
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    //
+    // **Looked up by the row's own `EquationRef`, not by its position**
+    // (2026-11-28). The text was `eq_texts[i]` for row `i`, which is right only
+    // while incidence rows are in equation order. They are on every committed
+    // specimen (1,205 rows checked), but nothing guaranteed it, and a row showing
+    // another equation's text would be read as fact. The `view` was also an
+    // `Option` whose only caller passed `Some`.
+    let eq_text = |eq: &rumoca_phase_structural::EquationRef| {
+        view.continuous_equation(eq.0)
+            .map(|equation| crate::dae_expr_format::format_equation(view, equation))
+    };
     let rows: Vec<serde_json::Value> = inc
         .eq_unknowns
         .iter()
@@ -5902,13 +5908,8 @@ fn incidence_to_json<'dae>(
             // lookups in `IncidenceMatrix::from_report` correlate by this exact
             // string, so a reimplementation that drifts silently unmatches
             // everything — which is what happened here (see
-            // `partial_matching_to_json`). Without a DAE there is no origin to
-            // look up, and the bare ref is what `equation_label` would return
-            // anyway.
-            let eq_name = match view {
-                Some(view) => rumoca_phase_structural::equation_label(view, &inc.equation_refs[i]),
-                None => inc.equation_refs[i].to_string(),
-            };
+            // `partial_matching_to_json`).
+            let eq_name = rumoca_phase_structural::equation_label(view, &inc.equation_refs[i]);
             let mut row = serde_json::json!({
                 "equation": eq_name,
                 // **The bare reference, as the cross-pane identity.**
@@ -5929,11 +5930,10 @@ fn incidence_to_json<'dae>(
                 "id": inc.equation_refs[i].to_string(),
                 "unknowns": sorted,
             });
-            if let Some(text) = eq_texts.get(i) {
-                row.as_object_mut().unwrap().insert(
-                    "equation_text".to_owned(),
-                    serde_json::Value::String(text.clone()),
-                );
+            if let Some(text) = eq_text(&inc.equation_refs[i]) {
+                row.as_object_mut()
+                    .unwrap()
+                    .insert("equation_text".to_owned(), serde_json::Value::String(text));
             }
             row
         })
@@ -5946,11 +5946,7 @@ fn incidence_to_json<'dae>(
     let unknown_names: Vec<String> = inc
         .unknowns
         .iter()
-        .enumerate()
-        .map(|(i, unknown)| match view {
-            Some(view) => rumoca_phase_structural::unknown_label(view, *unknown),
-            None => format!("unknown[{i}]"),
-        })
+        .map(|unknown| rumoca_phase_structural::unknown_label(view, *unknown))
         .collect();
     serde_json::json!({
         "n_eq": inc.n_eq,

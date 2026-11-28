@@ -2,7 +2,7 @@
   "model": "StiffDecay",
   "specimen": "specimens/StiffDecay.mo",
   "specimen_fnv1a": "fb054116cc43d41c",
-  "rumoca_rev": "86d1b2ee0",
+  "rumoca_rev": "4c0c24e30",
   "rumoca_version": "0.11.0",
   "stages": {
     "parse": {

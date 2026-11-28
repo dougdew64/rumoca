@@ -782,10 +782,13 @@ pub(crate) fn hrw_font_definitions() -> egui::FontDefinitions {
 /// thing.
 ///
 /// Each is captured **during the compile that produced the IR on screen** — via the
-/// capture scopes in `rumoca-phase-{flatten,dae,structural}` — rather than by
-/// re-running an algorithm when its tab is opened. See `matching::start_capture` for
-/// why that distinction matters: a re-derivation agrees with the compiler and still
-/// depicts a search that produced nothing.
+/// capture scopes `rumoca_phase_flatten::connections::trace`,
+/// `rumoca_phase_structural::preparation_trace` and
+/// `rumoca_phase_solve::preparation_trace` (with `rumoca_compile::observe` for the
+/// typed-model overlays) — rather than by re-running an algorithm when its tab is
+/// opened. That distinction matters because a re-derivation agrees with the compiler
+/// and still depicts a search that produced nothing. *(Corrected 2026-11-28: this
+/// pointed at a `matching::start_capture` that no longer exists.)*
 ///
 /// *(Reworded 2026-08-04: this said "the algorithm **replays** one compile produced",
 /// which was true in the playback sense and reads as the forbidden one. See the
@@ -5088,11 +5091,13 @@ impl App {
     /// it through `inspect`, which borrows anyway, so the clone was buying
     /// nothing even before it became impossible.
     ///
-    /// **The Index Reduction tab is not special-cased, and the re-model left it so.**
-    /// That tab does not offer the tearing animation (`worker::index_reduction_stage`
-    /// explains the refusal), so there is no reduced DAE to hand back here. (This said
-    /// "restore the branch with the re-model" until the 2026-11-07 sweep; the re-model
-    /// landed on 2026-11-04 and declined to.)
+    /// **No tab needs a different DAE here.** Every live session
+    /// (`live_trace::spawn_structural_live`, `spawn_reduction_live`) is handed the
+    /// compiled DAE and runs the real preparation on it, Simplify first, so the
+    /// reduced system it steps is the one the run builds. *(Rewritten 2026-11-28:
+    /// this said the Index Reduction tab's refusal of the tearing animation was
+    /// explained by `worker::index_reduction_stage`; that function now lives in
+    /// `worker::preparation` and says nothing about tearing animation.)*
     fn tearing_dae(&self) -> Option<&std::sync::Arc<rumoca_ir_dae::Dae>> {
         self.cached_dae.as_ref()
     }
