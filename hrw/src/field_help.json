@@ -38,10 +38,14 @@
     "affine": {
       "rumoca-phase-structural": "Classes proven equal up to sign and a time-invariant displacement. Members share a derivative but not necessarily a value."
     },
+    "after": {
+      "rumoca-phase-solve": "The shape of the system it returned; `None` when it returned none, leaving its input as the next transform's input."
+    },
     "algebraic_dependent": {
       "rumoca-ir-solve": "Whether the relation memory is refreshed from the algebraic coordinate after the event commit."
     },
     "algebraics": {
+      "rumoca-phase-solve": "Algebraic coordinates already expanded, including coupled-loop members.",
       "rumoca-phase-structural": "Algebraics already followed."
     },
     "algorithm_keyword": {
@@ -61,7 +65,11 @@
       "rumoca-phase-structural": "The STRUCT-T02 alias quotient applied before this analysis, including every class it left unchanged and why."
     },
     "alternate_charts": {
-      "rumoca-ir-solve": "Additional admissible reconstruction charts for this block. Each chart re-partitions the block's `y_indices` into dependent (reconstructed) and independent (integrated) coordinates over the same `manifold_residual` rows; `tearing` remains the primary chart. A definitional first-integral manifold has no globally regular reduced chart, so a fixed partition folds when a dependent coordinate passes through zero. This bounded set of coordinate patches lets a runtime re-select a regular chart across such a fold. Empty for every single-chart block. An empty set is omitted from human-readable serialization by the manual [`Serialize`] below, so a single-chart block's JSON is byte-identical to a block that predates the field; positional binary formats keep the field so their fixed layout still round-trips."
+      "rumoca-ir-solve": "Additional admissible reconstruction charts for this block. Each chart re-partitions the block's `y_indices` into dependent (reconstructed) and independent (integrated) coordinates over the same `manifold_residual` rows; `tearing` remains the primary chart. A definitional first-integral manifold has no globally regular reduced chart, so a fixed partition folds when a dependent coordinate passes through zero. This bounded set of coordinate patches lets a runtime re-select a regular chart across such a fold. Empty for every single-chart block. An empty set is omitted from human-readable serialization by the manual [`Serialize`] below, so a single-chart block's JSON is byte-identical to a block that predates the field; positional binary formats keep the field so their fixed layout still round-trips.",
+      "rumoca-phase-solve": "How many alternate charts were prepared beside the primary one."
+    },
+    "alternate_reconstructed_scalars": {
+      "rumoca-phase-solve": "Scalar each alternate chart reconstructs instead, in chart order."
     },
     "anchor": {
       "rumoca-phase-structural": "Anchor of the class rooted at each variable ordinal."
@@ -95,6 +103,15 @@
     },
     "assertion_projection": {
       "rumoca-ir-solve": "Wire recipe for the checked projection of one source invocation. A detached recipe grants no authority; the observer borrows its exact model table, source program and ordered action inventory together."
+    },
+    "assertion_roots": {
+      "rumoca-phase-solve": "Whether a call-scoped assertion owns an event root, decided once for the model's product."
+    },
+    "assertion_slots": {
+      "rumoca-phase-solve": "Every call-scoped assertion output after the result leaves, in owner output order: the owner's own predicates, its own message values, then each nested call's complete slot tuple."
+    },
+    "assertions": {
+      "rumoca-phase-solve": "Assertion slots of calls the iterations reach, carried after the targets (see [`FoldAssertions`])."
     },
     "assignment_leaf_dependencies": {
       "rumoca-ir-solve": "Issued once every program exists; see [`LeafDependencies`]."
@@ -135,6 +152,9 @@
     },
     "base_partitions": {
       "rumoca-ir-flat": "Base-clock partitions (execute asynchronously from each other)."
+    },
+    "before": {
+      "rumoca-phase-solve": "The shape of the system it was given."
     },
     "binding": {
       "rumoca-ir-ast": "The binding expression from `= expr` in declaration (e.g., `Real v = p.v - n.v`) Separate from `start` to preserve binding when both binding and start modifier are present.",
@@ -187,6 +207,9 @@
     "callee_provenance": {
       "rumoca-ir-solve": "Source span of the callee's call occurrence."
     },
+    "calls": {
+      "rumoca-phase-solve": "Calls the scope computes whatever its inputs are, in walk order."
+    },
     "carried": {
       "rumoca-ir-dae": "The state is carried to the returned record, not checked here."
     },
@@ -213,6 +236,9 @@
     "charts": {
       "rumoca-phase-structural": "Admissible reduced state-selection charts for a folding definitional first-integral coordinate group, naming scalars of `view`. Empty for every prepared system without such a group."
     },
+    "checked": {
+      "rumoca-phase-solve": "The checked block the functions belong to: what the GALEC oracle evaluates an expression of the block against."
+    },
     "child": {
       "rumoca-ir-flat": "Child node."
     },
@@ -238,6 +264,9 @@
     "classes": {
       "rumoca-ir-ast": "Nested class definitions (functions, models, packages, etc.)"
     },
+    "clippy": {
+      "rumoca-phase-solve": "A fold update can demand a member of a correlated assignment group before the ordinary statement walk reaches that group. The demand must issue the complete group once: lowering each joined definition independently clones the shared predecessor and turns a small loop body into combinatorial IR."
+    },
     "clock": {
       "rumoca-ir-flat": "The base clock for this partition."
     },
@@ -260,16 +289,23 @@
       "rumoca-ir-solve": "Exact causal definitions of the algebraic intermediates that sit on a same-tick path between two ordered producers (for example an alias chain `slow = fastAlias; fastAlias = fast`). Each output row refreshes one scalar coordinate into private work state only — intermediates become visible to later producers without committing unrelated targets."
     },
     "clock_partition_order": {
-      "rumoca-ir-solve": "SPEC_0040 SOLVE-C57 (implementing toward SPEC_0046 SDO-001/SDO-002): the construction-issued same-tick execution order for every clock-owned discrete producer. Rank is the vector position — an issued value. The runtime executes the steps in this order against private work state so an ordinary same-instant read observes this tick's value while `pre`/`previous`/ `sample(u)` reads keep their history lanes; the complete final target tuple still commits atomically after the last step. Equation-shaped producers owned by a DAE-C21/SOLVE-C55 event transaction are excluded; the complete transaction replaces them as one opaque outer-producer step. A runtime must never reconstruct this order from targets, names, spans, provenance, or program shape."
+      "rumoca-ir-solve": "SPEC_0040 SOLVE-C57 (implementing toward SPEC_0046 SDO-001/SDO-002): the construction-issued same-tick execution order for every clock-owned discrete producer. Rank is the vector position — an issued value. The runtime executes the steps in this order against private work state so an ordinary same-instant read observes this tick's value while `pre`/`previous`/ `sample(u)` reads keep their history lanes; the complete final target tuple still commits atomically after the last step. Equation-shaped producers owned by a DAE-C21/SOLVE-C55 event transaction are excluded; the complete transaction replaces them as one opaque outer-producer step. A runtime must never reconstruct this order from targets, names, spans, provenance, or program shape.",
+      "rumoca-phase-solve": "The issued clock-partition schedule (SOLVE-C57), filled by [`issue_clock_partition_order`] before [`DiscreteRows::finish`]."
     },
     "clock_schedule": {
       "rumoca-ir-solve": "Owning periodic clock for MLS §16 `previous()` history. `None` denotes ordinary Modelica `pre()` history and is committed after every event. A scheduled binding is committed only when this clock ticks, so unrelated roots and other clocks cannot advance its history."
+    },
+    "clocked_producers": {
+      "rumoca-phase-solve": "Clock-owned producers pending SOLVE-C57 same-tick order issuance."
     },
     "clocks": {
       "rumoca-ir-solve": "The periodic clocks, in clock-owner order."
     },
     "closed": {
       "rumoca-ir-solve": "Values of segments closed at the cap."
+    },
+    "coarse": {
+      "rumoca-phase-solve": "Structural answers only: nothing is settled exactly (see `expression_summary`)."
     },
     "coefficient": {
       "rumoca-ir-solve": "Why the step's isolated coefficient is bounded away from zero; set by construction and trusted by every executor (SPEC_0043 §4)."
@@ -340,15 +376,28 @@
     "constant": {
       "rumoca-ir-flat": "The constant as declared, e.g. `Modelica.Media.Interfaces.PartialMedium.nS`."
     },
+    "constants": {
+      "rumoca-phase-solve": "Constants (MLS 3.7 §4.5) `rhs` reads, each with its literal binding: translation-time values of the body, not owner inputs."
+    },
     "constrainedby": {
       "rumoca-ir-ast": "Constraining type for replaceable components (MLS §7.3.2) If set, redeclarations must be subtypes of this type"
     },
     "constraining_modifications": {
       "rumoca-ir-ast": "Constraining-clause modifiers of a replaceable class whose merge into its base's modifiers needs types (MLS §7.3.2, §7.2.3): a declared binding over them, a `final` conflict, or a class with no single base. Parsing keeps them here; instantiation merges or refuses them when the class is used."
     },
+    "context": {
+      "rumoca-phase-structural": "Which analysis of the preparation this was."
+    },
+    "contexts": {
+      "rumoca-phase-solve": "The context identities of every compiler forked from one root: an identity is allocated once and read by all of them."
+    },
     "continuation": {
       "rumoca-ir-dae": "A Boolean expression of the loop body scope, evaluated on the carried state at the start of each iteration; the first false value ends the fold with that state (a bounded `while`, MLS §11.2.3).",
-      "rumoca-ir-solve": "An early-exit predicate over the carried tuple, the captures and the binder values of the pass about to run, evaluated before each pass; the first false value ends the loop with the current tuple (MLS §11.2.3). The producer proves that every skipped pass would leave the tuple unchanged, so the domain stays the static capacity while a run-time bound such as `i <= n` decides how many passes execute."
+      "rumoca-ir-solve": "An early-exit predicate over the carried tuple, the captures and the binder values of the pass about to run, evaluated before each pass; the first false value ends the loop with the current tuple (MLS §11.2.3). The producer proves that every skipped pass would leave the tuple unchanged, so the domain stays the static capacity while a run-time bound such as `i <= n` decides how many passes execute.",
+      "rumoca-phase-solve": "A bounded `while` fold's predicate over the carried state."
+    },
+    "continuous_equations": {
+      "rumoca-phase-solve": "Entries in the continuous residual arena (`continuous_equation_count`). A structured equation family is not counted here, so this is not the number of scalar rows."
     },
     "continuous_partition": {
       "rumoca-ir-flat": "The continuous-time partition (if any). This contains equations without explicit clock associations."
@@ -390,6 +439,9 @@
     "default_tolerance": {
       "rumoca-ir-solve": "Relative and absolute tolerance of the local error when the importer defines none (the FMI setup tolerance replaces it otherwise); equal to the native simulation's default tolerance."
     },
+    "definite": {
+      "rumoca-phase-solve": "Variables definitely written on every path so far (Startup's boundary saturation reads this)."
+    },
     "definite_roots": {
       "rumoca-ir-flat": "Connectors with Connections.root() declarations (MLS §9.4.1). These are definite roots for overconstrained connectors, providing implicit equations that don't need to come from external connections. Stores the full path to the overconstrained record (e.g., \"pin_p.reference\")."
     },
@@ -411,6 +463,9 @@
     "dependencies": {
       "rumoca-ir-solve": "Per-output seed dependencies of each JVP program read so far; `None` when the program's dependencies are not derivable."
     },
+    "dependents": {
+      "rumoca-phase-solve": "Initialization definitions and numeric dependent bindings, ordered so each update follows the parameter definitions it reads."
+    },
     "description": {
       "rumoca-ir-ast": "Optional declaration description string (`\"...\"` after component declaration).",
       "rumoca-ir-flat": "Optional declaration description string (`\"...\"` after declaration)."
@@ -420,13 +475,17 @@
     },
     "dims": {
       "rumoca-ir-ast": "Array dimensions (None means unknown size, e.g., from `:` subscript).",
-      "rumoca-ir-flat": "Resolved array dimensions (preserved per SPEC_0007 and SPEC_0032)."
+      "rumoca-ir-flat": "Resolved array dimensions (preserved per SPEC_0007 and SPEC_0032).",
+      "rumoca-phase-solve": "Array extents, empty for a scalar."
     },
     "dims_expr": {
       "rumoca-ir-ast": "Unevaluated dimension expressions for parameter-dependent sizes. These are evaluated during flattening when parameter values are known."
     },
     "disabled_components": {
       "rumoca-ir-ast": "Disabled conditional components (MLS §4.8). Contains structured instance component paths whose conditions evaluated to false. These components and their sub-components should be excluded from flattening."
+    },
+    "discrete": {
+      "rumoca-phase-solve": "Declarations with a discrete role, `DiscreteReal` or `DiscreteValue`."
     },
     "discrete_input_runs": {
       "rumoca-ir-solve": "Source storage runs of discrete-valued external inputs. A discrete-time input changes only at events (MLS §4.5), so a change the importer makes between Co-Simulation steps is an event at the next step's first instant."
@@ -463,6 +522,9 @@
     "each_modifier_bindings": {
       "rumoca-ir-ast": "Component bindings introduced by an `each` modifier (MLS §7.2.5). This remains structured instantiation metadata so flattening can preserve element-wise modifier semantics when an array component stays compact."
     },
+    "eager": {
+      "rumoca-phase-solve": "Eagerly demanded calls and correlated conditionals not yet issued."
+    },
     "edges": {
       "rumoca-ir-flat": "Edges included in the spanning tree."
     },
@@ -470,11 +532,15 @@
       "rumoca-ir-ast": "Concrete effective types produced after instance dimensions are resolved. Each component `type_id` names exactly one descriptor in this catalog after successful post-instantiation type checking.",
       "rumoca-ir-flat": "Resolved effective type descriptors keyed by the exact `TypeId` stored on each concrete variable or aggregate instance."
     },
+    "effects": {
+      "rumoca-phase-solve": "It can write block state or raise a signal."
+    },
     "element": {
       "rumoca-ir-ast": "Element type."
     },
     "elements": {
-      "rumoca-ir-ast": "Public named elements with their interfaces (recursive)."
+      "rumoca-ir-ast": "Public named elements with their interfaces (recursive).",
+      "rumoca-phase-solve": "Element facts, under guard conjunctions as for `under`."
     },
     "else_branch": {
       "rumoca-ir-ast": "The else branch expression",
@@ -491,6 +557,9 @@
     },
     "entry_pre_rows": {
       "rumoca-ir-solve": "Per discrete output: whether its `pre` reads the event-entry value in every pass (`DiscreteEventPreMode::EventEntry`). Every other row, a `Fixed` one included, reads the event entry in the first pass and the previous pass after it, as the pre lanes advance."
+    },
+    "entry_readers": {
+      "rumoca-phase-solve": "For each member, the members that read one of its targets at the event-iteration entry and so are issued before it."
     },
     "enum_literal_ordinals": {
       "rumoca-ir-flat": "Enumeration literal ordinal map (MLS §4.9.5, 1-based ordinals). Keys are canonical literal paths (e.g. `Modelica.Electrical.Digital.Interfaces.Logic.'1'`), values are integer ordinals used by runtime numeric evaluation."
@@ -544,6 +613,12 @@
     "evaluation_bound": {
       "rumoca-ir-solve": "`n + s`."
     },
+    "evaluations": {
+      "rumoca-phase-solve": "Path evaluations renamed so far, numbering the next one."
+    },
+    "event_clock": {
+      "rumoca-phase-solve": "The MLS §16.3 event clock whose tick guards this update, if any."
+    },
     "event_iteration_plan": {
       "rumoca-ir-solve": "Compact compiler-owned Appendix-B iteration catalog."
     },
@@ -554,6 +629,12 @@
       "rumoca-ir-solve": "Registers that hold exactly a chosen parameter or a constant.",
       "rumoca-phase-structural": "Classes proven equal up to sign, with no displacement between members. Answers every question about a value."
     },
+    "examined_functions": {
+      "rumoca-phase-solve": "Functions whose call SCC was already examined for a SOLVE-C62 group."
+    },
+    "exchanges": {
+      "rumoca-phase-solve": "Coverage record of a reduced constraint group's exchanges; empty for a first-integral mirror set and for every model without such a group."
+    },
     "execution_order_refusal": {
       "rumoca-ir-solve": "Why the staged value schedule cannot certify its execution reads, derived from canonical execution prefixes over the final stages; never trusted from the wire."
     },
@@ -562,6 +643,9 @@
     },
     "expandable": {
       "rumoca-ir-ast": "True if the class is declared with the `expandable` keyword (MLS §9.1.3) Only meaningful for connector classes"
+    },
+    "expanded": {
+      "rumoca-phase-solve": "State derivatives already followed, so a derivative that reads itself through its own defining row terminates."
     },
     "exponent": {
       "rumoca-ir-solve": "`-1 / (p - 1)` for the fifth-order pair."
@@ -581,8 +665,14 @@
     "fallback_scan_resolution": {
       "rumoca-ir-solve": "The scan resolution of an experiment without a finite positive width."
     },
+    "families": {
+      "rumoca-phase-solve": "SOLVE-C70 owners, keyed by the DAE family they lower."
+    },
     "family": {
       "rumoca-ir-ast": "Compact authoritative form for a regular vectorized connection. `a` and `b` above are the domain's first scalar member for diagnostic and compatibility views. Flattening derives all scalar members from this family at its input boundary."
+    },
+    "faults": {
+      "rumoca-phase-solve": "It can fault."
     },
     "field": {
       "rumoca-ir-ast": "The field name to access."
@@ -619,10 +709,17 @@
       "rumoca-ir-ast": "Flow prefix (for connectors).",
       "rumoca-ir-flat": "Flow prefix."
     },
+    "fold_guard_base": {
+      "rumoca-phase-solve": "Prefix of `activation_path` already enforced by the owning compact fold. Nested folds materialize only guards introduced after this point."
+    },
+    "fold_parameters": {
+      "rumoca-phase-solve": "Exact DAE assignment-group membership for demand-ordered definitions."
+    },
     "formal": {
       "rumoca-phase-structural": "A generated index-reduction declaration: a formal-derivative coordinate."
     },
     "formal_aliases": {
+      "rumoca-phase-solve": "The formal-derivative application of the STRUCT-T02 quotient on the primary candidate, with every class it left unchanged; empty when the source basis is retained.",
       "rumoca-phase-structural": "The second, formal-derivative application of the quotient on the reduced candidate Solve lowering executes, when one exists."
     },
     "from": {
@@ -637,16 +734,23 @@
     },
     "function": {
       "rumoca-ir-ast": "The differentiated function, looked up as in a short class definition.",
-      "rumoca-ir-flat": "The function being called"
+      "rumoca-ir-flat": "The function being called",
+      "rumoca-phase-solve": "The function the layout belongs to; none for a model expression owner."
     },
     "function_def": {
       "rumoca-ir-flat": "The function that computes the residual. Prototype: `function equalityConstraint(a: T, b: T) -> Real[n]`"
+    },
+    "function_facts": {
+      "rumoca-phase-solve": "What each function contributes to every owner of it, derived once."
     },
     "function_name": {
       "rumoca-ir-ast": "External function name (defaults to Modelica function name if not specified)."
     },
     "function_sources": {
       "rumoca-ir-solve": "The checked function each owner refines, in owner order."
+    },
+    "function_values": {
+      "rumoca-phase-solve": "Values of the function's construction-issued SSA definitions. The key is the definition identity the DAE issued, not the assigned value alone: one function value owns a distinct definition for every redefinition, for a loop's entry parameter, and for a loop's output. Keying by definition is what lets a read name the exact reaching definition, so a demand that arrives before its defining statement was lowered resolves that definition instead of an unrelated live value."
     },
     "functions": {
       "rumoca-ir-flat": "User-defined functions used by this model (MLS §12).",
@@ -664,17 +768,29 @@
     "group_ends": {
       "rumoca-ir-solve": "Exclusive step ends of the coefficient groups, in commit order."
     },
+    "group_of": {
+      "rumoca-phase-solve": "Group index of every member, until the group is lowered."
+    },
+    "guard_reads": {
+      "rumoca-phase-solve": "What each guard's condition reads."
+    },
     "guarded_assignments": {
       "rumoca-ir-solve": "Correlated guarded updates retain one compact result program and one ordered target-range catalog. Scalar coordinate rows are derived only by evaluator/backend adapters."
     },
     "guarded_clocks": {
       "rumoca-ir-solve": "Per guarded-assignment output: the periodic clock that owns it, which gates it to that clock's ticks and to the first pass of an event."
     },
+    "guarded_equation_targets": {
+      "rumoca-phase-solve": "Every guarded equation target, retained until B.1b and B.1c have both contributed their owners. SOLVE-C58 order spans source value kinds."
+    },
     "guarded_jacobian_v": {
       "rumoca-ir-solve": "Program `i` differentiates guarded assignment `i`, output for output."
     },
     "guarded_targets": {
       "rumoca-ir-solve": "Per guarded-assignment output, in program order: its target."
+    },
+    "guards": {
+      "rumoca-phase-solve": "The branch guards the emitted fold runs under: a fold lowered inside one selected arm is not available to a sibling arm."
     },
     "has_explicit_binding": {
       "rumoca-ir-ast": "True if an explicit binding equation (= value) was provided in the declaration This distinguishes `constant Real c = 0;` (has_explicit_binding=true) from `constant Real c;` (has_explicit_binding=false, even though start may have a default)"
@@ -684,6 +800,9 @@
     },
     "has_unapplied_redeclare": {
       "rumoca-ir-ast": "A nested component redeclaration has not yet been applied by Instantiate. Descendant dimension facts must remain unknown until it is consumed."
+    },
+    "held_discretes": {
+      "rumoca-phase-solve": "Whether the row reads an unsettled discrete it holds fixed."
     },
     "id": {
       "rumoca-ir-ast": "Unique identifier for this state machine.",
@@ -698,6 +817,9 @@
     },
     "implicit_jacobian_v_scalar": {
       "rumoca-ir-solve": "Per-row forward-mode AD JVP of the *scalarized* `implicit_rhs`, row-aligned with successful `to_scalar_program_block(implicit_rhs)` output (and hence with the algebraic refresh plan's `row_idx`). Used by the state-only path to propagate the state seed through the algebraic projection (`d(alg)/d(state)`). Distinct from the tensor `implicit_jacobian_v`, whose scalarization is not row-aligned when the system has linear (`LinSolve`/`MatMul`) blocks."
+    },
+    "implied_guards": {
+      "rumoca-phase-solve": "The tests the early-exit predicate of the fold whose body this is names. A conditional statement whose guard consists of them is always taken."
     },
     "imports": {
       "rumoca-ir-ast": "Imports in this scope (MLS §13.2)."
@@ -739,6 +861,9 @@
     "initial_assert_equations": {
       "rumoca-ir-flat": "Runtime assertion equations from initial equation sections (MLS §8.6, §8.3.7)."
     },
+    "initial_definitions": {
+      "rumoca-phase-solve": "Reaching definition of each carried target in the enclosing scope."
+    },
     "initial_equation_keyword": {
       "rumoca-ir-ast": "Token for \"initial equation\" keyword (if present)"
     },
@@ -755,6 +880,9 @@
     "initial_structured_equations": {
       "rumoca-ir-flat": "Structured source equation families for initial equations."
     },
+    "initialization_equations": {
+      "rumoca-phase-solve": "Entries in the initialization equation partition."
+    },
     "inline_calls": {
       "rumoca-phase-structural": "STRUCT-T10(b): source call nodes replaced by their substituted body."
     },
@@ -768,7 +896,8 @@
       "rumoca-ir-solve": "One name and shape per input declaration; scalar names are derived."
     },
     "inputs": {
-      "rumoca-ir-ast": "The differentiated inputs, in application order."
+      "rumoca-ir-ast": "The differentiated inputs, in application order.",
+      "rumoca-phase-solve": "The aggregate model coordinates `rhs` reads, in stable owner input order, each with one expression that reads it whole."
     },
     "instance_id": {
       "rumoca-ir-ast": "Unique identifier for this class instance.",
@@ -782,6 +911,9 @@
     },
     "integers": {
       "rumoca-ir-solve": "Per carried value: its Integer value, when the passes fix it."
+    },
+    "integrated": {
+      "rumoca-phase-solve": "The primary chart's integrated scalar names."
     },
     "integrator_history_effects": {
       "rumoca-ir-solve": "Compiler-derived effect of changing each scalar update target on an integrator's continuous multistep history. This vector is row-aligned with `rhs`. A runtime may join the effect with exact update changes, but must not recover it from row position or model identity."
@@ -884,6 +1016,9 @@
     "iteration_locals": {
       "rumoca-ir-dae": "Function locals defined afresh inside each iteration. They belong to the transition region but are neither initialized from nor returned in the carried tuple."
     },
+    "iterator": {
+      "rumoca-phase-solve": "What every loop iterator is: an unbounded Integer scalar no slot holds."
+    },
     "kept": {
       "rumoca-ir-solve": "Per output, its kept operations, last first."
     },
@@ -904,6 +1039,9 @@
     "last_event": {
       "rumoca-ir-solve": "Time of each indicator's latest state event."
     },
+    "ledger": {
+      "rumoca-phase-solve": "The exact facts known about registers (a literal value, an exact Integer value, the operand a register negates), the owner of every allocated range, and the register budget."
+    },
     "lengths": {
       "rumoca-ir-solve": "Per output, the work of its slice so far."
     },
@@ -917,8 +1055,14 @@
     "lifetime": {
       "rumoca-ir-solve": "Reissued from the source on replay, never accepted from wire data."
     },
+    "literal_arguments": {
+      "rumoca-phase-solve": "For each protected function, per input: the least and greatest Integer literal it is passed over every call in the block, `None` when some call passes anything else (see `literal_arguments`)."
+    },
     "literal_expressions": {
       "rumoca-phase-structural": "SPEC_0043 §4: source expressions replaced by their literal values."
+    },
+    "literal_power_cache": {
+      "rumoca-phase-solve": "Packed result of a literal power of an aggregate base, keyed by (context, base, reciprocal, magnitude); for exponent 0, the one constant every element reads."
     },
     "literals": {
       "rumoca-ir-ast": "The literal values.",
@@ -936,11 +1080,26 @@
     "local_budget_bytes": {
       "rumoca-ir-solve": "The most bytes of simultaneously live register values the target may keep in non-memory locals at a program point. Live values beyond it are placed in explicit workspace cells. A register costs its scalar count times its element size: binary64 and Integer 8, binary32 4, Boolean 8. Required by version two, with no default."
     },
+    "local_scope": {
+      "rumoca-phase-solve": "The ordered branch scope whose own definitions this region computes instead of capturing from its owner."
+    },
+    "locals": {
+      "rumoca-phase-solve": "Static ranges of Integer locals (see `local_ranges`)."
+    },
     "location": {
       "rumoca-ir-ast": "Complete authored declaration, including its leading qualifiers and terminating semicolon. Element declarations include their constraint."
     },
+    "loops": {
+      "rumoca-phase-solve": "The iterators of the `for` loops being analysed or lowered, outermost first; a name resolves to the innermost loop that binds it."
+    },
+    "lost": {
+      "rumoca-phase-solve": "Inside some region an effect can precede a fault, which would then lose a fault-visible effect."
+    },
     "low_weight": {
       "rumoca-ir-solve": "The Illinois weights of the indicator values held at each end."
+    },
+    "lowers": {
+      "rumoca-phase-solve": "Whether the typed program accepts the expression; an out-of-range constant subscript is refused at construction instead."
     },
     "machines": {
       "rumoca-ir-ast": "All state machines by ID."
@@ -1000,6 +1159,9 @@
     "message": {
       "rumoca-ir-ast": "The error message string.",
       "rumoca-ir-flat": "Assertion message expression."
+    },
+    "message_values": {
+      "rumoca-phase-solve": "Owner output carrying each converted message value, keyed by the value expression the message converts."
     },
     "min": {
       "rumoca-ir-ast": "Minimum value attribute.",
@@ -1080,6 +1242,9 @@
       "rumoca-ir-ast": "Nominal value attribute.",
       "rumoca-ir-flat": "Nominal value attribute."
     },
+    "nonzero_starts": {
+      "rumoca-phase-solve": "Source value scalars whose evaluated `start` is nonzero, fixed before any trial guess or pin rewrites `values`."
+    },
     "notes": {
       "rumoca-phase-structural": "Scope notes a reader needs to interpret this analysis, such as a reduced state selection that executes a different system."
     },
@@ -1104,6 +1269,9 @@
     "observed": {
       "rumoca-ir-dae": "The targets are unread observations of a continuous-time definition, evaluated at every output point (SPEC_0022 EXPR-012)."
     },
+    "observed_rows": {
+      "rumoca-phase-solve": "Rows of observed B.1c owners (SPEC_0022 EXPR-012): unread observations refreshed at every output point."
+    },
     "oc_break_edge_scalar_count": {
       "rumoca-ir-flat": "Conservative scalar budget for VCG break-edge equations (MLS §9.4). Break edges are lowered to their declared `equalityConstraint` equations during connection generation. Balance accounting retains this metadata to validate the resulting equation inventory."
     },
@@ -1120,6 +1288,7 @@
       "rumoca-ir-flat": "The component class equation this equation instantiates, when it came from one (see [`rumoca_core::ComponentOccurrence`]). Construction metadata for later phases, which carry it in their own IR; Flat dumps stay unchanged."
     },
     "occurrences": {
+      "rumoca-phase-solve": "Empty until a row records a component occurrence; then one per row.",
       "rumoca-phase-structural": "The unknown occurrences of the row being projected, reused across rows."
     },
     "offset": {
@@ -1142,6 +1311,9 @@
     },
     "optional_edges": {
       "rumoca-ir-flat": "Optional edges derived from connect() statements for overconstrained nodes (MLS §9.4). These are used together with `branches` when building the virtual connection graph."
+    },
+    "ordinary_trigger_edges": {
+      "rumoca-phase-solve": "Issued ordinary guarded branches consume rising edges even when a branch's Boolean condition selects a periodic task (MLS §8.3.5.1)."
     },
     "origin": {
       "rumoca-ir-ast": "Origin of this statement (qualified name of the class it came from).",
@@ -1166,7 +1338,8 @@
     },
     "outputs": {
       "rumoca-ir-ast": "Output variables being assigned (for `(a, b) := func(x)` style calls)",
-      "rumoca-ir-flat": "Output variables (left-hand side variables)."
+      "rumoca-ir-flat": "Output variables (left-hand side variables).",
+      "rumoca-phase-solve": "Declarations with the `Output` role."
     },
     "overdetermined_type": {
       "rumoca-ir-flat": "Reference to the overdetermined type."
@@ -1206,8 +1379,15 @@
       "rumoca-ir-ast": "If-equations whose branch instantiation selected by evaluating component references (SPEC_0040 DAE-C22).",
       "rumoca-ir-flat": "Branch selections flatten made by evaluating a parameter guard at translation (SPEC_0040 DAE-C22): an if-equation whose branches differ in equation count or in the variables they differentiate."
     },
+    "parameter_definitions": {
+      "rumoca-phase-solve": "Definition identity of each per-iteration entry parameter."
+    },
+    "parameter_nominals": {
+      "rumoca-phase-solve": "The declared `nominal` of each `fixed = false` parameter scalar the projection solves, keyed by P-slot index (MLS §4.8.1)."
+    },
     "parameters": {
-      "rumoca-ir-solve": "Parameter storage indices an event writes: discrete values, relation and condition memory, `pre` copies, and clock activation lanes."
+      "rumoca-ir-solve": "Parameter storage indices an event writes: discrete values, relation and condition memory, `pre` copies, and clock activation lanes.",
+      "rumoca-phase-solve": "Parameter slots a projection unknown defines (`fixed = false`)."
     },
     "parent": {
       "rumoca-ir-ast": "Parent scope (None for global scope).",
@@ -1238,6 +1418,9 @@
     },
     "pending": {
       "rumoca-phase-structural": "Expressions whose derivative is still to be followed."
+    },
+    "periodic": {
+      "rumoca-phase-solve": "Whether `clock` is periodic, so the activation is the guard's level rather than the rise of the trigger."
     },
     "phase_numerator": {
       "rumoca-ir-solve": "Tick `k` is `(phase_numerator + k * period_numerator) / denominator`."
@@ -1300,6 +1483,9 @@
     "prefixes": {
       "rumoca-ir-ast": "Component prefixes (flow, stream, variability, causality)."
     },
+    "primary_reconstructed_scalar": {
+      "rumoca-phase-solve": "Scalar the primary basis reconstructs (its Dependent coordinate)."
+    },
     "priority": {
       "rumoca-ir-ast": "Priority of this transition (MLS §17.1: \"priority >= 1\"). Lower number = higher priority. Default: 1",
       "rumoca-ir-flat": "Priority value (lower = higher priority). Must be >= 0."
@@ -1326,9 +1512,11 @@
       "rumoca-ir-solve": "The blocks of rows solved simultaneously, each pairing its rows with the unknowns they determine."
     },
     "projection_unknowns": {
-      "rumoca-ir-solve": "Every unknown the projection solves, in plan order; derived from the projection plan."
+      "rumoca-ir-solve": "Every unknown the projection solves, in plan order; derived from the projection plan.",
+      "rumoca-phase-solve": "P-slot indices of each unbound `fixed = false` parameter scalar, keyed by variable index. These are the coordinates the projection solves."
     },
     "provenance": {
+      "rumoca-phase-solve": "The block's own span, else its first exact span: what derived declarations (status bits, loop iterators) are located at.",
       "rumoca-phase-structural": "That variable's declaration."
     },
     "pulse_rows": {
@@ -1338,7 +1526,8 @@
       "rumoca-ir-ast": "True if the function is pure (no side effects). MLS §12.3. Only meaningful for function classes. Functions are pure by default. Set to false when declared with `impure` keyword."
     },
     "pure_calls": {
-      "rumoca-ir-solve": "Exact pure DAE call frames shared by value, root, action, and visible projections. Empty minimal fixtures still carry the canonical binary64 arithmetic profile; lowering never reconstructs this table from rows."
+      "rumoca-ir-solve": "Exact pure DAE call frames shared by value, root, action, and visible projections. Empty minimal fixtures still carry the canonical binary64 arithmetic profile; lowering never reconstructs this table from rows.",
+      "rumoca-phase-solve": "Exact pure-call owners issued atomically at the DAE expression boundary."
     },
     "pure_external": {
       "rumoca-phase-structural": "`pure external \"C\" y = pext(u)`."
@@ -1358,6 +1547,9 @@
     },
     "quotient_replays": {
       "rumoca-ir-dae": "One slot per owner record in source order — the single global owner ordinal the stream markers name. Function owners hold a typed placeholder markers must reject; model owners hold the staged token consumed by their three markers and finished after roots."
+    },
+    "raised": {
+      "rumoca-phase-solve": "Indices into `SIGNALS` of the signals the lowered body may raise."
     },
     "raised_owners": {
       "rumoca-phase-structural": "`(first canonical row, order before this admission)` per raised owner."
@@ -1389,6 +1581,9 @@
     "real_eighths": {
       "rumoca-ir-dae": "Eighths, so the payload is a dyadic rational. The Real payload is deliberately not an arbitrary double. The workspace builds `serde_json` without its `float_roundtrip` feature (root `Cargo.toml` asks only for `preserve_order`), and its default number parser can land one ULP away from the correctly rounded value: reading back `-122.50221691932535` yields the neighbouring double, whose own shortest form is `-122.50221691932536`. That is a payload-fidelity defect of the name-tagged codec, not an ordinal defect — `bincode` carries the eight raw bytes and is unaffected — so this harness draws Reals from the domain both codecs represent exactly and leaves the defect to be fixed where it lives, in the workspace dependency declaration."
     },
+    "real_free": {
+      "rumoca-phase-solve": "The functions whose evaluation involves no Real value at any depth (see `real_free_functions`)."
+    },
     "record_field_prefixes": {
       "rumoca-ir-dae": "Per record type, the running sum of its field packed widths (one entry past the last field), derived once at freeze; `None` for a non-record or a record whose layout does not fit."
     },
@@ -1400,6 +1595,9 @@
     },
     "recovered": {
       "rumoca-ir-solve": "`recovered[step * tears + column]`."
+    },
+    "recursive": {
+      "rumoca-phase-solve": "Whether an invocation can enter a SOLVE-C62 recursive group, whose body no caller may expand in place."
     },
     "redeclare": {
       "rumoca-ir-ast": "True if the modification is a redeclaration (MLS §7.3)."
@@ -1431,6 +1629,9 @@
     "refresh_owners": {
       "rumoca-ir-solve": "Exact checked refresh owners issued during Solve construction. Runtime adapters prepare these schedules but never discover or filter them."
     },
+    "refresh_profile": {
+      "rumoca-phase-solve": "The execution family the model is lowered for."
+    },
     "register_listed_twice": {
       "rumoca-ir-solve": "Whether the last reader lists the register more than once."
     },
@@ -1443,6 +1644,9 @@
     },
     "removed_edges": {
       "rumoca-ir-flat": "Edges removed from the spanning tree (will use equalityConstraint)."
+    },
+    "report": {
+      "rumoca-phase-structural": "Every class the quotient considered: those it collapsed, and those it left unchanged with the reason."
     },
     "required": {
       "rumoca-ir-flat": "Whether this was a required edge (from Connections.branch())."
@@ -1528,6 +1732,9 @@
     "row_targets": {
       "rumoca-ir-solve": "The unknown each residual row is solved for, or `None` for a check row; derived from the projection plan."
     },
+    "row_unknowns": {
+      "rumoca-phase-solve": "The unknowns each entry of `rows` reads, positionally paired with it."
+    },
     "rows": {
       "rumoca-ir-solve": "Residual rows the projection plan solves.",
       "rumoca-phase-structural": "Every scalar row, in row order."
@@ -1544,11 +1751,18 @@
     "safety": {
       "rumoca-ir-solve": "`safety` of `factor = safety * err^exponent`."
     },
+    "same_tick_definitions": {
+      "rumoca-phase-solve": "Exact same-tick definitions (SOLVE-C57), derived once per DAE. Program granularity consults it while lowering, and the issued order replays it."
+    },
     "scalar": {
       "rumoca-phase-structural": "Scalar selected from an aggregate expression; zero for scalar terms."
     },
     "scalar_count": {
-      "rumoca-ir-flat": "Number of scalar equations this represents (MLS §8.4). For array equations like `x[n] = expr`, this is n. For scalar equations, this is 1. Used for balance checking per MLS §4.7."
+      "rumoca-ir-flat": "Number of scalar equations this represents (MLS §8.4). For array equations like `x[n] = expr`, this is n. For scalar equations, this is 1. Used for balance checking per MLS §4.7.",
+      "rumoca-phase-solve": "The number of scalar columns; the names live in the layout bindings."
+    },
+    "scalar_storable": {
+      "rumoca-phase-solve": "Whether this function and every function it transitively calls reads only Integer values scalar row storage holds exactly and converts no Real to an Integer, derived once when the owner is registered."
     },
     "scale": {
       "rumoca-phase-structural": "`scale(u) = 2*u`, a Modelica body."
@@ -1593,6 +1807,12 @@
     "sets": {
       "rumoca-ir-flat": "All connection sets, indexed by a representative variable name."
     },
+    "settled": {
+      "rumoca-phase-solve": "Exact settlements already made in this block, by the ranges and the span-free text of the expression (see `faults::settled`)."
+    },
+    "settled_discretes": {
+      "rumoca-phase-solve": "Discrete coordinates (by variable index) whose MLS §8.6 initial value is a definition reading only `time`, inputs, given states, parameters the projection does not solve, and other such coordinates. The runtime applies those definitions before every projection pass, so the projection reads them, and their `pre` storage, as known values."
+    },
     "shape": {
       "rumoca-ir-ast": "Array dimensions - empty for scalars, e.g., [2, 3] for a 2x3 matrix Only populated when dimensions are known literal integers"
     },
@@ -1620,11 +1840,18 @@
     "sliding_streak": {
       "rumoca-ir-solve": "Consecutive close state events of one indicator that make it slide ([`SlidingModes`])."
     },
+    "slope_invariant": {
+      "rumoca-phase-solve": "The stage's constraint slope is proven constant, so no chart folds."
+    },
     "slot": {
       "rumoca-ir-solve": "Slot in the runtime `p[]` vector."
     },
     "slots": {
-      "rumoca-ir-solve": "Unknown slots, projection unknowns first, then update targets."
+      "rumoca-ir-solve": "Unknown slots, projection unknowns first, then update targets.",
+      "rumoca-phase-solve": "The method's slots, at a method's top level only: block slots then locals. A region has none and reads only captured values."
+    },
+    "solver": {
+      "rumoca-phase-solve": "Solver-vector indices the projection solves or the updates write."
     },
     "solver_method": {
       "rumoca-ir-flat": "Solver method name."
@@ -1638,6 +1865,7 @@
     "source": {
       "rumoca-ir-ast": "Optional source expression before eager resolution. When present, this preserves the symbolic modifier form (`k = parentK`) so downstream flat-output generation can keep parameter propagation relationships instead of hard-coding evaluated defaults.",
       "rumoca-ir-solve": "The step's tangent is `-b / a`: `b` the row's tangent with the target held, `a` the coefficient of the target, taken from the last lane, which seeds the target alone.",
+      "rumoca-phase-solve": "The refresh source, once a tensor node made it differ.",
       "rumoca-phase-structural": "The variable whose `fixed = true` start the value was read from."
     },
     "source_is_discrete": {
@@ -1660,6 +1888,9 @@
     },
     "source_modifications": {
       "rumoca-ir-ast": "Ordered source-form modifier arguments from the component declaration. These preserve the syntax inside `x(...)` before semantic component attributes are split into `start`, `binding`, `shape`, and `modifications`."
+    },
+    "source_only": {
+      "rumoca-phase-solve": "Rows pushed now belong to the refresh source alone: the scalar form of the family the compact form just kept as a tensor node."
     },
     "source_pins": {
       "rumoca-phase-structural": "Exact initial-value transfers, indexed only in `source`."
@@ -1689,6 +1920,9 @@
     },
     "spans": {
       "rumoca-ir-solve": "`(start, register count)` of each region in the source program."
+    },
+    "split": {
+      "rumoca-phase-solve": "An `if` here lowers to one region per statement (a method's top level, and the bodies of such an `if`)."
     },
     "stack": {
       "rumoca-phase-structural": "Nodes currently on the Tarjan stack."
@@ -1740,7 +1974,8 @@
     },
     "states": {
       "rumoca-ir-ast": "States in this state machine.",
-      "rumoca-ir-solve": "The state domain every index was proven against."
+      "rumoca-ir-solve": "The state domain every index was proven against.",
+      "rumoca-phase-solve": "Declarations with the `State` role."
     },
     "status_bindings": {
       "rumoca-ir-solve": "Each function owner's status channels, in owner order."
@@ -1792,6 +2027,12 @@
     "subscripts": {
       "rumoca-ir-ast": "The subscript expressions."
     },
+    "substituted": {
+      "rumoca-phase-solve": "Parameter bindings already followed, so a diamond is walked once."
+    },
+    "summaries": {
+      "rumoca-phase-solve": "What a call can do (faults, effects), callee first."
+    },
     "synchronize": {
       "rumoca-ir-ast": "Whether to synchronize with sub-state machines of the target state. Default: false"
     },
@@ -1809,7 +2050,11 @@
     },
     "target": {
       "rumoca-ir-ast": "The target being modified (e.g., \"x\" or \"x.start\")",
-      "rumoca-ir-solve": "Solver-Y index the step assigns."
+      "rumoca-ir-solve": "Solver-Y index the step assigns.",
+      "rumoca-phase-solve": "The algebraic variable whose every scalar the family defines."
+    },
+    "target_expression": {
+      "rumoca-phase-solve": "The aggregate coordinate expression of the target."
     },
     "targets": {
       "rumoca-ir-solve": "Per requested output, its store and stored register.",
@@ -1861,8 +2106,14 @@
     "top_level_output_components": {
       "rumoca-ir-flat": "Public top-level components declared with `output` causality. Their record fields inherit the public interface prefix under MLS §4.4.2.2, independently of their runtime role (SPEC_0040 DAE-C24)."
     },
+    "totality": {
+      "rumoca-phase-solve": "Whether each expression evaluates without failure or effect (see `total_conditionals`)."
+    },
     "trace": {
       "rumoca-phase-structural": "Every matching, Tarjan and tearing step this analysis took."
+    },
+    "transform": {
+      "rumoca-phase-solve": "Which transform ran."
     },
     "transitions": {
       "rumoca-ir-ast": "Transitions between states."
@@ -1928,7 +2179,8 @@
       "rumoca-phase-structural": "Column indices of the unknowns this row mentions, ascending."
     },
     "unlocalizable_guards": {
-      "rumoca-ir-solve": "Projection blocks whose own unknowns a relation under `noEvent` switches, with no root to localize it (SPEC_0044 ME-EVENT-008, ES016). Construction warns about each; a projection of such a block that fails is a typed fold of the relation, never a generic failure."
+      "rumoca-ir-solve": "Projection blocks whose own unknowns a relation under `noEvent` switches, with no root to localize it (SPEC_0044 ME-EVENT-008, ES016). Construction warns about each; a projection of such a block that fails is a typed fold of the relation, never a generic failure.",
+      "rumoca-phase-solve": "ES016 facts: blocks whose own unknowns a `noEvent` relation switches."
     },
     "unresolved": {
       "rumoca-ir-ast": "Names of modification targets the hierarchy does not resolve: every constant of such a name may be modified, so none is read at its declared value."
@@ -1938,6 +2190,12 @@
     },
     "unused_captures": {
       "rumoca-ir-solve": "The captures of each running conditional that neither arm loads, by operation."
+    },
+    "update_definitions": {
+      "rumoca-phase-solve": "Definition identity of each end-of-iteration update."
+    },
+    "update_expressions": {
+      "rumoca-phase-solve": "Right-hand side each carried target ends an iteration at."
     },
     "update_jacobian_v": {
       "rumoca-ir-solve": "Forward-mode JVP of the initialization update rows over `[solver-y | parameter]` seeds, row-aligned with `update_rhs`. It carries a seed through the bindings of the settled initialization view; `None` when a row has no derivative lowering."
@@ -1975,7 +2233,8 @@
       "rumoca-phase-structural": "Structural value type (scalar kind and shape); declared quantity and unit types may differ across an equation, which already equates them."
     },
     "values": {
-      "rumoca-ir-solve": "Value key to the registers holding its outputs."
+      "rumoca-ir-solve": "Value key to the registers holding its outputs.",
+      "rumoca-phase-solve": "The value of a short-circuit local: canonical text with known values expanded, and everything that text reads."
     },
     "variability": {
       "rumoca-ir-ast": "Variability (constant, parameter, discrete, continuous).",
@@ -2005,6 +2264,9 @@
     "variable_storage_runs": {
       "rumoca-ir-solve": "Dense DAE variable ordinal to its first Solve storage slot. Scalar `k` of a variable is stored at `base + k` in the same column. This is the canonical cross-phase coordinate map; display names are not used to recover compiler identity."
     },
+    "variable_triggers": {
+      "rumoca-phase-solve": "The event clock, and its tick condition, of every variable an event clock owns."
+    },
     "variable_type_names": {
       "rumoca-ir-flat": "Declared flat-output type name for each variable (e.g., Boolean, Integer, MyEnum). Keys match `variables` and values preserve resolved type identity for rendering."
     },
@@ -2029,6 +2291,9 @@
     "width": {
       "rumoca-ir-solve": "The number of outputs the key was issued with."
     },
+    "withheld_preferences": {
+      "rumoca-phase-solve": "The `StateSelect.prefer` requests (MLS 3.7 §4.9.7.1) this selection does not honor, each with its cause: a derivative its selection needs, the requested basis, or its checked selection was refused."
+    },
     "witness": {
       "rumoca-phase-structural": "One asserted equality incident to each variable, for candidate owners."
     },
@@ -2049,6 +2314,9 @@
     },
     "zero": {
       "rumoca-ir-solve": "`positive`, `non_positive`, or `previous`."
+    },
+    "zero_coefficients": {
+      "rumoca-phase-solve": "The incidence proofs of exactly zero product terms, shared with structural analysis so both omit the same terms."
     }
   },
   "types": {
@@ -3206,6 +3474,208 @@
         "width": "The number of outputs the key was issued with."
       }
     },
+    "rumoca-phase-solve": {
+      "ActivationCondition": {
+        "periodic": "Whether `clock` is periodic, so the activation is the guard's level rather than the rise of the trigger."
+      },
+      "AlgebraicFamilyForm": {
+        "constants": "Constants (MLS 3.7 §4.5) `rhs` reads, each with its literal binding: translation-time values of the body, not owner inputs.",
+        "inputs": "The aggregate model coordinates `rhs` reads, in stable owner input order, each with one expression that reads it whole.",
+        "target": "The algebraic variable whose every scalar the family defines.",
+        "target_expression": "The aggregate coordinate expression of the target."
+      },
+      "BlockScope": {
+        "provenance": "The block's own span, else its first exact span: what derived declarations (status bits, loop iterators) are located at."
+      },
+      "CallRegistration": {
+        "examined_functions": "Functions whose call SCC was already examined for a SOLVE-C62 group.",
+        "families": "SOLVE-C70 owners, keyed by the DAE family they lower.",
+        "function_facts": "What each function contributes to every owner of it, derived once."
+      },
+      "CalleeInterface": {
+        "assertion_slots": "Every call-scoped assertion output after the result leaves, in owner output order: the owner's own predicates, its own message values, then each nested call's complete slot tuple.",
+        "recursive": "Whether an invocation can enter a SOLVE-C62 recursive group, whose body no caller may expand in place.",
+        "scalar_storable": "Whether this function and every function it transitively calls reads only Integer values scalar row storage holds exactly and converts no Real to an Integer, derived once when the owner is registered."
+      },
+      "Case": {
+        "lowers": "Whether the typed program accepts the expression; an out-of-range constant subscript is refused at construction instead."
+      },
+      "ContinuousResidualRows": {
+        "source": "The refresh source, once a tensor node made it differ.",
+        "source_only": "Rows pushed now belong to the refresh source alone: the scalar form of the family the compact form just kept as a tensor node."
+      },
+      "Ctx": {
+        "coarse": "Structural answers only: nothing is settled exactly (see `expression_summary`).",
+        "locals": "Static ranges of Integer locals (see `local_ranges`).",
+        "split": "An `if` here lowers to one region per statement (a method's top level, and the bodies of such an `if`)."
+      },
+      "DaeShape": {
+        "algebraics": "Declarations with the `Algebraic` role.",
+        "constants": "Declarations with the `Constant` role.",
+        "continuous_equations": "Entries in the continuous residual arena (`continuous_equation_count`). A structured equation family is not counted here, so this is not the number of scalar rows.",
+        "discrete": "Declarations with a discrete role, `DiscreteReal` or `DiscreteValue`.",
+        "initialization_equations": "Entries in the initialization equation partition.",
+        "inputs": "Declarations with the `Input` role.",
+        "outputs": "Declarations with the `Output` role.",
+        "parameters": "Declarations with the `Parameter` role.",
+        "states": "Declarations with the `State` role."
+      },
+      "DeferredFunctionConditionalCaptures": {
+        "local_scope": "The ordered branch scope whose own definitions this region computes instead of capturing from its owner.",
+        "slots": "The first capture slot of each source and the total slot width."
+      },
+      "Defs": {
+        "elements": "Element facts, under guard conjunctions as for `under`.",
+        "evaluations": "Path evaluations renamed so far, numbering the next one.",
+        "guard_reads": "What each guard's condition reads.",
+        "values": "The value of a short-circuit local: canonical text with known values expanded, and everything that text reads."
+      },
+      "DiscreteRows": {
+        "clock_partition_order": "The issued clock-partition schedule (SOLVE-C57), filled by [`issue_clock_partition_order`] before [`DiscreteRows::finish`].",
+        "clocked_producers": "Clock-owned producers pending SOLVE-C57 same-tick order issuance.",
+        "guarded_equation_targets": "Every guarded equation target, retained until B.1b and B.1c have both contributed their owners. SOLVE-C58 order spans source value kinds.",
+        "observed_rows": "Rows of observed B.1c owners (SPEC_0022 EXPR-012): unread observations refreshed at every output point.",
+        "ordinary_trigger_edges": "Issued ordinary guarded branches consume rising edges even when a branch's Boolean condition selects a periodic task (MLS §8.3.5.1).",
+        "same_tick_definitions": "Exact same-tick definitions (SOLVE-C57), derived once per DAE. Program granularity consults it while lowering, and the issued order replays it."
+      },
+      "EagerScope": {
+        "calls": "Calls the scope computes whatever its inputs are, in walk order.",
+        "group_of": "Group index of every member, until the group is lowered."
+      },
+      "Env": {
+        "definite": "Variables definitely written on every path so far (Startup's boundary saturation reads this).",
+        "slots": "The method's slots, at a method's top level only: block slots then locals. A region has none and reads only captured values."
+      },
+      "EventUpdate": {
+        "event_clock": "The MLS §16.3 event clock whose tick guards this update, if any."
+      },
+      "ExchangePlan": {
+        "slope_invariant": "The stage's constraint slope is proven constant, so no chart folds."
+      },
+      "ExpressionLowerer": {
+        "assertion_slots": "Kind of each entry of `predicate_values`, in owner output order.",
+        "eager": "Eagerly demanded calls and correlated conditionals not yet issued.",
+        "fold_parameters": "Exact DAE assignment-group membership for demand-ordered definitions.",
+        "function_values": "Values of the function's construction-issued SSA definitions. The key is the definition identity the DAE issued, not the assigned value alone: one function value owns a distinct definition for every redefinition, for a loop's entry parameter, and for a loop's output. Keying by definition is what lets a read name the exact reaching definition, so a demand that arrives before its defining statement was lowered resolves that definition instead of an unrelated live value.",
+        "implied_guards": "The tests the early-exit predicate of the fold whose body this is names. A conditional statement whose guard consists of them is always taken.",
+        "totality": "Whether each expression evaluates without failure or effect (see `total_conditionals`)."
+      },
+      "FoldIteration": {
+        "assertions": "Assertion slots of calls the iterations reach, carried after the targets (see [`FoldAssertions`])."
+      },
+      "FoldTransition": {
+        "continuation": "A bounded `while` fold's predicate over the carried state.",
+        "initial_definitions": "Reaching definition of each carried target in the enclosing scope.",
+        "parameter_definitions": "Definition identity of each per-iteration entry parameter.",
+        "update_definitions": "Definition identity of each end-of-iteration update.",
+        "update_expressions": "Right-hand side each carried target ends an iteration at."
+      },
+      "FunctionFoldOutputCacheKey": {
+        "guards": "The branch guards the emitted fold runs under: a fold lowered inside one selected arm is not available to a sibling arm."
+      },
+      "FunctionResultsLayout": {
+        "function": "The function the layout belongs to; none for a model expression owner."
+      },
+      "Functions": {
+        "checked": "The checked block the functions belong to: what the GALEC oracle evaluates an expression of the block against.",
+        "literal_arguments": "For each protected function, per input: the least and greatest Integer literal it is passed over every call in the block, `None` when some call passes anything else (see `literal_arguments`).",
+        "real_free": "The functions whose evaluation involves no Real value at any depth (see `real_free_functions`).",
+        "settled": "Exact settlements already made in this block, by the ranges and the span-free text of the expression (see `faults::settled`).",
+        "summaries": "What a call can do (faults, effects), callee first."
+      },
+      "GroupPlan": {
+        "scalar_storable": "Whether every member body and every callee outside the SCC is scalar storable; each member reaches the same closure."
+      },
+      "InitialIncidence": {
+        "algebraics": "Algebraic coordinates already expanded, including coupled-loop members.",
+        "expanded": "State derivatives already followed, so a derivative that reads itself through its own defining row terminates.",
+        "substituted": "Parameter bindings already followed, so a diamond is walked once."
+      },
+      "InitializationOwned": {
+        "parameters": "Parameter slots a projection unknown defines (`fixed = false`).",
+        "solver": "Solver-vector indices the projection solves or the updates write."
+      },
+      "InitializationParameterOwnership": {
+        "dependents": "Initialization definitions and numeric dependent bindings, ordered so each update follows the parameter definitions it reads.",
+        "projection_unknowns": "P-slot indices of each unbound `fixed = false` parameter scalar, keyed by variable index. These are the coordinates the projection solves."
+      },
+      "InitializationUnknownSpace": {
+        "parameter_nominals": "The declared `nominal` of each `fixed = false` parameter scalar the projection solves, keyed by P-slot index (MLS §4.8.1).",
+        "settled_discretes": "Discrete coordinates (by variable index) whose MLS §8.6 initial value is a definition reading only `time`, inputs, given states, parameters the projection does not solve, and other such coordinates. The runtime applies those definitions before every projection pass, so the projection reads them, and their `pre` storage, as known values."
+      },
+      "LoweredClocks": {
+        "variable_triggers": "The event clock, and its tick condition, of every variable an event clock owns."
+      },
+      "LoweredLayout": {
+        "assertion_roots": "Whether a call-scoped assertion owns an event root, decided once for the model's product.",
+        "pure_calls": "Exact pure-call owners issued atomically at the DAE expression boundary.",
+        "refresh_profile": "The execution family the model is lowered for."
+      },
+      "MethodScope": {
+        "iterator": "What every loop iterator is: an unbounded Integer scalar no slot holds.",
+        "loops": "The iterators of the `for` loops being analysed or lowered, outermost first; a name resolves to the innermost loop that binds it.",
+        "raised": "Indices into `SIGNALS` of the signals the lowered body may raise."
+      },
+      "PColumns": {
+        "scalar_count": "The number of scalar columns; the names live in the layout bindings."
+      },
+      "PreparedSelection": {
+        "exchanges": "Coverage record of a reduced constraint group's exchanges; empty for a first-integral mirror set and for every model without such a group.",
+        "formal_aliases": "The formal-derivative application of the STRUCT-T02 quotient on the primary candidate, with every class it left unchanged; empty when the source basis is retained.",
+        "withheld_preferences": "The `StateSelect.prefer` requests (MLS 3.7 §4.9.7.1) this selection does not honor, each with its cause: a derivative its selection needs, the requested basis, or its checked selection was refused."
+      },
+      "ProjectionComponent": {
+        "row_unknowns": "The unknowns each entry of `rows` reads, positionally paired with it."
+      },
+      "Proof": {
+        "loops": "Loop iterators in scope with their static `(low, high, step)`."
+      },
+      "ReducedFoldGroup": {
+        "alternate_reconstructed_scalars": "Scalar each alternate chart reconstructs instead, in chart order.",
+        "primary_reconstructed_scalar": "Scalar the primary basis reconstructs (its Dependent coordinate).",
+        "source": "Source variable ordinal of the folding tensor."
+      },
+      "RegisteredAssertion": {
+        "message_values": "Owner output carrying each converted message value, keyed by the value expression the message converts."
+      },
+      "RowIncidence": {
+        "held_discretes": "Whether the row reads an unsettled discrete it holds fixed."
+      },
+      "SameTickExchange": {
+        "entry_readers": "For each member, the members that read one of its targets at the event-iteration entry and so are issued before it."
+      },
+      "ScalarCompiler": {
+        "contexts": "The context identities of every compiler forked from one root: an identity is allocated once and read by all of them.",
+        "fold_guard_base": "Prefix of `activation_path` already enforced by the owning compact fold. Nested folds materialize only guards introduced after this point.",
+        "ledger": "The exact facts known about registers (a literal value, an exact Integer value, the operand a register negates), the owner of every allocated range, and the register budget.",
+        "literal_power_cache": "Packed result of a literal power of an aggregate base, keyed by (context, base, reciprocal, magnitude); for exponent 0, the one constant every element reads.",
+        "zero_coefficients": "The incidence proofs of exactly zero product terms, shared with structural analysis so both omit the same terms."
+      },
+      "ScalarRows": {
+        "occurrences": "Empty until a row records a component occurrence; then one per row."
+      },
+      "SolvePreparationEvent": {
+        "after": "The shape of the system it returned; `None` when it returned none, leaving its input as the next transform's input.",
+        "alternate_charts": "How many alternate charts were prepared beside the primary one.",
+        "before": "The shape of the system it was given.",
+        "integrated": "The primary chart's integrated scalar names.",
+        "transform": "Which transform ran."
+      },
+      "StructuralMatching": {
+        "unlocalizable_guards": "ES016 facts: blocks whose own unknowns a `noEvent` relation switches."
+      },
+      "Summary": {
+        "effects": "It can write block state or raise a signal.",
+        "faults": "It can fault.",
+        "lost": "Inside some region an effect can precede a fault, which would then lose a fault-visible effect."
+      },
+      "TrialPoint": {
+        "nonzero_starts": "Source value scalars whose evaluated `start` is nonzero, fixed before any trial guess or pin rewrites `values`."
+      },
+      "Variable": {
+        "dims": "Array extents, empty for a scalar."
+      }
+    },
     "rumoca-phase-structural": {
       "AffineMap": {
         "tested": "Every variable a recording map compared its target against; see [`AffineMap::recording`]."
@@ -3333,8 +3803,10 @@
         "raised_owners": "`(first canonical row, order before this admission)` per raised owner."
       },
       "PreparationEvent": {
+        "context": "Which analysis of the preparation this was.",
         "incidence": "The incidence the analysis matched over; `None` when building it failed, which is then the analysis's error.",
         "outcome": "The report on success; the analysis's own error otherwise.",
+        "report": "Every class the quotient considered: those it collapsed, and those it left unchanged with the reason.",
         "scope": "`Source` before state selection, `FormalDerivatives` after it.",
         "trace": "Every matching, Tarjan and tearing step this analysis took."
       },

@@ -2422,12 +2422,17 @@ impl WorkerState {
         // `OutputCapture` — so without one the trace lands in a terminal Doug is not
         // watching. It is started only for the retry, which happens only on a failure
         // already headed for the error path.
-        // **`simulate_with_optional_step_records`, so the diagnostics plots have
-        // data again** (2026-11-03, re-modelled after the v0.10.0 rebase disabled
-        // them). Same dispatch as `simulate_with_diagnostics`: `Auto` resolves
-        // through the same selector, so asking for the steps never changes which
-        // integrator runs, and `suite_core::step_observation` pins that an observed
-        // run is bit-identical to an unobserved one.
+        // **The step-recording integration, so the diagnostics plots have data**
+        // (2026-11-03, re-modelled after the v0.10.0 rebase disabled them; since
+        // 2026-11-27 `simulate_prepared_runtime_with_optional_step_records`, the
+        // integration half of `simulate_with_optional_step_records`'s `Auto` arm).
+        // `Auto` resolves through the same selector as `simulate_with_diagnostics`,
+        // so asking for the steps never changes which integrator runs. Two tests
+        // pin that observing changes nothing: `suite_core::step_observation` for
+        // `Bdf`, and rumoca-sim's
+        // `the_split_entry_integrates_exactly_as_the_unobserved_run` for this
+        // `Auto` split on the BDF path. *(Corrected 2026-11-28: this cited only the
+        // first, which never runs `Auto`. The RK-like fallback is not yet pinned.)*
         //
         // `None` is the backend saying it has no steps to report — the rk45 path
         // never enters the ME session — and is kept distinct from `Some(empty)`,

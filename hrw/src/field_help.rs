@@ -68,7 +68,20 @@ pub const IR_CRATES: &[&str] = &[
     "rumoca-ir-dae",
     "rumoca-ir-solve",
     "rumoca-phase-structural",
+    // The Simplify stage publishes this crate's `DaeShape` and
+    // `SolvePreparationEvent::Transform` (2026-11-28; see `SIMPLIFY_ROUTES`).
+    // Route-only: see `ROUTE_ONLY_CRATES`.
+    "rumoca-phase-solve",
 ];
+
+/// Harvested crates whose docs reach a pane **only through a [`Route`]**, never
+/// through the longest-doc fallback.
+///
+/// Adding `rumoca-phase-solve` for Simplify's routes would otherwise have changed
+/// eight fallback tooltips elsewhere and given 82 field names a first one, each
+/// borrowed from a type that pane does not show (measured 2026-11-28). Excluding it
+/// from the fallback leaves every other pane's tooltips exactly as they were.
+pub const ROUTE_ONLY_CRATES: &[&str] = &["rumoca-phase-solve"];
 
 // The field help table is embedded at compile time via `include_str!`.
 // This means the binary is self-contained — no runtime file I/O needed.
@@ -113,9 +126,55 @@ pub struct Route {
 pub fn routes(stage: StageKind) -> Option<&'static [Route]> {
     match stage {
         StageKind::Initialization => Some(INITIALIZATION_ROUTES),
+        StageKind::Simplify => Some(SIMPLIFY_ROUTES),
         _ => None,
     }
 }
+
+/// The Simplify stage publishes solve lowering's `SolvePreparationEvent::Transform`
+/// records, each with two `DaeShape`s, and a summary of each alias quotient
+/// (`worker/preparation.rs`, `simplify_stage`).
+///
+/// **Routed since 2026-11-28.** Until then the stage was on the longest-doc
+/// fallback, and every shape count borrowed another type's doc: `states` read *"The
+/// state domain every index was proven against"* and `algebraics` *"Algebraics
+/// already followed"*. `DaeShape`'s own docs also say what the fallback could not:
+/// its counts are declarations, and `continuous_equations` excludes structured
+/// families, which is why `ArrayFamily` reads 0 there.
+const SIMPLIFY_ROUTES: &[Route] = &[
+    Route::shape("states"),
+    Route::shape("algebraics"),
+    Route::shape("outputs"),
+    Route::shape("parameters"),
+    Route::shape("constants"),
+    Route::shape("inputs"),
+    Route::shape("discrete"),
+    Route::shape("continuous_equations"),
+    Route::shape("initialization_equations"),
+    Route::transform("transform"),
+    Route::transform("before"),
+    Route::transform("after"),
+    Route {
+        key: "scope",
+        krate: "rumoca-phase-structural",
+        ty: "PreparationEvent",
+        field: "scope",
+    },
+];
+
+/// Keys the Simplify stage publishes that **deliberately carry no tooltip**:
+/// `what_it_does`, `changed`, `eliminated` and `note` are HRW's gloss, comparison,
+/// tally and note; `transforms` and `alias_quotients` are its containers; and
+/// `classes` is `AliasQuotientReport::classes`, which Rumoca leaves undocumented.
+pub const SIMPLIFY_UNDOCUMENTED: &[&str] = &[
+    "what_it_does",
+    "changed",
+    "eliminated",
+    "note",
+    "transforms",
+    "alias_quotients",
+    "classes",
+];
 
 /// Since 2026-11-26 the stage publishes the plan solve lowering lowered
 /// (`worker/preparation.rs`, `initialization_plan_json`), read through the typed
@@ -162,6 +221,27 @@ impl Route {
             field,
         }
     }
+
+    /// A route to a field of `rumoca-phase-solve`'s `DaeShape`, published under its own name.
+    const fn shape(field: &'static str) -> Self {
+        Self {
+            key: field,
+            krate: "rumoca-phase-solve",
+            ty: "DaeShape",
+            field,
+        }
+    }
+
+    /// A route to a field of the `SolvePreparationEvent::Transform` variant, which the
+    /// harvest files under the enum's name.
+    const fn transform(field: &'static str) -> Self {
+        Self {
+            key: field,
+            krate: "rumoca-phase-solve",
+            ty: "SolvePreparationEvent",
+            field,
+        }
+    }
 }
 
 /// The embedded table, resolved per stage.
@@ -193,8 +273,9 @@ impl Route {
 /// Mechanism 2 was the only protection for `Initialization`, whose crate is `None`, and
 /// it was not enough: a labelled tooltip is still a false one when five of nine are
 /// borrowed from the wrong type. A stage with [`routes`] gets **exactly** its routed
-/// keys, each the doc on a named type's field, and no fallback. `Simulation` is the one
-/// stage still on the labelled fallback; giving it routes is a separate item.
+/// keys, each the doc on a named type's field, and no fallback. `Simplify` has routes
+/// too, since 2026-11-28. `Simulation` is the one stage still on the labelled
+/// fallback; giving it routes is a separate item.
 pub struct FieldHelp {
     /// `field -> crate -> doc`, exactly as `gen_field_help` writes it.
     by_field: HashMap<String, HashMap<String, String>>,
@@ -243,9 +324,12 @@ impl FieldHelp {
                 // The stage's own crate when it documents this field; otherwise the
                 // longest doc available, which is only ever a fallback and is labelled
                 // as belonging to another crate.
-                let chosen = want
-                    .and_then(|w| by_crate.get_key_value(w))
-                    .or_else(|| by_crate.iter().max_by_key(|(_, d)| d.len()));
+                let chosen = want.and_then(|w| by_crate.get_key_value(w)).or_else(|| {
+                    by_crate
+                        .iter()
+                        .filter(|(k, _)| !ROUTE_ONLY_CRATES.contains(&k.as_str()))
+                        .max_by_key(|(_, d)| d.len())
+                });
                 if let Some((from, doc)) = chosen {
                     table.insert(field.clone(), format!("{doc}\n\n\u{2014} {from}"));
                 }
@@ -700,5 +784,96 @@ mod tests {
                 "`{key}` is listed but the stage no longer publishes it",
             );
         }
+    }
+
+    /// **A route-only crate never supplies a fallback tooltip.** Its docs reach a
+    /// pane only through a [`Route`], so harvesting it for Simplify changed no
+    /// other pane's tooltips.
+    #[test]
+    fn a_route_only_crate_supplies_no_fallback_tooltip() {
+        let help = FieldHelp::load();
+        for stage in StageKind::ALL {
+            if routes(*stage).is_some() {
+                continue;
+            }
+            for (key, tip) in help.for_stage(*stage) {
+                for krate in ROUTE_ONLY_CRATES {
+                    assert!(
+                        !tip.ends_with(&format!("\u{2014} {krate}")),
+                        "{stage:?} `{key}` borrowed a fallback tooltip from {krate}",
+                    );
+                }
+            }
+        }
+    }
+
+    /// **Every key the Simplify stage publishes is routed or deliberately bare,
+    /// and each shape count's tooltip is `DaeShape`'s own** (2026-11-28).
+    ///
+    /// Read from every committed Simplify trace, so a key only some models
+    /// publish (`after`, an alias summary) is still held. The shape check is the
+    /// defect this closes: on the fallback `states` read another type's doc.
+    #[test]
+    fn the_simplify_pane_routes_every_key_it_publishes() {
+        fn keys(v: &serde_json::Value, out: &mut std::collections::BTreeSet<String>) {
+            match v {
+                serde_json::Value::Object(m) => {
+                    for (k, child) in m {
+                        out.insert(k.clone());
+                        keys(child, out);
+                    }
+                }
+                serde_json::Value::Array(a) => a.iter().for_each(|c| keys(c, out)),
+                _ => {}
+            }
+        }
+        let notebook = crate::manifest_path!("docs", "specimen-notebook");
+        let mut published = std::collections::BTreeSet::new();
+        let mut traces = 0;
+        for entry in std::fs::read_dir(notebook).expect("the notebook").flatten() {
+            let path = entry.path().join("trace").join("simplify.json");
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            let stage: serde_json::Value = serde_json::from_str(&text).expect("trace parses");
+            keys(&stage, &mut published);
+            traces += 1;
+        }
+        assert!(
+            traces >= 10,
+            "premise: the notebook has Simplify traces ({traces})"
+        );
+
+        let routed: Vec<&str> = routes(StageKind::Simplify)
+            .expect("routes")
+            .iter()
+            .map(|r| r.key)
+            .collect();
+        for key in &published {
+            let r = routed.contains(&key.as_str());
+            let u = SIMPLIFY_UNDOCUMENTED.contains(&key.as_str());
+            assert!(
+                r ^ u,
+                "`{key}` must be in exactly one of the routes and the undocumented list \
+                 (routed {r}, undocumented {u})",
+            );
+        }
+        for key in routed.iter().chain(SIMPLIFY_UNDOCUMENTED) {
+            assert!(
+                published.contains(*key),
+                "`{key}` is listed but the stage no longer publishes it",
+            );
+        }
+
+        let help = FieldHelp::load();
+        let states = help
+            .for_stage(StageKind::Simplify)
+            .get("states")
+            .expect("`states` has a tooltip");
+        assert!(
+            states.contains("Declarations with the `State` role")
+                && states.contains("rumoca-phase-solve \u{b7} DaeShape::states"),
+            "`states` must carry DaeShape's own doc: {states}",
+        );
     }
 }
