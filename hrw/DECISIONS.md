@@ -6211,3 +6211,8 @@ the version stamps. **The check also found three defects that predate this rebas
   a name *exists*, not that it is the one called, so none of the three failed it. The pipeline doc
   comment was also attached to the wrong function, `locate_library_model`, and has moved to
   `compile_target`.
+
+**Steps 8 and 9, 2026-11-28 — Doug.** He ran the smoke test on screen, and it passed. Help →
+About reads 0.11.0. **Still open:** the two Windows-only parts of step 10, which wait for the
+Windows machine in Chicago; the check of the base against the `v0.11.0` tag once it exists; and
+step 11. Doug agreed to the post-rebase tech-debt sweep, which has not started.
